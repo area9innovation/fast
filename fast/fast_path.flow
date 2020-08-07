@@ -21,11 +21,11 @@ export {
 
 getFastDir() -> string {
 	paths = [
-		getUrlParameter("fastdir"),
+		getUrlParameterDef("fastdir", "."),
 		"../fast", 
 		"fast", 
 	];
-	findDirectoryContainingFile(paths, "fast.flow");
+	findDirectoryContainingFile(paths, "fast/fast.flow");
 }
 
 getFlowDir() -> string {
@@ -75,7 +75,9 @@ fastPath2path(includes : [string], path : string) -> string {
 }
 
 findDirectoryContainingFile(dirs : [string], file : string) -> string {
-	dir = find(dirs, \i -> fileExists(pathCombine(i, file)));
+	dir = find(dirs, \i -> {
+		fileExists(pathCombine(i, file))
+	});
 	dir ?? {
 		resolveRelativePath(dir);
 	} : {

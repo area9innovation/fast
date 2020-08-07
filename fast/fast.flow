@@ -12,7 +12,8 @@ main() {
 	file1 = changeFileExt(file0, ".fast");
 	file = if (!fileExists(file1)) pathCombine(folder, file1) else file1;
 
-	includes = [pathCombine(getFastDir(), "lib"), getFastDir(), "."];
+	includes0 = [pathCombine(getFastDir(), "lib"), getFastDir(), "."];
+	includes = map(includes0, resolveRelativePath);
 	outputFolder = getUrlParameterDef("output", ".");
 
 	if (!isUrlParameterTrue("test")) {
