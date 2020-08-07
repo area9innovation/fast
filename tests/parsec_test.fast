@@ -1,0 +1,49 @@
+import parsec;
+
+
+one() -> i32 { 1; }
+one_(x : string) -> i32 { 1; }
+
+parsec.flow::main() -> i0 {
+    p0 = compiletime::emptyParseC(one);
+    //println(first(p0("a", 0)));
+    //println(first(p0("b", 0)));
+    //println(first(p0("ab", 0)));
+    //println(first(p0("aa", 0)));
+    //println(first(p0("", 0)));
+    println(p0("a", 0));
+    println(p0("b", 0));
+    println(p0("ab", 0));
+    println(p0("aa", 0));
+    println(p0("", 0));
+
+    p1 = compiletime::inputEndParseC(one, 2);
+    println(p1("a", 0));
+    println(p1("b", 0));
+    println(p1("ab", 0));
+    println(p1("aa", 0));
+    println(p1("", 0));
+
+    p2 = compiletime::tokenParseC("ab", one_, 2);
+    println(p2("a", 0));
+    println(p2("b", 0));
+    println(p2("ab", 0));
+    println(p2("aa", 0));
+    println(p2("aab", 1));
+    println(p2(" aab", 2));
+    println(p2("", 0));
+
+	/*println(first(p1()("a", 0)));
+    println(first(p1()("b", 0)));
+    println(first(p1()("ab", 0)));
+    println(first(p1()("aa", 0)));
+    println(first(p1()("", 0)));
+
+    println(first(p2()("a", 0)));
+    println(first(p2()("b", 0)));
+    println(first(p2()("ab", 0)));
+    println(first(p2()("aa", 0)));
+    println(first(p2()("", 0)));*/
+    
+	quit(0);
+}
