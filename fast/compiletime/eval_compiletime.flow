@@ -275,7 +275,7 @@ partialEvalFExp(env : FastEnv, ex : FExp) -> FExp {
 									FInlineString(i2s(vv), l, c)
 								}
 								FStringConstant(ss, __): {
-									FInlineString(ss, l, c);
+									FInlineString(toString(ss), l, c);
 								}
 								FVar(id, __): {
 									val = lookupTree(env.env, id);
@@ -310,14 +310,18 @@ partialEvalFExp(env : FastEnv, ex : FExp) -> FExp {
 			if (language == "fast" && streamHasString(co.stream)) {
 				sexpr = finlineForm2string(co.stream, fexp2fast, fastType2string);
 				expr = parseFastString(sexpr);
-				FSequence(
-					[
-						// Replace the stream with the parsed result
-						FInlineCode(co with stream = []),
-						expr
-					],
-					co.info
-				)
+				if (co.dependencies == []) {
+					expr;
+				} else {
+					FSequence(
+						[
+							// Replace the stream with the parsed result
+							FInlineCode(co with stream = []),
+							expr
+						],
+						co.info
+					)
+				}
 			} else co;
 		}
 	}
