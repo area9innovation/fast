@@ -210,6 +210,21 @@ No switch, no lambdas (no closures). No refs, no structs, no arrays.
 All of those are done in the standard library using native inlines.
 
 TODO:
+- Fix precendence and associativity, as well as prefix. This is not done,
+  so -1 does not work, while -(1) will work. 1+2*3+4 will not parse as expected.
+  Add parenthesis explicitly for now.
+  To fix, have a syntax operator table with arg count, associativity and precedence table for parsing
+  
+  There is a nice way to do it here:
+  https://matklad.github.io//2020/04/13/simple-but-powerful-pratt-parsing.html
+
+  Maybe have this syntax:
+  syntax $5 + $4		-> +($5, $4)
+  syntax < $5 >			-> <>($5)
+
+  The numbers dictate associtivity at those places.
+  Maybe the right hand side is automatic.
+
 - Mangle names with unicode towards targets that do not allow unicode
 
 ### Type system
@@ -958,18 +973,6 @@ TODO:
   Quoting and unquoting? These can be functions in the interpreter. 
 
 Exp parser:
-- Have a syntax operator table with arg count, associativity and precedence table for parsing
-  
-  There is a nice way to do it here:
-  https://matklad.github.io//2020/04/13/simple-but-powerful-pratt-parsing.html
-
-  Maybe have this syntax:
-  syntax $5 + $4		-> +($5, $4)
-  syntax < $5 >			-> <>($5)
-
-  The numbers dictate associtivity at those places.
-  Maybe the right hand side is automatic.
-
 - Figure out what to do about switch. Pattern matching?
 
   switch can technically be an overloaded function:
