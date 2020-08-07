@@ -42,14 +42,14 @@ Currently, it is still alpha, but it shows some interesting promise.
 		- [Runtime](#runtime)
 		- [Data structures](#data-structures)
 	- [Future plans](#future-plans)
+		- [Coverage report](#coverage-report)
 		- [Reflection and sophisticated meta-programming](#reflection-and-sophisticated-meta-programming)
 		- [Asynchronous code and calls](#asynchronous-code-and-calls)
 		- [Interpreter](#interpreter)
 		- [Compiler](#compiler)
+		- [Memory management options](#memory-management-options)
 		- [Rough examples for the future](#rough-examples-for-the-future)
 		- [Interoperability of native types](#interoperability-of-native-types)
-		- [Speculations](#speculations)
-		- [Coverage report](#coverage-report)
 		- [Fallback implementation of data structures](#fallback-implementation-of-data-structures)
 		- [Arbitrary bitwidth integers](#arbitrary-bitwidth-integers)
 		- [Random todos](#random-todos)
@@ -382,7 +382,12 @@ Fix tailcalls
 - https://capacitorjs.com/ for making native apps with native APIs
 
 - https://github.com/snabbdom/snabbdom
- 
+
+- Investigate this thing:
+  https://rauchg.com/2020/static-hoisting
+  This is a JS library which allows the CDN to produce compiled HTML
+  for requests.
+
 #### WASM backend
 
 You need to download the WASM binary toolkit to get wat2wasm.
@@ -811,6 +816,9 @@ Mir claims this is the minimal set of useful optimizations. Mir itself does not 
 The GRIN backend has a very nice selection of optimizations, optimized for functional languages.
 	https://grin-compiler.github.io/
 
+  Here is a basic runtime with strings:
+  https://github.com/grin-compiler/idris-grin/blob/master/prim_ops.h
+
 
 ## Runtime and standard library
 
@@ -872,9 +880,60 @@ We would like this family with arbitray combinations:
 TODO:
 - Implement more data structures in more languages
 - Add transducers in flow, so we can figure out what the type is. Then add in stdlib
-- Should we do flowschema-like automatic UIs of values this way.
 
 ## Future plans
+
+### Coverage report
+
+Make a "coverage" report, which will output a table of what
+Fastlåst supports.
+
+Languages:
+- C
+- Flow
+- Java
+- Javascript
+- Wasm
+- Rust
+
+Top languages to consider:
+* JavaScript
+- Python
+* Java
+- PHP
+- C#
+- C++
+- TypeScript
+- Shell
+* C
+- Ruby
+
+* Rust
+- Haxe
+- Dart
+- HTML+CSS
+- Go
+- Swift
+- SQL
+- R
+- Julia
+- Haskell
+- F#, Ocaml, ReasonML
+- WebGL
+- Kotlin
+- Apex
+- HCL - configuration language
+
+TODO:
+- Add "coverage" report
+- Build flow->wasm cross-call through JS
+- Build docker image for Fastlåst
+- Add C++, C#, TypeScript, Dart, CSS, Swift, Haxe, Kotlin, Go
+- Add first-order functions and closures as a frontend
+- Add algebraic data types as frontend
+- Add "with" and pattern matching as a frontend
+- Self-host Fastlåst
+- Add Yatta-style promises, and we get asynchronous code for all these languages
 
 ### Reflection and sophisticated meta-programming
 
@@ -997,119 +1056,65 @@ Exp parser:
 
 	switch(v : ?, cases : Array< Tuple<?, (?) -> ??> >) -> ??
 
-- Investigate this thing:
-  https://rauchg.com/2020/static-hoisting
-  This is a JS library which allows the CDN to produce compiled HTML
-  for requests.
+### Memory management options
+
+For low-level languages, figure out if we could do ownership a la Rust, regions? A mix of GC and 
+explicit regions? Allow bulk-freeing of regions. Annotations for how to copy or move between regions.
+
+- Check out Neut, which does memory analysis for the lambda calculus:
+  https://github.com/u2zv1wx/neut
+
+- Here is another Rust-like language, which also does some kind of memory analysis:
+  https://github.com/doctorn/micro-mitten
+
+- ASAP: As Static As Possible memory management paper:
+https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-908.pdf
+
+- See this dude that uses Datalog to model regions:
+http://smallcultfollowing.com/babysteps/blog/2018/04/27/an-alias-based-formulation-of-the-borrow-checker/
+
+
 
 ### Rough examples for the future
 
-// Defining an array type: The type in the array. The type used for the length. The length
-// We represent that as a tuple with the length and then enough bits for the contents
-typedef Array<type, lentype, len> = Tuple<type, lentype, i(len * sizeof(type))>;
+	// Defining an array type: The type in the array. The type used for the length. The length
+	// We represent that as a tuple with the length and then enough bits for the contents
+	typedef Array<type, lentype, len> = Tuple<type, lentype, i(len * sizeof(type))>;
 
-// Array concat: We have simple arithmetic when defining types
-+(l : Array<?, ??, length1>, r : Array<?, ??, length2>) -> Array<?, ??, int (length1 + length2) > {
-	length = length1 + length2;
-	result = alloc(length);
-	memcpy(l.second, result);	// Replace with iter and get and set ops
-	memcpy(r.second, result + length * sizeof(??));
-	Array( length, result)
-}
+	// Array concat: We have simple arithmetic when defining types
+	+(l : Array<?, ??, length1>, r : Array<?, ??, length2>) -> Array<?, ??, int (length1 + length2) > {
+		length = length1 + length2;
+		result = alloc(length);
+		memcpy(l.second, result);	// Replace with iter and get and set ops
+		memcpy(r.second, result + length * sizeof(??));
+		Array( length, result)
+	}
 
-// Defining a struct:
-typedef Some<?> = Tuple<#Some, ?>
-typedef Foo<?, ??> = Tuple<#Foo, ?, ??>
+	// Defining a struct:
+	typedef Some<?> = Tuple<#Some, ?>
+	typedef Foo<?, ??> = Tuple<#Foo, ?, ??>
 
-// Meta-code which constructs constructors for all struct-types with 1 argument
-makeConstructor1(type : (? : tag, ??)) -> code {
-	@tag(value : ??) -> ? {value.first}
-}
+	// Meta-code which constructs constructors for all struct-types with 1 argument
+	makeConstructor1(type : (? : tag, ??)) -> code {
+		@tag(value : ??) -> ? {value.first}
+	}
 
-typedef Maybe<?> = Tuple( tagof(None, Some), ?)
-Maybe<i32> = Tuple(i1, i32) == i33
+	typedef Maybe<?> = Tuple( tagof(None, Some), ?)
+	Maybe<i32> = Tuple(i1, i32) == i33
 
 
 ### Interoperability of native types
 
-typedef flow::ref<?> = inline flow { ref<$?> };
-typedef c::ref<?> = i32;
+	typedef flow::ref<?> = inline flow { ref<$?> };
+	typedef c::ref<?> = i32;
 
-flow::foo(a : ref<i>) -> () {
-	c::print(a);	// Not possible, since flow::ref is native
-}
+	flow::foo(a : ref<i>) -> () {
+		c::print(a);	// Not possible, since flow::ref is native
+	}
 
-c::foo(a : ref<i>) -> () {
-	flow::print(a);	// flow-side will get a random int
-}
-
-### Speculations
-
-Define data structure, a la flowschema.
-
-These data structures will have user ids linked to them, and from those,
-we can define security rules?
-
-Define "live set" in a program, which is a subset of that data.
-
-Content package
-	Modules
-		Learning objectives
-			Content item
-
-Maybe this is like regions in programming?
-
-### Coverage report
-
-Make a "coverage" report, which will output a table of what
-Fastlåst supports.
-
-Languages:
-- C
-- Flow
-- Java
-- Javascript
-- Wasm
-- Rust
-
-Top languages to consider:
-* JavaScript
-- Python
-* Java
-- PHP
-- C#
-- C++
-- TypeScript
-- Shell
-* C
-- Ruby
-
-* Rust
-- Haxe
-- Dart
-- HTML+CSS
-- Go
-- Swift
-- SQL
-- R
-- Julia
-- Haskell
-- F#, Ocaml, ReasonML
-- WebGL
-- Kotlin
-- Apex
-- HCL - configuration language
-
-TODO:
-- Add "coverage" report
-- Build flow->wasm cross-call through JS
-- Build docker image for Fastlåst
-- Add C++, C#, TypeScript, Dart, CSS, Swift, Haxe, Kotlin, Go
-- Add first-order functions and closures as a frontend
-- Add algebraic data types as frontend
-- Add "with" and pattern matching as a frontend
-- Self-host Fastlåst
-- Add Yatta-style promises, and we get asynchronous code for all these languages
+	c::foo(a : ref<i>) -> () {
+		flow::print(a);	// flow-side will get a random int
+	}
 
 ### Fallback implementation of data structures
 
@@ -1153,22 +1158,12 @@ Names are arguments (similar to strings), and exist at compile time, so we can i
 operator “.” that takes an expression and a name, and the runtime will construct a “field(name)” function for it. 
 No overloaded dot outside of normal overloading.
 
-For low-level languages, figure out if we could do ownership a la Rust, regions? A mix of GC and 
-explicit regions? Allow bulk-freeing of regions. Annotations for how to copy or move between regions.
-https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-908.pdf
-
-See this dude that uses Datalog to model regions:
-http://smallcultfollowing.com/babysteps/blog/2018/04/27/an-alias-based-formulation-of-the-borrow-checker/
-
 Down the line, we can introduce fixed-point fractional numbers of arbitrary composition f2.3. These take 2+3 bits and 
 thus just a typedef for i5. Introduce floats based on exponents: f3e2 or something where 3 is the number of bits 
 after the comma and 2 is the number of bits for the exponent. These take 2+3 bits. 
 Introduce compression/decompression/conversion functions between the raw bit representations. As a special case, 
 have functions for standard IEEE representations. Find a way to add posits, unums and others. The key idea is that 
 these are not part of the language, but a set of typedefs with functions to implement the required operations.
-
-TODO: Read about this:
-https://github.com/doctorn/micro-mitten
 
 Can we express scheduling of loops a la kernels in the runtime?
 
@@ -1193,10 +1188,3 @@ TODO:
 
 - Consider to use this library to expose things in Jupyter
 	https://github.com/jupyter-xeus/xeus
-
-- GRIN and C interoperability.
-  Here is a basic runtime with strings:
-  https://github.com/grin-compiler/idris-grin/blob/master/prim_ops.h
-
-- Consider to check out Neut:
-  https://github.com/u2zv1wx/neut
