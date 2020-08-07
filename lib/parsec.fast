@@ -1,0 +1,215 @@
+import string_utils;
+import partial_call;
+import tuples;
+
+export {
+    // Parser combinator library
+    // Each parser combinator generates a parser function of following signature:
+    // 
+    //    (input : string,  position : i32) -> Tuple<i32, ?>;
+    //
+    // The return tuple components:
+    // - the first one (i32) - is a new position after action of parser. In case of match fail it is -1.
+    // - the second one - the result of semantic action processing on the inputs.
+    //
+    // Arguments to the parser comboinators:
+    // - other parsers
+    // - semantic_actions: (arg_1 : ?, arg_2 : ?? , ... , arg_k : ???) -> ?????
+    // - failure value
+
+
+    emptyParseC(
+        sem_act : () -> ?
+    ) -> (string, i32) -> Tuple<i32, ?>;
+
+    inputEndParseC(
+        sem_act : () -> ?,
+        fail : ?
+    ) -> (string, i32) -> Tuple<i32, ?>;
+
+    tokenParseC(
+        pattern : string, 
+        sem_act : (string) -> ?,
+        fail : ?,
+    ) -> (string, i32) -> Tuple<i32, ?>;
+/*
+    unaryParseC(
+        parser : (string, i32) -> Tuple<i32, ?>,
+        sem_act : (?) -> ??,
+        fail : ??
+    ) -> (string, i32) -> Tuple<i32, ??>;
+
+    binaryParseC(
+        parser1 : (string, i32) -> Tuple<i32, ?>,
+        parser2 : (string, i32) -> Tuple<i32, ??>,
+        sem_act : (?, ??) -> ???,
+        fail : ???
+    ) -> (string, i32) -> Tuple<i32, ???>;
+
+    choiceParseC(
+        parser1 : (string, i32) -> Tuple<i32, ?>,
+        parser2 : (string, i32) -> Tuple<i32, ?>,
+        fail : ?
+    ) -> (string, i32) -> Tuple<i32, ?>;*/
+}
+
+// Empty sequence parser combinator
+
+compiletime::emptyParseC(
+    sem_act : () -> ?
+) -> (string, i32) -> Tuple<i32, ?> {
+    compiletime::partialCall(emptyParseCimpl, sem_act);
+}
+
+emptyParseCimpl(sem_act : () -> ?, input : string, i : i32) -> Tuple<i32, ?> {
+    tuple(i, sem_act());
+}
+
+
+compiletime::inputEndParseC(
+    sem_act : () -> ?,
+    fail : ?
+) -> (string, i32) -> Tuple<i32, ?> {
+    compiletime::partialCall(inputEndParseCimpl, sem_act, fail)
+}
+
+inputEndParseCimpl(sem_act : () -> ?, fail : ?, input : string, i : i32) -> Tuple<i32, ?> {
+    if (i == length(input)) {
+        tuple(i, sem_act());
+    } else {
+        tuple(-(1), fail);
+    }
+} 
+
+
+// Fixed string parser combinator
+
+compiletime::tokenParseC(
+    pattern : string, 
+    sem_act : (string) -> ?, 
+    fail : ?
+) -> (string, i32) -> Tuple<i32, ?> {
+    compiletime::partialCall(tokenParseCimpl, pattern, sem_act, fail);
+}
+
+tokenParseCimpl(
+    pattern : string, 
+    sem_act : (string) -> ?, 
+    fail : ?, 
+    input : string, 
+    i : i32
+) -> Tuple<i32, ?> {
+    doTokenParseCimpl(pattern, sem_act, fail, input, i, 0);
+} 
+
+doTokenParseCimpl(pattern : string, sem_act : (string) -> ?, fail : ?, input : string, i : i32, j : i32) -> Tuple<i32, ?> {
+    if (j == length(pattern)) {
+        tuple(i + j, sem_act(pattern));
+    } else {
+        a = index(input, i + j);
+        b = index(pattern, j);
+        if (a != b) {
+            tuple(-(1), fail);
+        } else {
+            doTokenParseCimpl(pattern, sem_act, fail, input, i, j + 1);
+        }
+    }
+}
+
+/*
+
+unaryParseC(
+    parser : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (?) -> ??,
+    fail : ??
+) -> (string, i32, (?) -> ??) -> Tuple<i32, ??> {
+    compiletime::partialCall(parser,
+        compiletime::partialCall(sem_act, 
+            compiletime::partialCall(fail, sequenceParseCimpl)
+        )
+    )
+}
+
+sequenceParseCimpl(
+    parser : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (?) -> ??,
+    fail : ??,
+    input : string, i : i32
+) -> (string, i32, (?) -> ??) -> Tuple<i32, ??> {
+    t = paser(input, i);
+    if (first(t) < 0) {
+        tuple(-1, fail);
+    } else {
+        tuple(first(t), sem_act(second(t)));
+    }
+}
+
+
+
+binaryParseC(
+    parser1 : (string, i32) -> Tuple<i32, ?>,
+    parser2 : (string, i32) -> Tuple<i32, ??>,
+    sem_act : (?, ??) -> ???,
+    fail : ???
+) -> (string, i32) -> Tuple<i32, ???> {
+    compiletime::partialCall(parser1,
+        compiletime::partialCall(parser2,
+            compiletime::partialCall(sem_act, 
+                compiletime::partialCall(fail, sequenceParseCimpl)
+            )
+        )
+    )
+}
+
+sequenceParseCimpl(
+    parser1 : (string, i32) -> Tuple<i32, ?>,
+    parser2 : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (?, ??) -> ???,
+    fail : ???,
+    input : string, i : i32
+) -> (string, i32) -> Tuple<i32, ???> {
+    t1 = paser1(input, i);
+    if (first(t1) < 0) {
+        tuple(-1, fail);
+    } else {
+        t2 = paser1(input, first(t1));
+        if (first(t2) < 0) {
+            tuple(-1, fail);
+        } else {
+            tuple(first(t2), sem_act(second(t1), second(t2)));
+        }
+    }
+}
+
+
+
+
+
+
+choiceParseC(
+    parser1 : (string, i32) -> Tuple<i32, ?>,
+    parser2 : (string, i32) -> Tuple<i32, ?>,
+    fail : ?
+) -> (string, i32) -> Tuple<i32, ?> {
+    compiletime::partialCall(parser1,
+        compiletime::partialCall(parser2,
+            compiletime::partialCall(fail, choiceParseCimpl)
+        )
+    );
+}
+
+choiceParseCimpl(
+    parser1 : (string, i32) -> Tuple<i32, ?>,
+    parser2 : (string, i32) -> Tuple<i32, ?>,
+    fail : ?,
+    input : string, i : i32
+) -> (string, i32) -> Tuple<i32, ???> {
+    t1 = paser1(input, i);
+    if (first(t1) >= 0) {
+        t1;
+    } else {
+        paser2(input, i);
+    }
+}
+
+*/
