@@ -49,7 +49,7 @@ Currently, it is still alpha, but it shows some interesting promise.
 		- [Interoperability of native types](#interoperability-of-native-types)
 		- [Speculations](#speculations)
 		- [Coverage report](#coverage-report)
-		- [Fallback implementation of data structurse](#fallback-implementation-of-data-structurse)
+		- [Fallback implementation of data structures](#fallback-implementation-of-data-structures)
 		- [Arbitrary bitwidth integers](#arbitrary-bitwidth-integers)
 		- [Random todos](#random-todos)
 
@@ -764,6 +764,8 @@ so we can juggle with multiple versions of the same code.
 Another related idea is to use Datalog to represent the intermediate
 AST, and allow queries on it. See 
 
+https://petevilter.me/post/datalog-typechecking/
+
 ### Optimizations
 
 Currently, Fastlåst implements Dead Code Elimination, Inlining with Constant Propagation
@@ -1099,7 +1101,7 @@ TODO:
 - Self-host Fastlåst
 - Add Yatta-style promises, and we get asynchronous code for all these languages
 
-### Fallback implementation of data structurse
+### Fallback implementation of data structures
 
 As an example, we can define Tuples in the type system, and provide language-specific 
 implementations. But some languages do not have Tuples directly. In that case, we should provide 
