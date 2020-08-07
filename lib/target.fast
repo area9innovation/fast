@@ -10,6 +10,10 @@ export {
 	isJs() -> i1;
 	isNode() -> i1;
 	isDeno() -> i1;
+
+	isRust() -> i1;
+
+	isWasm() -> i1;
 }
 
 inline isC() -> i1 { 0 : i1 }
@@ -27,3 +31,8 @@ js::inline isJs() -> i1 { 1 : i1 }
 inline isNode() -> i1 { 0 : i1 }
 inline isDeno() -> i1 { 0 : i1 }
 
+inline isRust() -> i1 { 0 : i1 }
+rust::inline isRust() -> i1 { 1 : i1 }
+
+inline isWasm() -> i1 { 0 : i1 }
+wasm::inline isWasm() -> i1 { 1 : i1 }

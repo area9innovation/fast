@@ -1,9 +1,9 @@
-import js;
-import java;
-import wasm;
-import c;
-import flow;
-import rust;
+import lang/js;
+import lang/java;
+import lang/wasm;
+import lang/c;
+import lang/flow;
+import lang/rust;
 
 //inline -(l : f32) -> f32 { -(0, l) }
 
