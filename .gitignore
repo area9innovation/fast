@@ -1,4 +1,5 @@
 /obj
+/out
 /www
 /objc
 .compile-errors

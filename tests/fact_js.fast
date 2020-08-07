@@ -13,7 +13,7 @@ www/fact_js.html::main() -> i0 {
 	inline html {
 		<html>
 			<body>
-				<input·type="number"·oninput="console.log(fact(this.value))"></input>
+				<input·type="number"·oninput="console.log(fact_js.fact(this.value))"></input>
 			</body>
 		</html>
 	}

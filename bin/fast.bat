@@ -1,0 +1,1 @@
+@flowcpp fast/fast.flow -- %*

@@ -1104,7 +1104,7 @@ TODO:
 - Add "coverage" report
 - Build flow->wasm cross-call through JS
 - Build docker image for Fastlåst
-- Add Rust, C++, C#, TypeScript, Dart, CSS, Swift, Haxe, Kotlin, Go
+- Add C++, C#, TypeScript, Dart, CSS, Swift, Haxe, Kotlin, Go
 - Add first-order functions and closures as a frontend
 - Add algebraic data types as frontend
 - Add "with" and pattern matching as a frontend
