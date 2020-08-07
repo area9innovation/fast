@@ -1,0 +1,110 @@
+import fast/backends/types;
+import fs/filesystem;
+
+export {
+	isFVoid(f : FExp) -> bool;
+
+	isFConstant(f : FExp) -> bool;
+
+	// "return val;" or "val; return;" depending on the type
+	makeFReturn(val : string, type : FastType) -> string;
+
+	// The default saver: saves 'code' in the 'compile.filename'.'suffix' file in the 'compile.objDir' directory.
+	fDefaultSaveCode(suffix : string) -> (FastCompile, string) -> void;
+
+	// The default linker: simply copies a file from the 'compile.objDir' to the output. Respects output path.
+	fDefaultLinkCode(suffix : string) -> (FastCompile, string, bool, (bool) -> void) -> void;
+
+	// The verbose and careful code saver: reports status of saved file.
+	fSaveCode(path : string, code :string) -> void;
+
+	// Checks if there's a cross call 'from' 'to' in calls.
+	fHasCallFromTo(calls : Set<FCrossCall>, from : string, to : string) -> bool;
+
+	// Checks if there's a cross call, which refers to lang either 'from' or 'to'
+	fHasCall(calls : Set<FCrossCall>, lang : string) -> bool;
+
+	// Extracts those languages, from which calls are addressed to the 'lang'.
+	fHostLanguages(calls : Set<FCrossCall>, lang : string) -> [string];
+
+	// Reports, if file doesn't exist.
+	fGetFileContent(file : string) -> string;
+}
+
+isFVoid(f : FExp) -> bool {
+	switch (f) {
+		FIntConstant(value, info): info.type == FTypeVoid();
+		default: false;
+	}
+}
+
+isFConstant(f : FExp) -> bool {
+	switch (f) {
+		FConstant(): true;
+		default: false;
+	}
+}
+
+makeFReturn(val : string, type : FastType) -> string {
+	if (type == FTypeVoid()) val + ";return;"
+	else "return " +val + ";"
+}
+
+fObjFilePath(compile : FastCompile, suffix : string) -> string {
+	pathCombine(compile.objDir, changeFileExt(compile.filename, if (suffix == "") suffix else "." + suffix))
+}
+
+fDefaultSaveCode(suffix : string) -> (FastCompile, string) -> void {
+	\compile, code -> {
+		fSaveCode(fObjFilePath(compile, suffix), code);
+	}
+}
+
+fDefaultLinkCode(suffix : string) -> (FastCompile, string, bool, (bool) -> void) -> void {
+	\compile, file, final, callback -> {
+		if (final) {
+			fSaveCode(file, getFileContent(fObjFilePath(compile, suffix)));
+		}
+		callback(true);
+	}
+}
+
+fSaveCode(path : string, code :string) -> void {
+	ensureDirectoryExists(dirName(path));
+	overwriting = fileExists(path);
+	if (overwriting && getFileContent(path) == code) {
+		// It is identical. No need to save
+		println("Saved " + path + " (already had correct content)");
+	} else if (setFileContent(path, code)) {
+		if (overwriting) {
+			println("Saved " + path + " (overwrote existing file)");
+		} else {
+			println("Saved " + path);
+		}
+	} else {
+		println("Could not save " + path);
+	}
+}
+
+fHasCallFromTo(calls : Set<FCrossCall>, from : string, to : string) -> bool {
+	existsSet(calls, \cc -> cc.fromLanguage == from && cc.toLanguage == to);
+}
+
+fHasCall(calls : Set<FCrossCall>, lang : string) -> bool {
+	existsSet(calls, \cc -> cc.fromLanguage == lang || cc.toLanguage == lang);
+}
+
+fHostLanguages(calls : Set<FCrossCall>, lang : string) -> [string] {
+	filtermap(set2array(calls), \cc : FCrossCall ->
+		if (cc.toLanguage == lang) Some(cc.fromLanguage) else None()
+	);
+}
+
+fGetFileContent(file : string) -> string {
+	if (fileExists(file)) {
+		getFileContent(file);
+	} else {
+		println("File: " + file + " doesn't exist");
+		"";
+	}
+}

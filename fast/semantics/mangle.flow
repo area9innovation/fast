@@ -1,0 +1,42 @@
+import fast/fast_ast;
+import fast/fast_prettyprint;
+import string_utils;
+
+export {
+	// Construct a type suffix for this type. Used by overload resolution
+	fullFastTypeMangle(t : FastType) -> string;
+
+	onlyIdChars(s : string) -> string;
+}
+
+fullFastTypeMangle(t : FastType) -> string {
+	error = \ -> {
+		println("Did not expect to have to mangle " + fastType2string(t));
+		"x";
+	}
+	switch (t) {
+		FTypeInfer(): error();
+		FTypeVar(id): error();
+
+		FIntConstant(value, info): "c";
+		FTypeInt(bits): "i" + i2s(bits);
+		FTypeFunction(args, to): "f" + superglue(args, fullFastTypeMangle, "_") + "r" + fullFastTypeMangle(to);
+		FTypeCall(id, typars): {
+			"a" + onlyIdChars(id) + superglue(typars, fullFastTypeMangle, "_");
+		}
+		FInlineType(language, stream, dependencies): {
+			"n" + superglue(stream, \si -> {
+				switch (si) {
+					FInlineString(v, __, __): onlyIdChars(v);
+					FInlineTypeUnquote(type, __, __): fullFastTypeMangle(type);
+				}
+			}, "_");
+		}
+	}
+}
+
+onlyIdChars(s : string) -> string {
+	stringFoldChar(s, "", \acc, ch -> {
+		if (isLetter(ch) || isDigit(ch) || ch == "_") acc + ch else acc + "_";
+	});
+}

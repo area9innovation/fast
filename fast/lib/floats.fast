@@ -1,0 +1,166 @@
+import string;
+
+// TODO: Add exports
+// export { + - * / % < <= == != > >= }
+
+typedef c::f32 = inline c { float };
+typedef c::f64 = inline c { double };
+
+typedef java::f32 = inline java { float };
+typedef java::f64 = inline java { double };
+
+typedef flow::f64 = inline flow { double };
+
+typedef js::f64 = inline js { Number };
+
+
+typedef wasm::f32 = inline wasm { f32 };
+typedef wasm::f64 = inline wasm { f64 };
+
+c::s2f32(s : string) -> f32 {
+	inline c { ((float) atof($s)) }
+	require include { #include·<stdlib.h> }
+}
+
+c::s2f64(s : string) -> f64 {
+	inline c { atof($s) }
+	require include { #include·<stdlib.h> }
+}
+
+
+java::s2f32(s : string) -> f32 {
+	inline java { Float.parseFloat($s) }
+}
+
+java::s2f64(s : string) -> f64 {
+	inline java { Double.parseDouble($s) }
+}
+
+
+flow::s2f64(s : string) -> f64 {
+	inline flow { s2d($s) }
+	require import { import·math/math; }
+}
+
+js::s2f64(s : string) -> f64 {
+	inline js { parseFloat($s) }
+}
+
+
+c::inline +(l : f32, r : f32) -> f32 { inline c { ($l) + ($r) } }
+c::inline -(l : f32, r : f32) -> f32 { inline c { ($l) - ($r) } }
+c::inline -(l : f32) -> f32 { inline c { -($l) } }
+c::inline *(l : f32, r : f32) -> f32 { inline c { ($l) * ($r) } }
+c::inline /(l : f32, r : f32) -> f32 { inline c { ($l) / ($r) } }
+c::inline %(l : f32, r : f32) -> f32 { inline c { ($l) % ($r) } }
+
+c::inline <(l : f32, r : f32) -> i1 { inline c { ($l) < ($r) } }
+c::inline <=(l : f32, r : f32) -> i1 { inline c { ($l) <= ($r) } }
+c::inline ==(l : f32, r : f32) -> i1 { inline c { ($l) == ($r) } }
+c::inline !=(l : f32, r : f32) -> i1 { inline c { ($l) != ($r) } }
+c::inline >(l : f32, r : f32) -> i1 { inline c { ($l) > ($r) } }
+c::inline >=(l : f32, r : f32) -> i1 { inline c { ($l) >= ($r) } }
+
+c::inline +(l : f64, r : f64) -> f64 { inline c { ($l) + ($r) } }
+c::inline -(l : f64, r : f64) -> f64 { inline c { ($l) - ($r) } }
+c::inline -(l : f64) -> f64 { inline c { -($l) } }
+c::inline *(l : f64, r : f64) -> f64 { inline c { ($l) * ($r) } }
+c::inline /(l : f64, r : f64) -> f64 { inline c { ($l) / ($r) } }
+c::inline %(l : f64, r : f64) -> f64 { inline c { ($l) % ($r) } }
+
+c::inline <(l : f64, r : f64) -> i1 { inline c { ($l) < ($r) } }
+c::inline <=(l : f64, r : f64) -> i1 { inline c { ($l) <= ($r) } }
+c::inline ==(l : f64, r : f64) -> i1 { inline c { ($l) == ($r) } }
+c::inline !=(l : f64, r : f64) -> i1 { inline c { ($l) != ($r) } }
+c::inline >(l : f64, r : f64) -> i1 { inline c { ($l) > ($r) } }
+c::inline >=(l : f64, r : f64) -> i1 { inline c { ($l) >= ($r) } }
+
+
+java::inline +(l : f32, r : f32) -> f32 { inline java { ($l) + ($r) } }
+java::inline -(l : f32, r : f32) -> f32 { inline java { ($l) - ($r) } }
+java::inline -(l : f32) -> f32 { inline java { -($l) } }
+java::inline *(l : f32, r : f32) -> f32 { inline java { ($l) * ($r) } }
+java::inline /(l : f32, r : f32) -> f32 { inline java { ($l) / ($r) } }
+java::inline %(l : f32, r : f32) -> f32 { inline java { ($l) % ($r) } }
+
+java::inline <(l : f32, r : f32) -> i1 { inline java { ($l) < ($r) } }
+java::inline <=(l : f32, r : f32) -> i1 { inline java { ($l) <= ($r) } }
+java::inline ==(l : f32, r : f32) -> i1 { inline java { ($l) == ($r) } }
+java::inline !=(l : f32, r : f32) -> i1 { inline java { ($l) != ($r) } }
+java::inline >(l : f32, r : f32) -> i1 { inline java { ($l) > ($r) } }
+java::inline >=(l : f32, r : f32) -> i1 { inline java { ($l) >= ($r) } }
+
+java::inline +(l : f64, r : f64) -> f64 { inline java { ($l) + ($r) } }
+java::inline -(l : f64, r : f64) -> f64 { inline java { ($l) - ($r) } }
+java::inline -(l : f64) -> f64 { inline java { -($l) } }
+java::inline *(l : f64, r : f64) -> f64 { inline java { ($l) * ($r) } }
+java::inline /(l : f64, r : f64) -> f64 { inline java { ($l) / ($r) } }
+java::inline %(l : f64, r : f64) -> f64 { inline java { ($l) % ($r) } }
+
+java::inline <(l : f64, r : f64) -> i1 { inline java { ($l) < ($r) } }
+java::inline <=(l : f64, r : f64) -> i1 { inline java { ($l) <= ($r) } }
+java::inline ==(l : f64, r : f64) -> i1 { inline java { ($l) == ($r) } }
+java::inline !=(l : f64, r : f64) -> i1 { inline java { ($l) != ($r) } }
+java::inline >(l : f64, r : f64) -> i1 { inline java { ($l) > ($r) } }
+java::inline >=(l : f64, r : f64) -> i1 { inline java { ($l) >= ($r) } }
+
+
+flow::inline +(l : f64, r : f64) -> f64 { inline flow { ($l) + ($r) } }
+flow::inline -(l : f64, r : f64) -> f64 { inline flow { ($l) - ($r) } }
+flow::inline -(l : f64) -> f64 { inline flow { -($l) } }
+flow::inline *(l : f64, r : f64) -> f64 { inline flow { ($l) * ($r) } }
+flow::inline /(l : f64, r : f64) -> f64 { inline flow { ($l) / ($r) } }
+flow::inline %(l : f64, r : f64) -> f64 { inline flow { ($l) % ($r) } }
+
+flow::inline <(l : f64, r : f64) -> i1 { inline flow { ($l) < ($r) } }
+flow::inline <=(l : f64, r : f64) -> i1 { inline flow { ($l) <= ($r) } }
+flow::inline ==(l : f64, r : f64) -> i1 { inline flow { ($l) == ($r) } }
+flow::inline !=(l : f64, r : f64) -> i1 { inline flow { ($l) != ($r) } }
+flow::inline >(l : f64, r : f64) -> i1 { inline flow { ($l) > ($r) } }
+flow::inline >=(l : f64, r : f64) -> i1 { inline flow { ($l) >= ($r) } }
+
+
+js::inline +(l : f64, r : f64) -> f64 { inline js { ($l) + ($r) } }
+js::inline -(l : f64, r : f64) -> f64 { inline js { ($l) - ($r) } }
+js::inline -(l : f64) -> f64 { inline js { -($l) } }
+js::inline *(l : f64, r : f64) -> f64 { inline js { ($l) * ($r) } }
+js::inline /(l : f64, r : f64) -> f64 { inline js { ($l) / ($r) } }
+js::inline %(l : f64, r : f64) -> f64 { inline js { ($l) % ($r) } }
+
+js::inline <(l : f64, r : f64) -> i1 { inline js { ($l) < ($r) } }
+js::inline <=(l : f64, r : f64) -> i1 { inline js { ($l) <= ($r) } }
+js::inline ==(l : f64, r : f64) -> i1 { inline js { ($l) == ($r) } }
+js::inline !=(l : f64, r : f64) -> i1 { inline js { ($l) != ($r) } }
+js::inline >(l : f64, r : f64) -> i1 { inline js { ($l) > ($r) } }
+js::inline >=(l : f64, r : f64) -> i1 { inline js { ($l) >= ($r) } }
+
+
+
+wasm::inline +(l : f32, r : f32) -> f32 { inline wasm { ${l} · ${r} · f32.add } }
+wasm::inline -(l : f32, r : f32) -> f32 { inline wasm { ${l} · ${r} · f32.sub } }
+wasm::inline *(l : f32, r : f32) -> f32 { inline wasm { ${l} · ${r} · f32.mul } }
+wasm::inline /(l : f32, r : f32) -> f32 { inline wasm { ${l} · ${r} · f32.div_s } }
+wasm::inline %(l : f32, r : f32) -> f32 { inline wasm { ${l} · ${r} · f32.rem_s } }
+
+wasm::inline <(l : f32, r : f32) -> i1 { inline wasm { ${l} · ${r} · f32.lt_s } }
+wasm::inline <=(l : f32, r : f32) -> i1 { inline wasm { ${l} · ${r} · f32.le_s } }
+wasm::inline ==(l : f32, r : f32) -> i1 { inline wasm { ${l} · ${r} · f32.eq } }
+wasm::inline !=(l : f32, r : f32) -> i1 { inline wasm { ${l} · ${r} · f32.neq } }
+wasm::inline >(l : f32, r : f32) -> i1 { inline wasm { ${l} · ${r} · f32.gt_s } }
+wasm::inline >=(l : f32, r : f32) -> i1 { inline wasm { ${l} · ${r} · f32.ge_s } }
+
+
+
+wasm::inline +(l : f64, r : f64) -> f64 { inline wasm { ${l} · ${r} · f64.add } }
+wasm::inline -(l : f64, r : f64) -> f64 { inline wasm { ${l} · ${r} · f64.sub } }
+wasm::inline *(l : f64, r : f64) -> f64 { inline wasm { ${l} · ${r} · f64.mul } }
+wasm::inline /(l : f64, r : f64) -> f64 { inline wasm { ${l} · ${r} · f64.div_s } }
+wasm::inline %(l : f64, r : f64) -> f64 { inline wasm { ${l} · ${r} · f64.rem_s } }
+
+wasm::inline <(l : f64, r : f64) -> i1 { inline wasm { ${l} · ${r} · f64.lt_s } }
+wasm::inline <=(l : f64, r : f64) -> i1 { inline wasm { ${l} · ${r} · f64.le_s } }
+wasm::inline ==(l : f64, r : f64) -> i1 { inline wasm { ${l} · ${r} · f64.eq } }
+wasm::inline !=(l : f64, r : f64) -> i1 { inline wasm { ${l} · ${r} · f64.neq } }
+wasm::inline >(l : f64, r : f64) -> i1 { inline wasm { ${l} · ${r} · f64.gt_s } }
+wasm::inline >=(l : f64, r : f64) -> i1 { inline wasm { ${l} · ${r} · f64.ge_s } }
+

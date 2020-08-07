@@ -1,0 +1,60 @@
+// TODO: Implement for more languages
+
+export {
+	ref(v: ?) -> Ref<?> with {heap, write};
+	free(r : Ref<?>) -> i0 with {heap};
+	set(r : Ref<?>, val : ?) -> i0 with {heap, write};
+	get(r : Ref<?>) -> ? with {heap, read};
+
+	// map : (a : Array<?>, fn : (?) -> ?? with e) -> Array<??> with e;
+}
+
+// C backend
+
+typedef c::Ref<?> = inline c { ${?} * };
+
+c::ref(v: ?) -> Ref<?> {
+	p = (inline c {
+		malloc(sizeof($v))
+	} require include {
+		#include·<stdlib.h>
+	}) : Ref<?>;
+	set(p, v);
+	p;
+}
+
+c::free(p : Ref<?>) -> i0 {
+	inline c { 
+		free($p) 
+	} require include {
+		#include·<stdlib.h>
+	}
+}
+
+c::set(p : Ref<?>, val : ?) -> i0 {
+	inline c { *($p) = $val }
+}
+
+c::get(p : Ref<?>) -> ? {
+	inline c { *($p) }
+}
+
+
+// Flow backend
+
+typedef flow::Ref<?> = inline flow { ref (${?}) };
+
+flow::ref(v: ?) -> Ref<?> {
+	inline flow { ref($v) }
+}
+
+flow::free(p : Ref<?>) -> i0 {
+}
+
+flow::set(p : Ref<?>, val : ?) -> i0 {
+	inline flow { ($p) := $val }
+}
+
+flow::get(p : Ref<?>) -> ? {
+	inline flow { ^($p) }
+}

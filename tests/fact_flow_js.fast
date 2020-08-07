@@ -1,0 +1,19 @@
+import runtime;
+
+fact(n : i32) -> i32 {
+	if (n <= 1) {
+		n
+	} else {
+		n * fact(n - 1)
+	}
+}
+
+xxx/yyy/fact1JS.js::main() -> i0 {
+	println(fact(4));
+	println(flow::fact(5));
+}
+
+yyy/zzz/fact2JS.flow::main() -> i0 {
+	println(fact(5));
+	println(js::fact(4));
+}

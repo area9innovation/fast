@@ -1,0 +1,31 @@
+
+foo() -> i0 {
+
+}
+
+bar() -> i1 {
+	0 : i1;
+}
+
+test() -> i0 {
+	foo();
+	if (bar()) {
+		foo();
+	}
+
+}
+
+statement.java::main(args : inline java { String[] }) -> i0 {
+	test();
+	flow::test();
+}
+
+statement.c::main() -> i0 {
+	test();
+}
+
+statement.js::main() -> i0 {
+	test();
+	flow::test();
+	wasm::test();
+}

@@ -1,0 +1,349 @@
+import sys/system;
+import sys/target;
+import fs/filesystem;
+import fast/backends/types;
+import fast/backends/utils;
+import fast/semantics/utils;
+import fast/fast_prettyprint;
+import text/blueprint;
+import fast/semantics/firstorder;
+
+export {
+	cbackend = FastBackend("c", false, fast2c, "c", true, [
+			"auto", "double", "int", "struct",
+			"break", "else", "long", "switch",
+			"case", "enum", "register", "typedef",
+			"char", "extern", "return", "union",
+			"const", "float", "short", "unsigned",
+			"continue", "for", "signed", "void",
+			"default", "goto", "sizeof", "volatile",
+			"do", "if", "static", "while",
+
+			// Hm, something is fishy here. In principle, we should parse #includes to detect name collisions
+			"free", "malloc",
+		], "", true, flinkC,
+		fDefaultSaveCode("c")
+	); 
+}
+
+fast2c(compile : FastCompile) -> string {
+	// Construct type names for all first-order types
+	firstOrderTypes = extractFirstOrderTypes(compile.code);
+	type2name = foldTree(firstOrderTypes, makeTree(), \name, type, acc -> {
+		typename = "_" + name + "_fn_type";
+		setTree(acc, type, typename);
+	});
+
+	env = FCEnv(type2name);
+	"#i" "nclude <stdint.h>\n"
+
+	+ generateFDependency(compile, "include", \e -> fexp2c(env, e), \e -> ftype2c(env, e), "\n", true)
+
+	// Forward declare first-order types
+	+ foldTree(type2name, "", \type, name, acc -> {
+		/*
+		typedef int(*fn)(int, int);
+		and then "fn" is a valid type name
+		*/
+		acc + "typedef " + fnameType2c(env, name, type) + ";\n"
+	})
+
+	+ generateFDependency(compile, "structs", \e -> fexp2c(env, e), \e -> ftype2c(env, e), "\n", true)
+
+	// Forward declare functions
+	+ superglue(compile.code.functions, \tl -> fastDecl2c(env, false, tl), "\n") 
+
+	// Generate globals
+	+ superglue(compile.code.globals, \tl -> fastDecl2c(env, true, tl), "\n") 
+
+	// then produce the code for functions
+	+ superglue(compile.code.functions, \tl -> fastDecl2c(env, true, tl), "\n");
+}
+
+FCEnv(
+	firstOrderTypes : Tree<FastType, string>,
+);
+
+fastDecl2c(env : FCEnv, withBody : bool, c : FastDeclaration) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, typars, type): "";
+		FastGlobalVar(__, id, value, info): ftype2c(env, info.type) + " " + id + (if (withBody) "=" + fexp2c(env, value) else "") + ";\n";
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+
+			locals = fexpLocals(makeTree(), body);
+
+			ftype2c(env, returnType) + " " + id + "("
+			+ superglue(args, \a -> {
+				ftype2c(env, a.type) + " " + a.name
+			}, ", ") 
+			+ ")"
+			+ (if (withBody) {
+				" {\n"
+				// Declare locals
+				+ foldTree(locals, "", \local, type, acc -> {
+					acc + ftype2c(env, type) + " " + local + ";\n"
+				})
+
+				+ fexp2creturn(env, body)
+				+ "}\n";
+			} else ";\n")
+		}
+	}
+}
+
+fexp2creturn(env : FCEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in C return backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FLet(id, value, body, info): blueprint("
+			%id% = %value%;
+			%body%
+			", [
+				"type", ftype2c(env, info.type),
+				"id", id,
+				"value", fexp2c(env, value),
+				"body", fexp2creturn(env, body)
+			]);
+
+		FSequence(exprs, __): {
+			foldi(exprs, "", \i, acc, e -> {
+				if (i < length(exprs) - 1) {
+					acc + fexp2c(env, e) + ";\n"
+				} else {
+					acc + fexp2creturn(env, e)
+				}
+			});
+		}
+		FIf(cond, then, else_, __): blueprint("
+			if (%cond%) {
+				%then%
+			} else {
+				%else%
+			}
+			", [
+				"cond", fexp2c(env, cond),
+				"then", fexp2creturn(env, then),
+				"else", fexp2creturn(env, else_)
+			]);
+
+		FSizeOf(type, __): todo();
+		FFunctionPointer(id, __): todo();
+
+		FConstant(): {
+			if (isFVoid(f)) {
+				"return;";
+			} else {
+				"return " + fexp2c(env, f) + ";";
+			}
+		}
+		FVar(id, info): makeFReturn(fexp2c(env, f), info.type);
+		FCall(fn, args, info): makeFReturn(fexp2c(env, f), info.type);
+		FCallOp(language, op, args, info): makeFReturn(fexp2c(env, f), info.type);
+		FTypeAnnotation(e, type, __): fexp2creturn(env, e);
+		FInlineCode(language, stream, deps, type, __): makeFReturn(fexp2c(env, f), type);
+	}
+}
+
+fexp2c(env : FCEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in C backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FIntConstant(value, info): {
+			switch (info.type) {
+				FTypeInt(nbits): {
+					if (nbits == 0) {
+						"null";
+					} else if (nbits == 1) {
+						i2s(value);
+					} else if (nbits == 64) {
+						i2s(value) + "L"
+					} else if (nbits == 32) {
+						i2s(value)
+					} else if (nbits == 16) {
+						"(short) "+ i2s(value)
+					} else if (nbits == 8) {
+						"(char) "+ i2s(value)
+					} else {
+						todo();
+					}
+				}
+				default: i2s(value);
+			}
+		}
+		FDoubleConstant(value, info): {
+			double2string(value) + switch (info.type) {
+				// Add a "f" suffix for 32-bit floats
+				FTypeInt(bits): if (bits == 32) "f" else "";
+				default: "";
+			}
+		}
+		FStringConstant(value, __): toString(value);
+		FFunctionPointer(id, __): id;
+		FVar(id, __): id;
+
+		FLet(id, value, body, __): {
+			id + " = "  + fexp2c(env, value) 
+			+ (
+				if (body != FVoid()) {
+					"; " + fexp2c(env, body);
+				} else ""
+			)
+		}
+		FSizeOf(type, __): todo();
+
+ 		FCall(fn, args, __): fexp2c(env, fn) + "(" + superglue(args, \a -> fexp2c(env, a), ", ") + ")";
+		FCallOp(language, op, args, __): {
+			css = map(args, \a -> fexp2c(env, a));
+			op + "(" + strGlue(css, ", ") + ")";
+		}
+
+		FSequence(exprs, __): {
+			css = map(exprs, \e -> fexp2c(env, e) + ";");
+			concatStrings(css)
+		}
+		FTypeAnnotation(e, type, __): fexp2c(env, e);
+		FIf(cond, then, else_, __): blueprint("
+			((%cond%) ? (%then%) : (%else%))
+			", [
+				"cond", fexp2c(env, cond),
+				"then", fexp2c(env, then),
+				"else", fexp2c(env, else_)
+			]);
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, \e -> fexp2c(env, e), \t -> ftype2c(env, t))
+		}
+	}
+}
+
+ftype2c(env : FCEnv, t : FastType) -> string {
+	todo = \ -> {
+		println("TODO: Type for C " + toString(t));
+		"int32_t";
+	}
+	switch (t) {
+		FTypeInfer(): todo();
+		FIntConstant(value, info): todo();
+		FTypeInt(bits): {
+			if (bits == 0) {
+				"void"			
+			} else if (bits == 1) {
+				"_Bool"
+			} else if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
+				"int" + i2s(bits) + "_t";
+			} else {
+				todo();
+			}
+		}
+		FTypeVar(id): todo();
+		FTypeFunction(args, to): lookupTreeDef(env.firstOrderTypes, t, "broken");
+		FTypeCall(id, typars): todo();
+		FInlineType(language, stream, deps): {
+			ftypeInlineForm2string(stream, \tt -> ftype2c(env, tt));
+		}
+	}
+}
+
+fnameType2c(env : FCEnv, name : string, t : FastType) -> string {
+	def = \ -> {
+		ftype2c(env, t) + " " + name;
+	}
+	switch (t) {
+		FTypeInfer(): def();
+		FIntConstant(value, info): def();
+		FTypeInt(bits): def();
+		FTypeVar(id): def();
+		FTypeFunction(args, to): {
+			ftype2c(env, to) + " (*" + name + ")(" + supergluei(args, \i, arg -> fnameType2c(env, "_" + name + "_" + i2s(i), arg), ", ") + ")"
+		}
+		FTypeCall(id, typars): def();
+		FInlineType(language, stream, deps): def();
+	}
+}
+
+
+fexp2cexp(f : FExp) -> string {
+	switch (f) {
+		FIntConstant(value, __): i2s(value);
+		default: {
+			println("TODO: C exp as expr" + toString(f));
+			"";
+		}
+	}
+}
+
+flinkC(compile : FastCompile, cfile : string, final : bool, callback : (bool) -> void) -> void {
+	if (final) {
+		fbuildC(compile, cfile, callback);
+	} else {
+		fgenC(compile, cfile, callback);
+	}
+}
+
+fgenC(compile : FastCompile, cfile : string, callback : (bool) -> void) -> void {
+	callback(true);
+}
+
+fbuildC(compile : FastCompile, cfile : string, callback : (bool) -> void) -> void {
+	name = changeFileExt(fileNameOnly(cfile), "");
+	inp_file = pathCombine(compile.objDir, name) + ".c";
+	if (fHasCallFromTo(compile.crossCalls, "js", "c")) {
+		// Case when JS is a host language
+		wasm_file = pathCombine(compile.objDir, name) + "_wasm.js";
+		ensureDirectoryExists(dirName(wasm_file));
+		compiler_command = if (hasTargetName("windows")) "wsl" else "emcc";
+		//-s MODULARIZE=1 \
+    	//-s EXPORT_ES6=1 \
+		emcc_args = [
+			inp_file,
+			"--bind",
+			"-o", wasm_file,
+			"-s", "WASM=1",
+			"-s", "MODULARIZE=1",
+			"-s", "EXPORT_ES6=1",
+		];
+		compiler_args = if (hasTargetName("windows")) concat(["emcc"], emcc_args) else emcc_args;
+		//println("Going to make " + wasm_file + ", input file: " + inp_file + " ...");
+		//println("src:\n" + getFileContent(inp_file));
+		//println("command:\n" + compiler_command + " " + strGlue(compiler_args, " "));
+		startProcess(compiler_command, compiler_args, "", "",
+			\c, o, e -> {
+				if (c != 0) {
+					println("EMCC failed");
+					println(e);
+					println(o);
+					println(i2s(c));
+					callback(false);
+				} else {
+					println("File '" + wasm_file + "' was made with EMCC from " + inp_file);
+					callback(true);
+				}
+			}
+		);
+	} else {
+		// No cross calls, pure C.
+		// The exefile does not have a suffix
+		// We compile to Unix-style file
+		exe_file = changeFileExt(cfile, "");
+		ensureDirectoryExists(dirName(exe_file));
+		compiler_command = if (hasTargetName("windows")) "wsl" else "gcc";
+		compiler_args = if (hasTargetName("windows")) ["gcc", inp_file, "-o", exe_file] else [inp_file, "-o", exe_file];
+		startProcess(compiler_command, compiler_args, ".", "",
+			\c, o, e -> {
+				if (c != 0) {
+					println("GCC failed");
+					println(e);
+					println(o);
+					println(i2s(c));
+					callback(false);
+				} else {
+					println("Made executable '" + exe_file + "'");
+					callback(true);
+				}
+			}
+		);
+	}
+}

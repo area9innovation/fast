@@ -1,0 +1,204 @@
+import fast/fast_ast;
+import fast/semantics/utils;
+import fast/semantics/constant_prop;
+import fast/backends/utils;
+import fast/typing/polymorphism;
+import ds/arrayutils;
+import ds/set;
+import fast/semantics/call_graph;
+
+export {
+	// Will inline all functions marked for inlining. Name collisions
+	// can result, so renaming has to happen after
+	inlineFast(f : FastAst, onError : (string, location : FLocation) -> void) -> FastAst;
+}
+
+
+inlineFast(f : FastAst, onError : (string, location : FLocation) -> void) -> FastAst {
+	// Find all functions that should be inlined
+	inlineNames = fold(f.functions, makeTree(), \acc, function -> {
+		if (function.inline) {
+			setTree(acc, function.id, function);
+		} else acc;
+	});
+
+	// Make the call graph and find a topological sort to inline in
+	callgraph = makeFastCallGraph(f);
+
+	// Build a queue of names to inline and do it in topological order
+	order = reverseA(callgraph.topologicalOrder);
+
+	makeOnError = \file -> {
+		\message, info -> {
+			loc = FLocation(file, info.line, info.col);
+			onError(message, loc);
+		}
+	}
+
+	// Inline in all globals
+	globals = map(f.globals, \global -> {
+		FastGlobalVar(global with value = inlineFExp(f, inlineNames, makeOnError(global.sourceFile), global.value));
+	});
+
+	functionsMap = fold(f.functions, makeTree(), \acc, fn -> setTree(acc, fn.id, fn));
+
+	// Inline in all functions, including removing inlined functions
+	functions = fold2(order, [], inlineNames, \inlinedFns, inlinesNames0, id -> {
+		mfn = lookupTree(functionsMap, id);
+		mfn ?? {
+			oe = makeOnError(mfn.sourceFile);
+			// println("Inlining " + id);
+			if (mfn.inline) {
+				ifn = FastFunction(mfn with body = inlineFExp(f, inlinesNames0, oe, mfn.body));
+				Pair(inlinedFns, setTree(inlinesNames0, id, ifn));
+			} else {
+				ifn = FastFunction(mfn with body = inlineFExp(f, inlinesNames0, oe, mfn.body));
+				Pair(
+					arrayPush(inlinedFns, ifn),
+					inlinesNames0
+				);
+			}
+		} : Pair(inlinedFns, inlinesNames0);
+	}).first;
+
+	FastAst(
+		f with globals = globals, functions = functions
+	);
+}
+
+
+// This is effectively map
+inlineFExp(env : FastAst, names : Tree<string, FastFunction>, onError : (string, FInfo) -> void, ex : FExp) -> FExp {
+	switch (ex) {
+		FConstant(): ex;
+		FVar(id, info): {
+			if (containsKeyTree(names, id)) {
+				onError("Can not inline first order fn " + id, info);
+			}
+			ex;
+		}
+		FSizeOf(type, __): ex;
+		FLet(id, value, body, info): {
+			FLet(id, 
+				inlineFExp(env, names, onError, value),
+				inlineFExp(env, names, onError, body), 
+				info
+			);
+		}
+		FCallOp(language, op, args, info): {
+			iargs = map(args, \a -> inlineFExp(env, names, onError, a));
+			mfn = lookupTree(names, op);
+			mfn ?? {
+				inlineFastCall(env, mfn, iargs, info)
+			} : FCallOp(language, op, iargs, info);
+		}
+		FCall(fn, args, info): {
+			iargs = map(args, \a -> inlineFExp(env, names, onError, a));
+
+			id = getFVar(fn);
+			if (id != "") {
+				mfn = lookupTree(names, id);
+				mfn ?? {
+					inlineFastCall(env, mfn, iargs, info)
+				} : FCall(
+					inlineFExp(env, names, onError, fn), 
+					iargs, info
+				);
+			} else {
+				FCall(
+					inlineFExp(env, names, onError, fn), 
+					iargs, info
+				);
+			}
+		}
+		FSequence(exprs, info): {
+			FSequence(
+				filtermapi(exprs, \i, a -> {
+					ie = inlineFExp(env, names, onError, a);
+					if (i != length(exprs) - 1 && isFVoid(ie)) None()
+					else Some(ie)
+				}), info
+			)
+		}
+		FTypeAnnotation(e, type, info): {
+			FTypeAnnotation(inlineFExp(env, names, onError, e), type, info);
+		}
+		FIf(cond, then, else_, info): {
+			condinline = inlineFExp(env, names, onError, cond);
+
+			// If the condition is constant, we resolve at compile time
+			mint = getConstantInt(condinline);
+
+			mint ?? {
+				if (mint == 0) {
+					inlineFExp(env, names, onError, else_)
+				} else  {
+					inlineFExp(env, names, onError, then)
+				}
+			} : FIf(
+				condinline,
+				inlineFExp(env, names, onError, then),
+				inlineFExp(env, names, onError, else_),
+				info
+			);
+		}
+		FInlineCode(language, stream, deps, type, info): {
+			in = \str -> {
+				map(str, \s -> {
+					switch (s) {
+						FInlineString(__, __, __): s;
+						FInlineUnquote(e, l, c): FInlineUnquote(inlineFExp(env, names, onError, e), l, c);
+						FInlineTypeUnquote(__, __, __): s;
+					}
+				})
+			}
+			incode = FInlineCode(language, in(stream), 
+				map(deps, \d -> {
+					FInlineDependency(d with stream = in(d.stream))
+				}),
+				type, 
+			info);
+
+			if (language == "fast" && stream == []) {
+					FVoid();
+			} else {
+				incode;
+			}
+		}
+	}
+}
+
+
+getConstantInt(f : FExp) -> Maybe<int> {
+	switch (f) {
+		FIntConstant(value, __): Some(value);
+		FTypeAnnotation(e, type, info): getConstantInt(e);
+		default: None();
+	}
+}
+
+inlineFastCall(env : FastAst, fn : FastFunction, args : [FExp], rinfo : FInfo) -> FExp {
+	// OK, this is completely unsafe in terms of name collisions,
+	// but we do a renaming phase later, which hopefully fixes collisions
+	// println("Ignoring potential name collisions when inlining");
+
+	polymorphicBindings = bindPolymorphism(makeTree(), FTypeFunction(map(args, \a -> a.info.type), rinfo.type), fn.info.type);
+	// println("Inlining " + fn.id + fastType2string(FTypeFunction(map(args, \a -> a.info.type), rinfo.type)) + " for " + 
+	//	fastType2string(fn.info.type));
+	if (!isEmptyTree(polymorphicBindings)) {
+		// TODO: We have to instantiate polymorphic types as well
+		// We have instantiateTypeParameters in typing/polymorphism which can help with this
+		// in a mapFastTypeInFExp
+		println("TODO: When inlining, we should instantiate the polymorphism in the body like this:");
+		traverseInOrder(polymorphicBindings, \name, type -> {
+			println(name + ": " + fastType2string(type));
+		})
+	}
+
+	inlined = foldi(args, fn.body, \i, acc : FExp, arg -> {
+		farg = fn.args[i];
+		FLet(farg.name, arg, acc, arg.info)
+	});
+
+	propagateFast(env, makeTree(), inlined);
+}

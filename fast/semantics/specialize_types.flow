@@ -1,0 +1,101 @@
+import fast/fast_ast;
+import fast/fast_prettyprint;
+import fast/semantics/helpers;
+import ds/treeutils;
+
+export {
+	// Specialize type defs. I.e. turn typedef Pair<?, ??> into the specific Pair<i32, i8> needed
+	specializeFastTypes(f : FastAst) -> FastAst;
+}
+
+specializeFastTypes(f : FastAst) -> FastAst {
+	calls0 = fold(f.globals, makeTree(), \acc, global -> {
+		collectTypeCallsFExp(acc, global.value)
+	});
+
+	calls1 = fold(f.functions, calls0, \acc, function -> {
+		// TODO: Check parameter types
+		collectTypeCallsFExp(acc, function.body)
+	});
+
+	if (false) {
+		traverseInOrder(calls1, \typedef, instantiations -> {
+			println(
+				typedef + ": " + superglue(set2array(instantiations), \t -> fastType2string(t), ", ")
+			);
+		});
+	}
+
+	FastAst(
+		f with 
+		types = concatA(map(f.types, \functor -> {
+			instantiations = lookupMultimap(calls1, functor.id);
+			specializeFastTypeFunctors(functor, instantiations)
+		}))
+	)
+}
+
+
+collectTypeCallsFExp(acc : Tree<string, Set<FTypeCall>>, ee : FExp) -> Tree<string, Set<FTypeCall>> {
+	foldFExp(ee, acc, \acc2, e -> {
+		collectTypeCalls(acc2, e.info.type)
+	});
+}
+
+
+collectTypeCalls(acc : Tree<string, Set<FTypeCall>>, t : FastType) -> Tree<string, Set<FTypeCall>> {
+	switch (t) {
+		FTypeInfer(): acc;
+		FIntConstant(value, info): acc;
+		FTypeVar(id): acc;
+		FTypeInt(bits): acc;
+		FTypeFunction(args, to): {
+			fold(args, collectTypeCalls(acc, to), collectTypeCalls);
+		}
+		FTypeCall(id, typars): {
+			insertMultimap(acc, id, t);
+		}
+		FInlineType(language, stream, dependencies): {
+			str = \acc2, st -> {
+				fold(st, acc2, \acc3, s -> {
+					switch (s) {
+						FInlineString(v, __, __): acc3;
+						FInlineTypeUnquote(type, __, __): collectTypeCalls(acc3, type);
+					}
+				})
+			}
+			fold(dependencies, str(acc, stream), \acc2, d -> {
+				str(acc2, d.stream)
+			})
+		}
+	}
+}
+
+specializeFastTypeFunctors(functor : FastTypeFunctor, instantiations : Set<FTypeCall>) -> [FastTypeFunctor] {
+	if (isEmptySet(instantiations)) {
+		[functor]
+	} else {
+		map(set2array(instantiations), \s -> {
+			specializeFastTypeFunctor(functor, s)
+		})
+	}
+}
+
+specializeFastTypeFunctor(functor : FastTypeFunctor, instantiation : FTypeCall) -> FastTypeFunctor {
+	typars = foldi(instantiation.typars, makeTree(), \i, acc, typar -> {
+		name = strLeft("??????????????", i + 1);
+		setTree(acc, name, typar)
+	});
+
+	itype = mapFastType(functor.type, \tt -> {
+		switch (tt) {
+			FTypeCall(id, args): {
+				if (trim2(id, "?") == "") {
+					lookupTreeDef(typars, id, tt);
+				} else tt;
+			}
+			default: tt;
+		}
+	});
+	FastTypeFunctor(functor with type = itype);
+}

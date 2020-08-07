@@ -1,0 +1,123 @@
+import fast/fast_ast;
+import ds/set;
+
+export {
+	// Extract all let-binding names with types
+	fexpLocals(locals : Tree<string, FastType>, ex : FExp) -> Tree<string, FastType>;
+
+	isFTailRecursive(f : FastFunction) -> bool;
+
+	getFVar(f : FExp) -> string;
+
+	// Ensures we format a double with .
+	double2string(d : double) -> string;
+}
+
+isFTailRecursive(f : FastFunction) -> bool {
+	// TODO: Implement this for real. Right now, it is just simple recursion check
+	free = fastFreevars(f);
+	if (containsSet(free, f.id)) {
+		println("TODO: We assume recursion in " + f.id + " is tail-recursion");
+		true;
+	} else false;
+}
+
+// Extract global names
+fastFreevars(decl : FastDeclaration) -> Set<string> {
+	switch (decl) {
+		FastTypeFunctor(__, language, id, typars, type): makeSet();
+		FastGlobalVar(__, id, value, __): fastExpFreevars(FastFree(makeSet(), makeSet()), value).globals;
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+			free = FastFree(makeSet(), buildSet(map(args, \a -> a.name)));
+			fastExpFreevars(free, body).globals;
+		}
+	}
+}
+
+FastFree(
+	globals : Set<string>,
+	locals : Set<string>
+);
+
+fastExpFreevars(acc : FastFree, ex : FExp) -> FastFree {
+	switch (ex) {
+		FConstant(): acc;
+		FVar(id, __): {
+			if (containsSet(acc.locals, id)) acc
+			else FastFree(acc with globals = insertSet(acc.globals, id));
+		}
+		FLet(id, value, body, __): {
+			vacc = fastExpFreevars(acc, value);
+			bacc = fastExpFreevars(vacc, body);
+			// If this id was used, we ignore it
+			FastFree(bacc with globals = removeSet(acc.globals, id));
+		}
+		FSizeOf(type, __): acc;
+		FCallOp(language, op, args, __): {
+			oacc = FastFree(acc with globals = insertSet(acc.globals, op));
+			fold(args, oacc, fastExpFreevars);
+		}
+		FCall(fn, args, __): fastExpFreevars(fold(args, acc, fastExpFreevars), fn);
+		FSequence(exprs, __): fold(exprs, acc, fastExpFreevars);
+		FTypeAnnotation(e, type, __): fastExpFreevars(acc, e);
+		FIf(cond, then, else_, __): fold([cond, then, else_], acc, fastExpFreevars);
+		FInlineCode(language, stream, dependencies, type, __): {
+			fold(stream, acc, \acc2, s -> {
+				switch (s) {
+					FInlineString(v, __, __): acc2;
+					FInlineUnquote(e, __, __): fastExpFreevars(acc2, e);
+					FInlineTypeUnquote(__, __, __): acc2;
+				}
+			})
+		}
+	}
+}
+
+
+fexpLocals(locals : Tree<string, FastType>, ex : FExp) -> Tree<string, FastType> {
+	switch (ex) {
+		FConstant(): locals;
+		FVar(id, info): locals;
+		FLet(id, value, body, info): {
+			fexpsLocals(setTree(locals, id, value.info.type), [value, body]);
+		}
+		FSizeOf(type, info): locals;
+		FCallOp(language, op, args, info): fexpsLocals(locals, args);
+		FCall(fn, args, info): {
+			fexpsLocals(
+				fexpLocals(locals, fn),
+				args
+			);
+		}
+		FSequence(exprs, info): fexpsLocals(locals, exprs);
+		FTypeAnnotation(e, type, info): fexpLocals(locals, e);
+		FIf(cond, then, else_, info): fexpsLocals(locals, [cond, then, else_]);
+		FInlineCode(language, stream, deps, type, info): fold(stream, locals, \acc, s -> {
+			switch (s) {
+				FInlineString(__, __, __): acc;
+				FInlineUnquote(e, __, __): fexpLocals(acc, e);
+				FInlineTypeUnquote(__, __, __): acc;
+			}
+		})
+	}
+}
+
+fexpsLocals(locals : Tree<string, FastType>, es : [FExp]) -> Tree<string, FastType> {
+	fold(es, locals, fexpLocals)
+}
+
+
+getFVar(f : FExp) -> string {
+	switch (f) {
+		FVar(id, __): id;
+		default: "";
+	}
+}
+
+
+double2string(d : double) -> string {
+	v0 = d2s(d);
+	if (strContains(v0, ".") || strContains(v0, "e") || strContains(v0, "E")) {
+		v0
+	} else v0 + ".0";
+}

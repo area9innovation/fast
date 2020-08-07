@@ -1,0 +1,44 @@
+import fast/backends/js;
+import fast/backends/html;
+import fast/backends/flow;
+import fast/backends/wasm;
+import fast/backends/c;
+import fast/backends/java;
+import fast/backends/fast;
+import fast/backends/types;
+import fast/backends/text;
+import fast/backends/rust;
+
+export {
+	isFastLanguage(name : string) -> bool;
+
+	languageKeepWhitespace(name : string) -> bool;
+
+	fastBackends = [
+		htmlbackend,
+		jsbackend,
+		flowbackend,
+		cbackend, 
+		wasmbackend,
+		javabackend,
+		rustbackend,
+
+		// Useful for Docker-compose.yml as well as playbooks for Ansible
+		yamlBackend,
+		dockerfileBackend,
+		terraformBackend,
+
+		// Special target for compile time evaluation
+		compiletimeBackend,
+		fastBackend,
+	];
+}
+
+isFastLanguage(name : string) -> bool {
+	exists(fastBackends, \fb -> fb.name == name);
+}
+
+languageKeepWhitespace(name : string) -> bool {
+	keep = filtermap(fastBackends, \fb -> if (fb.name == name) Some(fb.keepWhitespace) else None());
+	keep == [] || keep[0];
+}

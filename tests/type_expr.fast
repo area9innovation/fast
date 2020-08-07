@@ -1,0 +1,35 @@
+/*
+TODO:
+- When specializing, also instantiate different typedefs
+- Add a toString implementation?
+*/
+
+typedef java::Pair<?, ??> = 
+	inline java { Pair_${?}_${??} }
+	require java::classes { 
+		static·class·Pair_${?}_${??} { 
+			public·Pair_${?}_${??}(${?}·f,·${??}·s)·{
+				first = f;
+				second = s;
+			}
+			final·public·${?}·first;
+			final·public·${??}·second;
+		}
+	};
+
+java::pair(a : ?, b : ??) -> Pair<?, ??> {
+	inline java { 
+		new·$type{ Pair<?, ??> }( $a, $b )
+	}
+}
+
+java::println(s : ?) -> i0 {
+    inline java {
+        System.out.println($s)
+    }
+}
+
+type_expr.java::main(args : inline java { String[] }) -> i0 {
+	p = pair(1, 2);
+	println(p);
+}

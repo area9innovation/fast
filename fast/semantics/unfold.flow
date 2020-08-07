@@ -1,0 +1,137 @@
+import fast/fast_ast;
+import fast/semantics/helpers;
+
+export {
+	// Lift statements in expression contexts up
+	// if (seq;tail) a else b       ->   seq;if(tail) a else b;
+	// let a = {seq:tail} in body   ->   seq;let a = tail in body
+	// fn({seq;tail})				->   seq;fn(tail)
+	unfoldFastAst(f : FastAst) -> FastAst;
+}
+
+unfoldFastAst(f : FastAst) -> FastAst {
+	mapFastAst(f, unfoldFExp)
+}
+
+unfoldFExp(f : FExp) -> FExp {
+	switch (f) {
+		// All expressions-like stay
+		FConstant(): f;
+		FVar(id, __): f;
+		FSizeOf(__, __): f;
+		FTypeAnnotation(e, __, __): FTypeAnnotation(f with e = unfoldFExp(e));
+		FInlineCode(language, stream, dependencies, type, info): {
+			fl = \str -> map(str, \s -> switch (s) {
+				FInlineString(__, __, __): s;
+				FInlineUnquote(e, l, c): FInlineUnquote(unfoldFExp(e), l, c);
+				FInlineTypeUnquote(__, __, __): s;
+			});
+			FInlineCode(language, fl(stream), map(dependencies, \d -> FInlineDependency(d with stream = fl(d.stream))), type, info);
+		}
+
+		FCallOp(language, op, args, info): {
+			// Extract seqs from args
+			uargs = unfoldFExps(args);
+			ucall = FCallOp(f with args = uargs.second);
+			if (uargs.first != []) {
+				FSequence(arrayPush(uargs.first, ucall), info);
+			} else ucall;
+		}
+		FCall(fn, args, info): {
+			// Extract seqs from args
+			ufn = unfoldFExp(fn);
+			fnsplit = splitFSequence(ufn);
+			uargs : Pair<[FExp], [FExp]> = unfoldFExps(args);
+			ucall = FCall(fnsplit.second, uargs.second, info);
+
+			prefix = concat(fnsplit.first, uargs.first);
+			if (prefix != []) {
+				FSequence(arrayPush(prefix, ucall), info);
+			} else ucall;
+		}
+
+		FSequence(exprs, info): {
+			uexprs = map(exprs, unfoldFExp);
+			unfoldFSeq([], uexprs, info)
+		}
+		FLet(id, value, body, info): {
+			uv = unfoldFExp(value);
+			splitVal = splitFSequence(uv);
+			l = FLet(id, splitVal.second, unfoldFExp(body), info);
+			if (splitVal.first != []) {
+				FSequence(arrayPush(splitVal.first, l), info);
+			} else l
+		}
+		FIf(cond, then, else_, info): {
+			uc = unfoldFExp(cond);
+			splitVal = splitFSequence(uc);
+			ui = FIf(splitVal.second, unfoldFExp(then), unfoldFExp(else_), info);
+			if (splitVal.first != []) {
+				FSequence(arrayPush(splitVal.first, ui), info);
+			} else ui;
+		}
+	}
+}
+
+// If this is a sequence, split into the head and the tail
+splitFSequence(f : FExp) -> Pair<[FExp], FExp> {
+	switch (f) {
+		FSequence(exprs, info): {
+			n = length(exprs);
+			if (n == 0) Pair([], f)
+			else Pair(subrange(exprs, 0, n - 1), exprs[n-1]);
+		}
+		default: Pair([], f);
+	}
+}
+
+// Grab the initial parts of each seq, and combine into one part
+// at the start, and then the tails
+unfoldFExps(es : [FExp]) -> Pair<[FExp], [FExp]> {
+	fold(es, Pair([], []), \acc, e -> {
+		ue = unfoldFExp(e);
+		sp = splitFSequence(ue);
+		Pair(concat(acc.first, sp.first), arrayPush(acc.second, sp.second))
+	})
+}
+
+// Given a sequence, expand nested sequences into one long one
+// If there is a FLet inside, rewrite and "inline" the rest
+
+// {a,{b,c},d}
+// -> {a,b,c,d}
+
+// {a, (b=1;c), d} -> {a, (b=1;c;d)}
+
+unfoldFSeq(acc : [FExp], seq : [FExp], info : FInfo) -> FExp {
+	if (seq == []) {
+		n = length(acc);
+		if (n == 0) {
+			FVoid()
+		} else if (n == 1) {
+			acc[0]
+		} else FSequence(acc, info)
+	} else {
+		head = seq[0];
+		rest = tail(seq);
+		switch (head) {
+			FLet(id, value, body, linfo): {
+				nacc = arrayPush(acc,
+					FLet(id, value, 
+						unfoldFSeq([], 
+							concat([body], rest), info
+						),
+						// The info of the final sequence
+						info
+					)
+				);
+				// And lift the entire thing to whatever
+				unfoldFSeq(nacc, [], info);
+			}
+			FSequence(rseq, sinfo): {
+				unfoldFSeq(acc, concat(rseq, rest), info);
+			}
+			default: unfoldFSeq(arrayPush(acc, head), rest, info);
+		}
+	}
+}

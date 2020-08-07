@@ -1,0 +1,222 @@
+import tuples;
+import ref;
+
+export {
+	array() -> Array<?>;
+	array(a : ?) -> Array<?>;
+	array(a : ?, b : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?, d : ?) -> Array<?>;
+
+	index(a : Array<?>, i : i32, def : ?) -> ?;
+
+	// Concatenation
+	+(a : Array<?>, b : Array<?>) -> Array<?>;
+	// TODO: string2int shows that + sometimes does not work, so as a workaround, we have this
+	concat(a : Array<?>, b : Array<?>) -> Array<?>;
+
+	length(a : Array<?>) -> i32;
+	
+	free(a : Array<?>) -> i0;
+
+	tail(a : Array<?>) -> Array<?>;
+
+	reverseA(a : Array<?>, def : ?) -> Array<?>;
+}
+
+reverseA(a : Array<?>, def : ?) -> Array<?> {
+    doReverseA(a, 0, array(), def);
+}
+
+doReverseA(a : Array<?>, i : i32, acc : Array<?>, def : ?) -> Array<?> {
+    if (i == length(a)) { 
+        acc; 
+    } else {
+        // Uncommenting followig line causes errors:
+        //
+        // /home/dmitry/area9/fast/tests/string2int.fast: 27:43: Expected ; after let binding of new_acc. Got id '+'
+        // tests/string2int.fast:20:4: Type check: Unknown id doReverseA
+        // tests/string2int.fast:20:20: Type check: Unresolved overload of 'array : () -> Array<a372>'. Candidates: () -> Array<?>, (?) -> Array<?>, (?, ?) -> Array<?>, (?, ?, ?) -> Array<?>, (?, ?, ?, ?) -> Array<?>
+        //
+        // new_acc = array(index(a, i, def)) + acc;
+        new_acc = concat(array(index(a, i, def)), acc);
+        doReverseA(a, i + 1, new_acc, def);
+    }
+}
+
+// TODO: Implement in C and Wasm
+// For C, we need a struct with a length and the data
+
+
+inline free(a : Array<?>) -> i0 {
+	// NOP for most languages
+}
+
+
+// C implementation
+/*
+typedef c::Array<?> = Tuple<i32, Ref<?> >;
+
+c::array() -> Array<?> { 
+	tuple(0, refBytes(0))
+}
+
+c::refBytes(n : i32) -> Ref<?> {
+	p = (inline c {
+		malloc(${n})
+	} require include {
+		#include·<stdlib.h>
+	}) : Ref<?>;
+	p;
+}
+
+*/
+
+// Rust implementation
+
+typedef rust::Array<?> = 
+	inline rust { Vec< ${?} > }
+	require use { use std::vec; }
+	;
+
+rust::array() -> Array<?> {
+	inline rust { Vec::new() }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() };
+	inline rust { arr.push(a) };
+	inline rust { arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?, c : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
+rust::concat(a : Array<?>, b : Array<?>) -> Array<?> {
+	inline rust { let mut x = a.to_vec() };
+	inline rust { x.extend(b.iter()) };
+	inline rust { (*x).to_vec() }
+	require use { use std::vec; }
+}
+
+rust::inline +(a : Array<?>, b : Array<?>) -> Array<?> {
+	inline rust { concat_arr(${a}, ${b}) }
+	require use { use std::vec; }
+}
+
+rust::inline length(a : Array<?>) -> i32 {
+	inline rust { (${a}.len() as i32) }
+	require use { use std::vec; }
+}
+
+rust::index(a : Array<?>, i : i32, def : ?) -> ? {
+	inline rust { 
+		if (i < (a.len() as i32)) { 
+			return a[i as usize];
+		} else { 
+			return def; 
+		}
+	}
+	require use { use std::vec; }
+}
+
+// Flow implementation
+
+typedef flow::Array<?> = inline flow { [ ${?} ] };
+
+flow::array() -> Array<?> { inline flow { [] } }
+flow::array(a : ?) -> Array<?> { inline flow  { [ ${a} ] } }
+flow::array(a : ?, b : ?) -> Array<?> { inline flow  { [ ${a}, ${b} ] } }
+flow::array(a : ?, b : ?, c : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c} ] } }
+flow::array(a : ?, b : ?, c : ?, d : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d} ] } }
+
+flow::inline +(a : Array<?>, b : Array<?>) -> Array<?> {
+	inline flow { concat($a, $b) }
+	require import { import ds/array; }
+}
+
+flow::concat(a : Array<?>, b : Array<?>) -> Array<?> {
+	inline flow { concat($a, $b) }
+	require import { import ds/array; }
+}
+
+flow::inline length(a : Array<?>) -> i32 {
+	inline flow { length($a) }
+	require import { import ds/array; }
+}
+
+flow::inline index(a : Array<?>, i : i32, def : ?) -> ? {
+	inline flow { elementAt($a, $i, $def) }
+	require import { import ds/array; }
+}
+
+flow::inline tail(a : Array<?>) -> Array<?> {
+	inline flow { tail($a) }
+	require import { import ds/array; }
+}
+
+// Java implementation
+
+typedef java::Array<?> = inline java { ${?} [] };
+java::array() -> Array<?> { inline java { new·$type{ Array<?> } {} } }
+java::array(a : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a} } ) } }
+java::array(a : ?, b : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b} } ) } }
+
+java::inline +(a : Array<?>, b : Array<?>) -> Array<?> {
+	concat(a, b)
+}
+
+java::inline length(a : Array<?>) -> i32 {
+	inline java { ${a}.length }
+}
+
+java::index(a : Array<?>, i : i32, def : ?) -> ? {
+	if (i < length(a)) {
+		inline java { ${a}[ ${i} ] }
+	} else def;
+}
+
+java::concat(a : Array<?>, b : Array<?>) -> Array<?> {
+	result = inline java { Arrays.copyOf(a, a.length + b.length); }
+		require import { import java.util.Arrays; }
+		: Array<?>;
+	inline java { System.arraycopy(b, 0, result, a.length, b.length); } : i0;
+	result;
+}
+
+
+// JS implementation
+
+js::array() -> Array<?> { inline js { [] } }
+js::array(a : ?) -> Array<?> { inline js  { [ ${a} ] } }
+js::array(a : ?, b : ?) -> Array<?> { inline js  { [ ${a}, ${b} ] } }
+js::array(a : ?, b : ?, c : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c} ] } }
+js::array(a : ?, b : ?, c : ?, d : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d} ] } }
+
+js::inline +(a : Array<?>, b : Array<?>) -> Array<?> {
+	inline js { ${a}.concat($b) }
+}
+
+js::inline length(a : Array<?>) -> i32 {
+	inline js { ${a}.length }
+}
+
+js::inline index(a : Array<?>, i : i32, def : ?) -> ? {
+	inline js { ( ${i} < ${a}.length) ? ${a} [ ${i} ]·:·$def }
+}

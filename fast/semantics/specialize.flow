@@ -1,0 +1,198 @@
+import fast/fast_ast;
+import fast/fast_prettyprint;
+import fast/semantics/call_graph;
+import fast/semantics/overload;
+import fast/typing/polymorphism;
+import fast/typing/instantiate_types;
+
+export {
+	// Resolves polymorphism for types that need it.
+	// Polymorphic functions are converted into specialized functions with the overloads required.
+	specializeFastAst(f : FastAst, onError : (string, FLocation) -> void) -> FastAst;
+}
+
+specializeFastAst(f : FastAst, onError : (string, FLocation) -> void) -> FastAst {
+	// Make the call graph and find a topological sort to specialize in
+	callgraph = makeFastCallGraph(f);
+
+	// Build a queue of names to specialize and do it in topological order
+	order = callgraph.topologicalOrder;
+
+	spec2 = SpecAcc(
+		f,
+		// The set of polymorphic names
+		fold(f.functions, makeSet(), \acc, function -> {
+			if (isPolymorphicFastType(function.info.type)) {
+				insertSet(acc, function.id)
+			} else acc;
+		}),
+		// Quick lookup from global
+		fold(f.globals, makeTree(), \acc, global -> setTree(acc, global.id, global)),
+		// Quick lookup from functions
+		fold(f.functions, makeTree(), \acc, fn -> treePushToArrayValue(acc, fn.id, fn)),
+		order,
+		makeSet(),
+		makeTree(), 
+		buildGeneralTypedefEnv(f),
+		onError
+	);
+
+	spec3 = specializeToplevel(spec2);
+
+	FastAst(
+		f
+		with functions = concat(
+			filter(f.functions, \fn -> !containsSet(spec3.polymorphicNames, fn.id)),
+			getTreeValues(spec3.newFunctions)
+		)
+	);
+}
+
+SpecAcc(
+	program : FastAst, 
+	// The set of function names that are polymorphic
+	polymorphicNames : Set<string>,
+	// Quick lookup of globals
+	globals : Tree<string, FastGlobalVar>, 
+	// Quick lookup of (overloaded) functions
+	functions : Tree<string, [FastFunction]>, 
+
+	// Pending names to specialize
+	queue : [string],
+	// Specific specializations we already have done
+	specializations : Set<SpecCall>,
+	// Specialized fnuctions to keep
+	newFunctions : Tree<SpecCall, FastFunction>,
+
+	typedefEnv : TypedefEnv,
+
+	onError : (string, FLocation) -> void
+);
+
+SpecCall(
+	name : string,
+	args : [FastType]
+);
+
+// OK, specialize this name with this type
+specializeToplevel(spec : SpecAcc) -> SpecAcc {
+	if (spec.queue == []) spec
+	else {
+		first = spec.queue[0];
+		rest = tail(spec.queue);
+
+		mglobal = lookupTree(spec.globals, first);
+		spec0 = mglobal ?? {
+			// println("Handling " + mglobal.id);
+			specializeFExp(spec, mglobal.sourceFile, mglobal.value)
+		} : {
+			spec
+		}
+
+		mfunction = getTreeArrayValue(spec.functions, first);
+		spec1 = fold(mfunction, spec0, \acc, fn -> {
+			// println("Handling " + fn.id);
+			specializeFExp(acc, fn.sourceFile, fn.body)
+		});
+
+		spec2 = SpecAcc(spec1 with queue = rest);
+		specializeToplevel(spec2);
+	}
+}
+
+specializeFExp(acc : SpecAcc, sourceFile : int, ee : FExp) -> SpecAcc {
+	foldFExp(ee, acc, \acc2 : SpecAcc, e -> {
+		switch (e) {
+			FVar(id, info): {
+				if (containsSet(acc.polymorphicNames, id)/* && !isPolymorphicFastType(info.type)*/) {
+					ft = info.type;
+					switch (ft) {
+						FTypeFunction(__, __): performSpecialization(acc2, sourceFile, id, ft);
+						default: {
+							// We have to evaluate typedefs here
+							ft2 = evaluateFastType(acc.typedefEnv, ft);
+							switch (ft2) {
+								FTypeFunction(__, __): performSpecialization(acc2, sourceFile, id, ft2);
+								default: {
+									acc.onError("Can only specialize calls, got " + fastType2string(ft2), FLocation(sourceFile, info.line, info.col));
+									acc2;
+								}
+							}
+						}
+					}
+				} else acc2;
+			}
+			FCallOp(language, op, args, info): {
+				if (containsSet(acc.polymorphicNames, op) /*&& !isPolymorphicFastType(info.type)*/) {
+					// OK, we have to reconstruct the function type
+					type = FTypeFunction(map(args, \a -> a.info.type), info.type);
+					performSpecialization(acc2, sourceFile, op, type);
+				} else acc2;
+			}
+			default: acc2;
+		}
+	});
+}
+
+// Produce a specialized version of the given top-level id and insert into our program
+performSpecialization(acc : SpecAcc, sourceFile : int, id : string, call : FTypeFunction) -> SpecAcc {
+	specCall = SpecCall(id, call.args);
+	if (containsSet(acc.specializations, specCall) || isPolymorphicFastType(call)) {
+		acc;
+	} else {
+		acc2 = SpecAcc(
+			acc with specializations = insertSet(acc.specializations, specCall)
+		);
+
+		functions = getTreeArrayValue(acc.functions, id);
+		fold(functions, acc2, \acc3, fn -> {
+			if (doesFunctionOverload(call, fn)) {
+				// println("Specializing " + id + "(" + superglue(call.args, fastType2string, ",") + ")");
+
+				typarBindings = bindPolymorphism(makeTree(), call, fn.info.type);
+				
+				/*
+				traverseInOrder(typarBindings, \tv, tp -> {
+					println("  " + tv + " = " + fastType2string(tp));
+				});
+				*/
+
+				body = instantiateTypars(typarBindings, fn.body);
+				// println(fexp2string(body));
+
+				// Fix the types
+				newFn = FastFunction(fn with 
+					args = mapi(fn.args, \i, fa -> FFunctionArg(fa with type = call.args[i])),
+					returnType = call.to,
+					info = FInfo(fn.info with type = call),
+					// And in the body, instantiate the polymorphism similarly to the binding
+					body = body
+				);
+
+
+				acc4 = SpecAcc(acc3 with newFunctions = setTree(acc3.newFunctions, specCall, newFn));
+
+				// OK, and now handle the body
+				specializeFExp(acc4, sourceFile, body)
+			} else {
+				acc3
+			}
+		});
+	}
+}
+
+
+instantiateTypars(typars : Tree<string, FastType>, ex : FExp) -> FExp {
+	mapFastTypeInFExp(ex, \type -> {
+		mapFastType(type, \tt -> {
+			switch (tt) {
+				FTypeCall(id, args): {
+					if (trim2(id, "?") == "") {
+						lookupTreeDef(typars, id, tt);
+					} else tt;
+				}
+				default: tt;
+			}
+		})
+	})
+}

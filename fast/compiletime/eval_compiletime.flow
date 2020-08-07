@@ -1,0 +1,405 @@
+import fast/compiletime/fast_natives;
+import fast/compiletime/env;
+import fast/semantics/overload;
+import fast/backends/utils;
+import fast/backends/fast;
+import fast/fast_parser;
+
+export {
+	makeFastEnv(f : FastAst, onError : (string) -> void) -> FastEnv;
+
+	// Evaluates main::compiletime, or 
+	evalCompiletime(f : FastAst) -> FastAst;
+
+	partialEvalFExp(env : FastEnv, ex : FExp) -> FExp;
+}
+
+makeFastEnv(f : FastAst, onError : (string) -> void) -> FastEnv {
+	tenv0 = FastEnv(makeTree(), makeTree(), getFastFlowNatives(onError));
+
+	// Register all global functions in the compiletime or global scope
+	fold(f.functions, tenv0, \acc, fn : FastFunction -> {
+		// Register top-level functions
+		if (fn.language == "" || fn.language == "compiletime") {
+			FastEnv(acc with functions = treePushToArrayValue(acc.functions, fn.id, fn));
+		} else acc;
+	});
+}
+
+evalCompiletime(f : FastAst) -> FastAst {
+	file = ref 0;
+	onError = \e -> {
+		println(f.sourceFiles[^file] + ": " + e);
+	}
+	tenv = makeFastEnv(f, onError);
+
+	// Evaluate all compile-time constructs in globals
+	f0 = foldi(f.globals, f, \i, acc, g : FastGlobalVar -> {
+		file := g.sourceFile;
+		val = evalFExp(tenv, g.value);
+		nacc = extractFastDeps(acc, ^file, val, false, onError);
+		nglobal = FastGlobalVar(g with value = val);
+		FastAst(nacc with globals = replace(nacc.globals, i, nglobal));
+	});
+
+	// Filter out compiletime mains.
+	funs = filter(f.functions, \fun -> {
+		fun.language != "compiletime" || fun.id == "main"
+	});
+	f1 = FastAst(f0 with functions = funs);
+
+	// Evaluate all compile-time construct in functions
+	f2 = foldi(funs, f1, \i, acc, fun : FastFunction -> {
+		file := fun.sourceFile;
+		body = evalFExp(tenv, fun.body);
+		nacc = extractFastDeps(acc, ^file, body, false, onError);
+		nfun = FastFunction(fun with body = body);
+		FastAst(nacc with functions = replace(nacc.functions, i, nfun));
+	});
+
+	// OK, run all compiletime::main's and insert the result in the AST
+	// Notice we do this on f before mains are filtered out
+	fold(f.functions, f2, \acc, fun -> {
+		if (fun.language == "compiletime" && fun.id == "main") {
+			// Rig up onError
+			file := fun.sourceFile;
+			evalFMain(acc, fun.sourceFile, onError, fun)
+		} else acc;
+	})
+}
+
+// Evaluate code at compile time, and insert any produced code into the AST
+evalFMain(f : FastAst, sourceFile : int, onError : (string) -> void, fun : FastFunction) -> FastAst {
+	// This is maybe excessive, but it is correct. Later, we could potentially keep the environment
+	// up to date more precisely
+	tenv = makeFastEnv(f, onError);
+	val = partialEvalFExp(tenv, fun.body);
+
+	// OK, gran all inline results
+	extractFastDeps(f, sourceFile, val, true, onError)
+}
+
+// Traverse this expression, and extract and parse any "inline fast" constructs that might come
+// from meta-programming and inline those in the FastAst
+extractFastDeps(f : FastAst, sourceFile : int, e : FExp, onlyCompiletime : bool, onError : (string) -> void) -> FastAst {
+	// OK, gran all inline results
+	file = f.sourceFiles[sourceFile];
+
+	foldFExp(e, f, \acc, ee -> {
+		switch (ee) {
+			default: acc;
+			FInlineCode(language, stream, dependencies, type, info): {
+				if (language == "fast") {
+					expr = finlineForm2string(stream, fexp2fast, fastType2string);
+					// TODO: Parse this thing
+
+					fold(dependencies, acc, \acc2, dep -> {
+						// Give the lexer a starting line+col so error positions are correct
+						lineCol = if (dep.stream == []) Pair(1, 0) else {
+							form : FInlineForm = dep.stream[0];
+							Pair(form.startLine, form.startCol);
+						}
+
+						if (dep.language != "" && dep.language != "fast") {
+							onError(i2s(lineCol.first) + ":" + i2s(lineCol.second) + ": Did not expect dependency in language " + language + " in section " + dep.name);
+							acc2;
+						} else {
+							dexpr = finlineForm2string(dep.stream, fexp2fast, fastType2string);
+							if (dep.name == "import" || dep.name == "function" || dep.name == "global" || dep.name == "typedef") {
+								parse = prepareFastParse(file, dexpr, lineCol.first, lineCol.second);
+								fastfile = fastParser(FastFile(file, [], [], []), parse, 0);
+
+								addFastFile(acc2, sourceFile, fastfile);
+							} else {
+								onError("Do not know what to do with section " + dep.name);
+								acc2;
+							}
+						}
+					})
+				} else {
+					if (onlyCompiletime) {
+						onError(i2s(info.line) + ":" + i2s(info.col) + ": Did not expect inline " + language);
+					}
+					acc;
+				}
+			}
+		}
+	});
+}
+
+// Starts partial evaluation from any compiletime calls
+evalFExp(env : FastEnv, ex : FExp) -> FExp {
+	switch (ex) {
+		FConstant(): ex;
+		FVar(id, info): ex;
+		FSizeOf(type, info): ex;
+		FLet(id, value, body, info): FLet(id, evalFExp(env, value), evalFExp(env, body), info);
+
+		FCallOp(language, op, args, info): {
+			if (language == "compiletime") {
+				partialEvalFExp(env, ex);
+			} else {
+				// TODO: If a function is only implemented at compiletime, we could evaluate it as well
+				FCallOp(ex with args = evalFExps(env, args));
+			}
+		}
+		FCall(cfn, args, info): FCall(evalFExp(env, cfn), evalFExps(env, args), info);
+		FSequence(exprs, info): FSequence(evalFExps(env, exprs), info);
+		FTypeAnnotation(e, type, info): FTypeAnnotation(evalFExp(env, e), type, info);
+		FIf(cond, then, else_, info): FIf(evalFExp(env, cond), evalFExp(env, then), evalFExp(env, else_), info);
+		FInlineCode(language, stream, dependencies, type, info): {
+			fl = \str -> map(str, \s -> switch (s) {
+				FInlineString(__, __, __): s;
+				FInlineUnquote(e, l, c): FInlineUnquote(evalFExp(env, e), l, c);
+				FInlineTypeUnquote(__, __, __): s;
+			});
+			FInlineCode(language, fl(stream), map(dependencies, \d -> FInlineDependency(d with stream = fl(d.stream))), type, info);
+		}
+	}	
+}
+
+evalFExps(env : FastEnv, exs : [FExp]) -> [FExp] {
+	map(exs, \e -> evalFExp(env, e))
+}
+
+partialEvalFExp(env : FastEnv, ex : FExp) -> FExp {
+	switch (ex) {
+		FConstant(): ex;
+		FSizeOf(type, info): {
+			switch (type) {
+				FIntConstant(value, __): type;
+				FTypeInt(bits): FIntConstant(bits, info);
+				FTypeVar(id): ex;
+				FTypeFunction(args, to): ex;
+				FTypeCall(id, typars): ex;
+				FTypeInfer(): ex;
+				FInlineType(__, __, __): ex;
+			}
+		}
+		FVar(id, info): {
+			lookupTreeDef(env.env, id, ex);
+			/*
+				if (containsKeyTree(env.functions, id)) {
+					FFunctionPointer(id, info);
+			*/
+		}
+		FLet(id, value, body, info): {
+			pvalue = partialEvalFExp(env, value);
+			switch (pvalue) {
+				FConstant(): {
+					nenv = FastEnv(env with env = setTree(env.env, id, pvalue));
+					partialEvalFExp(nenv, body);
+				}
+				default: {
+					FLet(id, pvalue, partialEvalFExp(env, body), info);
+				}
+			}
+		}
+		FCallOp(language, op, args, info): {
+			if (language != "" && language != "compiletime") {
+				ex;
+			} else {
+				eargs = partialEvalFExps(env, args);
+				mf = partialEvalFastFunction(env, op, eargs);
+				switch (mf) {
+					None(): FCallOp(language, op, eargs, info);
+					Some(v): {
+						// println("Compile time eval result:");
+						// println(fexp2string(v));
+						v;
+					}
+				}
+			}
+		}
+		FCall(fn, args, info): {
+			pfn = partialEvalFExp(env, fn);
+			switch (pfn) {
+				FVar(fnname, vinfo): {
+					eargs = partialEvalFExps(env, args);
+					mf = partialEvalFastFunction(env, fnname, eargs);
+					switch (mf) {
+						None(): FCall(pfn, eargs, info);
+						Some(v): v;
+					}
+				}
+				default: {
+					FCall(pfn, partialEvalFExps(env, args), info);
+				}
+			}
+		}
+		FSequence(exprs, info): {
+			res = foldi(exprs, [], \i, acc, e -> {
+				pe = partialEvalFExp(env, e);
+				if (i != length(exprs) - 1 && isFConstant(pe)) {
+					// Not requried
+					acc
+				} else arrayPush(acc, pe)
+			});
+			if (res == []) {
+				FIntConstant(0, FInfo(info with type = FTypeVoid()));
+			} else if (length(res) == 1) res[0]
+			else FSequence(res, info);
+		}
+		FTypeAnnotation(e, type, info): {
+			ee = partialEvalFExp(env, e);
+			switch (ee) {
+				FIntConstant(val, ei): {
+					FIntConstant(val, FInfo(ei with type = type));
+				}
+				default: {
+					// TODO: Maybe we can get rid of the annotation
+					FTypeAnnotation(ee, type, info);
+				}
+			}
+		}
+		FIf(cond, then, else_, info): {
+			pcond = partialEvalFExp(env, cond);
+			switch (pcond) {
+				FIntConstant(val, iinfo): {
+					partialEvalFExp(env, if (val != 0) then else else_)
+				}
+				default: {
+					FIf(pcond, partialEvalFExp(env, then), partialEvalFExp(env, else_), info);
+				}
+			}
+		}
+		FInlineCode(language, stream, dependencies, type, info): {
+			str = \s -> {
+				map(s, \f -> {
+					switch (f) {
+						FInlineString(__, __, __): f;
+						FInlineUnquote(e, l, c): {
+							ue = partialEvalFExp(env, e);
+							switch (ue) {
+								FIntConstant(vv, __): {
+									FInlineString(i2s(vv), l, c)
+								}
+								FStringConstant(ss, __): {
+									FInlineString(ss, l, c);
+								}
+								FVar(id, __): {
+									val = lookupTree(env.env, id);
+									val ?? {
+										println("TODO: Should we use this value for id at compile time? " + id);
+										FInlineUnquote(ue, l, c);
+									} : FInlineUnquote(ue, l, c);
+								}
+								default: {
+									if (ue != e) {
+										println("TODO: Inline code at compile time: Check whether this should be a string instead of unquote");
+										println(fexp2string(ue));
+									}
+									FInlineUnquote(ue, l, c);
+								}
+							}
+						}
+						FInlineTypeUnquote(utype, __, __): {
+							// println(utype);
+							f;
+						}
+					}
+				})
+			}
+			co = FInlineCode(ex with 
+				stream = str(stream), 
+				dependencies = map(dependencies, \d -> {
+					FInlineDependency(d with stream = str(d.stream))
+				})
+			);
+
+			if (language == "fast" && streamHasString(co.stream)) {
+				sexpr = finlineForm2string(co.stream, fexp2fast, fastType2string);
+				expr = parseFastString(sexpr);
+				FSequence(
+					[
+						// Replace the stream with the parsed result
+						FInlineCode(co with stream = []),
+						expr
+					],
+					co.info
+				)
+			} else co;
+		}
+	}
+}
+
+streamHasString(ss : [FInlineForm]) -> bool {
+	exists(ss, \s -> {
+		switch (s) {
+			FInlineString(__, __, __): true;
+			default: false;
+		}
+	})
+}
+
+partialEvalFExps(env : FastEnv, exs : [FExp]) -> [FExp] {
+	map(exs, \e -> partialEvalFExp(env, e))
+}
+
+partialEvalFastFunction(env : FastEnv, id : string, eargs : [FExp]) -> Maybe<FExp> {
+	statics = filtermap(eargs, \e -> {
+		switch (e) {
+			FConstant(): Some(e);
+			default: None();
+		}
+	});
+
+	def = \ -> {
+		fnsm = lookupTree(env.functions, id);
+		fnsm ?? {
+			partialEvalFastFunctions(env, fnsm, eargs);
+		} : {
+			None();
+		}
+	}
+
+	if (length(statics) == length(eargs)) {
+		nativem = lookupTree(env.natives, id);
+		nativem ?? {
+			Some(nativem(statics))
+		} : def();
+	} else {
+		def();
+	}
+}
+
+
+partialEvalFastFunctions(env : FastEnv, fns : [FastFunction], args : [FExp]) -> Maybe<FExp> {
+	atypes = map(args, \a -> a.info.type);
+	overloads = filter(fns, \fn : FastFunction -> {
+		dist = overloadDistFastTypes(atypes, map(fn.args, \a -> a.type));
+		dist != -1;
+	});
+	if (length(overloads) == 1) {
+		fn = overloads[0];
+		// Bind locals
+		nenv = foldi(fn.args, env.env, \i, acc, arg -> {
+			// println(arg.name + "=" + fexp2string(args[i]));
+			setTree(acc, arg.name, args[i]);
+		});
+		Some(partialEvalFExp(
+			FastEnv(env with env = nenv), 
+			fn.body
+		));
+	} else {
+		None();
+	}
+}
+
+addFastFile(f : FastAst, sourceFile : int, file : FastFile) -> FastAst {
+	// Update source indexes
+	decls = map(file.toplevel, \t -> {
+				switch (t) {
+					FastTypeFunctor(__, __, __, __, __): FastTypeFunctor(t with sourceFile = sourceFile);
+					FastFunction(__, __, __, __, __, __, __, __, __, __): FastFunction(t with sourceFile = sourceFile);
+					FastGlobalVar(__, __, __, __): FastGlobalVar(t with sourceFile = sourceFile);
+				}
+			});
+
+	FastAst(
+		f with 
+		types = concat(f.types, filtermap(decls, \d -> switch (d) {FastTypeFunctor(__, __, __, __, __): Some(d); default: None();})),
+		globals = concat(f.globals, filtermap(decls, \d -> switch (d) {FastGlobalVar(__, __, __, __): Some(d); default: None();})),
+		functions = concat(f.functions, filtermap(decls, \d -> switch (d) {FastFunction(__, __, __, __, __, __, __, __, __, __): Some(d); default: None();}))
+	);
+}

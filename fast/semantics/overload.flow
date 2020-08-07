@@ -1,0 +1,203 @@
+import fast/fast_ast;
+import fast/typing/resolve_graph;
+import fast/typing/polymorphism;
+import fast/semantics/utils;
+import fast/semantics/mangle;
+
+export {
+	// Construct the signature to resolve overloading for this function
+	makeFastOverload(f : FastFunction) -> FastOverload;
+
+	FastOverload(language : string, name : string, args : [FastType], effects : [FastEffect]);
+
+	// Construct a unique name for this overload
+	fastOverloadName(f : FastOverload) -> FastOverload;
+
+	// Given a range of overloads, which one is the best to match this call?
+	findBestOverload(call : FastOverload, overloads : [FastOverload]) -> FastOverload;
+
+	// Given a range of overloads, which are compatible to match this call?
+	findCompatibleOverloads(call : FTypeFunction, overloads : [FTypeFunction]) -> [FTypeFunction];
+
+	doesFunctionOverload(call : FTypeFunction, fn : FastFunction) -> bool;
+
+	// Do these overlap? Used for DCE to determine whether a language-specific version overrides a general one
+	overloadIntersects(left : FastOverload, right : FastOverload) -> bool;
+
+	// How well does this call potentially fit the overload?
+	// -1 if NO fit. 0 for perfect fit. otherwise, lower is better
+	// I.e. call has to be "lower" than the overload. This is like
+	// type equivalence, except tyvars and infers are taken as ok
+	overloadDistFastType(call : FastType, overload : FastType) -> int;
+	overloadDistFastTypes(calls : [FastType], overloads : [FastType]) -> int;
+}
+
+makeFastOverload(f : FastFunction) -> FastOverload {
+	FastOverload(f.language, f.id, map(f.args, \a -> a.type), map(f.args, \a -> a.effect));
+}
+
+fastOverloadName(f : FastOverload) -> FastOverload {
+	// At first, we just overload on the number of args
+	name = f.name + "__" + fullFastTypeMangle(FTypeFunction(f.args, FTypeVoid()));
+	FastOverload(f with name = name)
+}
+
+findBestOverload(call : FastOverload, overloads : [FastOverload]) -> FastOverload {
+	if (overloads == []) {
+		call
+	} else {
+		// Find language matches
+		pots = filter(overloads, \o -> length(o.args) == length(call.args) && (o.language == call.language || o.language == "" || call.language == ""));
+		if (length(pots) == 1) {
+			pots[0];
+		} else {
+			distances : [Pair<int, FastOverload>]= filtermap(pots, \o -> {
+				dist = overloadDistFastTypes(call.args, o.args);
+				if (dist == -1) None()
+				else Some(Pair(dist, o));
+			});
+
+			if (length(distances) == 1) {
+				distances[0].second;
+			} else {
+				hasUnique = filter(distances, \d -> d.first == 0);
+				if (length(hasUnique) == 1) {
+					hasUnique[0].second;
+				} else {
+					println("TODO: Could not resolve overload to " + call.name);
+					println(call);
+					println(distances);
+					iter(pots, println);
+					call;
+				}
+			}
+		}
+	}
+}
+
+findCompatibleOverloads(call : FTypeFunction, overloads : [FTypeFunction]) -> [FTypeFunction] {
+	filter(overloads, \o -> {
+		overloadDistFastTypes(call.args, o.args) != -1;
+	});
+}
+
+/*
+
+findCompatibleOverloads(call : FTypeFunction, overloads : [FTypeFunction]) -> [FTypeFunction] {
+	distances : [Pair<int, FTypeFunction>]= filtermap(overloads, \o -> {
+		dist = overloadDistFastTypes(call.args, o.args);
+		if (dist == -1) None()
+		else Some(Pair(dist, o));
+	});
+
+	if (length(distances) == 1) {
+		distances[0].second;
+	} else {
+		hasUnique = filter(distances, \d -> d.first == 0);
+		if (length(hasUnique) == 1) {
+			hasUnique[0].second;
+		} else {
+			println("TODO: Could not resolve overload to " + fastType2string(call) + " from these");
+			iter(distances, \p -> {
+				println("  " + i2s(p.first) + ": " + fastType2string(p.second));
+			});
+			call;
+		}
+	}
+}
+*/
+
+overloadIntersects(general : FastOverload, specific : FastOverload) -> bool {
+	dist = overloadDistFastTypes(general.args, specific.args);
+	dist != -1;
+}
+
+doesFunctionOverload(call : FTypeFunction, fn : FastFunction) -> bool {
+	dist = overloadDistFastType(call, fn.info.type);
+	dist != -1
+}
+
+// How well does this call potentially fit the overload?
+// -1 if NO fit. 0 for perfect fit. otherwise, lower is better
+overloadDistFastType(call : FastType, overload : FastType) -> int {
+	if (isFastTypePar(overload) || isFastTypePar(call)) 3
+	else switch (overload) {
+		FIntConstant(svalue, __): {
+			switch (call) {
+				FIntConstant(bvalue, __): if (svalue == bvalue) 0 else -1;
+				FTypeVar(__): 2;
+				FTypeInfer(): 3;
+				default: -1;
+			}
+		}
+		FTypeInt(sbits): {
+			switch (call) {
+				FIntConstant(bvalue, __): 0;
+				FTypeVar(__): 2;
+				FTypeInfer(): 3;
+				FTypeInt(bbits): {
+					if (sbits == -1 || bbits == -1 || sbits != bbits) -1
+					else 0
+				}
+				default: -1;
+			}
+		}
+		FTypeCall(sid, stypars): {
+			switch (call) {
+				FTypeVar(__): 2;
+				FTypeInfer(): 3;
+				FTypeCall(bid, btypars): {
+					if (trim2(bid, "?") == "") {
+						// OK, this might work
+						// TODO: We should check that all typar matches agree
+						3;
+					} else {
+						if (sid == bid) overloadDistFastTypes(stypars, btypars)
+						else -1;
+					}
+				}
+				default: -1;
+			}
+		}
+		FTypeFunction(sargs, sto): {
+			switch (call) {
+				FTypeVar(__): 2;
+				FTypeInfer(): 3;
+				FTypeFunction(bargs, bto): {
+					ac = overloadDistFastTypes(sargs, bargs);
+					if (ac == -1) ac
+					else ac + overloadDistFastType(sto, bto);
+				}
+				default: -1;
+			}
+		}
+		FInlineType(slanguage, sstream, sdependencies): {
+			switch (call) {
+				FTypeVar(__): 2;
+				FTypeInfer(): 3;
+				FInlineType(blanguage, bstream, bdependencies): {
+					if (sstream == bstream) 0
+					else {
+						// println("TODO: What is the distance between inline types?");
+						-1
+					}
+				}
+				default: -1;
+			}
+		}
+		FTypeVar(sid): 2;
+		FTypeInfer(): 3;
+	}
+
+}
+
+overloadDistFastTypes(calls : [FastType], overloads : [FastType]) -> int {
+	if (length(calls) != length(overloads)) -1
+	else foldi(calls, 0, \i, acc, call -> {
+		if (acc == -1) acc
+		else {
+			dist = overloadDistFastType(call, overloads[i]);
+			if (dist == -1) dist else acc + dist;
+		}
+	});
+}

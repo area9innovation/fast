@@ -1,0 +1,158 @@
+export {
+	tuple(a : ?) -> Tuple<?>;
+	tuple(a : ?, b : ??) -> Tuple<?, ??>;
+	first(a : Tuple<?>) -> ?;
+	first(a : Tuple<?, ??>) -> ?;
+	second(a : Tuple<?, ??>) -> ??;
+
+	// TODO: Add comparison
+}
+
+typedef Tuple<?> = ?;
+
+inline tuple(a : ?) -> Tuple<?> {
+	a
+}
+
+inline first(a : Tuple<?>) -> ? {
+	a
+}
+
+
+// Flow
+
+typedef flow::Tuple<?, ??> = 
+	inline flow { Pair< ${?} , ${??}> }
+	require flow::import { import·ds/tuples; }
+	;
+
+
+flow::tuple(a : ?, b : ??) -> Tuple<?, ??> {
+	inline flow { Pair($a, $b) }
+}
+
+flow::first(a : Tuple<?, ??>) -> ? {
+	inline flow { ($a).first }
+}
+
+flow::second(a : Tuple<?, ??>) -> ?? {
+	inline flow { ($a).second }
+}
+
+
+
+// C - they are structs, and stack based
+
+typedef c::Tuple<?, ??> = inline c { 
+	struct Tuple_${?}_${??}
+	} require c::structs { 
+	struct·Tuple_${?}_${??} { 
+		${?}·first; 
+		${??}·second; 
+	};
+};
+
+c::tuple(a : ?, b : ??) -> Tuple<?, ??> {
+	inline c { 
+		$type{ Tuple<?, ??> }·t = { $a, $b } 
+	} : i0;
+	inline c { t } : Tuple<?, ??>;
+}
+
+c::first(a : Tuple<?, ??>) -> ? {
+	inline c { ($a).first }
+}
+
+c::second(a : Tuple<?, ??>) -> ?? {
+	inline c { ($a).second }
+}
+
+
+/*
+c::convert2flow(p : Tuple<?, ??>) -> inline c { struct·FlowValue } {
+	flow::Tuple(
+		convert2flow(first(p)), 
+		convert2flow(second(p))
+	)
+}
+
+c::convert2flow(i : i32) -> i32 {
+	i;
+}
+
+*/
+/*
+
+struct FlowValue
+convert2flow${mangle(?, ??)}(struct Tuple${mangle(?, ??)} p) {
+	return FlowRunner.evaluateFn2("Tuple", 
+		convert2flow${mangle(?)}(first(p)), 
+		convert2flow${mangle(?)}(second(p))
+	)
+}
+
+FlowRunner.evaluateFn2("printTuple", FlowValue());
+
+*/
+
+
+// Java
+
+typedef java::Tuple<?, ??> = 
+	inline java { Tuple_${?}_${??} }
+	require java::classes { 
+		static class Tuple_${?}_${??} { 
+			public Tuple_${?}_${??}(${?}·f,·${??}·s)·{
+				first = f;
+				second = s;
+			}
+			final·public·${?}·first;
+			final·public·${??}·second;
+		}
+	};
+
+java::tuple(a : ?, b : ??) -> Tuple<?, ??> {
+	inline java { 
+		new·$type{ Tuple<?, ??> }( $a, $b )
+	}
+}
+
+java::first(a : Tuple<?, ??>) -> ? {
+	inline java { ($a).first }
+}
+
+java::second(a : Tuple<?, ??>) -> ?? {
+	inline java { ($a).second }
+}
+
+// JS
+
+typedef js::Tuple<?, ??> = inline js { { first: ${?}, second: ${??} } };
+
+js::tuple(a : ?, b : ??) -> Tuple<?, ??> {
+	inline js { { first: $a, second: $b } }
+}
+
+js::first(a : Tuple<?, ??>) -> ? {
+	inline js { ($a).first }
+}
+
+js::second(a : Tuple<?, ??>) -> ?? {
+	inline js { ($a).second }
+}
+
+// Rust
+
+typedef rust::Tuple<?, ??> = inline rust { (${?}, ${??}) };
+
+rust::tuple(a : ?, b : ??) -> Tuple<?, ??> {
+	inline rust { (a, b) }
+}
+
+rust::first(a : Tuple<?, ??>) -> ? {
+	inline rust { a.0 }
+}
+
+rust::second(a : Tuple<?, ??>) -> ?? {
+	inline rust { a.1 }
+}

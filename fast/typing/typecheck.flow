@@ -1,0 +1,333 @@
+import fast/fast_ast;
+import fast/typing/fast_type_utils;
+import fast/typing/polymorphism;
+
+/*
+TODO:
+Check exports are consistent, and names exist
+Resolve type calls to underlying types
+*/
+
+export {
+	fastTypecheck(f : FastAst) -> bool;
+}
+
+CheckEnv(
+	mutable env : Tree<string, [FastType]>,
+	// Lookup from type to number of args that type constructor has
+	types : Tree<string, [int]>,
+	onError : (string, file : int, info : FInfo) -> void
+);
+
+fastTypecheck(f : FastAst) -> bool {
+	env = CheckEnv(
+		makeTree(),
+		fold(f.types, makeTree(), \acc, typefn -> {
+			treePushToArrayUnique(acc, typefn.id, length(typefn.typars))
+		}),
+		\error, file, info -> {
+			println(elementAt(f.sourceFiles, file, "") + ".fast:" + i2s(info.line) + ":" + i2s(info.col) + ": Type check: " + error);
+		}
+	);
+
+	// Register all globals in the type environment - with polymorphism
+	globalTypes = fold(f.globals, env.env, \acc, global -> {
+		treePushToArrayUnique(acc, global.id, global.info.type);
+	});
+	functionTypes = fold(f.functions, globalTypes, \acc, function -> {
+		treePushToArrayUnique(acc, function.id, declaredFastFunctionType(function));
+	});
+	env.env ::= functionTypes;
+
+	// Check all globals
+
+	iter(f.globals, \global : FastGlobalVar -> {
+		if (isPolymorphicFastType(global.info.type)) {
+			env.onError(global.id + " is polymorphic global, which is unsupported", global.sourceFile, global.info);
+		}
+		gtype = getFExpType(env, global.sourceFile, global.value);
+		if (gtype == FTypeVoid()) {
+			env.onError(global.id + " is void, which is unsupported", global.sourceFile, global.info);			
+		}
+		checkFExpType(env, global.sourceFile, global.info.type, global.value);
+	});
+
+	// Check all functions
+
+	iter(f.functions, \function -> {
+		oenv = env.env;
+		env.env ::= fold(function.args, env.env, \acc, arg -> {
+			if (arg.type == FTypeVoid()) {
+				env.onError("Arg " + arg.name + " can not be void in " + function.id, function.sourceFile, function.info)
+			}
+			setTree(acc, arg.name, [arg.type])
+		});
+		checkFExpType(env, function.sourceFile, function.returnType, function.body);
+		env.env ::= oenv;
+	});
+
+	true;
+}
+
+checkFExpType(env : CheckEnv, sourceFile : int, expected : FastType, e : FExp) -> void {
+	etype = getFExpType(env, sourceFile, e);
+	if (!validFastType(env, expected)) {
+		env.onError("Unknown type " + fastType2string(expected), sourceFile, e.info);
+	} else if (!validFastType(env, etype)) {
+		env.onError("Unknown type "  + fastType2string(etype), sourceFile, e.info);
+	} else if (!ftypesMatch(etype, expected)) {
+		env.onError("Expected " + fastType2string(expected) + ", but found " + fastType2string(etype), sourceFile, e.info);
+	}
+}
+
+checkFExp(env : CheckEnv, sourceFile : int, ex : FExp) -> void {
+	checkFExpType(env, sourceFile, ex.info.type, ex);
+}
+
+getFExpType(env : CheckEnv, sourceFile : int, ex : FExp) -> FastType {
+	switch (ex) {
+		FIntConstant(__, info): info.type;
+		FDoubleConstant(__, __): FTypeCall("f64", []); // I guess it could be f32?
+		FStringConstant(__, __): FTypeCall("string", []);
+		FFunctionPointer(id, info): FTypeInfer();
+
+		FVar(id, info): {
+			vtypes = getTreeArrayValue(env.env, id);
+			if (vtypes == []) {
+				env.onError("Unknown id " + id, sourceFile, info);
+				FTypeInfer();
+			} else if (length(vtypes) == 1) {
+				vtypes[0]
+			} else {
+				resolved = filter(vtypes, \vt -> ftypesMatch(vt, info.type));
+				if (resolved == []) {
+					env.onError("Unresolved overload of '" + id + " : " + fastType2string(info.type) + "'. Candidates: " + superglue(vtypes, fastType2string, ", "), sourceFile, info);
+					info.type;
+				} else if (length(resolved) == 1) {
+					resolved[0];
+				} else {
+					// OK, if the type is polymorphic, it is fine as long as all overloads return the same value
+					// Check that all are functions, and that there is a unique result type
+					retType = foldi(resolved, FTypeInfer(), \i, acc, ft -> {
+						switch (ft) {
+							FTypeFunction(__, rt): {
+								if (i == 0) rt 
+								else if (ftypesMatch(rt, acc)) {
+									acc;
+								} else {
+									env.onError("Overloading of " + id + " requires all overloads to return the same type. " + fastType2string(acc) + " != " + fastType2string(rt), sourceFile, info);
+									FTypeInfer();
+								}
+							}
+							default: {
+								env.onError("Overloading of " + id + " : " + fastType2string(info.type) + " only supported on functions, not " + fastType2string(ft), sourceFile, info);
+									FTypeInfer();
+							}
+						}
+					});
+					info.type;
+				}
+			}
+		}
+		FLet(id, value, body, info): {
+			vtype = getFExpType(env, sourceFile, value);
+			if (!validFastType(env, vtype)) {
+				env.onError("Unknown value type in let: " + fastType2string(vtype), sourceFile, info);
+			} else if (vtype == FTypeVoid()) {
+				env.onError("let " + id + " can not be given a void value", sourceFile, value.info);
+			}
+			oenv = env.env;
+			env.env ::= setTree(env.env, id, [vtype]);
+			btype = getFExpType(env, sourceFile, body);
+
+			env.env ::= oenv;
+
+			btype;
+		}
+		FSizeOf(type, info): FTypeInt(32);
+		FCallOp(language, op, args, info): {
+			calltype = FTypeFunction(map(args, \a -> a.info.type), info.type);
+			getFCallType(env, sourceFile, FCall(FVar(op, FInfo(info with type = calltype)), args, info));
+		}
+		FCall(fn, args, info): {
+			getFCallType(env, sourceFile, ex);
+		}
+		FSequence(exprs, info): {
+			// Check all args
+			iter(exprs, \ee -> {
+				checkFExp(env, sourceFile, ee)
+			});
+			if (exprs == []) FTypeVoid()
+			else {
+				getFExpType(env, sourceFile, lastElement(exprs, ex));
+			}
+		}
+		FTypeAnnotation(e, type, info): {
+			checkFExp(env, sourceFile, e);
+
+			type;
+		}
+		FIf(cond, then, else_, info): {
+			checkFExpType(env, sourceFile, FTypeBool(), cond);
+			ttype = getFExpType(env, sourceFile, then);
+			etype = getFExpType(env, sourceFile, else_);
+
+			if (!ftypesMatch(ttype, etype)) {
+				env.onError("Expected 'then' type " + fastType2string(ttype) + " to match 'else' type " + fastType2string(etype), sourceFile, info);
+			} else if (!validFastType(env, ttype)) {
+				env.onError("Unknown 'then' type " + fastType2string(ttype), sourceFile, info);
+			}
+
+			ttype;
+		}
+		FInlineCode(language, stream, dependencies, type, info): {
+			check = \str -> {
+				iter(str, \f : FInlineForm -> {
+					switch (f) {
+						FInlineString(v, startLine, startCol): {}
+						FInlineUnquote(e, startLine, startCol): {
+							checkFExp(env, sourceFile, e)
+						}
+						FInlineTypeUnquote(utype, startLine, startCol): {
+							if (!validFastType(env, utype)) {
+								env.onError("Unknown type " + fastType2string(utype) + " in inline block", sourceFile, FInfo(info with line = startLine, col = startCol));
+							}
+						}
+					}
+				})
+			}
+			check(stream);
+			iter(dependencies, \dep -> check(dep.stream));
+
+			if (!validFastType(env, type)) {
+				env.onError("Unknown inline code type " + fastType2string(type), sourceFile, info);
+			}
+
+			type;
+		} 
+	}
+}
+
+getFCallType(env : CheckEnv, sourceFile : int, ex : FCall) -> FastType {
+	fntype = getFExpType(env, sourceFile, ex.fn);
+	argtypes = mapi(ex.args, \i, a -> {
+		atype = getFExpType(env, sourceFile, a);
+		if (atype == FTypeVoid()) {
+			env.onError("Arg #" + i2s(i + 1) + " can not be void", sourceFile, a.info);
+		}
+		if (!validFastType(env, atype)) {
+			env.onError("Unknown type of arg #" + i2s(i + 1) + ": " + fastType2string(atype), sourceFile, a.info);
+		}
+		atype;
+	});
+
+	switch (fntype) {
+		FTypeFunction(fargs, fto): {
+			if (length(argtypes) != length(fargs)) {
+				env.onError("Expected " + i2s(length(fargs)) + ", got " + i2s(length(argtypes)) + "  arguments", sourceFile, ex.info);
+			} else {
+				// Check that the args match
+				iteri(argtypes, \i, t1 -> {
+					if (!ftypesMatch(t1, fargs[i])) {
+						env.onError("arg #" + i2s(i + 1) + ": " + fastType2string(t1) + " != " + fastType2string(fargs[i]), sourceFile, ex.args[i].info);
+					}
+				})
+			}
+
+			fto;
+		}
+		default: {
+			env.onError("Can only call function type, not " + fastType2string(fntype), sourceFile, ex.fn.info);
+			ex.info.type;
+		}
+	}
+}
+
+ftypesMatch(t1 : FastType, t2 : FastType) -> bool {
+	switch (t1) {
+		FTypeInfer(): false;
+		FIntConstant(value1, info1): switch (t2) {
+			FIntConstant(value2, info2): value1 == value2;
+			FTypeCall(id, typars): isFastTypePar(t2);
+			default: false;
+		}
+		FTypeVar(id): false;
+		FTypeInt(bits): t1 == t2 || isFastTypePar(t2);
+		FTypeFunction(args1, to1): {
+			switch (t2) {
+				FTypeFunction(args2, to2): {
+					ftypesMatch(to1, to2) && fallTypesMatch(args1, args2)
+				}
+				FTypeCall(id, typars): isFastTypePar(t2);
+				default: false;
+			}
+		}
+		FTypeCall(id1, typars1): {
+			// TODO: Here, we could evaluate the types down to whatever they are
+			// See promise.fast line 41
+			switch (t2) {
+				FTypeCall(id2, typars2): {
+					isFastTypePar(t1) 
+					|| isFastTypePar(t2)
+					|| {
+						(id1 == id2 && fallTypesMatch(typars1, typars2));
+					}
+				}
+				FTypeInfer(): false;
+				FTypeVar(__): false;
+				default: {
+					isFastTypePar(t1);
+				}
+			}
+		}
+		FInlineType(language, stream, dependencies): t1 == t2 || isFastTypePar(t2);
+	}
+}
+
+fallTypesMatch(ts1 : [FastType], ts2 : [FastType]) -> bool {
+	length(ts1) == length(ts2)
+	&& foldi(ts1, true, \i, acc, t1 -> {
+		acc && ftypesMatch(t1, ts2[i])
+	})
+}
+
+validFastType(env : CheckEnv, t : FastType) -> bool {
+	switch (t) {
+		FTypeInfer(): false;
+		FTypeVar(__): false;
+
+		FIntConstant(value, __): true;
+		FTypeInt(bits): bits >= 0;
+		FTypeFunction(args, to): {
+			forall(args, \a -> {
+				validFastType(env, a)
+			}) && validFastType(env, to);
+		}
+		FTypeCall(id, typars): {
+			if (trim2(id, "?") == "") {
+				typars == [];
+			} else {
+				existing = getTreeArrayValue(env.types, id);
+				if (!contains(existing, length(typars))) {
+					false;
+				} else {
+					forall(typars, \tp -> {
+						validFastType(env, tp)
+					})
+				}
+			}
+		}
+		FInlineType(lan, stream, deps): {
+			check = \str -> {
+				forall(str, \f : FInlineTypeForm -> {
+					switch (f) {
+						FInlineString(__, __, __): true;
+						FInlineTypeUnquote(tt, __, __): validFastType(env, tt);
+					}
+				})
+			}
+			check(stream)
+			&& forall(deps, \dep -> check(dep.stream));
+		}
+	}
+}

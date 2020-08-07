@@ -1,0 +1,125 @@
+import fast/backends/utils;
+import fast/fast_prettyprint;
+import text/blueprint;
+import fast/semantics/utils;
+
+export {
+	// Useful for Docker-compose files, as well as Ansible playbooks
+	// TODO: Add helpers in the library for Docker-compose.yml files start 
+	// with "docker compose up" and stop with "docker compose stop"
+	yamlBackend = FastBackend(
+		"yaml", true, \p -> fast2text(p, []), "yaml", false, [], "", false, 
+		fDefaultLinkCode("yaml"), 
+		fDefaultSaveCode("yaml")
+	);
+
+	/*
+	Supports 
+	 inline dockerfile { RUN/CMD/ENV/COPY ... } 
+	 require from { FROM ubuntu:bionic }
+	 require aptget { <name> } 
+	for dependencies
+	*/
+	dockerfileBackend = getDockerfileBackend();
+
+	// Useful for Terraform configuration scripts. See https://www.terraform.io/intro/index.html
+
+	terraformBackend = FastBackend(
+		"terraform", true, \p -> fast2text(p, []), "tf", false, [], "", false, 
+		fDefaultLinkCode("tf"), 
+		fDefaultSaveCode("tf")
+	);
+
+		// Configure a dependency section to include in the output
+		FDependencySection(
+			section : string, 
+			separator : string,
+			unique : bool,
+			append : (string, string) -> string, 
+		);
+}
+
+fast2text(compile : FastCompile, sections : [FDependencySection]) -> string {
+	fold(sections, "", \acc, section -> {
+		sec = generateFDependency(compile, section.section, fexp2text, \t -> "", section.separator, section.unique);
+		section.append(acc, sec);
+	}) +
+	superglue(compile.code.globals, fastDecl2text, "")
+	+ superglue(compile.code.functions, fastDecl2text, "");
+;
+}
+
+fastDecl2text(c : FastDeclaration) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, pars, type): "";
+		FastGlobalVar(__, id, value, __): fexp2text(value);
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+			fexp2text(body);
+		}
+	}
+}
+
+fexp2text(f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in Text backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FIntConstant(value, info): {
+			switch (info.type) {
+				FTypeInt(bits): if (bits == 0) "" else i2s(value);
+				default: i2s(value);
+			}
+		}
+		FDoubleConstant(value, __): double2string(value);
+		FStringConstant(value, __): value;
+		FFunctionPointer(id, __): id;
+		FVar(id, __): id;
+
+		FLet(id, value, body, __): todo();
+		FSizeOf(type, __): todo();
+		FCall(fn, args, __): todo();
+		FCallOp(language, op, args, __): todo();
+		FSequence(exprs, __): {
+			jss = map(exprs, fexp2text);
+			concatStrings(jss)
+		}
+		FTypeAnnotation(e, type, __): fexp2text(e);
+		FIf(cond, then, else_, __): todo();
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, fexp2text, \t -> "");
+		}
+	}
+}
+
+
+getDockerfileBackend() -> FastBackend {
+	// TODO: When it is time to run this, we should do
+	// "docker build -f <DockerfileName> -t <name> ." 
+	// in the output folder with the dockerfile
+	FastBackend(
+		"dockerfile", true, \p -> fast2text(p, [
+			// Put the FROM section at the top
+			FDependencySection("from", "\n", true, \acc, sec -> {
+				(if (sec == "") {
+					// Default to this
+					"FROM ubuntu:bionic"
+				} else {
+					sec + acc;
+				}) + "\n";
+			}),
+			// We collect all apt-gets in one line
+			FDependencySection("aptget", " ", true, \acc, sec -> {
+				if (sec == "") {
+					acc;
+				} else {
+					// 
+					line = "RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y " + sec + "\n";
+					acc + line;
+				}
+			}),
+		]), "", false, [], "", false,
+		fDefaultLinkCode(""),
+		fDefaultSaveCode("")
+	);
+}

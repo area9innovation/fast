@@ -1,0 +1,12 @@
+import runtime;
+
+overload.java::main() -> i0 {
+    i = 1 : i32;
+    l = 1 : i64;
+
+    di = i + i;
+    li = l + l;
+
+    println(di : i32);
+    println(li : i64);
+}

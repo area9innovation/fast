@@ -1,0 +1,23 @@
+square(i : ?) -> ? {
+    i;
+}
+
+polymorphism.java::main() -> i0 {
+    a = square(1 : i1);
+    b = square(1 : i32);
+}
+
+polymorphism.wasm::main() -> i0 {
+    a = square(1 : i1);
+    b = square(1 : i32);
+}
+
+polymorphism.js::main() -> i0 {
+    a = square(1 : i1);
+    b = square(1 : i32);
+}
+
+polymorphism.flow::main() -> i0 {
+    a = square(1 : i1);
+    b = square(1 : i32);
+}

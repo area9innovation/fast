@@ -1,0 +1,18 @@
+import runtime;
+
+fact(i : i32) -> i32 {
+	if i <= 1 {
+		i
+	} else {
+		i * fact(i - 1)
+	}
+}
+
+//fact.c::main() -> i0 {
+//	println(fact(5));
+//}
+
+test.js::main() -> i0 {
+	println(fact(3));
+	println(c::fact(4));
+}

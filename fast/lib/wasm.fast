@@ -1,0 +1,19 @@
+wasm::inline +(l : i32, r : i32) -> i32 { inline wasm { ${l} · ${r} · i32.add } }
+wasm::inline -(l : i32, r : i32) -> i32 { inline wasm { ${l} · ${r} · i32.sub } }
+wasm::inline *(l : i32, r : i32) -> i32 { inline wasm { ${l} · ${r} · i32.mul } }
+wasm::inline /(l : i32, r : i32) -> i32 { inline wasm { ${l} · ${r} · i32.div_s } }
+wasm::inline %(l : i32, r : i32) -> i32 { inline wasm { ${l} · ${r} · i32.rem_s } }
+
+wasm::inline <(l : i32, r : i32) -> i1 { inline wasm { ${l} · ${r} · i32.lt_s } }
+wasm::inline <=(l : i32, r : i32) -> i1 { inline wasm { ${l} · ${r} · i32.le_s } }
+wasm::inline ==(l : i32, r : i32) -> i1 { inline wasm { ${l} · ${r} · i32.eq } }
+wasm::inline !=(l : i32, r : i32) -> i1 { inline wasm { ${l} · ${r} · i32.neq } }
+wasm::inline >(l : i32, r : i32) -> i1 { inline wasm { ${l} · ${r} · i32.gt_s } }
+wasm::inline >=(l : i32, r : i32) -> i1 { inline wasm { ${l} · ${r} · i32.ge_s } }
+
+wasm::inline ||(l : i1, r : i1) -> i1 { inline wasm { ${l} · ${r} · i32.or } }
+wasm::inline &&(l : i1, r : i1) -> i1 { inline wasm { ${l} · ${r} · i32.and } }
+
+wasm::inline println(i : ?) -> i0 {
+	js::println(i);
+}

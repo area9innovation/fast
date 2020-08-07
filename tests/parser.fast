@@ -1,0 +1,14 @@
+import string;
+import runtime;
+import system;
+
+// Run with
+// flowcpp fast/fast.flow -- file=parser eval=run()
+
+parser.js::main() -> i0 {
+	println("Hello world");
+}
+
+run() -> Promise<string, string> {
+	startProcess("deno run obj/parser.js");
+}

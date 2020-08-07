@@ -1,0 +1,138 @@
+import fast/fast_ast;
+import ds/tree;
+import math/math;
+
+export {
+	// Constant propagation: We promise all mentions of constants are replaced accordingly
+	propagateFast(env : FastAst, constants : Tree<string, FExp>, f : FExp) -> FExp;
+}
+
+// This is effectively "map", except for the constants are updated
+propagateFast(env : FastAst, constants : Tree<string, FExp>, f : FExp) -> FExp {
+	switch (f) {
+		FConstant(): f;
+		FVar(id, info): lookupTreeDef(constants, id, f);
+		FLet(id, value, body, info): {
+			pvalue = propagateFast(env, constants, value);
+			if (hasFastSideEffects(env, pvalue)) {
+				FLet(id, pvalue, propagateFast(env, constants, body), info);
+			} else {
+				// OK, we could inline.
+				if (isFastCodeSizeSmall(pvalue) || countFastVar(id, body) <= 1) {
+					// It is small, or we only occur once
+					nconstants = setTree(constants, id, pvalue);
+					propagateFast(env, nconstants, body);
+				} else {
+					FLet(id, pvalue, propagateFast(env, constants, body), info);
+				}
+			}
+		}
+		FSizeOf(type, info): f;
+		FCallOp(language, op, args, info): FCallOp(language, op, map(args, \a -> propagateFast(env, constants, a)), info);
+		FCall(fn, args, info): FCall(propagateFast(env, constants, fn), map(args, \a -> propagateFast(env, constants, a)), info);
+		FSequence(exprs, info): FSequence(map(exprs, \e -> propagateFast(env, constants, e)), info);
+		FTypeAnnotation(e, type, info): {
+			FTypeAnnotation(f with e = propagateFast(env, constants, e));
+		}
+		FIf(cond, then, else_, info): {
+			pcond = propagateFast(env, constants, cond);
+			pthen = propagateFast(env, constants, then);
+			pelse_ = propagateFast(env, constants, else_);
+			FIf(pcond, pthen, pelse_, info);
+		}
+		FInlineCode(language, stream, dependencies, type, info): {
+			ms = \str -> {
+				map(str, \s -> {
+					switch (s) {
+						FInlineString(__, __, __): s;
+						FInlineUnquote(e, l, c): FInlineUnquote(propagateFast(env, constants, e), l, c);
+						FInlineTypeUnquote(__, __, __): s;
+					}
+				})			
+			}
+			FInlineCode(language, 
+				ms(stream),
+				map(dependencies, \d -> {
+					FInlineDependency(d with stream = ms(d.stream));
+				}),
+				type, 
+				info
+			);
+		}
+	}
+}
+
+// This is effectively "exists"
+hasFastSideEffects(env : FastAst, f : FExp) -> bool {
+	switch (f) {
+		FConstant(): false;
+		FVar(__, __): false;
+
+		FLet(id, value, body, __): hasFastSideEffects(env, value) || hasFastSideEffects(env, body);
+		FSizeOf(type, __): false;
+		FCallOp(language, op, args, __): {
+			println("Assuming " + op + " does not have side effects");
+			exists(args, \a -> hasFastSideEffects(env, a));
+		}
+		FCall(fn, args, __): {
+			// TODO: 
+			println("TODO: Assuming side effects in call to " + toString(fn));
+			true; 
+		}
+		FSequence(exprs, __): exists(exprs, \a -> hasFastSideEffects(env, a));
+		FTypeAnnotation(e, type, __): hasFastSideEffects(env, e);
+		FIf(cond, then, else_, __): hasFastSideEffects(env, cond) || hasFastSideEffects(env, then) || hasFastSideEffects(env, else_);
+		FInlineCode(language, stream, dependencies, type, __): {
+			es = \str -> {
+				exists(str, \form -> switch (form) {
+					FInlineString(__, __, __): false;
+					FInlineUnquote(e, __, __): hasFastSideEffects(env, e);
+					FInlineTypeUnquote(__, __, __): false;
+				}) 
+			}
+			es(stream) || exists(dependencies, \d -> es(d.stream));
+		}
+	}
+}
+
+
+isFastCodeSizeSmall(f : FExp) -> bool {
+	switch (f) {
+		FConstant(): true;
+		FVar(__, __): true;
+
+		FLet(id, value, body, __): false;
+		FSizeOf(type, __): true;
+		FCallOp(language, op, args, __): false;
+		FCall(fn, args, __): false;
+		FSequence(exprs, __): false;
+		FTypeAnnotation(e, type, __): isFastCodeSizeSmall(e);
+		FIf(cond, then, else_, __): false;
+		FInlineCode(language, stream, dependencies, type, __): false;
+	}
+}
+
+// This is effectively "fold"
+countFastVar(v : string, f : FExp) -> int {
+	switch (f) {
+		FConstant(): 0;
+		FVar(id, __): b2i(id == v);
+
+		FLet(id, value, body, __): countFastVar(v, value) + countFastVar(v, body);
+		FSizeOf(type, __): 0;
+		FCallOp(language, op, args, __): fold(args, 0, \acc, a -> acc + countFastVar(v, a));
+		FCall(fn, args, __): fold(args, countFastVar(v, fn), \acc, a -> acc + countFastVar(v, a));
+		FSequence(exprs, __): fold(exprs, 0, \acc, a -> acc + countFastVar(v, a));
+		FTypeAnnotation(e, type, __): countFastVar(v, e);
+		FIf(cond, then, else_, __): countFastVar(v, cond) + countFastVar(v, then) + countFastVar(v, else_);
+		FInlineCode(language, stream, dependencies, type, __): {
+			fold(stream, 0, \acc, form -> {
+				acc + switch (form) {
+					FInlineString(__, __, __): 0;
+					FInlineUnquote(e, __, __): countFastVar(v, e);
+					FInlineTypeUnquote(__, __, __): 0;
+				}
+			});
+		}
+	}
+}

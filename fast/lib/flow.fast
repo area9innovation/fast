@@ -1,0 +1,26 @@
+// export { + - * / % < <= == != > >= || && println }
+
+flow::inline +(l : i32, r : i32) -> i32 { inline flow { ($l) + ($r) } }
+flow::inline -(l : i32, r : i32) -> i32 { inline flow { ($l) - ($r) } }
+flow::inline -(l : i32) -> i32 { inline flow { -($l) } }
+flow::inline *(l : i32, r : i32) -> i32 { inline flow { ($l) * ($r) } }
+flow::inline /(l : i32, r : i32) -> i32 { inline flow { ($l) / ($r) } }
+flow::inline %(l : i32, r : i32) -> i32 { inline flow { ($l) % ($r) } }
+
+flow::inline <(l : i32, r : i32) -> i1 { inline flow { ($l) < ($r) } }
+flow::inline <=(l : i32, r : i32) -> i1 { inline flow { ($l) <= ($r) } }
+flow::inline ==(l : i32, r : i32) -> i1 { inline flow { ($l) == ($r) } }
+flow::inline !=(l : i32, r : i32) -> i1 { inline flow { ($l) != ($r) } }
+flow::inline >(l : i32, r : i32) -> i1 { inline flow { ($l) > ($r) } }
+flow::inline >=(l : i32, r : i32) -> i1 { inline flow { ($l) >= ($r) } }
+
+flow::inline ||(l : i1, r : i1) -> i1 { inline flow { ($l) || ($r) } }
+flow::inline &&(l : i1, r : i1) -> i1 { inline flow { ($l) && ($r) } }
+
+flow::println(i : ?) -> i0 {
+    inline flow {
+        println($i)
+    } require import {
+        import·runtime;
+    }
+}

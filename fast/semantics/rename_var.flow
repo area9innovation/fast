@@ -1,0 +1,172 @@
+import fast/fast_ast;
+import ds/arrayutils;
+
+export {
+	// This will rename all let-bindings that use a forbidden name (keyword).
+	// It will also ensure that let-bindings do not shadow.
+	// If you need function-level unique names, extract all locals and then forbid those
+	// If you need to mask all names to avoid all name collisions, give a prefix
+	renameFastAst(forbidden : Set<string>, prefix : string, p : FastAst) -> FastAst;
+}
+
+renameFastAst(forbidden : Set<string>, prefix : string, p : FastAst) -> FastAst {
+
+	renameId = \acc, id -> {
+		nid = prefix + id;
+		if (containsSet(forbidden, nid)) {
+			// println("Rename " + id + " in rest of the code");
+			newName = findNewName(forbidden, nid, 0);
+			setTree(acc, id, newName);
+		} else if (prefix != "" && id != "main") {
+			setTree(acc, id, nid)
+		} else acc;
+	}
+
+	// OK, build rename map of all globals and functions with bad names
+	globalRenames0 = fold(p.globals, makeTree(), \acc, global -> {
+		renameId(acc, global.id)
+	});
+
+	globalRenames = fold(p.functions, globalRenames0, \acc, fn -> {
+		renameId(acc, fn.id)
+	});
+
+	// Rename all globals and the contents
+	globals = map(p.globals, \global -> {
+		id = global.id;
+		newid = lookupTreeDef(globalRenames, id, id);
+		FastGlobalVar(global with id = newid,
+			value = replaceFVar(forbidden, globalRenames, global.value)
+		);
+	});
+
+	// Rename all functions and the contents
+	functions = map(p.functions, \function -> {
+		id = function.id;
+		fnname = lookupTreeDef(globalRenames, id, id);
+
+		// Make sure arg names are registered
+		forbiddenArgNames = filter(function.args, \a -> containsSet(forbidden, a.name));
+		renames = fold2(forbiddenArgNames, forbidden, globalRenames, \nforbid, nrenames, arg -> {
+			name = arg.name;
+			newName = findNewName(nforbid, name, 0);
+			Pair(
+				insertSet(nforbid, newName),
+				setTree(nrenames, name, newName)
+			);
+		});
+		FastFunction(
+			function with
+			id = fnname,
+			args = map(function.args, \a -> {
+				FFunctionArg(a with name = lookupTreeDef(renames.second, a.name, a.name));
+			}),
+			body = replaceFVar(renames.first, renames.second, function.body)
+		)
+	});
+
+	FastAst(
+		p with globals = globals, functions = functions
+	)
+}
+
+
+// Does renaming according to the replaceNames map.
+// If a name is in the forbidden set, we will construct a new name for it.
+// If there are name shadows, we also rename those.
+replaceFVar(forbidden : Set<string>, replaceNames : Tree<string, string>, ex : FExp) -> FExp {
+	switch (ex) {
+		FConstant(): ex;
+		FVar(id, info): {
+			newid = lookupTreeDef(replaceNames, id, id);
+			FVar(newid, info);
+		}
+		FLet(id, value, body, info): {
+			if (containsSet(forbidden, id)) {
+				// OK, rename this name since it is forbidden
+				newName = findNewName(forbidden, id, 0);
+
+				// println("Conflicting name '" + id+ "' is renamed to " + newName);
+
+				// We do not allow this name to be used again
+				nforbidden = insertSet(forbidden, newName);
+				FLet(newName, 
+					replaceFVar(nforbidden, replaceNames, value),
+					replaceFVar(
+						nforbidden,
+						setTree(replaceNames, id, newName),
+						body
+					),
+					info
+				);
+			} else {
+				FLet(id, 
+					replaceFVar(forbidden, replaceNames, value),
+					replaceFVar(
+						// OK, we do not allow this name to be used again
+						insertSet(forbidden, id), 
+						replaceNames,
+						body
+					),
+					info
+				);
+			}
+		}
+		FSizeOf(type, info): ex;
+		FCallOp(language, op, args, info): {
+			FCallOp(language, op, replaceFVars(forbidden, replaceNames, args), info);
+		}
+		FCall(fn, args, info): {
+			FCall(
+				replaceFVar(forbidden, replaceNames, fn),
+				replaceFVars(forbidden, replaceNames, args), info
+			);
+		}
+		FSequence(exprs, info): {
+			// In flow, we can not have more lets with the same name
+			letNames = filtermap(exprs, \ee -> {
+				switch (ee) {
+					FLet(id, __, __, __): Some(id);
+					default: None();
+				}
+			});
+			if (length(letNames) != length(uniq(letNames))) {
+				println("TODO: Name conflict in sequence: " + strGlue(letNames, ", "));
+				println(info.line);
+				println(info.col);
+			}
+
+			FSequence(
+				replaceFVars(forbidden, replaceNames, exprs), 
+				info
+			);
+		}
+		FTypeAnnotation(e, type, info): FTypeAnnotation(replaceFVar(forbidden, replaceNames, e), type, info); 
+		FIf(cond, then, else_, info): FIf(replaceFVar(forbidden, replaceNames,cond), 
+			replaceFVar(forbidden, replaceNames,then), 
+			replaceFVar(forbidden, replaceNames,else_), info);
+		FInlineCode(language, stream, dependencies, type, info): {
+			rep = \str -> {
+				map(str, \s : FInlineForm -> switch (s) {
+					FInlineString(__, __, __): s;
+					FInlineUnquote(e, l, c): FInlineUnquote(replaceFVar(forbidden, replaceNames, e), l, c);
+					FInlineTypeUnquote(__, __, __): s;
+				})
+			}
+			FInlineCode(language, rep(stream), map(dependencies, \d : FInlineDependency -> {
+				FInlineDependency(d with stream = rep(d.stream))
+			}), type, info);
+		}
+	}
+}
+
+replaceFVars(forbidden : Set<string>, replaceNames : Tree<string, string>, es : [FExp]) -> [FExp] {
+	map(es, \e -> replaceFVar(forbidden, replaceNames, e))
+}
+
+findNewName(forbidden : Set<string>, name : string, cnt : int) -> string {
+	nname = name + "_" + i2s(cnt);
+	if (containsSet(forbidden, nname)) {
+		findNewName(forbidden, name, cnt + 1)
+	} else nname;
+}

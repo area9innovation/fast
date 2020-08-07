@@ -1,0 +1,324 @@
+import sys/system;
+import sys/target;
+import fs/filesystem;
+import fast/backends/types;
+import fast/backends/utils;
+import fast/semantics/utils;
+import fast/fast_prettyprint;
+import text/blueprint;
+import fast/semantics/firstorder;
+import string_utils;
+
+export {
+	rustbackend = FastBackend("rust", false, fast2rust, "rs", true, [
+			"as",       "use",       "extern",   "crate",    "break",   "const",
+			"continue", "crate",     "else",     "if",       "let",     "enum",
+			"false",     "fn",       "for",      "impl",     "in",      "loop",
+			"match",     "mod",      "move",     "mut",      "pub",     "ref",
+			"return",    "Self",     "self",     "static",   "struct",  "super",
+			"trait",     "true",     "type",     "unsafe",   "use",     "where",
+			"while",     "abstract", "alignof",  "become",   "box",     "do",
+			"final",     "macro",    "offsetof", "override", "priv",    "proc",
+			"pure",      "sizeof",   "typeof",   "unsized",  "virtual", "yield"
+		], "", true, flinkRust,
+		fDefaultSaveCode("rs")
+	);
+}
+
+fast2rust(compile : FastCompile) -> string {
+	// Construct type names for all first-order types
+	firstOrderTypes = extractFirstOrderTypes(compile.code);
+	type2name = foldTree(firstOrderTypes, makeTree(), \name, type, acc -> {
+		typename = "_" + name + "_fn_type";
+		setTree(acc, type, typename);
+	});
+
+	rustIsHost = sizeSet(compile.crossCalls) == 0 || exists(fHostLanguages(compile.crossCalls, "rust"), \h -> h == "rust");
+
+	env = FRustEnv(compile, type2name);
+
+	generateFDependency(compile, "use", \e -> fexp2rust(env, e), ftype2rust, "\n", true) + "\n"
+
+	// Forward declare first-order types
+	+ foldTree(type2name, "", \type, name, acc -> {
+		acc + "type " + name + " = " + ftype2rust(type) + ";\n"
+	})
+
+	+ generateFDependency(compile, "structs", \e -> fexp2rust(env, e), ftype2rust, "\n", true)
+
+	// Generate globals
+	+ superglue(compile.code.globals, \tl -> fastDecl2rust(env, tl, rustIsHost), "\n",) 
+
+	// then produce the code for functions
+	+ superglue(compile.code.functions, \tl -> fastDecl2rust(env, tl, rustIsHost), "\n");
+}
+
+FRustEnv(
+	compile : FastCompile,
+	firstOrderTypes : Tree<FastType, string>,
+);
+
+fastDecl2rust(env : FRustEnv, c : FastDeclaration, rustIsHost : bool) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, typars, type): "";
+		FastGlobalVar(__, id, value, info): 
+			"let " + id + "=" + fexp2rust(env, value) + ";\n";
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+			(if (rustIsHost) "" else "#[no_mangle]\n") + 
+			"pub " +
+			(if (rustIsHost) "" else "extern \"C\" ") + 
+			"fn " + id + "(" + superglue(args, frustArgRef, ", ") + ") -> " + ftype2rust(returnType) + " {\n"
+				+ strIndent(
+					concatStrings(map(args, frustArgDeref)) +
+					fexp2rust(env, body)
+				)
+			+ "\n}\n";
+		}
+	}
+}
+
+frustArgDeref(arg : FFunctionArg) -> string {
+	unwrap_ref = \-> "let " + arg.name + " = " + "ref__" + arg.name + ".clone();\n";
+	switch (arg.type) {
+		FTypeCall(id, typars): unwrap_ref();
+		FInlineType(__,__,__): unwrap_ref();
+		default(): "";
+	}
+}
+
+frustArgRef(arg : FFunctionArg) -> string {
+	wrap_w_ref = \ -> "ref__" + arg.name + " : &" + ftype2rust(arg.type);
+	switch (arg.type) {
+		FTypeCall(id, typars): wrap_w_ref();
+		FInlineType(__,__,__): wrap_w_ref();
+		default(): arg.name + " : " + ftype2rust(arg.type);
+	}
+}
+
+fexp2rust(env : FRustEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in rust backend: " + fexp2string(f));
+		"<todo>";
+	}
+	funarg = \arg -> {
+		switch (arg.info.type) {
+			FTypeCall(__, __): "&" + fexp2rust(env, arg);
+			FInlineType(__,__,__): "&" + fexp2rust(env, arg);
+			default(): fexp2rust(env, arg);
+		}
+	}
+	switch (f) {
+		FIntConstant(value, info):
+			i2s(value);
+		FDoubleConstant(value, info):
+			double2string(value);
+		FStringConstant(value, __): 
+			"String::from(" + toString(value) + ")";
+		FFunctionPointer(id, __): id;
+		FVar(id, __): id;
+		FLet(id, value, body, __): {
+			"let " + id + " = "  + fexp2rust(env, value) 
+			+ (
+				if (body != FVoid()) {
+					";\n" + fexp2rust(env, body);
+				} else ""
+			)
+		}
+		FSizeOf(type, __): todo();
+ 		FCall(fn, args, __): {
+		 	fexp2rust(env, fn) + "(" + superglue(args, funarg, ", ") + ")";
+		}
+		FCallOp(language, op, args, __): {
+			op + "(" + superglue(args, funarg, ", ") + ")";
+		}
+
+		FSequence(exprs, __): {
+			css = superglue(exprs, \e -> fexp2rust(env, e), ";\n");
+			rtrim2(css, "\n");
+		}
+		FTypeAnnotation(e, type, __): "(" + fexp2rust(env, e) + " as " + ftype2rust(type) + ")";
+		FIf(cond, then, else_, __): blueprint("
+			(if (%cond%) { %then% } else { %else% })
+			", [
+				"cond", fexp2rust(env, cond),
+				"then", fexp2rust(env, then),
+				"else", fexp2rust(env, else_)
+			]);
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, \e -> fexp2rust(env, e), ftype2rust)
+		}
+	}
+}
+
+ftype2rust(t : FastType) -> string {
+	todo = \ -> {
+		println("TODO: Type for rust " + toString(t));
+		"i32";
+	}
+	switch (t) {
+		FTypeInfer(): todo();
+		FIntConstant(value, info): ftype2rust(info.type);
+		FTypeInt(bits): {
+			if (bits == 0) {
+				"()"
+			} else if (bits == 1) {
+				"bool"
+			} else if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
+				"i" + i2s(bits);
+			} else {
+				todo();
+			}
+		}
+		FTypeVar(id): todo();
+		FTypeFunction(args, to):
+			"fn(" + superglue(args, ftype2rust, ", ") + ") -> " + ftype2rust(to);
+		FTypeCall(id, typars): {
+			todo();
+		}
+		FInlineType(language, stream, deps): {
+			ftypeInlineForm2string(stream, ftype2rust);
+		}
+	}
+}
+
+flinkRust(compile : FastCompile, rustfile : string, final : bool, callback : (bool) -> void) -> void {	
+	if (final) {
+		fbuildRust(compile, rustfile, callback);
+	} else {
+		fgenRust(compile, rustfile, callback);
+	}
+}
+
+fgenRust(compile : FastCompile, rustfile : string, callback : (bool) -> void) -> void {
+	callback(true);
+}
+
+
+fCreateRustLib(compile : FastCompile, name : string, callback : (bool) -> void) -> void {
+	rust_lib = "rust_lib_" + name;
+	cargo_lib_args = ["new", "--lib", rust_lib];
+	lib_path = pathCombine(compile.objDir, rust_lib);
+
+	create_lib = \-> startProcess(
+		if (hasTargetName("windows")) "wsl" else "cargo", 
+		if (hasTargetName("windows")) concat(["cargo"], cargo_lib_args) else cargo_lib_args, 
+		compile.objDir, "",
+		\c, o, e -> {
+			if (c != 0) {
+				println("Creating a rust library '" + rust_lib + "' with cargo failed");
+				println("Maybe cargo is not installed?");
+				println(e);
+				println(o);
+				println(i2s(c));
+				callback(false);
+			} else {
+				println("Library '" + rust_lib + "' was made with cargo");
+				cargo_toml = pathCombine(lib_path, "Cargo.toml");
+				if (setFileContent(cargo_toml, getFileContent(cargo_toml) + "\n[lib]\ncrate-type =[\"cdylib\"]\n")) {
+					inp_file = pathCombine(compile.objDir, name) + ".rs";
+					lib_src = pathCombineMany([lib_path, "src", "lib.rs"]);
+					if (setFileContent(lib_src, getFileContent(inp_file))) {
+						callback(true);
+					} else {
+						println("Failed to copy '" + inp_file + "' file to '" + lib_src + "'");
+						callback(false);
+					}
+				} else {
+					println("Failed to append '" + cargo_toml + "' file");
+					callback(false);
+				}
+			}
+		}
+	);
+
+	if (isDirectory(lib_path)) {
+		err = deleteRecursively(lib_path);
+		if (err != "") {
+			println(err);
+			callback(false);
+		} else {
+			create_lib();
+		}
+	} else {
+		create_lib();
+	}
+}
+
+fBuildRustLib(compile : FastCompile, name : string, callback : (bool) -> void) -> void {
+	rust_lib = "rust_lib_" + name;
+	cargo_build_args = ["build", "--target", "wasm32-unknown-unknown"];
+	startProcess(
+		if (hasTargetName("windows")) "wsl" else "cargo", 
+		if (hasTargetName("windows")) concat(["cargo"], cargo_build_args) else cargo_build_args, 
+		pathCombine(compile.objDir, rust_lib), "",
+		\c, o, e -> {
+			if (c != 0) {
+				println("Building a rust library " + rust_lib + "with cargo failed");
+				println("Try to add appropriate target with command:");
+				println("/$ rustup target add wasm32-unknown-unknown");
+				println(e);
+				println(o);
+				println(i2s(c));
+				callback(false);
+			} else {
+				println("Library '" + rust_lib + "' was build with cargo");
+				callback(true);
+			}
+		}
+	);
+}
+
+fbuildRust(compile : FastCompile, rustfile : string, callback : (bool) -> void) -> void {
+	name = changeFileExt(fileNameOnly(rustfile), "");
+	inp_file = pathCombine(compile.objDir, name) + ".rs";
+	if (fHasCallFromTo(compile.crossCalls, "js", "rust")) {
+		// Case when JS is a host language
+		wasm_out_file = changeFileExt(pathCombine(compile.outDir, name), ".wasm");
+		ensureDirectoryExists(dirName(wasm_out_file));
+		// First step: create a rust library with cargo
+		fCreateRustLib(compile, name, \success_1 -> 
+			if (!success_1) callback(false) else {
+				// Second step: building a rust library with cargo
+				fBuildRustLib(compile, name, \success_2 ->
+					if (!success_2) callback(false) else {
+						rust_lib = "rust_lib_" + name;
+						wasm_path = pathCombineMany([compile.objDir, rust_lib, "target", "wasm32-unknown-unknown", "debug", changeFileExt(rust_lib, ".wasm")]);
+						if (!fileExists(wasm_path)) {
+							println("File '" + wasm_path + "' doesn't exist");
+							callback(false);
+						} else {
+							if (!setFileContentBytes(wasm_out_file, getFileContentBinary(wasm_path))) {
+								println("Failed to copy '" + wasm_path + "' to " + wasm_out_file);
+								callback(false);
+							} else {
+								callback(true);	
+							}
+						}
+					}
+				)
+			}
+		);
+	} else {
+		// No cross calls, pure Rust.
+		// The exefile does not have a suffix
+		// We compile to Unix-style file
+		exe_file = changeFileExt(rustfile, "");
+		ensureDirectoryExists(dirName(exe_file));
+		compiler_command = if (hasTargetName("windows")) "wsl" else "rustc";
+		compiler_args = if (hasTargetName("windows")) ["rustc", inp_file, "-o", exe_file] else [inp_file, "-o", exe_file];
+		startProcess(compiler_command, compiler_args, ".", "",
+			\c, o, e -> {
+				if (c != 0) {
+					println("rustc failed");
+					println(e);
+					println(o);
+					println(i2s(c));
+					callback(false);
+				} else {
+					println("Made rust executable '" + exe_file + "'");
+					callback(true);
+				}
+			}
+		);
+	}
+}

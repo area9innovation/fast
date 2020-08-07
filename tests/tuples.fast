@@ -1,0 +1,31 @@
+import runtime;
+import tuples;
+
+// Figure out how to unquote the type parameters into inline block
+
+// Can not figure out how to type the convert2flow function
+
+printTuple(p : Tuple<?, ??>) -> i0 {
+	f = first(p);
+	println(f); // TODO: If first is here, we have a name conflict in sequence after inlining
+	println(second(p));
+}
+
+test() -> i0 {
+	p = tuple(1, 2);
+	printTuple(p);
+}
+
+tuples.c::main() -> i0 {
+	test();
+}
+tuples.java::main() -> i0 {
+	test();
+}
+
+tuples.js::main() -> i0 {
+	test();
+	flow::test();
+}
+
+// TODO: Add example of sending data between languages

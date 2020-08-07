@@ -1,0 +1,185 @@
+import fast/fast_ast;
+import fast/typing/polymorphism;
+
+export {
+	// Instantiate type calls
+	evaluateFastTypes(ast : FastAst) -> FastAst;
+
+	// Construct a typedef environment with the general (non-language specific) typedefs
+	buildGeneralTypedefEnv(ast : FastAst) -> TypedefEnv;
+
+	// Evaluate this one type
+	evaluateFastType(env : TypedefEnv, type : FastType) -> FastType;
+
+	// Instantiates only tyvars
+	instantiateFastTyvars(tyvars : Tree<int, FastType>, onError : (int) -> void, ast : FastAst) -> FastAst;
+}
+
+buildGeneralTypedefEnv(ast : FastAst) -> TypedefEnv {
+	TypedefEnv(
+		fold(ast.types, makeTree(), \acc, type -> {
+			if (type.language == "") treePushToArrayValue(acc, type.id, type)
+			else acc;
+		}),
+		makeTree(), println
+	)
+}
+
+evaluateFastTypes(ast : FastAst) -> FastAst {
+	typeFunctors : Tree<string, [FastTypeFunctor]> = fold(ast.types, makeTree(), \acc, type -> {
+		treePushToArrayValue(acc, type.id, type);
+	});
+
+	env = TypedefEnv(typeFunctors, makeTree(), println);
+
+	globals = map(ast.globals, \g -> {
+		FastGlobalVar(g with 
+			value = evaluateTypeInFExp(env, g.value), 
+			info = evaluateFInfo(env, g.info)
+		)
+	});
+
+	functions = map(ast.functions, \f -> {
+		FastFunction(f with 
+			info = evaluateFInfo(env, f.info),
+			args = map(f.args, \a -> FFunctionArg(a with type = evaluateFastType(env, a.type))),
+			returnType = evaluateFastType(env, f.returnType),
+			body = evaluateTypeInFExp(env, f.body), 
+		)
+	});
+
+	FastAst(ast with globals = globals, functions = functions);
+}
+
+evaluateFInfo(env : TypedefEnv, info : FInfo) -> FInfo {
+	FInfo(info with type = evaluateFastType(env, info.type));
+}
+
+evaluateFastType(env : TypedefEnv, type : FastType) -> FastType {
+	switch (type) {
+		FTypeInfer(): { type; }
+		FIntConstant(value, info): type;
+		FTypeVar(id): {
+			env.onError("Unresolved tyvar " + i2s(id)); 
+			type;
+		}
+		FTypeInt(bits): type;
+		FTypeFunction(args, to): {
+			FTypeFunction(
+				map(args, \a -> evaluateFastType(env, a)),
+				evaluateFastType(env, to)
+			)
+		}
+		FTypeCall(id, typars): {
+			functors0 = getTreeArrayValue(env.typeFunctors, id);
+			// Which have the correct number of type parameters?
+			functors = filter(functors0, \f -> length(f.typars) == length(typars));
+			nfuncs = length(functors);
+			if (nfuncs >= 1) {
+				evalFunctor = \functor -> {
+					ienv = foldi(functor.typars, env, \i, acc, typar : string -> {
+						if (typars[i] == FTypeCall(typar, [])) {
+							// No point is binding to what it already is
+							acc
+						} else {
+							TypedefEnv(acc with typars = setTree(acc.typars, typar, typars[i]))
+						}
+					});
+					evaluateFastType(ienv, functor.type);
+				}
+				if (nfuncs == 1) {
+					// Nothing to choose, pick up the first functor
+					evalFunctor(functors[0]);
+				} else {
+					// We need to find a functor, which matches the call typars
+					functor_fits_typars = \func : FastTypeFunctor -> {
+						func_typars = switch (func.type) {
+							FTypeCall(__, tps): tps;
+							FInlineType(__, stream,__): {
+								filtermap(stream, \type_form ->
+									switch (type_form) {
+										FInlineTypeUnquote(t, __, __): Some(t);
+										FInlineString(__,__,__): None();
+									}
+								);
+							}
+							default: [];
+						}
+						typars == func_typars;
+					}
+					switch (find(functors, functor_fits_typars)) {
+						Some(functor): {
+							evalFunctor(functor);
+						}
+						None(): {
+							env.onError("No proper type functor " + id + " is found for type parameters: " + superglue(typars, fastType2string, ", "));
+							type
+						}
+					}
+				}
+			} else {
+				if (isFastTypePar(type)) {
+					// It is only ?, so we are good
+					mbound = lookupTree(env.typars, id);
+					mbound ?? {
+						mbound
+					} : type;
+				} else {
+					env.onError(("Don't know the type functor " + id);
+					type;
+				}
+			}
+		}
+		FInlineType(language, stream, dependencies): {
+			str = \s -> map(s, \f -> {
+				switch (f) {
+					FInlineString(v, __, __): f;
+					FInlineTypeUnquote(ty, sl, sc): FInlineTypeUnquote(evaluateFastType(env, ty), sl, sc);
+				}
+			});
+			FInlineType(language, str(stream), map(dependencies, \d -> FInlineTypeDependency(d with stream = str(d.stream))));
+		}
+	}
+}
+
+evaluateTypeInFExp(env : TypedefEnv, exx : FExp) -> FExp {
+	mapFastTypeInFExp(exx, \t -> evaluateFastType(env, t))
+}
+
+
+instantiateFastTyvars(tyvars : Tree<int, FastType>, onError : (int) -> void, ast : FastAst) -> FastAst {
+	mapFastAst(ast, \e -> {
+		mapFastTypeInFExp(e, \t -> {
+			instantiateFastTypeTyvars(tyvars, onError, t)
+		})
+	});
+}
+
+instantiateFastTypeTyvars(tyvars : Tree<int, FastType>, onError : (int) -> void, type : FastType) -> FastType {
+	switch (type)  {
+		FTypeInfer(): type;
+		FTypeVar(id): {
+			mtype = lookupTree(tyvars, id);
+			mtype ?? {
+				instantiateFastTypeTyvars(tyvars, onError, mtype);
+			} : {
+				onError(id);
+				type;
+			}
+		}
+
+		FIntConstant(value, info): type;
+		FInlineType(language, stream, dependencies): type;
+
+		FTypeInt(bits): type;
+		FTypeFunction(args, to): {
+			FTypeFunction(
+				map(args, \a -> instantiateFastTypeTyvars(tyvars, onError, a)), 
+				instantiateFastTypeTyvars(tyvars, onError, to)
+			);
+		}
+		FTypeCall(id, typars): {
+			FTypeCall(id, map(typars, \t -> instantiateFastTypeTyvars(tyvars, onError, t)));
+		}
+	}
+}

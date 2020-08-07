@@ -1,0 +1,71 @@
+import fast/fast_ast;
+import fast/semantics/overload;
+import ds/set;
+
+export {
+	// Do Dead Code Elimination for this output & language.
+	// Required is the set of functions we need to preserve
+	// This is conservative and will keep all overloads, even if not all are required.
+	fastDce(output : string, language : string, f : FastAst, required : Set<string>, onError : (string) -> void) -> FastAst;
+}
+
+fastDce(output : string, language : string, f : FastAst, required : Set<string>, onError : (string) -> void) -> FastAst {
+	// Here is a list of top-level names that are alive.
+	alive : Set<string> = required;
+
+	// Filter types to those alive in this language
+	types0 = filter(f.types, \type -> {
+		type.language == language || type.language == "";
+	});
+
+	// What type functors have a language specific version?
+	hasLanguageSpecificType : Set<Pair<string, int>> = fold(types0, makeSet(), \acc, t -> {
+		if (t.language != "") insertSet(acc, Pair(t.id, length(t.typars))) else acc;
+	})
+	types = filter(types0, \t -> {
+		t.language != "" || !containsSet(hasLanguageSpecificType, Pair(t.id, length(t.typars)));
+	});
+
+	// Look at functions in this language
+	functions0 = filter(f.functions, \function -> {
+		(function.output == "" || function.output == output)
+		&& containsSet(alive, function.id) && (function.language == language || function.language == "")
+	});
+
+	// OK, check collect overloads
+	overloads : Tree<string, [FastOverload]> = fold(functions0, makeTree(), \acc, fn -> {
+		treePushToArrayValue(acc, fn.id, makeFastOverload(fn))
+	});
+
+	// If we have a language-less toplevel, where there is a specialization, remove the language-less one
+	unneededLanguageLess : Set<FastOverload> = foldTree(overloads, makeSet(), \name, fns, acc -> {
+		generalSpecific = unzip(fns, \fn -> fn.language == "");
+		general = generalSpecific.first;
+		specific = generalSpecific.second;
+		if (length(general) >= 1 && length(specific) >= 1) {
+			// OK, find which general overload profiles are dominated by language-specific versions
+			dominated = filter(general, \g -> {
+				exists(specific, \s -> overloadIntersects(s, g))
+			});
+			fold(dominated, acc, \acc2, dom -> {
+				insertSet(acc2, dom)
+			});
+		} else acc;
+	});
+
+	functions = filter(functions0, \fn -> {
+		!containsSet(unneededLanguageLess, makeFastOverload(fn))
+	});
+
+	// Test that we have all the alive functions
+	missing = fold(functions, alive, \aacc, decl -> {
+		removeSet(aacc, decl.id);
+	});
+	if (!isEmptySet(missing)) {
+		onError(strGlue(set2array(missing), ", ") + " missing");
+	}
+
+	FastAst(
+		f with types = types, functions = functions
+	);
+}

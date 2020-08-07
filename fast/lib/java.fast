@@ -1,0 +1,42 @@
+
+java::inline +(l : i32, r : i32) -> i32 { inline java { ($l) + ($r) } }
+java::inline -(l : i32, r : i32) -> i32 { inline java { ($l) - ($r) } }
+java::inline *(l : i32, r : i32) -> i32 { inline java { ($l) * ($r) } }
+java::inline /(l : i32, r : i32) -> i32 { inline java { ($l) / ($r) } }
+java::inline %(l : i32, r : i32) -> i32 { inline java { ($l) % ($r) } }
+
+java::inline <(l : i32, r : i32) -> i1 { inline java { ($l) < ($r) } }
+java::inline <=(l : i32, r : i32) -> i1 { inline java { ($l) <= ($r) } }
+java::inline ==(l : i32, r : i32) -> i1 { inline java { ($l) == ($r) } }
+java::inline !=(l : i32, r : i32) -> i1 { inline java { ($l) != ($r) } }
+java::inline >(l : i32, r : i32) -> i1 { inline java { ($l) > ($r) } }
+java::inline >=(l : i32, r : i32) -> i1 { inline java { ($l) >= ($r) } }
+
+java::inline ||(l : i1, r : i1) -> i1 { inline java { ($l) || ($r) } }
+java::inline &&(l : i1, r : i1) -> i1 { inline java { ($l) && ($r) } }
+
+java::inline +(l : i64, r : i64) -> i64 { inline java { ($l) + ($r) } }
+java::inline -(l : i64, r : i64) -> i64 { inline java { ($l) - ($r) } }
+java::inline *(l : i64, r : i64) -> i64 { inline java { ($l) * ($r) } }
+java::inline /(l : i64, r : i64) -> i64 { inline java { ($l) / ($r) } }
+java::inline %(l : i64, r : i64) -> i64 { inline java { ($l) % ($r) } }
+
+java::inline <(l : i64, r : i64) -> i1 { inline java { ($l) < ($r) } }
+java::inline <=(l : i64, r : i64) -> i1 { inline java { ($l) <= ($r) } }
+java::inline ==(l : i64, r : i64) -> i1 { inline java { ($l) == ($r) } }
+java::inline !=(l : i64, r : i64) -> i1 { inline java { ($l) != ($r) } }
+java::inline >(l : i64, r : i64) -> i1 { inline java { ($l) > ($r) } }
+java::inline >=(l : i64, r : i64) -> i1 { inline java { ($l) >= ($r) } }
+
+/*
+java::print(s : ?) -> i0 {
+    inline java {
+        System.out.print($s)
+    }
+}*/
+
+java::println(s : ?) -> i0 {
+    inline java {
+        System.out.println($s)
+    }
+}

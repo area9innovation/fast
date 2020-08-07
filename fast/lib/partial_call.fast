@@ -1,0 +1,32 @@
+import runtime;
+
+export {
+	partialCall(fn : (?) -> ??, arg : ?) -> () -> ??;
+	partialCall(fn : (?, ??) -> ???, arg : ?) -> (??) -> ???;
+}
+
+compiletime::partialCall(fn : (?) -> ??, arg : ?) -> () -> ?? {
+	id = gensym();
+	inline fast {
+		${id}
+	} require function {
+		${id} () -> $type{ ?? } {
+			${fn}(${arg})
+		}
+	} : () -> ??
+}
+
+compiletime::partialCall(fn : (?, ??) -> ???, arg : ?) -> (??) -> ??? {
+	id = gensym();
+	inline fast {
+		${id}
+	} require function {
+		${id}(b : $type{??}) -> $type{???} {
+			${fn}(${arg}, b);
+		}
+	} : (??) -> ???
+}
+
+gensym() -> string {
+	"__gen__name_" + i2s(getFreshIdCounter());
+}

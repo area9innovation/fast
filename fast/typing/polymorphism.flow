@@ -1,0 +1,122 @@
+import fast/fast_ast;
+import fast/fast_prettyprint;
+import fast/typing/type_environment;
+import fast/typing/tyvars;
+
+export {
+	// Is this a type parameter?
+	isFastTypePar(f : FastType) -> bool;
+
+	// Is this polymorphic somewhere?
+	isPolymorphicFastType(t : FastType) -> bool;
+
+	// Given a concrete type, find the binding of all type parameters according to the polymorphic type
+	bindPolymorphism(typars : Tree<string, FastType>, concrete : FastType, abstract : FastType) 
+		-> Tree<string, FastType>;
+
+	// Instantiate type parameters ?, ??, ... according to the tree. If unbound, make a type var for each
+	instantiateTypeParameters(env : FastInference, location : FLocation, typars : ref Tree<string, FastType>, type : FastType) -> FastType;
+}
+
+isFastTypePar(f : FastType) -> bool {
+	switch (f) {
+		FTypeCall(id, typars): trim2(id, "?") == "" && typars == [];
+		default: false;
+	}
+}
+
+
+isPolymorphicFastType(t : FastType) -> bool {
+	switch (t) {
+		FTypeInfer(): false;
+		FIntConstant(value, info): false;
+		FTypeVar(id): false;
+		FTypeInt(bits): false;
+		FTypeFunction(args, to): exists(args, isPolymorphicFastType) || isPolymorphicFastType(to);
+		FTypeCall(id, typars): (typars == [] && trim2(id, "?") == "") || exists(typars, isPolymorphicFastType);
+		FInlineType(language, stream, dependencies): false;
+	}
+}
+
+bindPolymorphism(typars : Tree<string, FastType>, 
+			concrete : FastType, abstract : FastType) -> Tree<string, FastType> {
+	switch (abstract) {
+		FTypeInfer(): typars;
+		FIntConstant(value, info): typars;
+		FTypeVar(id): typars;
+		FTypeInt(bits): typars;
+		FTypeFunction(aargs, ato): switch (concrete) {
+			FTypeFunction(cargs, cto): {
+				// Check args and to
+				typars1 = bindPolymorphisms(typars, cargs, aargs);
+				bindPolymorphism(typars1, cto, ato);
+			}
+			default: typars;
+		}
+		FTypeCall(aid, atypars): {
+			if (isFastTypePar(abstract)) {
+				mbind = lookupTree(typars, aid);
+				mbind ?? {
+					if (concrete == mbind) {
+						typars;
+					} else {
+						println("Conflict in binding of " + aid + ": " + fastType2string(concrete) + " vs " + fastType2string(mbind));
+						typars;
+					}
+				} : {
+					setTree(typars, aid, concrete)
+				}
+			} else {
+				switch (concrete) {
+					FTypeCall(cid, ctypars): {
+						if (aid == cid) {  
+							bindPolymorphisms(typars, ctypars, atypars);
+						} else typars;
+					}
+					default: {
+						typars;
+					}
+				}
+			}
+		}
+		FInlineType(language, stream, dependencies): typars;
+	}
+}
+
+bindPolymorphisms(typars : Tree<string, FastType>, concretes : [FastType], abstracts : [FastType]) -> Tree<string, FastType> {
+	foldi(concretes, typars, \i, acc, concrete -> {
+		if (i < length(abstracts)) {
+			bindPolymorphism(acc, concrete, abstracts[i])
+		} else acc;
+	})
+}
+
+instantiateTypeParameters(env : FastInference, location : FLocation, typars : ref Tree<string, FastType>, type : FastType) -> FastType {
+	switch (type) {
+		FTypeInfer(): type;
+		FIntConstant(value, info): type;
+		FTypeVar(id): type;
+		FTypeInt(bits): type;
+		FTypeFunction(args, to): FTypeFunction(
+				map(args, \a -> instantiateTypeParameters(env, location, typars, a)), 
+				instantiateTypeParameters(env, location, typars, to)
+			);
+		FTypeCall(id, ttypars): {
+			withQuestionMarks = trim2(id, "?");
+			if (withQuestionMarks == "" && ttypars == []) {
+				// OK, we have a type-parameters
+				minst = lookupTree(^typars, id);
+				minst ?? {
+					minst
+				} : {
+					t = makeFastTyvar(env, location);
+					typars := setTree(^typars, id, t);
+					t;
+				}
+			} else {
+				FTypeCall(id, map(ttypars, \tp -> instantiateTypeParameters(env, location, typars, tp)));
+			}
+		}
+		FInlineType(language, stream, dependencies): type;
+	}
+}

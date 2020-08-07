@@ -1,0 +1,12 @@
+import runtime;
+
+// TODO: Complains about no output, although there is at compiletime.
+
+fact(n : i32) -> i32 {
+	if (n <= 1) {n} else {n * fact(n - 1)}
+}
+
+// Save the result in "output".fast
+output.compiletime::main() -> i32 {
+	fact(5);
+}

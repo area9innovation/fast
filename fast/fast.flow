@@ -1,0 +1,149 @@
+import fast/fast_parser;
+import fast/fast_prettyprint;
+import fast/compiletime/eval_compiletime;
+import fast/typing/type_inference;
+import fast/typing/typecheck;
+import fast/backends/compile;
+import fast/fast_path;
+
+main() {
+	folder = "tests/";
+	file0 = getUrlParameterDef("file", "tuples.fast");
+	file1 = changeFileExt(file0, ".fast");
+	file = if (!fileExists(file1)) pathCombine(folder, file1) else file1;
+
+	includes = [pathCombine(getFastDir(), "lib"), getFastDir(), "."];
+	outputFolder = getUrlParameterDef("output", "www2");
+
+	if (!isUrlParameterTrue("test")) {
+		// Compile a single program
+		compileFastFile(file, includes, outputFolder, \ast -> {
+			eval = getUrlParameter("eval");
+			if (eval != "") {
+				// OK, parse and evaluate this expression at compile time
+				evalExp = parseFastString(eval);
+				evaluated = partialEvalFExp(makeFastEnv(ast, println), evalExp);
+				switch (evaluated) {
+					FFunctionPointer(cmd, __): {
+						println("Running '" + cmd + "'");
+						parts = strSplit(cmd, " ");
+						startProcess(parts[0], tail(parts), ".", "", \ec, sout, serr -> {
+							if (ec != 0) println("Error code: " + i2s(ec));
+							if (sout != "") println(sout);
+							if (serr != "") println(serr);
+							quit(ec);
+						});
+					}
+					default: {
+						println("Eval of " + eval + ":");
+						println(fexp2string(evaluated));
+						quit(0);
+					}
+				}
+			} else {
+				quit(0);
+			}
+		});
+	} else {
+		// test=1 : Compile all programs in the folder
+		tests = readDirectory(folder);
+		files = filtermap(tests, \t -> if (endsWith(t, ".fast")) Some(folder + t) else None());
+		applyAllSync(
+			map(files, \f -> \ok, -> {
+				println("\n\nCompiling " + f + "\n");
+				compileFastFile(f, includes, outputFolder, \__ -> ok())
+			}),
+			\ -> {
+				quit(0);
+			}
+		)
+	}
+}
+
+compileFastFile(file : string, includes : [string], outputFolder : string, onDone : (FastAst) -> void) -> void {
+	program = parseFastProgram(FastProgram(includes, makeTree()), makeSet1(file));
+
+	// Link all modules together
+	ast0 = fastProgram2ast(program);
+
+	// Do first type check
+	ast1 = fastTypeInference(ast0);
+
+	// Interpret at compile time
+	ast2 = evalCompiletime(ast1);
+
+	// Perform type inference
+	ast = fastTypeInference(ast2);
+
+	if (s2i(getUrlParameter("verbose")) >= 2) {
+		println("Original program after compile time:");
+		println(fast2string(ast));
+	}
+
+	// Do type checking
+	fastTypecheck(ast);
+
+	compileFastProgram(ast, outputFolder, \ -> onDone(ast));
+}
+
+// We have a queue of files in fast paths we need to load
+parseFastProgram(acc : FastProgram, queue : Set<string>) -> FastProgram {
+	mfile = popMinSet(queue);
+	mfile ?? {
+		file = path2fastPath(acc.includes, mfile.value);
+		if (containsKeyTree(acc.files, file)) {
+			parseFastProgram(acc, mfile.rest)
+		} else {
+			path = fastPath2path(acc.includes, changeFileExt(file, ".fast"));
+			f = parseFastFile(path);
+			nqueue = fold(f.imports, mfile.rest, \acc2, im : string -> {
+				insertSet(acc2, im)	
+			});
+			nacc = FastProgram(acc with files = setTree(acc.files, file, f));
+			parseFastProgram(nacc, nqueue)
+		}
+	} : acc;
+}
+
+// Link the program into one AST
+fastProgram2ast(f : FastProgram) -> FastAst {
+	files = getTreeKeys(f.files);
+	filesIndex = foldi(files, makeTree(), \i, acc, file -> {
+		setTree(acc, file, i);
+	});
+
+	decls = foldTree(f.files, [], \name, fastfile : FastFile, acc -> {
+		sourceFile = lookupTreeDef(filesIndex, name, -1);
+		concat3(acc, 
+			filtermap(fastfile.exports, \e -> {
+				switch (e) {
+					FastTypeFunctor(__, __, __, __, __): {
+						Some(FastTypeFunctor(e with sourceFile = sourceFile));
+					}
+					FastFunctionDecl(__, __, __, __): None();
+				}
+			}),
+			map(fastfile.toplevel, \t -> {
+				switch (t) {
+					FastTypeFunctor(__, __, __, __, __): FastTypeFunctor(t with sourceFile = sourceFile);
+					FastFunction(__, __, __, __, __, __, __, __, __, __): FastFunction(t with sourceFile = sourceFile);
+					FastGlobalVar(__, __, __, __): FastGlobalVar(t with sourceFile = sourceFile);
+				}
+			})
+		)
+	});
+		FastAst(
+		files,
+		filtermap(decls, \d -> switch (d) {FastTypeFunctor(__, __, __, __, __): Some(d); default: None();}),
+		filtermap(decls, \d -> switch (d) {FastGlobalVar(__, __, __, __): Some(d); default: None();}),
+		filtermap(decls, \d -> switch (d) {FastFunction(__, __, __, __, __, __, __, __, __, __): Some(d); default: None();})
+	);
+}
+
+// Given an absolute path, parse this file
+parseFastFile(file : string) -> FastFile {
+	program = getFileContent(file);
+	parse = prepareFastParse(file, program, 1, 0);
+	fastParser(FastFile(file, [], [], []), parse, 0);
+}
+

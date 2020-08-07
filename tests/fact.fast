@@ -1,0 +1,39 @@
+import runtime;
+import string;
+
+// Polymorphism of println call in JS from WASM not correct
+
+doubleNumber(n : i32) -> i32 {
+	println(n);
+	2 * n;
+}
+
+fact(n : i32) -> i32 {
+	if (n <= 1) {n} else {n * fact(n - 1)}
+}
+
+wasm::main() -> i0 {
+	println(42);	// Will redirect to JS println
+}
+
+flow::main() -> i0 {
+	println("Hello from flow");
+}
+
+js::main() -> i0 {
+	println("Hello from JS");
+	println("WASM:");
+	wasm::main();
+    println(wasm::doubleNumber(4));
+	println(wasm::fact(3));
+	println("JS:");
+	println(fact(3));
+	println("Flow:");
+	println(flow::fact(3));
+}
+
+fact.html::main() -> i0 {
+	js::main();
+	// For now, this is required. Later, we can hopefully avoid it
+	flow::main();	
+}

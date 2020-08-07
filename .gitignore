@@ -1,0 +1,7 @@
+/obj
+/www2
+/objc
+.compile-errors
+*.bytecode
+*.debug
+.vscode/

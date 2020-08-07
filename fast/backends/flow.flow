@@ -1,0 +1,252 @@
+import fast/backends/utils;
+import fast/semantics/helpers;
+import fast/semantics/utils;
+import text/blueprint;
+import sys/system;
+import sys/target;
+import fast/backends/utils;
+
+export {
+	flowbackend = FastBackend("flow", false, fast2flow, "flow", false, [
+			"import", "export", "require", "forbid", "native", "io",
+			"mutable", "bool", "int", "double", "string", "flow",
+			"void", "ref", "if", "else", "with", "cast", "unsafe",
+			"switch", "default",
+		], "fast__",  false, flinkFlow,
+		fDefaultSaveCode("flow")
+	);
+}
+
+fast2flow(compile : FastCompile) -> string {
+	f = compile.code;
+	output = compile.filename;
+	extern_calls = filter(set2array(compile.crossCalls), \cc -> cc.fromLanguage == "flow");
+
+	generateFDependency(compile, "import", \e -> fexp2flow(output, e, compile.onError), \e -> fastType2flow(e, compile.onError), "\n", true) + "\n"
+	+ superglue(extern_calls, \c -> fastExternCall2flow(output, c, compile.onError), "\n") + "\n"
+	+ superglue(f.globals, \t -> fastDecl2flow(output, t, compile.onError), "\n") + "\n"
+	+ superglue(f.functions, \t -> fastDecl2flow(output, t, compile.onError), "\n") + "\n";
+}
+
+fastExternCall2flow(output : string, c : FCrossCall, onError : (string) -> void) -> string {
+	switch (c.type) {
+		FTypeFunction(args, ret_type): {
+			"native " + fexternCall2flowId(output, c.toLanguage, c.id) + " : " +
+			"(" + superglue(args, \arg -> fastType2flow(arg, onError), ", ") + ") -> " +
+			fastType2flow(ret_type, onError) + " = " + output + "." + c.id + ";";
+		}
+		default: {
+			onError("cannot make native for " + c.id + " - type mismatch");
+			"";
+		}
+	}
+}
+
+fexternCall2flowId(output : string, lang : string, id : string) -> string {
+	prefix = if (lang == "" || lang == "flow") "" else {
+		"__" + output + "_" + lang + "_call__"
+	}
+	prefix + id;
+}
+
+fastDecl2flow(output_ : string, c : FastDeclaration, onError : (string) -> void) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, typars, type): {
+			println("Does not support typedef yet");
+			"// typedef " + id + " = " + fastType2flow(type, onError) + ";";
+		}
+		FastGlobalVar(__, id, value, info): id + " : " + fastType2flow(info.type, onError) + " = " + fexp2flow(output_, value, onError) + ";";
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+			id + "(" + superglue(args, \a -> a.name + " : " + fastType2flow(a.type, onError), ", ") + ") -> " 
+			+ fastType2flow(returnType, onError) + " {" + fexp2flow(output_, body, onError) + "}"
+		}
+	}
+}
+
+fastTypeDecl2flow(t : FastTypeDeclaration, onError : (string) -> void) -> string {
+	switch (t) {
+		FastTypeFunctor(__, language, id, typars, type): {
+			println("Does not support typedef yet");
+			"// typedef " + id + " = " + fastType2flow(type, onError) + ";";
+		}
+		FastFunctionDecl(id, args, rt, effects): "// " + id + " : " + fastType2flow(rt, onError);
+	}
+}
+
+fexp2flow(output : string, f : FExp, onError : (string) -> void) -> string {
+	switch (f) {
+		FIntConstant(value, info): {
+			switch (info.type) {
+				FTypeInt(nbits): {
+					if (nbits == 0) {
+						"{}";
+					} else if (nbits == 1) {
+						b2s(i2b(value));
+					} else if (nbits == 32) {
+						i2s(value)
+					} else {
+						println("Only 32 bit ints supported in flow");
+						i2s(value);
+					}
+				}
+				default: i2s(value);
+			}
+		}
+		FDoubleConstant(value, __): double2string(value);
+		FStringConstant(value, __): toString(value);
+		FFunctionPointer(id, __): id;
+		FVar(id, __): id;
+		FLet(id, value, body, __): blueprint("
+			{%id% = %value%;
+			%body%}
+			", [
+				"id", id,
+				"value", fexp2flow(output, value, onError),
+				"body", fexp2flow(output, body, onError)
+			]);
+		FSizeOf(type, __): {
+			onError("sizeof not supported");
+			"/* sizeof " + fastType2flow(type, onError) + "*/";
+		}
+		FCall(fn, args, __): fexp2flow(output, fn, onError) + "(" + superglue(args, \a -> fexp2flow(output, a, onError), ", ") + ")";
+		FCallOp(lang, op, args, __): {
+			fexternCall2flowId(output, lang, op) + "(" + superglue(args, \a -> fexp2flow(output, a, onError), ", ") + ")";
+		}
+		FSequence(exprs, __): {
+			if (length(exprs) == 1) fexp2flow(output, exprs[0], onError)
+			else {
+				seq = superglue(exprs, \e -> fexp2flow(output, e, onError), ";\n");
+				blueprint("
+					{
+						%seq%
+					}
+				", ["seq", seq]
+				);
+			}
+		}
+		FTypeAnnotation(e, type, __): {
+			fexp2flow(output, e, onError) + "/* : " + fastType2flow(type, onError) + "*/";
+		}
+		FIf(cond, then, else_, __): blueprint("
+			if (%cond%) %then%
+			else %else%
+			", [
+				"cond", fexp2flow(output, cond, onError),
+				"then", fexp2flow(output, then, onError),
+				"else", fexp2flow(output, else_, onError)
+			]);
+		FInlineCode(language, stream, deps, code, __): {
+			finlineForm2string(stream, \e -> fexp2flow(output, e, onError), \t -> fastType2flow(t, onError))
+		}
+	}
+}
+
+fastType2flow(t : FastType, onError : (string) -> void) -> string {
+	switch (t) {
+		FTypeInfer(): "flow"; // Cop out
+		FIntConstant(value, __): i2s(value);
+		FTypeInt(bits): if (bits == 0) "void" 
+			else if (bits == 1) "bool"
+			else if (bits == 32) "int"
+			else {
+				onError("Does not support i" + i2s(bits));
+				"int";
+			}
+		FTypeVar(id): {
+			onError("type var not supported");
+			"tyvar";
+		}
+		FTypeFunction(args, to): "(" + superglue(args, \a -> fastType2flow(a, onError), ", ") + ") -> " + fastType2flow(to, onError);
+		FTypeCall(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, \tp -> fastType2flow(tp, onError), ", ") + ">");
+		FInlineType(language, stream, deps): {
+			ftypeInlineForm2string(stream, \tp -> fastType2flow(tp, onError));
+		}
+	}
+}
+
+flinkFlow(compile : FastCompile, flowfile : string, final : bool, callback : (bool) -> void) -> void {
+	// OK, what host languages are we in?
+	hostLanguages = fHostLanguages(compile.crossCalls, "flow");
+
+	called = filtermap(set2array(compile.crossCalls), \cc : FCrossCall -> {
+		if (cc.toLanguage == "flow") Some("fast__" + cc.id) else None();
+	});
+	exportNames = strGlue(called, ",");
+
+	jslink = Promise(\fulfill, reject -> {
+		if (contains(hostLanguages, "js")) {
+			just_flowfile = fileNameOnly(flowfile);
+			name = changeFileExt(just_flowfile, "");
+			out_dir = compile.objDir;
+			jsfile = name + "_lib.flow.js";
+			flowc = "flowc1" + (if (hasTargetName("windows")) ".bat" else "");
+			flowc_args = [
+				just_flowfile, 
+				"js=" + jsfile, 
+				"jslibrary=" + exportNames, 
+				"jslibraryobject=__flowExport"
+			];
+			startProcess(flowc, 
+				flowc_args, out_dir, "",
+				\c, o, e -> {
+					if (c != 0) {
+						println("Flow failed at js compilation");
+						println(e);
+						println(o);
+						println(i2s(c));
+						println("flowc1 " + flowfile + "js=" + jsfile);
+						reject(false);
+					} else {
+						println("Made '" + jsfile + "'");
+						// deleteFile(flowfile);
+						fulfill(true);
+					}
+				}
+			);
+		} else fulfill(true)
+	});
+
+	javalink = Promise(\fulfill, reject -> {
+		folder = dirName(flowfile);
+		just_flowfile = fileNameOnly(flowfile);
+		out_dir = compile.objDir;
+		deleteFile(pathCombine(out_dir, "sources_lib"));
+		if (contains(hostLanguages, "java")) {
+			name = changeFileExt(just_flowfile, "");
+			flowc = "flowc1" + (if (hasTargetName("windows")) ".bat" else "");
+			flowc_args = [
+				just_flowfile,
+				"java=.", 
+				"java-package=" + name, 
+				"java-library=" + exportNames, 
+				"java-main=" + name + "_lib"
+			];
+			startProcess(flowc, 
+				flowc_args, 
+				out_dir, "",
+				\c, o, e -> {
+					if (c != 0) {
+						println("Flow failed at flow lib java compilation '" + flowc + " "  + strGlue(flowc_args, " ") + "'");
+						println(e);
+						println(o);
+						println(i2s(c));
+						reject(false);
+					} else {
+						println("Made '" + name + "' java library");
+						setFileContent(
+							pathCombine(out_dir, "sources_lib"), 
+							getFileContent(pathCombineMany([out_dir, name, "sources"]))
+						);
+						fulfill(true);
+					}
+				}
+			);
+		} else fulfill(true) 
+	});
+
+	if (!final) {
+		doneP(allP([jslink, javalink]), \bs -> callback(forall(bs, idfn)), callback);
+	} else {
+		callback(true);
+	}
+}

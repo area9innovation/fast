@@ -1,0 +1,84 @@
+import fast/backends/types;
+import fast/backends/utils;
+import fast/fast_prettyprint;
+import text/blueprint;
+import fs/filesystem;
+import fast/semantics/utils;
+
+export {
+	htmlbackend = FastBackend(
+		"html", false, fast2html, "html", false, [], "", false,
+		fDefaultLinkCode("html"),
+		fDefaultSaveCode("html")
+	);
+}
+
+fast2html(compile : FastCompile) -> string {
+	// <html><script·type="text/javascript"·src="calls1.js"></script></html>
+	jscalls = filterSet(compile.crossCalls, \cc -> cc.toLanguage == "js");
+	flowcalls = filterSet(compile.crossCalls, \cc -> cc.toLanguage == "flow");
+
+	"<html>"
+
+	// generateFDependency(compile, "include", \e -> fexp2c(env, e), \e -> ftype2c(e), "\n", true)
+
+	// OK, include the JS if we have a call to JS
+	+ (if (isEmptySet(jscalls)) ""
+	else {
+		"<script type=\"text/javascript\" src=\"" + changeFileExt(compile.filename, ".js") + "\"></script>"
+	})
+
+	// OK, include the flow if we have a call to flow
+	+ (if (isEmptySet(flowcalls)) ""
+	else {
+		"<script type=\"text/javascript\" src=\"" + changeFileExt(compile.filename, ".flow.js") + "\"></script>"
+	})
+
+	+ superglue(compile.code.globals, fastDecl2html, "")
+	+ superglue(compile.code.functions, fastDecl2html, "");
+}
+
+fastDecl2html(c : FastDeclaration) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, pars, type): "";
+		FastGlobalVar(__, id, value, __): fexp2html(value);
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+			// In HTML, we only produce main
+			if (language == "html" && id == "main") {
+				fexp2html(body);
+			} else "";
+		}
+	}
+}
+
+fexp2html(f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in HTML backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FIntConstant(value, __): i2s(value);
+		FDoubleConstant(value, __): double2string(value);
+		FStringConstant(value, __): value;
+		FFunctionPointer(id, __): id;
+		FVar(id, __): id;
+
+		FLet(id, value, body, __): todo();
+		FSizeOf(type, __): todo();
+		FCall(fn, args, __): todo();
+		FCallOp(language, op, args, __): {
+			if (op == "main" && (language == "js" || language == "flow")) {
+				"";
+			} else todo();
+		}
+		FSequence(exprs, __): {
+			jss = map(exprs, fexp2html);
+			concatStrings(jss)
+		}
+		FTypeAnnotation(e, type, __): fexp2html(e);
+		FIf(cond, then, else_, __): todo();
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, fexp2html, \t -> "");
+		}
+	}
+}

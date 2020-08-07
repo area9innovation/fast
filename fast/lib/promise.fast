@@ -1,0 +1,103 @@
+import target;
+import tuples;
+import string;
+
+export {
+	// Construct a promise
+	// The function calls the first fulfill function on success, the second reject function on failure
+	promise(fn : ((?) -> i0, (??) -> i0) -> i0) -> Promise<?, ??>;
+	// Run a promise, accepting a given value, ignoring any failure
+	done(promise : Promise<?, ??>, fulfill : (?) -> i0) -> i0;
+	// Run a promise, accepting a given value, with a given rejection handler
+	done(promise : Promise<?, ??>, fulfill : (?) -> i0, reject : (??) -> i0) -> i0;
+
+	// Construct a HTTP get request
+	fetch(url : string) -> Promise<string, string>;
+
+	// For chaining when we get a new promise from the fulfillment of the previous promise
+	then(promise : Promise<?, ??>, fulfill : (?) -> Promise<???, ??>) -> Promise<???, ??>;
+	then(promise : Promise<?, ??>, fulfill : (?) -> Promise<???, ??>, reject : (??) -> i0) -> Promise<???, ??>;
+}
+
+// With implicit ignoring
+done(promise : Promise<?, ??>, fulfill : (?) -> i0) -> i0 {
+	done(promise, fulfill, ignore)
+}
+
+ignore(v : ?) -> i0 {
+	{}
+}
+
+// General implementation
+typedef Promise<?, ??> = ((?) -> i0, (??) -> i0) -> i0;
+
+promise(fn : ((?) -> i0, (??) -> i0) -> i0) -> Promise<?, ??> {
+	// Figure out how to do this from a typing point of view
+	fn;
+}
+
+done(promise : Promise<?, ??>, fulfill : (?) -> i0, reject : (??) -> i0) -> i0 {
+	// Figure out how to do this from a typing point of view
+	promise(fulfill, reject);
+}
+
+// JavaScript
+
+typedef js::Promise<?, ??> =
+	inline js { Promise< ${?} , ${??} > }
+	;
+
+js::promise(fn : ((?) -> i0, (??) -> i0) -> i0) -> Promise<?, ??> {
+	inline js { new·Promise($fn) }
+}
+
+js::done(promise : Promise<?, ??>, fulfill : (?) -> i0, reject : (??) -> i0) -> i0 {
+	inline js { ${promise}.then( $fulfill, $reject) }
+}
+
+
+js::inline fetch(url : string) -> Promise<string, string> {
+	p = inline js { fetch($url).then(function(p) { return p.text()}) } : Promise<string, string>;
+
+	if (isNode()) {
+		inline js { }
+		require node_import {
+			// import·fetch·from·'cross-fetch';
+			const·fetch·=·require("node-fetch");
+		}
+		require npm { node-fetch }
+	} else if (isDeno()) {
+		inline js { }
+		require deno_flag { --allow-net }
+	};
+	p;
+}
+
+
+// Flow
+
+typedef flow::Promise<?, ??> =
+	inline flow { Promise< ${?} , ${??} > }
+	require flow::import { import·promise; }
+	;
+
+flow::promise(fn : ((?) -> i0, (??) -> i0) -> i0) -> Promise<?, ??> {
+	inline flow { Promise($fn) }
+}
+
+flow::done(promise : Promise<?, ??>, fulfill : (?) -> i0, reject : (??) -> i0) -> i0 {
+	inline flow { done($promise, $fulfill, $reject) }
+}
+
+flow::inline fetch(url : string) -> Promise<string, string> {
+	inline flow {
+		Promise(
+			\fulfill, reject -> {
+				httpRequest3($url, fulfill, reject);
+			}
+		)
+	} require import {
+		import promise;
+		import net/http;
+	}
+}

@@ -1,0 +1,94 @@
+import fast/fast_prettyprint;
+import fast/backends/utils;
+import fast/semantics/utils;
+
+export {
+	// A special backend.
+	compiletimeBackend = FastBackend(
+		"compiletime", false, fast2fast, "fast", false, [], "", false, 
+		fDefaultLinkCode("fast"),
+		fDefaultSaveCode("fast")
+	);
+
+	// Fast itself as a target
+	fastBackend = FastBackend(
+		"fast", true, fast2fast, "fast", false, [], "", false,
+		fDefaultLinkCode("fast"),
+		fDefaultSaveCode("fast")
+	);
+
+	fast2fast(compile : FastCompile) -> string;
+
+	fexp2fast(f : FExp) -> string;
+}
+
+fast2fast(compile : FastCompile) -> string {
+	superglue(compile.code.globals, fastDecl2fast, "")
+	+ superglue(compile.code.functions, fastDecl2fast, "");
+}
+
+fastDecl2fast(c : FastDeclaration) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, typars, type): {
+			"typedef " 
+			+ (if (language != "") language + "::" else "")
+			+ id + (if (typars != []) "<" + strGlue(typars, ", ") + ">" else "") 
+			+ " = " + fastType2string(type) + ";\n";
+		}
+		FastGlobalVar(__, id, value, info): id + " : " + fastType2string(info.type) 
+			+ fastEffect2string(info.effect) + " = " + fexp2fast(value) + ";\n"
+			;
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, info): {
+			(if (output != "") output + "." else "")
+			+ (if (language != "") language + "::" else "")
+			+ (if (inline) "inline " else "")
+			+ id + "(" + superglue(args, \a -> a.name + " : " + fastType2string(a.type) + fastEffect2string(a.effect), ", ") + ") -> " 
+			+ fastType2string(returnType) + fastEffect2string(effect) + " " + fexp2fast(body)
+			+ "\n"
+		}
+	}
+}
+
+fexp2fast(f : FExp) -> string {
+	switch (f) {
+		FIntConstant(value, __): i2s(value);
+		FDoubleConstant(value, __): double2string(value);
+		FStringConstant(value, __): toString(value);
+		FFunctionPointer(id, __): id;
+		FVar(id, __): id;
+
+		FLet(id, value, body, info): blueprint("
+			%id% = %value%;
+			%body%", [
+				"id", id,
+				"value", fexp2fast(value),
+				"body", fexp2fast(body)
+			]);
+		FSizeOf(type, __): "sizeof(" + fastType2string(type) + ")";
+
+		FCall(fn, args, info): fexp2fast(fn) + "(" + superglue(args, fexp2fast, ", ") + ")";
+
+		FCallOp(language, op, args, info): (if (language != "") language + ":" else "") + op + "(" + superglue(args, fexp2fast, ", ") + ")";
+
+		FSequence(exprs, info): {
+			seq = superglue(exprs, \e -> fexp2fast(e), ";\n");
+			blueprint("
+				{
+					%seq%
+				}
+			", ["seq", seq]);
+		}
+		FTypeAnnotation(e, type, __): fexp2fast(e) + " : " + fastType2string(type);
+		FIf(cond, then, else_, __): blueprint("
+			if (%cond%) %then%
+			else %else%
+			", [
+				"cond", fexp2fast(cond),
+				"then", fexp2fast(then),
+				"else", fexp2fast(else_)
+			]);
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, fexp2fast, fastType2string);
+		}
+	}
+}

@@ -1,0 +1,15 @@
+
+global : infer = 0;
+
+foo(a : infer) -> infer {
+    int(a);
+}
+
+int(i : i32) -> i32 {
+    i;
+}
+
+inference.java::main() -> i0 {
+    foo(32);
+    {}
+}

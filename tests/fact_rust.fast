@@ -1,0 +1,41 @@
+import runtime;
+import array;
+
+fact(n : i32) -> i32 {
+	if (n <= 1) {n} else {n * fact(n - 1)}
+}
+
+printTuple(p : Tuple<?, ??>) -> i0 {
+	f = first(p);
+	println(f); // TODO: If first is here, we have a name conflict in sequence after inlining
+	println(second(p));
+}
+
+testTuples() -> i0 {
+	p1 = tuple(77, 88);
+	printTuple(p1);
+	p2 = tuple("some", "words");
+	printTuple(p2);
+}
+
+testArrays() -> i0 {
+	a0 = (array()) : Array<i32>;
+	a1 = array(0);
+	a2 = array(1, 2);
+	//c0 = a1 + a2;
+	c0 = concat(a1, a2);
+
+	println(length(c0));
+
+	println(index(c0, 0, 0));
+	println(index(c0, 1, 0));
+	println(index(c0, 2, 0));
+}
+
+
+fact.rust::main() -> i0 {
+	println("Hello from rust");
+	println(fact(4));
+	testArrays();
+	testTuples();
+}

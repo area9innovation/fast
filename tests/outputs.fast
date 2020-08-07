@@ -1,0 +1,26 @@
+import string;
+import runtime;
+
+output1.js::main() -> i0 {
+    println("Hello from 1");
+    for1();
+    both();
+}
+
+output2.js::main() -> i0 {
+    println("Hello from 2");
+    for2();
+    both();
+}
+
+for1() -> i0 {
+    println("1");
+}
+
+for2() -> i0 {
+    println("2");
+}
+
+both() -> i0 {
+    println("Both");
+}

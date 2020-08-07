@@ -1,0 +1,38 @@
+import fast/fast_ast;
+import ds/simplegraph;
+import fast/typing/union_find;
+
+export {
+	FastInference(
+		// Environment of globals, functions, locals
+		mutable env : Tree<string, [FastType]>,
+		// Environment for evaluation of type functors
+		mutable typedefEnv : TypedefEnv,
+		mutable unifyGraph : SimpleGraph<FastType, bool>,
+
+		mutable tyvars : Tree<int, FastType>,
+		mutable tyvarId : int,
+		// Unresolved overloads for this type-var. Always points to the parent of the tyvar-set
+		mutable overloads : Tree<int, FastOverloadInference>,
+		// The list of tyvars depend on the key, so if we know the key, try to resolve those set.
+		mutable tyvarDependencies : Tree<int, Set<int>>,
+		// What tyvars have been merged?
+		mutable unionFind : UnionFind,
+
+		// Where does each tyvar come from?
+		mutable tyvarLocations : Tree<int, FLocation>,
+
+		onError : (string, location : FLocation) -> void
+	);
+
+	// To be able to give useful error messages
+	FLocation(sourceFile : int, line : int, col : int);
+
+	FastOverloadInference(callSite : FTypeFunction, overloads : [FTypeFunction]);
+
+	TypedefEnv(
+		typeFunctors : Tree<string, [FastTypeFunctor]>,
+		typars : Tree<string, FastType>,
+		onError : (string) -> void
+	);
+}

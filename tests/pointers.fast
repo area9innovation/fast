@@ -1,0 +1,70 @@
+export {
+	typedef c::pointer<?> = inline c { ${?} * };
+
+	malloc(v: ?) -> pointer<?> with {heap, write};
+	free(p : pointer<?>) -> i0 with {heap};
+	setPointer(p : pointer<?>, val : ?) -> i0 with {heap, write};
+	readPointer(p : pointer<?>) -> ? with {heap, read};
+
+	// map : (a : Array<?>, fn : (?) -> ?? with e) -> Array<??> with e;
+}
+
+c::malloc(v: ?) -> pointer<?> {
+	p = (inline c {
+		malloc(sizeof($v))
+	} require include {
+		#include·<stdlib.h>
+	}) : pointer<?>;
+	setpointer(p, v);
+	p;
+}
+
+c::free(p : pointer<?>) -> i0 {
+	inline c { 
+		free($p) 
+	} require include {
+		#include·<stdlib.h>
+	}
+}
+
+c::setpointer(p : pointer<?>, val : ?) -> i0 {
+	inline c { *($p) = $val }
+}
+
+c::getpointer(p : pointer<?>) -> ? {
+	inline c { *($p) }
+	
+}
+
+foo() -> i0 {
+	mem = malloc(12);
+	setpointer(mem, 42);
+	answer = getpointer(mem);
+	free(mem);
+}
+
+pointers.c::main() -> i0 {
+	foo();
+}
+
+/*
+Type inference:
+foo : () -> void with { heap, read, write }
+
+No effect for map fn to allow parallel implementation of it
+
+-write
+
+associativ effects
+
+locks: lock all, men overload med effects
+
+cost-effects: track memory and instructions
+
+maybe use it to track complexity
+
+effects ::= var, constant-set, +, not.
+
+todo: casts
+
+*/

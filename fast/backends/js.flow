@@ -1,0 +1,324 @@
+import fast/backends/utils;
+import fast/fast_prettyprint;
+import text/blueprint;
+import fast/semantics/utils;
+import sys/system;
+import sys/target;
+import fast/backends/utils;
+
+export {
+	jsbackend = FastBackend("js", false, fast2js, "js", false, [
+			"abstract", "arguments",  "await",        "boolean",
+			"break",    "byte",       "case",         "catch",
+			"char",     "class",      "const",        "continue",
+			"debugger", "default",    "delete",       "do",
+			"double",   "else",       "enum",         "eval",
+			"export",   "extends",    "false",        "final",
+			"finally",  "float",      "for",          "function",
+			"goto",     "if",         "implements",   "import",
+			"in",       "instanceof", "int",          "interface",
+			"let",      "long",       "native",       "new",
+			"null",     "package",    "private",      "protected",
+			"public",   "return",     "short",        "static",
+			"super",    "switch",     "synchronized", "this",
+			"throw",    "throws",     "transient",    "true",
+			"try",      "typeof",     "var",          "void",
+			"volatile", "while",      "with",         "yield"
+		], "", false, flinkJs,
+		fDefaultSaveCode("js")
+	);
+}
+
+fast2js(compile : FastCompile) -> string {
+	// Construct the imports needed to expose JS in WASM
+	calls = set2array(compile.crossCalls);
+
+	needsWasm = fHasCall(compile.crossCalls, "wasm");
+	needsC = fHasCall(compile.crossCalls, "c");
+	needsRust = fHasCall(compile.crossCalls, "rust");
+	needsFlow = fHasCall(compile.crossCalls, "flow");
+
+	wasmImportsCore = superglue(calls, \cc -> {
+		if (cc.fromLanguage == "wasm") {
+			cc.id + ":" + cc.id
+		} else ""
+	}, ", ");
+
+	// Do we have a main?
+	hasMain = exists(compile.code.functions, \fn -> fn.id == "main");
+
+	decl_ids = mergeSets(
+		buildSet(map(compile.code.globals, \tl -> tl.id)),
+		buildSet(map(compile.code.functions, \tl -> tl.id))
+	);
+
+	env = FJsEnv(\id -> if (containsSet(decl_ids, id)) compile.filename + "." + id else id);
+
+	decls = concat(
+		map(compile.code.globals, \tl -> tl.id + " : " + fastDecl2js(env, tl)),
+		map(compile.code.functions, \tl -> tl.id + " : " + fastDecl2js(env, tl))
+	);
+
+	// Set up a wasm instance if we use WASM
+	(if (needsWasm) "var __wasmInstance = null;\n" else "")
+
+	// Spit out all our code
+	+ "var " + compile.filename + " = {\n"
+	+ strGlue(decls, ",\n")
+	+ "};\n"
+
+	// Spit out the WASM loader first if we have that
+	+ (
+		if (needsWasm) {
+			"fetch('" + changeFileExt(compile.filename, ".wasm") + "').then(response => response.arrayBuffer())\n" +
+			".then(bytes => WebAssembly.instantiate(bytes, { imports: {" + wasmImportsCore + "}}))\n" +
+			".then(instance => {\n" +
+			"\t__wasmInstance = instance.instance.exports;\n"
+			+ (if (hasMain) "\t" + compile.filename + ".main()\n" else "")
+			+ "})";
+		} else if (needsC || needsRust) {
+			name = changeFileExt(fileNameOnly(compile.filename), "");
+			wasm_lib = resolveRelativePath(changeFileExt(pathCombine(compile.outDir, name) + ".wasm", ".wasm"));
+			"const __wasmExport = new WebAssembly.Instance(new WebAssembly.Module(await Deno.readFile('" + wasm_lib + "'))).exports;\n\n";
+		} else ""
+	)
+	// Call main, in case it exists
+	+ (if (hasMain) compile.filename + ".main()" else "");
+}
+
+FJsEnv(
+	// JS non-local ids (aka declared functions/globals) are assembled in a JS namespace object.
+	// So, to access these ids from a global scope you need to wrap them with <namespace>.id
+	wrapId : (string) -> string
+);
+
+fastDecl2js(env : FJsEnv, c : FastDeclaration) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, pars, type): "";
+		FastGlobalVar(__, id, value, __): "var " + id + " = " + fexp2js(env, value) + ";";
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+			"function " + id + "(" + superglue(args, \a -> a.name, ", ") + ") {\n" 
+			+ (if (returnType == FTypeVoid()) {
+				fexp2js(env, body) 
+			} else {
+				fexp2jsreturn(env, body) 
+			})
+			+ "}\n";
+		}
+	}
+}
+
+fexp2jsreturn(env : FJsEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in JS return backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FLet(id, value, body, __): blueprint("
+			var %id% = %value%;
+			%body%
+			", [
+				"id", id,
+				"value", fexp2js(env, value),
+				"body", fexp2jsreturn(env, body)
+			]);
+
+		FSequence(exprs, __): {
+			foldi(exprs, "", \i, acc, e -> {
+				if (i < length(exprs) - 1) {
+					acc + fexp2js(env, e) + ";\n"
+				} else {
+					acc + fexp2jsreturn(env, e)
+				}
+			});
+		}
+		FIf(cond, then, else_, __): blueprint("
+			if (%cond%) {
+				%then%
+			} else {
+				%else%
+			}
+			", [
+				"cond", fexp2js(env, cond),
+				"then", fexp2jsreturn(env, then),
+				"else", fexp2jsreturn(env, else_)
+			]);
+
+		FSizeOf(type, __): todo();
+		FFunctionPointer(id, __): todo();
+
+		FConstant(): "return " + fexp2js(env, f) + ";";
+		FVar(id, __): "return " + fexp2js(env, f) + ";";
+		FCall(fn, args, __): "return " + fexp2js(env, f) + ";";
+		FCallOp(language, op, args, __): "return " + fexp2js(env, f) + ";";
+		FTypeAnnotation(e, type, __): fexp2jsreturn(env, e) + ";";
+		FInlineCode(language, stream, deps, type, __): "return " + fexp2js(env, f) + ";";
+	}
+}
+
+fexp2js(env : FJsEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in JS backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FIntConstant(value, info): {
+			switch (info.type) {
+				FTypeInt(bits): {
+					if (bits == 0) {
+						"null";
+					} else if (bits == 1) {
+						b2s(i2b(value));
+					} else if (bits == 32) {
+						i2s(value)
+					} else {
+						println("Only 32 bit ints supported in JS");
+						i2s(value);
+					}
+				}
+				default: i2s(value);
+			}
+		}
+		FDoubleConstant(value, __): double2string(value);
+		FStringConstant(value, __): toString(value);
+		FFunctionPointer(id, __): "\\" + id;
+		FVar(id, __): env.wrapId(id);
+		FLet(id, value, body, info): {
+			if (info.type == FTypeVoid()) {
+				blueprint("
+				var %id% = %value%;
+				%body%
+				", [
+					"id", id,
+					"value", fexp2js(env, value),
+					"body", fexp2jsreturn(env, body)
+				]);
+			} else {
+				blueprint("
+				function() {
+					var %id% = %value%;
+					%body%
+				}()
+				", [
+					"id", id,
+					"value", fexp2js(env, value),
+					"body", fexp2jsreturn(env, body)
+				]);
+			}
+
+		}
+		FSizeOf(type, __): todo();
+		FCall(fn, args, __): fexp2js(env, fn) + "(" + superglue(args, \a -> fexp2js(env, a), ", ") + ")";
+		FCallOp(language, op, args, __): {
+			jss = map(args, \a -> fexp2js(env, a));
+			(
+				if (language == "wasm") "__wasmInstance." else 
+				if (language == "flow") "__flowExport." else
+				if (language == "c" || language == "rust") "__wasmExport." else ""
+			) 
+			+ op + "(" + strGlue(jss, ", ") + ")";
+		}
+		FSequence(exprs, __): {
+			jss = map(exprs, \e -> fexp2js(env, e));
+			if (length(jss) == 1) {
+				jss[0];
+			} else {
+				strGlue(jss, ";\n");
+			}
+		}
+		FTypeAnnotation(e, type, __): {
+			fexp2js(env, e);
+		}
+		FIf(cond, then, else_, __): blueprint("
+			((%cond%) ? (%then%) : (%else%))
+			", [
+				"cond", fexp2js(env, cond),
+				"then", fexp2js(env, then),
+				"else", fexp2js(env, else_)
+			]);
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, \e -> fexp2js(env, e), \t -> "")
+		}
+	}
+}
+
+flinkJs(compile : FastCompile, javafile : string, final : bool, callback : (bool) -> void) -> void {	
+	if (final) {
+		fbuildJs(compile, javafile, callback);
+	} else {
+		fgenJs(compile, javafile, callback);
+	}
+}
+
+// Glues together the final *.js file and saves it to the output folder.
+fbuildJs(compile : FastCompile, jsfile : string, callback : (bool) -> void) -> void {
+	name = changeFileExt(fileNameOnly(jsfile), "");
+	if (fHasCallFromTo(compile.crossCalls, "js", "flow")) {
+		// Case when JS is a host language
+		js_host = fGetFileContent(pathCombine(compile.objDir, name + ".js"));
+		js_lib = fGetFileContent(pathCombine(compile.objDir, name + "_lib.flow.js"));
+		fSaveCode(jsfile, js_lib + "\n\n" + js_host);
+		callback(true);
+	} else if (fHasCallFromTo(compile.crossCalls, "flow", "js")) {
+		// Case when flow is a host language, so JS runtime is generated from flow.
+		js_host = fGetFileContent(pathCombine(compile.objDir, name + "_host.flow.js"));
+		fSaveCode(jsfile, js_host);
+		callback(true);
+	} else if (fHasCallFromTo(compile.crossCalls, "js", "c") || fHasCallFromTo(compile.crossCalls, "js", "rust")) {
+		if (fHasCallFromTo(compile.crossCalls, "js", "c") && fHasCallFromTo(compile.crossCalls, "js", "rust")) {
+			println("Error: calling both c and rust functions from js is not supported. Choose one of: c or rust.");
+			callback(false);
+		} else {
+			// Case when JS is a host language.
+			js_host = fGetFileContent(pathCombine(compile.objDir, name + ".js"));
+			fSaveCode(jsfile, js_host);
+			callback(true);
+		}
+	} else {
+		// No cross calls, pure JS.
+		js_host = fGetFileContent(pathCombine(compile.objDir, name + ".js"));
+		fSaveCode(jsfile, js_host);
+		callback(true);
+	}
+}
+
+// Prepare a JS host for the generated flow source.
+fgenJs(compile : FastCompile, jsfile : string, callback : (bool) -> void) -> void {
+	if (fHasCallFromTo(compile.crossCalls, "flow", "js")) {
+		flowfile = changeFileExt(jsfile, ".flow");
+		folder = dirName(flowfile);
+		out_dir = compile.objDir;
+		extern_natives = filtermap(set2array(compile.crossCalls), \cc ->
+			if (!(cc.fromLanguage == "flow" && cc.toLanguage == "js")) None() else Some(cc.id)
+		);
+		name = changeFileExt(fileNameOnly(flowfile), "");
+		flowc = "flowc1" + (if (hasTargetName("windows")) ".bat" else "");
+		js_host = name + "_host.flow.js";
+		js_extern_lib = resolveRelativePath(pathCombine(out_dir, name + ".js"));
+		flowc_args = filter([
+			fileNameOnly(flowfile), 
+			"es6=" + js_host,
+			if (extern_natives ==[]) "" else "js-extern-natives=" + superglue(extern_natives, \id -> name + "." + id, ","),
+			"nodejs=1",
+			"js-extern-lib=" + js_extern_lib,
+			"verbose=1"
+		], isNotSpace);
+		startProcess(flowc, flowc_args, out_dir, "",
+			\c, o, e -> {
+				if (c != 0) {
+					println("Flow failed at JS host compilation");
+					println(flowc + " " + strGlue(flowc_args, " "));
+					println(e);
+					println(o);
+					println(i2s(c));
+					callback(false);
+				} else {
+					println("Made '" + js_host + "' host JS runtime");
+					callback(true);
+				}
+			}
+		);
+	} else {
+		callback(true);
+	}
+}

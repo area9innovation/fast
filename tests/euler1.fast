@@ -1,0 +1,55 @@
+import runtime;
+import system;
+
+/*
+If we list all the natural numbers below 10 that are multiples of 3 or 5, 
+we get 3, 5, 6 and 9. The sum of these multiples is 23.
+
+Find the sum of all the multiples of 3 or 5 below 1000.
+*/
+
+/*
+TODO:
+- Call from Wasm of println to polymorphic function in JS is not handled correctly
+- Cyclic imports in flow.
+*/
+
+euler1(limit : i32) -> i32 {
+    foldRange(1, limit - 1, 0, eulerFn);
+}
+
+eulerFn(acc : i32, i: i32) -> i32 {
+	if (((i % 3) == 0) || ((i % 5) == 0)) {
+		acc + i;
+	} else acc;
+}
+
+foldRange(start : i32, end : i32, acc : ?, fn : (?, i32) -> ?) -> ? {
+	if (start <= end) {
+		foldRange(start + 1, end, fn(acc, start), fn)
+	} else {
+		acc;
+	}
+}
+
+js::main() -> i0 {
+	println(wasm::euler1(1000));
+	println(euler1(1000));
+	println(flow::euler1(1000));
+}
+
+euler1.html::main() -> i0 {
+	js::main();
+}
+
+euler1.c::main() -> i0 {
+	println(euler1(1000));
+}
+
+euler1.java::main(args : inline java { String[] }) -> i0 {
+	println(euler1(1000));
+}
+
+compiletime::main() -> Promise<string, string> {
+	startProcess("echo hello");
+}

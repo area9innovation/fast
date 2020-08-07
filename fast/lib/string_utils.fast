@@ -1,0 +1,80 @@
+import array;
+import runtime;
+import string;
+
+export {
+	string2array(s : string) -> Array<string>; 
+	s2i(s : string) -> i32;
+	i2s(n : i32) -> string; 
+}
+
+
+string2array(s : string) -> Array<string> {
+    doString2array(s, 0, array());
+}
+
+doString2array(s : string, i : i32, acc : Array<string>) -> Array<string> {
+    if (i == length(s)) { 
+        acc;
+    } else {
+        // Here concatenation of arrays with '+' works ok:
+        //new_acc = concat(acc, array(index(s, i)));
+        new_acc = acc + array(index(s, i));
+        doString2array(s, i + 1, new_acc);
+    }
+}
+
+s2i(s : string) -> i32 {
+	digits = reverseA(string2array(s), "");
+    doStr2i(digits, 0, 1, 0);
+}
+
+doStr2i(digits : Array<string>, i : i32, deg : i32, acc : i32) -> i32 {
+	if (i == length(digits)) {
+        acc;
+    } else {
+        new_acc = acc + deg * digit2i(index(digits, i, ""));
+        doStr2i(digits, i + 1, deg * 10, new_acc);
+    }
+}
+
+digit2i(s : string) -> i32 {
+    if (s == "0") { 0 } else 
+    if (s == "1") { 1 } else
+    if (s == "2") { 2 } else
+    if (s == "3") { 3 } else
+    if (s == "4") { 4 } else
+    if (s == "5") { 5 } else
+    if (s == "6") { 6 } else
+    if (s == "7") { 7 } else
+    if (s == "8") { 8 } else
+    if (s == "9") { 9 } else 
+    { 0 }
+}
+
+i2s(n : i32) -> string {
+	if (n < 0) {
+        +("-", i2s(-(n)));
+    } else {
+        if (n < 10) {
+            (digit2s(n));
+        } else {
+            m = n / 10;
+            r = n - (m * 10);
+            +(i2s(m), digit2s(r));
+        }
+    }
+}
+
+digit2s(d : i32) -> string {
+	if (d == 0) { "0" } else
+	if (d == 1) { "1" } else
+	if (d == 2) { "2" } else
+	if (d == 3) { "3" } else
+	if (d == 4) { "4" } else
+	if (d == 5) { "5" } else
+	if (d == 6) { "6" } else
+	if (d == 7) { "7" } else
+	if (d == 8) { "8" } else
+	if (d == 9) { "9" } else { "" } ;
+}

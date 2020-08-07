@@ -1,0 +1,22 @@
+
+rust::inline +(l : i32, r : i32) -> i32 { inline rust { ($l) + ($r) } }
+rust::inline -(l : i32, r : i32) -> i32 { inline rust { ($l) - ($r) } }
+rust::inline *(l : i32, r : i32) -> i32 { inline rust { ($l) * ($r) } }
+rust::inline /(l : i32, r : i32) -> i32 { inline rust { ($l) / ($r) } }
+rust::inline %(l : i32, r : i32) -> i32 { inline rust { ($l) % ($r) } }
+
+rust::inline <(l : i32, r : i32) -> i1 { inline rust { ($l) < ($r) } }
+rust::inline <=(l : i32, r : i32) -> i1 { inline rust { ($l) <= ($r) } }
+rust::inline ==(l : i32, r : i32) -> i1 { inline rust { ($l) == ($r) } }
+rust::inline !=(l : i32, r : i32) -> i1 { inline rust { ($l) != ($r) } }
+rust::inline >(l : i32, r : i32) -> i1 { inline rust { ($l) > ($r) } }
+rust::inline >=(l : i32, r : i32) -> i1 { inline rust { ($l) >= ($r) } }
+
+rust::inline ||(l : i1, r : i1) -> i1 { inline rust { ($l) || ($r) } }
+rust::inline &&(l : i1, r : i1) -> i1 { inline rust { ($l) && ($r) } }
+
+rust::println(s : ?) -> i0 {
+	inline rust {
+		println!("{}", $s)
+	}
+}

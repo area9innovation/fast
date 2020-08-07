@@ -1,0 +1,250 @@
+import ds/list;
+import math/math;
+import string;
+import string_utils;
+
+export {
+	// Will lex this string. Give the starting line no and col (1, 0 is good default)
+	fastLex(s : string, line : int, col : int) -> List<FastLex>;
+
+	FastLex ::= FLInt, FLDouble, FLString, FLPunctuation, FLId;
+		// Constant integer
+		FLInt(n : int, line : int, col : int);
+
+		// Constant double
+		FLDouble(d : double, line : int, col : int);
+
+		// Constant string
+		FLString(n : string, line : int, col : int);
+
+		// { } ; , ( ) - these can not be used in operators
+		FLPunctuation(s : string, line : int, col : int);
+
+		// Any id or operator
+		FLId(id : string, line : int, col : int);
+
+	flex2string(l : FastLex) -> string;
+
+	isOperatorString(s :  string) -> bool;
+}
+
+fastLex(s : string, line : int, col : int) -> List<FastLex> {
+	doFastLex(
+		makeList(), 
+		line, col,
+		// Skip unicode marker
+		if (getCharCodeAt(s, 0) == 0xfeff) 1 else 0, 
+		s
+	)
+}
+
+// These are punctuation for structure
+fastPunctuation = "{};,()";
+
+// These are considered to be part of operators
+// Consider to take the list from Swift or Julia
+// https://gist.github.com/natecook1000/c5fb2b8cd0967f53770e
+fastOperatorChars = "!#$%&*+-./<:=>@[\\]^`{|}~«¬­°±»¿÷–—―‘’‚‛“”„•‥…‰′″‹›⁄−√∞∫≈≠≤≥◊‽←↑→↓↔↕↖↗↘↙⇦⇧⇨⇪×÷∩∀∃≡⌨■□▢▣▪▫▬▭▮▯▲▶►▼◀◄◇◊○◎●◐◑◒◓◕◖◗◙◚◛◠◡◢◣◤◥◧◨◩◪◫◯☠✓➡∀∁∂∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∞∟∠∡∢∣∤∥∦∧∨∩∪∫∬∭∮∯∰∱∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋⊌⊍⊎⊏⊐⊑⊒⊓⊔⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⊢⊣⊤⊥⊦⊧⊨⊩⊪⊫⊬⊭⊮⊯⊰⊱⊲⊳⊴⊵⊶⊷⊸⊹⊺⊻⊼⊽⊾⊿⋀⋁⋂⋃⋄⋅⋆⋇⋈⋉⋊⋋⋌⋍⋎⋏⋐⋑⋒⋓⋔⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋮⋯⋰⋱⋲⋳⋴⋵⋶⋷⋸⋹⋺⋻⋼⋽⋾⋿⨀⨁⨂⨃⨄⨅⨆⨇⨈⨉⨊⨋⨌⨍⨎⨏⨐⨑⨒⨓⨔⨕⨖⨗⨘⨙⨚⨛⨜⨝⨞⨟⨠⨡⨢⨣⨤⨥⨦⨧⨨⨩⨪⨫⨬⨭⨮⨯⨰⨱⨲⨳⨴⨵⨶⨷⨸⨹⨺⨻⨼⨽⨾⨿⩀⩁⩂⩃⩄⩅⩆⩇⩈⩉⩊⩋⩌⩍⩎⩏⩐⩑⩒⩓⩔⩕⩖⩗⩘⩙⩚⩛⩜⩝⩞⩟⩠⩡⩢⩣⩤⩥⩦⩧⩨⩩⩪⩫⩬⩭⩮⩯⩰⩱⩲⩳⩴⩵⩶⩷⩸⩹⩺⩻⩼⩽⩾⩿⪀⪁⪂⪃⪄⪅⪆⪇⪈⪉⪊⪋⪌⪍⪎⪏⪐⪑⪒⪓⪔⪕⪖⪗⪘⪙⪚⪛⪜⪝⪞⪟⪠⪡⪢⪣⪤⪥⪦⪧⪨⪩⪪⪫⪬⪭⪮⪯⪰⪱⪲⪳⪴⪵⪶⪷⪸⪹⪺⪻⪼⪽⪾⪿⫀⫁⫂⫃⫄⫅⫆⫇⫈⫉⫊⫋⫌⫍⫎⫏⫐⫑⫒⫓⫔⫕⫖⫗⫘⫙⫚⫛⫝̸⫝⫞⫟⫠⫡⫢⫣⫤⫥⫦⫧⫨⫩⫪⫫⫬⫭⫮⫯⫰⫱⫲⫳⫴⫵⫶⫷⫸⫹⫺⫻⫼⫽⫾⫿";
+
+// These chars do NOT occur in alphabetical ids
+fastNonAlphabetical = fastOperatorChars + " \t\r\n/\"*" + fastPunctuation;
+
+isOperatorString(s :  string) -> bool {
+	s != "" && stringFoldChar(s, true, \acc, ch -> {
+		acc && strContains(fastOperatorChars, ch)
+	});
+}
+
+doFastLex(acc : List<FastLex>, line : int, col : int, i : int, s : string) -> List<FastLex> {
+	if (i < strlen(s)) {
+		c = getCharAt(s, i);
+		// println(c + " at " + i2s(col));
+
+		if ("0" <= c && c <= "9") {
+			// Start with a number
+			if (getCharAt(s, i + 1) == "x") {
+				fastLexHexNumber(acc, line, col + 2, i + 2, i + 2, s);
+			} else {
+				fastLexNumber(acc, line, col, i, i + 1, s);
+			}
+		} else if (c == " " || c == "\r") {
+			// Skip
+			doFastLex(acc, line, col + 1, i + 1, s);
+		} else if (c == "\t") {
+			// Skip
+			doFastLex(acc, line, (col / 4)*4 + 4, i + 1, s);
+		} else if (c == "\n") {
+			// Skip
+			doFastLex(acc, line + 1, 0, i + 1, s);
+		} else if (c == "/" && getCharAt(s, i + 1) == "/") {
+			// Line comment
+			fastLexLineComment(acc, line, col, i + 2, s)
+		} else if (c == "/" && getCharAt(s, i + 1) == "*") {
+			fastLexBlockComment(acc, line, col + 2, i + 2, s);
+		} else if (strContains(fastPunctuation, c)) {
+			doFastLex(
+				Cons(FLPunctuation(c, line, col), acc),
+				line, col + 1,
+				i + 1,
+				s
+			);
+		} else if (c == "\"") {
+			fastLexString(acc, line, col + 1, line, col, "", i + 1, s)
+		} else if (strContains(fastOperatorChars, c)) {
+			fastLexOperator(acc, line, col + 1, i, i + 1, s)
+		} else {
+			fastLexAlphabetical(acc, line, col + 1, i, i + 1, s);
+		}
+	} else acc;
+}
+
+fastLexLineComment(acc : List<FastLex>, line : int, col : int, i : int, s : string) -> List<FastLex> {
+	if (i < strlen(s)) {
+		c = getCharAt(s, i);
+		if (c == "\n") {
+			doFastLex(acc, line + 1, 0, i + 1, s);
+		} else fastLexLineComment(acc, line, col, i + 1, s);
+	} else acc;
+}
+
+fastLexBlockComment(acc : List<FastLex>, line : int, col : int, i : int, s : string) -> List<FastLex> {
+	if (i + 1 < strlen(s)) {
+		c = getCharAt(s, i);
+		cc = substring(s, i, 2);
+		if (cc == "*/") {
+			doFastLex(acc, line, col + 2, i + 2, s);
+		} else if (c == "\n") {
+			fastLexBlockComment(acc, line + 1, 0, i + 1, s);
+		} else if (c == "\t") {
+			fastLexBlockComment(acc, line, (col / 4) * 4 + 4, i + 1, s);
+		} else {
+			fastLexBlockComment(acc, line, col + 1, i + 1, s);
+		}
+	} else {
+		println("ERROR: Missing */");
+		acc;
+	}
+}
+
+fastLexHexNumber(acc : List<FastLex>, line : int, col : int, si : int, i : int, s : string) -> List<FastLex> {
+	if (i < strlen(s)) {
+		c = getCharAt(s, i);
+		if (("0" <= c && c <= "9") || ("a" <= c && c <= "f") || ("A" <= c && c <= "F")) {
+			fastLexHexNumber(acc, line, col + 1, si, i + 1, s);
+		} else {
+			h = substring(s, si, i - si);
+			n = parseHex(h);
+			nacc = Cons(FLInt(n, line, col - 2 - (i - si)), acc);
+			doFastLex(nacc, line, col, i, s);
+		}
+	} else {
+		h = substring(s, si, i - si);
+		n = parseHex(h);
+		Cons(FLInt(n, line, col - 2 - (i - si)), acc)
+	}
+}
+
+fastLexNumber(acc : List<FastLex>, line : int, col : int, si : int, i : int, s : string) -> List<FastLex> {
+	getVal = \ ->{
+		h = substring(s, si, i - si);
+		if (strContains(h, ".")) {
+			FLDouble(s2d(h), line, col - (i - si) + 1);
+		} else {
+			FLInt(s2i(h), line, col - (i - si) + 1);
+		}
+	}
+
+	if (i < strlen(s)) {
+		c = getCharAt(s, i);
+		if (("0" <= c && c <= "9") || c == ".") {
+			fastLexNumber(acc, line, col + 1, si, i + 1, s);
+		} else {
+			nacc = Cons(getVal(), acc);
+			doFastLex(nacc, line, col, i, s);
+		}
+	} else {
+		Cons(getVal(), acc)
+	}
+}
+
+fastLexString(acc : List<FastLex>, line : int, col : int, sline : int, scol : int, str : string, i : int, s : string) -> List<FastLex> {
+	if (i < strlen(s)) {
+		c = getCharAt(s, i);
+		if (c == "\"") {
+			nacc = Cons(FLString(str, sline, scol), acc);
+			doFastLex(nacc, line, col + 1, i + 1, s)
+		} else if (c == "\\") {
+			ec = getCharAt(s, i + 1);
+			esc = if (ec == "n") {
+				"\n"
+			} else if (ec == "\\") {
+				"\\"
+			} else if (ec == "t") {
+				"\t"
+			} else if (ec == "\r") {
+				"\r"
+			} else if (ec == "\"") {
+				"\""
+			} else {
+				// \u hexdigit_ hexdigit_ hexdigit_ hexdigit_
+				// \x hexdigit_ hexdigit_
+				println("TODO: Handle string escape " + ec);
+				ec;
+			}
+			fastLexString(acc, line, col + 2, sline, scol, str + esc, i + 2, s);
+		} else if (c == "\n") {
+			fastLexString(acc, line + 1, 0, sline, scol, str + c, i + 1, s);
+		} else if (c == "\t") {
+			fastLexString(acc, line, (col / 4) * 4  + 4, sline, scol, str + c, i + 1, s);
+		} else {
+			fastLexString(acc, line, col + 1, sline, scol, str + c, i + 1, s);
+		}
+	} else {
+		println("Missing \"");
+		Cons(FLString(str, sline, scol), acc)
+	}
+}
+
+
+fastLexOperator(acc : List<FastLex>, line : int, col : int, si : int, i : int, s : string) -> List<FastLex> {
+	if (i < strlen(s)) {
+		c = getCharAt(s, i);
+		if (strContains(fastOperatorChars, c)) {
+			fastLexOperator(acc, line, col + 1, si, i + 1, s);
+		} else {
+			id = substring(s, si, i - si);
+			nacc = Cons(FLId(id, line, col - (i - si)), acc); 
+			doFastLex(nacc, line, col, i, s);
+		}
+	} else {
+		id = substring(s, si, i - si);
+		Cons(FLId(id, line, col - (i - si)), acc);
+	}
+}
+
+fastLexAlphabetical(acc : List<FastLex>, line : int, col : int, si : int, i : int, s : string) -> List<FastLex> {
+	if (i < strlen(s)) {
+		c = getCharAt(s, i);
+		// println("Ready alpha " + c + " at " + i2s(col));
+		if (!strContains(fastNonAlphabetical, c)) {
+			fastLexAlphabetical(acc, line, col + 1, si, i + 1, s);
+		} else {
+			id = substring(s, si, i - si);
+			nacc = Cons(FLId(id, line, col - (i - si)), acc);
+			doFastLex(nacc, line, col, i, s);
+		}
+	} else {
+		id = substring(s, si, i - si);
+		Cons(FLId(id, line, col - (i - si)), acc);
+	}
+}
+
+flex2string(l : FastLex) -> string {
+	switch (l) {
+		FLInt(n, line, col): "int " + i2s(n);
+		FLDouble(n, line, col): "double " + d2s(n);
+		FLString(n, line, col): "string";
+		FLPunctuation(s, line, col): s;
+		FLId(id, line, col): "id '" + id + "'";
+	}
+}

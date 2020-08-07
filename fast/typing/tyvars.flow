@@ -1,0 +1,151 @@
+import fast/typing/type_environment;
+import fast/fast_prettyprint;
+import net/url_parameter;
+
+/*
+TODO: The tyvar dependencies are not used for anything
+at the moment. Decide whether they should stay or go.
+It might be we do not need it, since function overload
+resolution works in practice without.
+*/
+
+export {
+	// Introduce a new type var
+	makeFastTyvar(env : FastInference, location : FLocation) -> FTypeVar;
+
+	// We know this type var needs this type, so update it
+	setFastTyvar(env : FastInference, id : int, type : FastType) -> void;
+
+	// We know these type vars are the same type, so join them
+	joinFastTyvars(env : FastInference, id1 : int, id2 : int) -> void;
+
+	// Mark that this tyvar is dependent on these types
+	recordTyvarDependency(env : FastInference, id : int, types : [FastType]) -> void;
+
+	// Given the sets we have, resolve the final tyvars
+	resolveFastTyvars(env : FastInference) -> void;
+
+	reportTyvarError(env : FastInference, tyvar : int, message : string) -> void;
+}
+
+
+tyvarDebug = isUrlParameterTrue("tyvars");
+
+makeFastTyvar(env : FastInference, location : FLocation) -> FTypeVar {
+	tyvar = FTypeVar(env.tyvarId);
+	env.tyvarId ::= env.tyvarId + 1;
+	env.tyvarLocations ::= setTree(env.tyvarLocations, tyvar.id, location);
+
+	tyvar;
+}
+
+setFastTyvar(env : FastInference, id : int, type : FastType) -> void {
+	mexisting = lookupTree(env.tyvars, id);
+	mexisting ?? {
+		if (mexisting != type) {
+			reportTyvarError(env, id, "a" + i2s(id) + " = " + fastType2string(type) + " which was already " + fastType2string(mexisting));
+			env.tyvars ::= setTree(env.tyvars, id, type);
+		}
+	} : {
+		if (tyvarDebug) {
+			println("Binding a" + i2s(id) + " = " + fastType2string(type));
+		}
+		env.tyvars ::= setTree(env.tyvars, id, type);
+	}
+
+	// Propagate this type to the parent
+	parent = unionFind(env.unionFind, id);
+	if (parent != id) {
+		setFastTyvar(env, parent, type);
+	}
+}
+
+joinFastTyvars(env : FastInference, id1 : int, id2 : int) -> void {
+	if (id1 != id2) {
+		if (tyvarDebug) {
+			println("Joining a" + i2s(id1) + " and a" + i2s(id2));
+		}
+		// OK, find out if any of these has a type already.
+		mtype1 = lookupTree(env.tyvars, id1);
+		mtype2 = lookupTree(env.tyvars, id2);
+		p1 = unionFind(env.unionFind, id1);
+		p2 = unionFind(env.unionFind, id2);
+		mtype3 = if (p1 != id1) lookupTree(env.tyvars, p1) else None();
+		mtype4 = if (p2 != id2) lookupTree(env.tyvars, p2) else None();
+
+		// Join the sets
+		nid = unionUnion(env.unionFind, id1, id2);
+
+		set = \mt -> {
+			mt ?? { setFastTyvar(env, nid, mt) } : {}
+		}
+		// Make sure the final type is set
+		set(mtype1);
+		set(mtype2);
+		set(mtype3);
+		set(mtype4);
+	}
+}
+
+/*
+Keep a list of tyvars that we should monitor, and when they change
+we should see if we can resolve the overloads
+*/
+recordTyvarDependency(env : FastInference, id : int, types : [FastType]) -> void {
+	iter(types, \type -> {
+		recordTyvarDependencyType(env, id, type)
+	})
+}
+
+recordTyvarDependencyType(env : FastInference, tid : int, type : FastType) -> void {
+	switch (type) {
+		FTypeInfer(): {};
+		FIntConstant(value, info): {};
+		FTypeVar(id): {
+			parent = unionFind(env.unionFind, id);
+			parenttid = unionFind(env.unionFind, tid);
+			// println("Tyvar dependency: " + i2s(parent) + " -> " + i2s(parenttid));
+			env.tyvarDependencies ::= insertMultimap(env.tyvarDependencies, parent, parenttid);
+		}
+		FTypeInt(bits): {}
+		FTypeFunction(args, to): {
+			recordTyvarDependency(env, tid, args);
+			recordTyvarDependencyType(env, tid, to);
+		}
+		FTypeCall(id, typars): recordTyvarDependency(env, tid, typars);
+		FInlineType(language, stream, dependencies): {
+			println("TODO: Should we traverse this dependency");
+		}
+	}
+}
+
+resolveFastTyvars(env : FastInference) -> void {
+	fori(0, env.tyvarId - 1, \tv -> {
+		mtype = lookupTree(env.tyvars, tv);
+		pid = unionFind(env.unionFind, tv);
+		mtype ?? {
+			if (pid != tv) {
+				setFastTyvar(env, pid, mtype)
+			}
+		}: {
+			ptype = lookupTree(env.tyvars, pid);
+			switch (ptype) {
+				None(): {
+					// reportTyvarError(env, tv, "Could not resolve type for tyvar " + i2s(tv));
+				}
+				Some(pt): {
+					if (tyvarDebug) {
+						println("Resolving a" + i2s(tv) + " to " + fastType2string(pt));
+					}
+					env.tyvars ::= setTree(env.tyvars, tv, pt);
+				}
+			}
+		}
+	});
+}
+
+
+reportTyvarError(env : FastInference, tyvar : int, message : string) -> void {
+	loc = lookupTreeDef(env.tyvarLocations, tyvar, FLocation(-1, -1, -1));
+	env.onError(message, loc);
+}

@@ -1,0 +1,145 @@
+import fast/typing/type_environment;
+import fast/typing/tyvars;
+import fast/fast_prettyprint;
+
+/*
+TODO: This is dead code. We can consider to retire it,
+although the graph part might be helpful
+*/
+export {
+	resolveUnifyGraph(env : FastInference) -> void;
+}
+
+resolveUnifyGraph(env : FastInference) -> void {
+	dot = simpleGraph2dot(env.unifyGraph, FTypeVoid(), [], \t -> {
+		[DotLabel(fastType2string(t))]
+	}, \e -> []);
+
+	setFileContent("unify.dot", dot);
+	{}
+
+	queue = buildSet(getTreeKeys(env.unifyGraph.nodes));
+	traverseUnifyQueue(env, queue);	
+}
+
+traverseUnifyQueue(env : FastInference, queue : Set<FastType>) -> void {
+	mpop = popMinSet(queue);
+	mpop ?? {
+		node = mpop.value;
+		rest = mpop.rest;
+
+		// Here, we have all the types in this connected component
+		reachable = insertSet(reachableClosureFromSimpleNode(env.unifyGraph, node), node);
+
+		smallest = smallestFastType(set2array(reachable));
+
+		// TODO: If smallest is a tyvar, we have an unresolved polymorphic group, and should
+		// require that to be explicit
+
+		iterSet(reachable, \r -> {
+			switch (r) {
+				FTypeVar(id): {
+					if (r != smallest) {
+						setFastTyvar(env, id, smallest);
+					}
+				}
+				default: {}
+			}
+		});
+	
+		nqueue = differenceSets(rest, reachable);
+		traverseUnifyQueue(env, nqueue);
+	} : {
+	}
+}
+
+smallestFastType(types : [FastType]) -> FastType {
+	if (types == []) FTypeVoid()
+	else {
+		// TODO: It is excessive to sort. We only need the smallest
+		ordered = mergeSort(types, compareFastType);
+		ordered[0];
+	}
+}
+
+compareFastType(small : FastType, big : FastType) -> int {
+	switch (small) {
+		FIntConstant(svalue, __): {
+			switch (big) {
+				FIntConstant(bvalue, __): genericCompare(svalue, bvalue);
+				default: -1;
+			}
+		}
+		FTypeInt(sbits): {
+			switch (big) {
+				FIntConstant(bvalue, __): 1;
+				FTypeInt(bbits): genericCompare(sbits, bbits);
+				default: -1;
+			}
+		}
+		FTypeCall(sid, stypars): {
+			switch (big) {
+				FIntConstant(bvalue, __): 1;
+				FTypeInt(bbits): 1;
+				FTypeCall(bid, btypars): {
+					if (sid == bid) compareFastTypes(stypars, btypars)
+					else genericCompare(sid, bid);
+				}
+				default: -1;
+			}
+		}
+		FTypeFunction(sargs, sto): {
+			switch (big) {
+				FIntConstant(bvalue, __): 1;
+				FTypeInt(bbits): 1;
+				FTypeCall(bid, btypars): 1;
+				FTypeFunction(bargs, bto): {
+					ac = compareFastTypes(sargs, bargs);
+					if (ac != 0) ac
+					else compareFastType(sto, bto);
+				}
+				default: -1;
+			}
+		}
+		FInlineType(slanguage, sstream, sdependencies): {
+			switch (big) {
+				FIntConstant(bvalue, __): 1;
+				FTypeInt(bbits): 1;
+				FTypeCall(bid, btypars): 1;
+				FTypeFunction(bargs, bto): 1;
+				FInlineType(blanguage, bstream, bdependencies): genericCompare(small, big);
+				default: -1;
+			}
+		}
+
+		FTypeVar(sid): {
+			switch (big) {
+				FIntConstant(bvalue, __): 1;
+				FTypeInt(bbits): 1;
+				FTypeCall(bid, btypars): 1;
+				FTypeFunction(bargs, bto): 1;
+				FInlineType(blanguage, bstream, bdependencies): 1;
+				FTypeVar(bid): genericCompare(sid, bid);
+				FTypeInfer(): -1;
+			}
+		}
+
+		FTypeInfer(): {
+			switch (big) {
+				FTypeInfer(): 0;
+				default: -1;
+			}
+		}
+	}
+}
+
+compareFastTypes(small : [FastType], big : [FastType]) -> int {
+	if (small == [] && big != []) -1
+	else if (small == [] && big == []) 0
+	else if (big == []) 1
+	else {
+		s = compareFastType(small[0], big[0]);
+		if (s != 0) s
+		else compareFastTypes(tail(small), tail(big))
+	}
+}

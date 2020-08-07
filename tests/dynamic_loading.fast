@@ -1,0 +1,38 @@
+import runtime;
+import dynamic_loading;
+
+// This is main
+dynamic_loading.js::main() -> i0 {
+    println("This is main code");
+	both();
+    // Gives promise
+    library = loadCode("dynamic_library.js");   
+    done(library, nextStep, errorStep);
+}
+
+// This is in master
+nextStep() -> i0 {
+    // calls foo from library
+    foo();
+}
+
+errorStep() -> i0 {
+    println("Could not load library");
+}
+
+// This is in both - so binary only in main, but accessible from library
+both() -> i0 {
+	println("This is in both");
+}
+
+// This goes to the library
+dynamic_library.js::main() -> i0 {
+    println("Hello from library");
+	both();
+}
+
+dynamic_library.js::foo() -> i0 {
+    println("This is in the library");
+}
+
+

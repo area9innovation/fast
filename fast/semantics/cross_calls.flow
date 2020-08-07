@@ -1,0 +1,175 @@
+import fast/fast_ast;
+import fast/backends/backends;
+import ds/set;
+import ds/treeutils;
+
+export {
+	// Identify all calls from this output, including foreign language calls in the same output
+	fastCrossLanguageCalls(p : FastAst, output : string) -> FastCalls;
+
+	FastCalls(
+		// For each language, what calls have been made?
+		calls : Tree<string, Set<string>>,
+		// Across languages, what cross-calls do we have?
+		crossCalls : Set<FCrossCall>,
+	);
+}
+
+FLanguageFn(language : string, id : string);
+
+FastCrossCall(
+	// The queue of functions to traverse
+	queue : Set<FLanguageFn>,
+	// The set of functions we have visited
+	visited : Set<FLanguageFn>,
+	// What calls exist that cross languages?
+	crossCalls : Set<FCrossCall>,
+	// Top-level
+	toplevels : Tree<FLanguageFn, [FastDeclaration]>
+);
+
+fastCrossLanguageCalls(p : FastAst, output : string) -> FastCalls {
+	// Find the anchor functions for this output
+	roots = fold(p.functions, makeSet(), \acc, fn -> {
+		if (fn.output == output) {
+			insertSet(acc, FLanguageFn(fn.language, fn.id))
+		} else acc
+	});
+
+	gtoplevels : Tree<FLanguageFn, [FastDeclaration]> = fold(p.globals, makeTree(), \acc, global -> {
+		// OK, we expand this to exist in all backends
+		fold(fastBackends, acc, \acc2, backend -> {
+			treePushToArrayUnique(acc2, FLanguageFn(backend.name, global.id), global);
+		});
+	});
+
+	env = FastCrossCall(
+		roots,
+		makeSet(),
+		makeSet(),
+		fold(p.functions, gtoplevels, \acc : Tree<FLanguageFn, [FastDeclaration]>, fn -> {
+			if (fn.output == "" || fn.output == output) {
+				if (fn.language == "") {
+					// OK, we expand this to exist in all backends
+					fold(fastBackends, acc, \acc2 : Tree<FLanguageFn, [FastDeclaration]>, backend -> {
+						treePushToArrayUnique(acc2, FLanguageFn(backend.name, fn.id), fn);
+					});
+				} else {
+					treePushToArrayUnique(acc, FLanguageFn(fn.language, fn.id), fn)
+				}
+			} else {
+				// We skip this guy
+				acc;
+			}
+		})
+	);
+	calls = collectCrossCalls(env);
+
+	FastCalls(
+		foldSet(calls.visited, makeTree(), \acc, fcall -> {
+			insertMultimap(acc, fcall.language, fcall.id)
+		}),
+		calls.crossCalls
+	)
+}
+
+collectCrossCalls(acc : FastCrossCall) -> FastCrossCall {
+	mpop = popMinSet(acc.queue);
+	mpop ?? {
+		call : FLanguageFn = mpop.value;
+		rest = mpop.rest;
+
+		nacc = FastCrossCall(
+				acc
+				with queue = rest
+			);
+
+		if (containsSet(acc.visited, call)) {
+			collectCrossCalls(nacc);
+		} else {
+			tls = getTreeArrayValue(acc.toplevels, call);
+			if (tls == []) {
+				if (call.id != "main") {
+					println("Could not find " + call.language + ":" + call.id);
+				}
+				collectCrossCalls(nacc);
+			} else {
+				fold(tls, nacc, \tlacc, tl -> {
+					// println("Visiting " + call.language + "::" + call.id);
+					acc0 = FastCrossCall(tlacc with visited = insertSet(tlacc.visited, call));
+					
+					acc1 = switch (tl) {
+						FastTypeFunctor(__, language, id, typars, type): {
+							tlacc;
+						}
+						FastGlobalVar(__, id, value, __): fastCrossExpCalls(acc0, call.language, value);
+						FastFunction(__, __, fnlanguage, inline, id, args, returnType, effect, body, __): {
+							fastCrossExpCalls(acc0, call.language, body);
+						}
+					}
+					collectCrossCalls(acc1);
+				})
+			}
+		}
+	} : acc;
+}
+
+fastCrossExpCalls(acc : FastCrossCall, language : string, xe : FExp) -> FastCrossCall {
+	switch (xe) {
+		FConstant(): acc;
+		FVar(id, info): {
+			flanguage = FLanguageFn(language, id);
+			if (!containsSet(acc.visited, flanguage) && containsKeyTree(acc.toplevels, flanguage)) {
+				FastCrossCall(acc with queue = insertSet(acc.queue, flanguage));
+			} else acc;
+		}
+		FSizeOf(type, info): acc;
+		FLet(id, value, body, info): fastCrossExpsCalls(acc, language, [value, body]);
+		FCallOp(targ, op, args, info): {
+			if (targ == "" || targ == language) {
+				// Normal call
+				flanguage = FLanguageFn(language, op);
+				nacc = if (!containsSet(acc.visited, flanguage) && containsKeyTree(acc.toplevels, flanguage)) {
+					FastCrossCall(acc with queue = insertSet(acc.queue, flanguage));
+				} else acc;
+				fastCrossExpsCalls(nacc, language, args);
+			} else {
+				// OK, we have a cross-language call
+				// Figure out the type
+				tls = getTreeArrayValue(acc.toplevels, FLanguageFn(targ, op));
+				fold(tls, acc, \acc1, tl -> {
+					type = switch (tl) {
+							FastFunction(__, __, __, __, __, __, __, __, __, finfo): finfo.type;
+							default: FTypeInfer();
+						};
+					crossCall = FCrossCall(language, targ, op, type, FTypeFunction(map(args, \a -> a.info.type), info.type));
+					FastCrossCall(
+						acc1
+						with crossCalls = insertSet(acc1.crossCalls, crossCall),
+						queue = insertSet(acc1.queue, FLanguageFn(targ, op))
+					);
+				})
+			}
+		}
+		FCall(fn, args, info): {
+			acc1 = fastCrossExpCalls(acc, language, fn);
+			fastCrossExpsCalls(acc1, language, args);
+		}
+		FSequence(exprs, info): fastCrossExpsCalls(acc, language, exprs);
+		FTypeAnnotation(e, type, info): fastCrossExpCalls(acc, language, e);
+		FIf(cond, then, else_, info): fastCrossExpsCalls(acc, language, [cond, then, else_]);
+		FInlineCode(targ, stream, deps, type, info): {
+			fold(stream, acc, \acc2, s -> {
+				switch (s) {
+					FInlineString(__, __, __): acc2;
+					FInlineUnquote(ex, __, __): fastCrossExpCalls(acc2, language, ex);
+					FInlineTypeUnquote(__, __, __): acc2;
+				}
+			});
+		}
+	}
+}
+
+fastCrossExpsCalls(acc : FastCrossCall, language : string, es : [FExp]) -> FastCrossCall {
+	fold(es, acc, \acc2, e -> fastCrossExpCalls(acc2, language, e))
+}

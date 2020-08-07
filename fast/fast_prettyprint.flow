@@ -1,0 +1,147 @@
+import fast/fast_ast;
+import fast/semantics/helpers;
+import text/blueprint;
+
+export {
+	fast2string(f : FastAst) -> string;
+	fexp2string(f : FExp) -> string;
+	fastType2string(t : FastType) -> string;
+	fastEffect2string(f : FastEffect) -> string;
+
+	fastFile2string(f : FastFile) -> string;
+}
+
+fastFile2string(f : FastFile) -> string {
+	superglue(f.imports, \i -> "import " + i + ";\n", "")
+	+ (if (f.exports != []) {
+		"export {\n"
+		+ superglue(f.exports, \td -> "\t" + fastTypeDecl2string(td) + "\n", "")
+		+ "}\n"
+	} else "")
+	+ 
+	superglue(f.toplevel, fastDecl2string, "")
+}
+
+fast2string(f : FastAst) -> string {
+	superglue(f.types, fastDecl2string, "")
+	+ superglue(f.globals, fastDecl2string, "")
+	+ superglue(f.functions, fastDecl2string, "")
+}
+
+fastDecl2string(c : FastDeclaration) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, pars, type): fastTypeDecl2string(c) + "\n";
+		FastGlobalVar(__, id, value, info): id + " : " + fastType2string(info.type) 
+			+ fastEffect2string(info.effect) + " = " + fexp2string(value) + ";\n"
+			;
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, info): {
+			(if (output != "") output + "." else "")
+			+ (if (language != "") language + "::" else "")
+			+ (if (inline) "inline " else "")
+			+ id + "(" + superglue(args, \a -> a.name + " : " + fastType2string(a.type) + fastEffect2string(a.effect), ", ") + ") -> " 
+			+ fastType2string(returnType) + fastEffect2string(effect) + " " + fexp2string(body)
+			+ fastInfo2string(info) + "\n"
+		}
+	}
+}
+
+fastTypeDecl2string(t : FastTypeDeclaration) -> string {
+	switch (t) {
+		FastTypeFunctor(__, language, id, typars, type): "typedef " 
+			+ (if (language != "") language + "::" else "")
+			+ id + (if (typars != []) "<" + strGlue(typars, ", ") + ">" else "") 
+			+ " = " + fastType2string(type) + ";";
+		FastFunctionDecl(id, args, rt, effect): {
+			id + "(" + superglue(args, \a -> a.name + " : " + fastType2string(a.type) + fastEffect2string(a.effect), ", ") + ") -> " 
+			+ fastType2string(rt) + fastEffect2string(effect)  + ";";
+		}
+	}
+}
+
+fastEffect2string(f : FastEffect) -> string {
+	switch (f) {
+		FEffectInfer(): "";
+		FEffectSet(set): " with {" + strGlue(set2array(set), ",") + "}";
+		FEffectVar(id): " with " + id;
+	}
+}
+
+fexp2string(f : FExp) -> string {
+	inf = \ -> {
+		"/* " + fastType2string(f.info.type) + "*/ "
+	}
+	switch (f) {
+		FIntConstant(value, info): i2s(value) + inf();
+		FDoubleConstant(value, info): d2s(value);
+		FStringConstant(value, info): toString(value) + inf();
+		FFunctionPointer(id, info): "\\" + id + inf();
+		FVar(id, info): id + inf();
+		FLet(id, value, body, info): blueprint("
+			%id% = %value%;
+			%body%", [
+				"id", id,
+				"value", fexp2string(value),
+				"body", fexp2string(body)
+			]) + inf();
+		FSizeOf(type, info): "sizeof " + fastType2string(type)  + inf();
+		FCall(fn, args, info): fexp2string(fn) + "(" + superglue(args, fexp2string, ", ") + ")" + inf();
+		FCallOp(language, op, args, info): (if (language != "") language + "::" else "") + op + "(" + superglue(args, fexp2string, ", ") + ")" + inf();
+		FSequence(exprs, info): {
+			seq = superglue(exprs, \e -> fexp2string(e) + fastInfo2string(e.info), ";\n");
+			blueprint("
+				{
+					%seq%
+				}
+			", ["seq", seq]
+			) + inf();
+		}
+		FTypeAnnotation(e, type, info): {
+			fexp2string(e) + " : " + fastType2string(type) + inf();
+		}
+		FIf(cond, then, else_, info): blueprint("
+			if %cond% %then%
+			else %else%
+			", [
+				"cond", fexp2string(cond),
+				"then", fexp2string(then),
+				"else", fexp2string(else_)
+			]) + inf();
+		FInlineCode(language, stream, dependencies, type, info): {
+			t = \str -> {
+				"{" + finlineForm2string(str, \e -> "$(" + fexp2string(e) + ")", \t -> "$type(" + fastType2string(t) + ")") + "}"
+			}
+			"inline " + language + t(stream)
+			+ superglue(dependencies, \dep -> {
+				" require " + dep.language + "::" + dep.name + " " + t(dep.stream)
+			}, "") 
+			+ (if (type == FTypeVoid()) "" else ":" + fastType2string(type))
+			+ inf();
+		}
+	}
+}
+
+fastType2string(t : FastType) -> string {
+	switch (t) {
+		FTypeInfer(): "infer";
+		FIntConstant(value, info): i2s(value);
+		FTypeInt(bits): "i" + i2s(bits);
+		FTypeVar(id): "a" + i2s(id);
+		FTypeFunction(args, to): "(" +  superglue(args, fastType2string, ", ") + ") -> " + fastType2string(to);
+		FTypeCall(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, fastType2string, ", ") + ">");
+		FInlineType(language, stream, dependencies): {
+			tx = \str -> {
+				"{"
+				+ ftypeInlineForm2string(str, \tp -> "$(" + fastType2string(tp) + ")")
+				+ "}"
+			}
+			"inline " + language + tx(stream)
+			+ superglue(dependencies, \dep -> {
+				" require " + dep.language + "::" + dep.name + " " + tx(dep.stream)
+			}, "");
+		}
+	}
+}
+
+fastInfo2string(f : FInfo) -> string {
+	if (f.type != FTypeInfer()) "/*" + fastType2string(f.type) + "*/" else ""
+}

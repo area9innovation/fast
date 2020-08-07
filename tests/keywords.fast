@@ -1,0 +1,9 @@
+import runtime;
+
+keywords.c::main() -> i0 {
+    int = 0;
+    auto = 1;
+    break = 2;
+    case = 3;
+    char = 4;
+}

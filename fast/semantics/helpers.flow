@@ -1,0 +1,233 @@
+import fast/fast_ast;
+import text/blueprint;
+import fast/backends/types;
+
+export {
+	extractFastInlineForms(f : FastAst) -> [FInlineCode];
+	extractFastInlineTypeForms(f : FastAst) -> [FInlineType];
+
+
+	foldFExp(ex : FExp, acc : ?, fn : (?, FExp) -> ??) -> ??;
+
+	mapFastAst(f : FastAst, fn : (FExp) -> FExp) -> FastAst;
+
+	mapFExp(ex : FExp, fn : (FExp) -> FExp) -> FExp;
+
+	mapFastTypeInFExp(ex : FExp, fn : (FastType) -> FastType) -> FExp;
+
+	mapFastType(f : FastType, fn : (FastType) -> FastType) -> FastType;
+
+	finlineForm2string(s : [FInlineForm], e2s : (FExp) -> string, t2s : (FastType) -> string) -> string;
+	ftypeInlineForm2string(stream : [FInlineTypeForm], t2s : (FastType) -> string) -> string;
+
+	// Generates the code for a given section
+	generateFDependency(program : FastCompile, section : string, 
+		e2s : (FExp) -> string, t2s : (FastType) -> string, sep : string, unique : bool) -> string;
+}
+
+extractFastInlineForms(f : FastAst) -> [FInlineCode] {
+	varInlines = fold(f.globals, makeList(), \acc, global -> {
+		extractFExpInlineForms(acc, global.value);
+	})
+	functionInlines = fold(f.functions, varInlines, \acc, function -> {
+		extractFExpInlineForms(acc, function.body);
+	});
+	list2array(functionInlines)
+}
+
+extractFastInlineTypeForms(f : FastAst) -> [FInlineType] {
+	list2array(fold(f.types, makeList(), \acc, typefun -> {
+		extractFInlineTypeForms(acc, typefun.type);
+	}))
+}
+
+extractFInlineTypeForms(acc : List<FInlineType>, t : FastType) -> List<FInlineType> {
+	switch (t) {
+		FTypeInfer(): acc;
+		FIntConstant(value, info): acc;
+		FTypeInt(bits): acc;
+		FTypeVar(id): acc;
+		FTypeFunction(args, to): extractFInlineTypeForms(fold(args, acc, extractFInlineTypeForms), to);
+		FTypeCall(id, typars): fold(typars, acc, extractFInlineTypeForms)
+		FInlineType(language, stream, dependencies): Cons(t, acc);
+	}
+}
+
+extractFExpInlineForms(acc : List<FInlineCode>, f : FExp) -> List<FInlineCode> {
+	foldFExp(f, acc,
+		\acc2 : List<FInlineCode>, c : FExp -> {
+			switch (c) {
+				FInlineCode(language, stream, dependencies, type, info): Cons(c, acc2);
+				default: acc2;
+			}
+		}
+	)
+}
+
+foldFExp(ex : FExp, acc : ?, fn : (?, FExp) -> ??) -> ?? {
+	fn(switch (ex) {
+		FConstant(): acc;
+		FVar(id, info): acc;
+		FSizeOf(type, info): acc;
+
+		FLet(id, value, body, info): foldFExps([value, body], acc, fn);
+
+		FCallOp(language, op, args, info): foldFExps(args, acc, fn);
+		FCall(cfn, args, info): foldFExps(args, foldFExp(cfn, acc, fn), fn);
+		FSequence(exprs, info): foldFExps(exprs, acc, fn);
+		FTypeAnnotation(e, type, info): foldFExp(e, acc, fn);
+		FIf(cond, then, else_, info): foldFExps([cond, then, else_], acc, fn);
+		FInlineCode(language, stream, dependencies, type, info): {
+			fl = \ac, str -> fold(str, ac, \acc2, s -> switch (s) {
+				FInlineString(__, __, __): acc2;
+				FInlineUnquote(e, __, __): foldFExp(e, acc2, fn);
+				FInlineTypeUnquote(__, __, __): acc2;
+			});
+			fold(dependencies, fl(acc, stream), \acc2, dep -> {
+				fl(acc2, dep.stream)
+			});
+		}
+	}, ex)
+}
+
+foldFExps(exs : [FExp], acc : ?, fn : (?, FExp) -> ??) -> ?? {
+	fold(exs, acc, \acc2, ex -> foldFExp(ex, acc2, fn));
+}
+
+
+mapFastAst(f : FastAst, fn : (FExp) -> FExp) -> FastAst {
+	FastAst(
+		f
+		with globals = map(f.globals, \g : FastGlobalVar -> {
+			FastGlobalVar(g with value = fn(g.value))
+		}),
+		functions = map(f.functions, \fun : FastFunction -> {
+			FastFunction(fun with body = fn(fun.body))
+		})
+	)
+}
+
+mapFExp(ex : FExp, fn : (FExp) -> FExp) -> FExp {
+	fn(switch (ex) {
+		FConstant(): ex;
+		FVar(id, info): ex;
+		FSizeOf(type, info): ex;
+		FLet(id, value, body, info): FLet(id, mapFExp(value, fn), mapFExp(body, fn), info);
+
+		FCallOp(language, op, args, info): FCallOp(ex with args = mapFExps(args, fn));
+		FCall(cfn, args, info): FCall(mapFExp(cfn, fn), mapFExps(args, fn), info);
+		FSequence(exprs, info): FSequence(mapFExps(exprs, fn), info);
+		FTypeAnnotation(e, type, info): FTypeAnnotation(mapFExp(e, fn), type, info);
+		FIf(cond, then, else_, info): FIf(mapFExp(cond, fn), mapFExp(then, fn), mapFExp(else_, fn), info);
+		FInlineCode(language, stream, dependencies, type, info): {
+			fl = \str -> map(str, \s -> switch (s) {
+				FInlineString(__, __, __): s;
+				FInlineUnquote(e, l, c): FInlineUnquote(mapFExp(e, fn), l, c);
+				FInlineTypeUnquote(__, __, __): s;
+			});
+			FInlineCode(language, fl(stream), map(dependencies, \d -> FInlineDependency(d with stream = fl(d.stream))), type, info);
+		}
+	})
+}
+
+mapFExps(es : [FExp], fn : (FExp) -> FExp) -> [FExp] {
+	map(es, \e -> mapFExp(e, fn))
+}
+
+
+finlineForm2string(stream : [FInlineForm], e2s : (FExp) -> string, t2s : (FastType) -> string) -> string {
+	superglue(stream, \form : FInlineForm -> {
+		switch (form) {
+			FInlineString(s, __, __): s;
+			FInlineUnquote(e, __, __): e2s(e);
+			FInlineTypeUnquote(e, __, __): t2s(e);
+		}
+	}, "");
+}
+
+ftypeInlineForm2string(stream : [FInlineTypeForm], t2s : (FastType) -> string) -> string {
+	superglue(stream, \form : FInlineTypeForm -> {
+		switch (form) {
+			FInlineString(s, __, __): s;
+			FInlineTypeUnquote(e, __, __): t2s(e);
+		}
+	}, "");
+}
+
+generateFDependency(program : FastCompile, section : string, e2s : (FExp) -> string, t2s : (FastType) -> string, sep : string, unique : bool) -> string {
+	deps = concat(
+		generateFInlineDependency(getTreeArrayValue(program.inlineDependencies, section), e2s, t2s, sep, unique),
+		generateFInlineTypeDependency(getTreeArrayValue(program.inlineTypeDependencies, section), t2s, sep, unique)
+	);
+	strGlue(if (unique) uniq(deps) else deps, "");
+}
+
+generateFInlineDependency(deps : [FInlineDependency], e2s : (FExp) -> string, t2s : (FastType) -> string, sep : string, unique : bool) -> [string] {
+	streams0 = map(deps, \d -> d.stream);
+	streams = if (unique) uniq(streams0) else streams0;
+	map(streams, \s -> finlineForm2string(s, e2s, t2s) + sep);
+}
+
+generateFInlineTypeDependency(deps : [FInlineTypeDependency], t2s : (FastType) -> string, sep : string, unique : bool) -> [string] {
+	streams0 = map(deps, \d -> d.stream);
+	streams = if (unique) uniq(streams0) else streams0;
+	map(streams, \s -> ftypeInlineForm2string(s, t2s) + sep);
+}
+
+mapFastTypeInFExp(exx : FExp, fn : (FastType) -> FastType) -> FExp {
+	ifn = \i -> FInfo(i with type = fn(i.type));
+	mapFExp(exx, \ex -> {
+		switch (ex) {
+			FIntConstant(value, info): FIntConstant(value, ifn(info));
+			FDoubleConstant(value, info): FDoubleConstant(value, ifn(info));
+			FStringConstant(value, info): FStringConstant(value, ifn(info));
+			FFunctionPointer(id, info): FFunctionPointer(id, ifn(info));
+			FVar(id, info): FVar(id, ifn(info));
+			FLet(id, value, body, info): FLet(id, value, body, ifn(info));
+			FSizeOf(type, info): FSizeOf(fn(type), ifn(info));
+			FCallOp(language, op, args, info): FCallOp(language, op, args, ifn(info));
+			FCall(cfn, args, info): FCall(cfn, args, ifn(info));
+			FSequence(exprs, info): FSequence(exprs, ifn(info));
+			FTypeAnnotation(e, type, info): FTypeAnnotation(e, fn(type), ifn(info));
+			FIf(cond, then, else_, info): FIf(cond, then, else_, ifn(info));
+			FInlineCode(language, stream, dependencies, type, info): {
+				str = \s -> {
+					map(s, \ss -> {
+						switch (ss) {
+							FInlineTypeUnquote(tt, sl, sc): FInlineTypeUnquote(fn(tt), sl, sc);
+							FInlineString(v, __, __): ss;
+							FInlineUnquote(e, __, __): ss;
+						}
+					})
+				};
+				FInlineCode(language, str(stream), map(dependencies, \dep -> {
+					FInlineDependency(dep with stream = str(dep.stream))
+				}), fn(type), ifn(info));
+			}
+		}
+	});
+}
+
+mapFastType(t : FastType, fn : (FastType) -> FastType) -> FastType {
+	fn(switch (t) {
+		FTypeInfer(): fn(t);
+		FIntConstant(value, info): fn(t);
+		FTypeVar(id): fn(t);
+		FTypeInt(bits): fn(t);
+		FTypeFunction(args, to): FTypeFunction(map(args, \a -> mapFastType(a, fn)), mapFastType(to, fn));
+		FTypeCall(id, typars): FTypeCall(id, map(typars, \tt -> mapFastType(tt, fn)));
+		FInlineType(language, stream, dependencies): {
+			st = \str : [FInlineTypeForm] -> {
+				map(str, \s : FInlineTypeForm -> {
+					switch (s) {
+						FInlineString(ss, __, __): s;
+						FInlineTypeUnquote(tt, sl, sc): FInlineTypeUnquote(mapFastType(tt, fn), sl, sc);
+					}
+				});
+			}
+			FInlineType(language, st(stream), map(dependencies, \d : FInlineTypeDependency -> {
+				FInlineTypeDependency(d with stream = st(d.stream))
+			}))
+		}
+	})
+}

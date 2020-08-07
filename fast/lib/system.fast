@@ -1,0 +1,41 @@
+import promise;
+
+export {
+	startProcess(s : string) -> Promise<string, string>;
+}
+
+flow::inline startProcess(s : string) -> Promise<string, string> {
+	inline flow {
+		parts = strSplit(s, " ");
+		Promise(\fulfill, reject -> {
+			startProcess(parts[0], tail(parts, 1), ".", "", \ec, sout, serr -> {
+				if (ec == 0) {
+					fulfill(sout));
+				} else {
+					reject(serr);
+				}
+			});
+		})
+	} require import {
+		import sys/system;
+		import string;
+		import promise;
+	} : Promise<string, string>
+}
+
+js::inline startProcess(s : string) -> Promise<string, string> {
+	if (isDeno()) {
+		inline js {
+			Deno.run({
+				// TODO: Fix this
+				cmd: ["echo", "hello"],
+			});
+		} : Promise<string, string>
+	} else {
+		promise(rejectFn)
+	}
+}
+
+rejectFn(ful : (string) -> i0, rej : (string) -> i0) -> i0 {
+	rej("Start process not implemented");
+}

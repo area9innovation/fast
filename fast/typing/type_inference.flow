@@ -1,0 +1,367 @@
+import fast/typing/type_environment;
+import fast/typing/fast_type_utils;
+import fast/typing/unify;
+import fast/semantics/overload;
+import fast/semantics/utils;
+import fast/fast_prettyprint;
+import fast/typing/instantiate_types;
+
+/*
+Algorithm:
+- Update the declared types for all globals and functions to avoid Infer, but use type variables
+
+- Build a type environment with all globals and functions, using declared types (containing type variables)
+
+- For globals, infer the type of the value. Unify that with the declared type
+
+- For functions, populate the type environment with type variables for the arguments, and then infer the type of the body
+  Unify the arg and return type with with the declared function type
+
+- Resolve the unification graph and bind all tyvars
+
+- Instantiate all type vars in both declared and inferred types to real types
+*/
+export {
+	fastTypeInference(f : FastAst) -> FastAst;
+
+	fastTypeInferFConstantType(onError : (string) -> void, f : FConstant) -> FConstant;
+}
+
+fastTypeInference(f : FastAst) -> FastAst {
+	env = FastInference(makeTree(), buildGeneralTypedefEnv(f), makeSimpleGraph(), makeTree(), 0, makeTree(), 
+			makeTree(), makeUnionFind(128), makeTree(), \error, location -> {
+		println(elementAt(f.sourceFiles, location.sourceFile, "") + ".fast:" + i2s(location.line) + ":" + i2s(location.col) + ": " + error);
+	});
+
+	// Instantiate type vars for all "infer" types in declared globals
+	// but not the value. This ensures we have tyvars ready for their overall type
+	globals = map(f.globals, \global : FastGlobalVar -> {
+		location = FLocation(global.sourceFile, global.info.line, global.info.col);
+		FastGlobalVar(global with info = resolveFastInfo(env, location, global.info));
+	});
+
+	// Instantiate type vars for all "infer" types for all declared function types
+	// but not the body. This ensures we have tyvars ready for their overall type
+	functions = map(f.functions, \function -> {
+		location = FLocation(function.sourceFile, function.info.line, function.info.col);
+		rargs = map(function.args, \a -> {
+			FFunctionArg(a with type = resolveFastType(env, location, a.type))
+		});
+		ret = resolveFastType(env, location, function.returnType);
+		FastFunction(function with 
+			args = rargs, returnType = ret,
+			info = FInfo(function.info with type = FTypeFunction(map(rargs, \ra -> ra.type), ret))
+		);
+	});
+
+	if (false) {
+		preType = FastAst(f with globals = globals, functions = functions);
+		println("Before type inference");
+		println(fast2string(preType));
+	}
+
+	// Register all globals in the type environment - with polymorphism
+	globalTypes = fold(globals, env.env, \acc, global -> {
+		treePushToArrayUnique(acc, global.id, global.info.type);
+	});
+	functionTypes = fold(functions, globalTypes, \acc, function -> {
+		treePushToArrayUnique(acc, function.id, declaredFastFunctionType(function));
+	});
+	env.env ::= functionTypes;
+
+	// Infer the type of all globals, and unify with the declared type
+	globals1 = map(globals, \global : FastGlobalVar -> {
+		location = FLocation(global.sourceFile, global.info.line, global.info.col);
+		if (isPolymorphicFastType(global.info.type)) {
+			env.onError(global.id + " is polymorphic global, which is unsupported", location);
+		}
+		nvalue : FExp = fastTypeInferFExpType(env, location, global.value);
+		unifyFastInfo(env, location, global.info, nvalue.info);
+		FastGlobalVar(global with value = nvalue);
+	});
+
+	functions1 = map(functions, \function -> {
+		location = FLocation(function.sourceFile, function.info.line, function.info.col);
+
+		// Bind args into the environment
+		oenv = env.env;
+		iargs = map(function.args, \a -> makeFastTyvar(env, location));
+		env.env ::= foldi(function.args, env.env, \i, acc, a -> {
+			setTree(acc, a.name, [iargs[i]])
+		});
+
+		// This gives the return type
+		nbody = fastTypeInferFExpType(env, location, function.body);
+
+		env.env ::= oenv;
+
+		// The entire function has this info profile
+		inferredInfo = FInfo(nbody.info with type = FTypeFunction(iargs, nbody.info.type));
+
+		// Unify against the declared type
+		declaredInfo = FInfo(
+			if (false) {
+				// If we do this, we have to capture these tyvars in the environment back
+				// to polymorphic variables
+				instantiateTypeParameters(env, location, ref makeTree(), 
+					declaredFastFunctionType(function)
+				)
+			} else {
+				declaredFastFunctionType(function)
+			},
+			function.effect,
+			function.info.line,
+			function.info.col
+		);
+		unifyFastInfo(env, location, declaredInfo, inferredInfo);
+
+		FastFunction(function with body = nbody, info = inferredInfo);
+	});
+
+	if (false) {
+		typedType = FastAst(f with globals = globals1, functions = functions1);
+		println("Before overload resolution");
+		println(fast2string(typedType));
+
+		println("\nWith environment:");
+		traverseInOrder(env.env, \name, types -> {
+			println(name + ": " + superglue(types, fastType2string, ","));
+		});
+
+		println("\nWith instantiated tyvars:");
+		println(fast2string(instantiateFastTyvars(env.tyvars, println, typedType)));
+	}
+
+	// println("\nRunning graph algorithm\n");
+
+	// Now we have the unification graph built
+	// resolveUnifyGraph(env);
+
+	// Now, resolve overloads
+	traverseInOrder(env.overloads, \tyvar, overload -> {
+		location = lookupTreeDef(env.tyvarLocations, tyvar, FLocation(-1, -1, -1));
+		callsite = resolveFTypeFunction(env, location, overload.callSite);
+		works = findCompatibleOverloads(callsite, map(overload.overloads, \o -> resolveFTypeFunction(env, location, o)));
+		if (length(works) == 1) {
+			unifyFastType(env, location, FTypeVar(tyvar), works[0]);
+		} else {
+			mtype = lookupTree(env.tyvars, tyvar);
+			mtype ?? {
+				// OK, we are good, since we already have a type
+			} : {
+				env.onError("Can not resolve a" + i2s(tyvar) + " = overload " 
+					+ fastType2string(resolveFastType(env, location, overload.callSite)) 
+					+ " vs "  + superglue(works, \ot -> {
+						fastType2string(resolveFastType(env, location, ot))
+					}, ", "), location
+				);
+			}
+		}
+	});
+
+	// OK, check if any tyvars are unknown
+	resolveFastTyvars(env);
+
+	// OK, now resolve all tyvars at the top-level
+	nast = FastAst(
+		f
+		with globals = map(globals1, \g -> {
+			location = FLocation(g.sourceFile, g.info.line, g.info.col);
+			FastGlobalVar(g with info = resolveFastInfo(env, location, g.info))
+		}),
+		functions = map(functions1, \fn -> {
+			location = FLocation(fn.sourceFile, fn.info.line, fn.info.col);
+
+			ninfo = resolveFastInfo(env, location, fn.info);
+
+			iargs = switch (ninfo.type) {
+				FTypeFunction(a, r): a;
+				default: [];
+			};
+			rt = switch (ninfo.type) {
+				FTypeFunction(a, r): r;
+				default: fn.returnType;
+			};
+			// Update the argument types
+			nargs = mapi(fn.args, \i, arg -> {
+				FFunctionArg(arg with type = iargs[i])
+			});
+			FastFunction(fn with args = nargs, returnType = rt, info = ninfo)
+		})
+	);
+
+	// Instantiate tyvars all the way down
+	instantiateFastTyvars(env.tyvars, \tyvar-> {
+		// We will check all types in the type check, so no need for this
+		// reportTyvarError(env, tyvar, "Could not resolve type for tyvar " + i2s(tyvar));
+	}, nast);
+}
+
+// This figures out what type the expression has, and places that in the info field
+fastTypeInferFExpType(env : FastInference, location0 : FLocation, f : FExp) -> FExp {
+	location = FLocation(location0 with line = f.info.line, col = f.info.col);
+	switch (f) {
+		FConstant(): fastTypeInferFConstantType(\e -> env.onError(e, location), f);
+		FVar(id, info): {
+			types = getTreeArrayValue(env.env, id);
+			if (length(types) == 1) {
+				itype = instantiateTypeParameters(env, location, ref makeTree(), types[0]);
+				FVar(id, FInfo(info with type = itype))
+			} else if (length(types) >= 2) {
+				env.onError("Overloading of first-order " + id + " not supported. Could be: " + superglue(types, fastType2string, ", "), location);
+				itype = instantiateTypeParameters(env, location, ref makeTree(), types[0]);
+				FVar(id, FInfo(info with type = itype))
+			} else {
+				env.onError("Unknown var " + id, location);
+				f;
+			}
+		}
+		FLet(id, value, body, info): {
+			nvalue = fastTypeInferFExpType(env, location, value);
+			oenv = env.env;
+			env.env ::= setTree(env.env, id, [nvalue.info.type]);
+			nbody = fastTypeInferFExpType(env, location, body);
+			env.env ::= oenv;
+			FLet(id, nvalue, nbody, nbody.info);
+		}
+		FSizeOf(type, info): {
+			// TODO: We should find out how big the type is, and do ceil(log2(bits) bits
+			// FSizeOf(type, FInfo(FTypeInt(FIntConstant(32, inferFastInfo)), info.effect));
+			println("Inference of type of " + toString(f));
+			f;
+		}
+		FCallOp(language, op, args, info): {
+			call = FCall(FVar(op, inferFastInfo), args, info);
+			mcall = fastTypeInferFCall(env, location, call);
+			FCallOp(language, op, mcall.args, mcall.info);
+		}
+		FCall(fn, args, info): {
+			fastTypeInferFCall(env, location, f);
+		}
+		FSequence(exprs, info): {
+			if (exprs == []) {
+				FSequence(exprs, FInfo(info with type = FTypeVoid()));
+			} else {
+				iexprs = map(exprs, \e -> fastTypeInferFExpType(env, location, e));
+				// The type is the last element
+				last = lastElement(iexprs, f);
+				FSequence(iexprs, last.info);
+			}
+		}
+		FTypeAnnotation(e, type, info): {
+			switch (e) {
+				FIntConstant(value, iinfo): {
+					// OK, we override it
+					nint = FIntConstant(value, FInfo(iinfo with type = type));
+					FTypeAnnotation(nint, type, FInfo(info with type = type));
+				}
+				default: {
+					ne = fastTypeInferFExpType(env, location, e);
+					unifyFastType(env, location, type, ne.info.type);
+					FTypeAnnotation(ne, type, FInfo(ne.info with type = type));
+				}
+			}
+		}
+		FIf(cond, then, else_, info): {
+			ncond = fastTypeInferFExpType(env, location, cond);
+			nthen = fastTypeInferFExpType(env, location, then);
+			nelse = fastTypeInferFExpType(env, location, else_);
+
+			unifyFastType(env, location, FTypeBool(), ncond.info.type);
+
+			unifyFastType(env, location, nthen.info.type, nelse.info.type);
+
+			FIf(ncond, nthen, nelse, nthen.info)
+		}
+		FInlineCode(language, stream, deps, typ, info): {
+			ms = \str -> {
+				map(str, \s -> {
+					switch (s) {
+						FInlineString(__, __, __): s;
+						FInlineUnquote(e, l, c): FInlineUnquote(fastTypeInferFExpType(env, location, e), l, c);
+						FInlineTypeUnquote(__, __, __): s;
+					}
+				})
+			}
+
+			type = if (typ == FTypeInfer()) {
+				makeFastTyvar(env, location)
+			} else typ;
+
+			FInlineCode(language, ms(stream), 
+				map(deps, \d -> FInlineDependency(d with stream = ms(d.stream))), 
+				type,
+				FInfo(info with type = type)
+			);
+		}
+	}
+}
+
+fastTypeInferFCall(env : FastInference, location : FLocation, call : FCall) -> FCall {
+	// What are the argument types?
+	nargs : [FExp] = map(call.args, \a -> fastTypeInferFExpType(env, location, a));
+	argTypes = map(nargs, \a -> a.info.type);
+	retType = makeFastTyvar(env, location);
+
+	callsite : FTypeFunction = FTypeFunction(argTypes, retType);
+
+	// If fn is Var, we can do overloading
+	var = getFVar(call.fn);
+	nfn = if (var != "") {
+		types = getTreeArrayValue(env.env, var);
+		itypes = map(types, \t -> instantiateTypeParameters(env, location, ref makeTree(), t));
+
+		// OK, sort down to those that are compatible
+		fntypes : [FTypeFunction] = filtermap(itypes, \t : FastType -> switch (t) {
+			FTypeFunction(oargs, __): if (overloadDistFastTypes(callsite.args, oargs) != -1) Some(t) else None();
+			default: None();
+		});
+
+		preciseTypes = filter(fntypes, \fn -> overloadDistFastTypes(callsite.args, fn.args) == 0);
+		type = if (length(preciseTypes) == 1) {
+			// OK, we know this type is enough to disambiguate
+			unifyFastType(env, location, callsite, preciseTypes[0]);
+			callsite
+		} else if (length(fntypes) == 1) {
+			unifyFastType(env, location, callsite, fntypes[0]);
+			callsite;
+		} else {
+			unique = makeFastTyvar(env, location);
+			overloads = FastOverloadInference(callsite, fntypes);
+			env.overloads ::= setTree(env.overloads, unique.id, overloads);
+
+			// println("Record overload " + fastType2string(callsite) + " vs " + superglue(itypes, fastType2string, ", "));
+
+			recordTyvarDependency(env, unique.id, arrayPush(fntypes, callsite));
+			unique;
+		}
+		FVar(var, FInfo(call.fn.info with type = type));
+	} else {
+		fastTypeInferFExpType(env, location, call.fn);
+	}
+
+	unifyFastType(env, location, callsite, nfn.info.type);
+
+	FCall(nfn, nargs, FInfo(call.info with type = retType));
+}
+
+fastTypeInferFConstantType(onError : (string) -> void, f : FConstant) -> FConstant {
+	switch (f) {
+		FIntConstant(value, info): {
+			ninfo = if (info.type == FTypeInfer()) FInfo(info with type = FTypeInt(32)) else info;
+			FIntConstant(value, ninfo);
+		}
+		FDoubleConstant(value, info): {
+			FDoubleConstant(value, FInfo(info with type = FTypeCall("f64", [])));
+		}
+		FStringConstant(value, info): {
+			chars = strlen(value);
+			// OK, we just assume a type "string" exists
+			FStringConstant(value, FInfo(info with type = FTypeCall("string", [])));
+		}
+		FFunctionPointer(id, info): {
+			onError("Inference of function pointer " + id + " not supported");
+			f;
+		}
+	}
+}

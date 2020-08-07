@@ -1,0 +1,29 @@
+import floats;
+import runtime;
+
+/*
+WASM: No representation of strings
+*/
+
+test() -> i0 {
+	a = 1.5;
+	b = 2.7;
+	c = a + b;
+	println(c);
+}
+
+/*
+floats.c::main() -> i0 {
+	test();
+}*/
+
+floats.java::main(args : inline java { String[] }) -> i0 {
+	test();
+}
+/*
+floats.js::main() -> i0 {
+	test();
+	// wasm::test(); Needs strings in wasm first
+	flow::test();
+}
+*/

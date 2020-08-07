@@ -1,0 +1,39 @@
+import reflection;
+
+c::inline +(l : i32, r : i32) -> i32 { inline c { ($l) + ($r) } }
+c::inline -(l : i32, r : i32) -> i32 { inline c { ($l) - ($r) } }
+c::inline *(l : i32, r : i32) -> i32 { inline c { ($l) * ($r) } }
+c::inline /(l : i32, r : i32) -> i32 { inline c { ($l) / ($r) } }
+c::inline %(l : i32, r : i32) -> i32 { inline c { ($l) % ($r) } }
+
+c::inline <(l : i32, r : i32) -> i1 { inline c { ($l) < ($r) } }
+c::inline <=(l : i32, r : i32) -> i1 { inline c { ($l) <= ($r) } }
+c::inline ==(l : i32, r : i32) -> i1 { inline c { ($l) == ($r) } }
+c::inline !=(l : i32, r : i32) -> i1 { inline c { ($l) != ($r) } }
+c::inline >(l : i32, r : i32) -> i1 { inline c { ($l) > ($r) } }
+c::inline >=(l : i32, r : i32) -> i1 { inline c { ($l) >= ($r) } }
+
+c::inline ||(l : i1, r : i1) -> i1 { inline c { ($l) || ($r) } }
+c::inline &&(l : i1, r : i1) -> i1 { inline c { ($l) && ($r) } }
+
+c::println(s : ?) -> i0 {
+	if (isInt(s)) {
+		inline c {
+			printf("%i\n", $s)
+		} require include {
+			#include·<stdio.h>
+		} : i0
+	} else if (isString(s)) {
+		inline c {
+			printf("%s\n", $s)
+		} require include {
+			#include·<stdio.h>
+		} : i0
+	} else {
+		inline c {
+			printf("<todo>\n");
+		} require include {
+			#include·<stdio.h>
+		} : i0
+	};
+}

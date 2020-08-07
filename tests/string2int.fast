@@ -1,0 +1,43 @@
+import string_utils;
+
+test1() -> i0 {
+    println(s2i(""));
+    println(s2i("0"));
+    println(s2i("2"));
+    println(s2i("35"));
+    println(s2i("42"));
+    println(s2i("99999"));
+    println(s2i("1234567890"));
+    println(s2i("0123456789"));
+    println(s2i("3457356"));
+    println(s2i("34573567892395"));
+}
+
+test2() -> i0 {
+    println(i2s(0));
+    println(i2s(3));
+    println(i2s(9));
+    println(i2s(35));
+    println(i2s(42));
+    println(i2s(99999));
+    println(i2s(1234567890));
+    println(i2s(0123456789));
+    println(i2s(3457356));
+    println(i2s(34573567892395));
+}
+
+
+str2i_test.flow::main() -> i0 {
+    test1();
+    println("-----------");
+    test2();
+    quit(0);
+}
+
+/*
+
+Doesn't work yet
+
+str2i_test.rust::main() -> i0 {
+    test();
+}*/

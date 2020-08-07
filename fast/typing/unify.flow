@@ -1,0 +1,207 @@
+import fast/typing/type_environment;
+import fast/typing/tyvars;
+import fast/typing/polymorphism;
+import fast/typing/instantiate_types;
+import fast/fast_prettyprint;
+
+export {
+	// Unify these guys. Any effects should happen in the type environment
+	unifyFastInfo(env : FastInference, location : FLocation, l : FInfo, r : FInfo) -> void;
+
+	unifyFastType(env : FastInference, location : FLocation, l : FastType, r : FastType) -> void;
+
+	// Make a tyvar for all infers. If we have a binding for a tyvar, instantiate it
+	resolveFastInfo(env : FastInference, location : FLocation, info : FInfo) -> FInfo;
+
+	// Make a tyvar for all infers. If we have a binding for a tyvar, instantiate it
+	resolveFastType(env : FastInference, location : FLocation, type : FastType) -> FastType;
+	resolveFTypeFunction(env : FastInference, location : FLocation, type : FTypeFunction) -> FTypeFunction;
+}
+
+unifyFastInfo(env : FastInference, location : FLocation, l : FInfo, r : FInfo) -> void {
+	unifyFastType(env, location, l.type, r.type);
+	// TODO: Consider to unify effects
+}
+
+unifyFastType(env : FastInference, location : FLocation, ltype : FastType, rtype : FastType) -> void {
+	todo = \ -> {
+		env.onError("TODO: Unify " + fastType2string(ltype) + " and " + fastType2string(rtype), location);
+	}
+	// println("Unify " + fastType2string(ltype) + " and " + fastType2string(rtype));
+
+	addUnify = \t1, t2 -> {
+		env.unifyGraph ::= addSimpleEdge(env.unifyGraph, t1, t2, true, 1);
+		env.unifyGraph ::= addSimpleEdge(env.unifyGraph, t2, t1, true, 1);
+	}
+
+	bind = \ -> {
+		// We do not need the graph, so we can ignore this for now
+		// addUnify(ltype, rtype);
+	}
+
+	rest = \ -> {
+		switch (rtype) {
+			FTypeVar(rid): {
+				setFastTyvar(env, rid, ltype);
+				bind();
+			}
+			FTypeCall(rid, rtypars): {
+				// OK, see if we can evaluate this
+				eright = evaluateFastType(env.typedefEnv, rtype);
+				if (eright != rtype) {
+					unifyFastType(env, location, ltype, eright);
+				} else {
+					todo();
+				}
+			}
+			default: bind();
+		}		
+	}
+
+	switch (ltype) {
+		FTypeInfer(): {
+			env.onError("NOT SUPPOSED TO HAPPEN", location);
+		}
+		FIntConstant(value, info): rest();
+		FTypeInt(lbits): {
+			switch (rtype) {
+				FTypeInt(rbits): {
+					if (lbits != rbits) {
+						env.onError("Integer type mismatch i" + i2s(lbits) + "!=i" + i2s(rbits), location);
+					}
+				}
+				default: rest();
+			}
+		}
+		FTypeVar(lid): {
+			switch (rtype) {
+				FTypeVar(rid): {
+					joinFastTyvars(env, lid, rid);
+				}
+				FTypeFunction(rargs, rto): {
+					unifyFastType(env, location, rtype, ltype);
+				}
+				FTypeCall(tid, ttypars): {
+					unifyFastType(env, location, rtype, ltype);
+				}
+				default: {
+					setFastTyvar(env, lid, rtype);
+					bind();
+				}
+			}
+		} 
+		FTypeFunction(largs, lto): {
+			switch (rtype) {
+				FTypeVar(rid): {
+					etype = lookupTree(env.tyvars, rid);
+					shellType = etype ?? {
+						etype
+					} : {
+						setFastTyvar(env, rid, ltype);
+						// We construct a shell function type with the correct structure
+						shellType = FTypeFunction(map(largs, \__ -> makeFastTyvar(env, location)), makeFastTyvar(env, location));
+						bind();
+						shellType;
+					};
+					unifyFastType(env, location, ltype, shellType);
+				}
+				FTypeFunction(rargs, rto): {
+					unifyFastTypes(env, location, largs, rargs);
+					unifyFastType(env, location, lto, rto);
+				}
+				default: rest();
+			}
+		}
+		FTypeCall(lid, ltypars): {
+			switch (rtype) {
+				FTypeVar(rid): {
+					etype = lookupTree(env.tyvars, rid);
+					shellCall = etype ?? {
+						etype
+					} : {
+						// Unknown tyvar, so make a shell
+						setFastTyvar(env, rid, ltype);
+
+						// We construct a shell type call with tyvars
+						shellCall = FTypeCall(lid, map(ltypars, \__ -> makeFastTyvar(env, location)));
+						bind();
+						shellCall;
+					}
+					unifyFastType(env, location, ltype, shellCall);
+				}
+				FTypeCall(rid, rtypars): {
+					if (lid != rid) {
+						eleft = evaluateFastType(env.typedefEnv, ltype);
+						eright = evaluateFastType(env.typedefEnv, rtype);
+						if (eleft != ltype || eright != rtype) {
+							unifyFastType(env, location, eleft, eright);
+						} else {
+							env.onError("Can not unify " + lid + " and " + rid, location);
+						}
+					} else {
+						unifyFastTypes(env, location, ltypars, rtypars);
+					}
+				}
+				default: {
+					eleft = evaluateFastType(env.typedefEnv, ltype);
+					if (eleft != ltype) {
+						// OK, we evaluate this guy
+						unifyFastType(env, location, eleft, rtype);
+					} else {
+						todo();
+					}
+				}
+			}
+		}
+		FInlineType(language, stream, dependencies): rest();
+	}
+}
+
+unifyFastTypes(env : FastInference, location : FLocation, lefts : [FastType], rights : [FastType]) -> void {
+	if (length(lefts) != length(rights)) {
+		println("TODO: # args do not match");
+	} else {
+		iteri(lefts, \i, left -> {
+			unifyFastType(env, location, left, rights[i])
+		});
+	}
+}
+
+
+
+resolveFastInfo(env : FastInference, location : FLocation, info : FInfo) -> FInfo {
+	FInfo(info with type = resolveFastType(env, location, info.type))
+}
+
+// If this is a bound type var, resolve it. If it is a infer, make a type var for it
+// For functions and calls, we recursively resolve
+resolveFastType(env : FastInference, location : FLocation, type : FastType) -> FastType {
+	switch (type)  {
+		FTypeInfer(): {
+			makeFastTyvar(env, location);
+		}
+		FTypeVar(id): {
+			mtype = lookupTree(env.tyvars, id);
+			mtype ?? {
+				resolveFastType(env, location, mtype);
+			} : {
+				type;
+			}
+		}
+
+		FIntConstant(value, info): type;
+		FInlineType(language, stream, dependencies): type;
+
+		FTypeInt(bits): type;
+		FTypeFunction(args, to): {
+			FTypeFunction(map(args, \a -> resolveFastType(env, location, a)), resolveFastType(env, location, to));
+		}
+		FTypeCall(id, typars): {
+			FTypeCall(id, map(typars, \t -> resolveFastType(env, location, t)));
+		}
+	}
+}
+
+resolveFTypeFunction(env : FastInference, location : FLocation, type : FTypeFunction) -> FTypeFunction {
+	FTypeFunction(map(type.args, \a -> resolveFastType(env, location, a)), resolveFastType(env, location, type.to));
+}

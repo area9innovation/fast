@@ -1,0 +1,86 @@
+import fast/fast_ast;
+
+export {
+	// What functions are used as first order functions in this program?
+	extractFirstOrder(f : FastAst) -> Set<string>;
+
+	// Extract the first order names and resolve their types
+	// (Assumes we have specialized overloads)
+	extractFirstOrderTypes(f : FastAst) -> Tree<string, FastType>;
+}
+
+extractFirstOrderTypes(f : FastAst) -> Tree<string, FastType> {
+	names = extractFirstOrder(f);
+
+	// Find the types for all first-order calls
+	foldSet(names, makeTree(), \acc, name : string -> {
+		types = filtermap(f.functions, \fn : FastFunction -> {
+			if (fn.id == name) {
+				Some(fn.info.type)
+			} else None();
+		});
+		fold(types, acc, \acc2, type -> {
+			if (containsKeyTree(acc2, name)) {
+				println("Assumption broken: Needs overloads resolved");
+			}
+			setTree(acc2, name, type)
+		});
+	});
+}
+
+extractFirstOrder(f : FastAst) -> Set<string> {
+	// What global functions exist?
+	globals = fold(f.functions, makeSet(), \acc, function -> {
+		insertSet(acc, function.id);
+	});
+
+	// Find first-order uses in globals
+	varUses = fold(f.globals, makeSet(), \acc, global -> {
+		extractFExpFirstOrder(globals, acc, global.value);
+	});
+
+	// Find first-order uses in functions
+	fold(f.functions, varUses, \acc, function -> {
+		extractFExpFirstOrder(globals, acc, function.body);
+	});
+}
+
+extractFExpFirstOrder(globals : Set<string>, acc : Set<string>, ex : FExp) -> Set<string> {
+	switch (ex) {
+		FConstant(): acc;
+		FVar(id, __): {
+			if (containsSet(globals, id)) insertSet(acc, id)
+			else acc;
+		}
+		FLet(id, value, body, info): {
+			extractFExpsFirstOrder(globals, acc, [value, body]);
+		}
+		FSizeOf(type, info): acc;
+
+		FCallOp(language, op, args, info): extractFExpsFirstOrder(globals, acc, args);
+		FCall(fn, args, info): {
+			// If the fn is a id, it is not first-order, otherwise it is
+			nacc = switch (fn) {
+				FVar(id, __): acc;
+				default: extractFExpFirstOrder(globals, acc, fn)
+			}
+			extractFExpsFirstOrder(globals, nacc, args);
+		}
+		FSequence(exprs, info): extractFExpsFirstOrder(globals, acc, exprs);
+		FTypeAnnotation(e, type, info): extractFExpFirstOrder(globals, acc, e);
+		FIf(cond, then, else_, info): extractFExpsFirstOrder(globals, acc, [cond, then, else_]);
+		FInlineCode(language, stream, dependencies, type, info): {
+			fold(stream, acc, \nacc, st -> {
+				switch (st) {
+					FInlineString(__, __, __): nacc;
+					FInlineUnquote(e, __, __): extractFExpFirstOrder(globals, nacc, e);
+					FInlineTypeUnquote(__, __, __): nacc;
+				}
+			});
+		}
+	}
+}
+
+extractFExpsFirstOrder(globals : Set<string>, acc : Set<string>, exs : [FExp]) -> Set<string> {
+	fold(exs, acc, \nacc, e -> extractFExpFirstOrder(globals, nacc, e))
+}

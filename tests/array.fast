@@ -1,0 +1,33 @@
+import array;
+import runtime;
+
+// TODO: Report on "array" functions missing in C, Wasm targets
+// Fix wasm target
+
+array.java::main(args : inline java { String[] }) -> i0 {
+	test();
+	flow::test();
+}
+
+array.js::main() -> i0 {
+	test();
+//	wasm::test();
+}
+
+array.c::main() -> i0 {
+	test();
+}
+
+test() -> i0 {
+	a0 = (array()) : Array<i32>;
+	a1 = array(0);
+	a2 = array(1, 2);
+	c0 = a1 + a2;
+
+	println(length(c0));
+
+	println(index(c0, 0, 0));
+	println(index(c0, 1, 0));
+	println(index(c0, 2, 0));
+}
+

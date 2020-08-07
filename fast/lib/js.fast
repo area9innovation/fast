@@ -1,0 +1,22 @@
+js::inline +(l : i32, r : i32) -> i32 { inline js { (($l) + ($r)) | 0 } }
+js::inline -(l : i32, r : i32) -> i32 { inline js { (($l) - ($r)) | 0 } }
+js::inline -(l : i32) -> i32 { inline js { (-($l)) | 0 } }
+js::inline *(l : i32, r : i32) -> i32 { inline js { (($l) * ($r)) | 0 } }
+js::inline /(l : i32, r : i32) -> i32 { inline js { (($l) / ($r)) | 0 } }
+js::inline %(l : i32, r : i32) -> i32 { inline js { (($l) % ($r)) | 0 } }
+
+js::inline <(l : i32, r : i32) -> i1 { inline js { ($l) < ($r) } }
+js::inline <=(l : i32, r : i32) -> i1 { inline js { ($l) <= ($r) } }
+js::inline ==(l : i32, r : i32) -> i1 { inline js { ($l) == ($r) } }
+js::inline !=(l : i32, r : i32) -> i1 { inline js { ($l) != ($r) } }
+js::inline >(l : i32, r : i32) -> i1 { inline js { ($l) > ($r) } }
+js::inline >=(l : i32, r : i32) -> i1 { inline js { ($l) >= ($r) } }
+
+js::inline ||(l : i1, r : i1) -> i1 { inline js { ($l) || ($r) } }
+js::inline &&(l : i1, r : i1) -> i1 { inline js { ($l) && ($r) } }
+
+js::println(s : ?) -> i0 {
+	inline js {
+		console.log($s)
+	}
+}

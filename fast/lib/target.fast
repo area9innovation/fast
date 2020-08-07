@@ -1,0 +1,29 @@
+// TODO: Add all languages
+
+export {
+	isC() -> i1;
+
+	isFlow() -> i1;
+
+	isJava() -> i1;
+
+	isJs() -> i1;
+	isNode() -> i1;
+	isDeno() -> i1;
+}
+
+inline isC() -> i1 { 0 : i1 }
+c::inline isC() -> i1 { 1 : i1 }
+
+inline isFlow() -> i1 { 0 : i1 }
+flow::inline isFlow() -> i1 { 1 : i1 }
+
+inline isJava() -> i1 { 0 : i1 }
+java::inline isJava() -> i1 { 1 : i1 }
+
+inline isJs() -> i1 { 0 : i1 }
+js::inline isJs() -> i1 { 1 : i1 }
+
+inline isNode() -> i1 { 0 : i1 }
+inline isDeno() -> i1 { 0 : i1 }
+

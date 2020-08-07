@@ -1,0 +1,14 @@
+import js;
+import java;
+import wasm;
+import c;
+import flow;
+import rust;
+
+//inline -(l : f32) -> f32 { -(0, l) }
+
+/*
+compiletime::typeof(v : ?) -> string {
+	typeof(v);
+}
+*/

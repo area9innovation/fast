@@ -1,0 +1,163 @@
+import fast/fast_ast;
+import fast/fast_prettyprint;
+import fast/typing/type_inference;
+import ds/tree;
+import math/math;
+
+export {
+	getFastFlowNatives(onError : (string) -> void) -> Tree<string, ([FConstant]) -> FConstant>;
+}
+
+// TODO: Add string and double support for operations
+getFastFlowNatives(onError : (string) -> void) -> Tree<string, ([FConstant]) -> FConstant> {
+	pairs2tree([
+		Pair("+", \args -> {
+			if (length(args) == 0) {
+				onError("+ operation must take at least one argument");
+				FVoid();
+			} else {
+				switch (args[0]) {
+					FIntConstant(__,__): {
+						ints = getFInts(args);
+						if (length(ints) != length(args)) {
+							onError("Can add only ints or strings");
+						}
+						FIntConstant(sum(ints), args[0].info);
+					}
+					FStringConstant(__,__): {
+						strings = getFStrings(args);
+						if (length(strings) != length(args)) {
+							onError("Can add only ints or strings");
+						}
+						FStringConstant(concatStrings(strings), args[0].info);
+					}
+					default: {
+						onError("illegal argument type for the + operation: " + fexp2string(args[0]));
+						FVoid();
+					}
+				}
+			}
+		}),
+		Pair("-", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args)) {
+				onError("Can only subtract ints");
+			}
+			FIntConstant(fold(tail(ints), ints[0], \acc, i -> acc - i), args[0].info);
+		}),
+		Pair("*", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args)) {
+				onError("Can only multiply ints");
+			}
+			FIntConstant(fold(ints, 1, \acc, i -> acc * i), args[0].info);
+		}),
+		Pair("/", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args)) {
+				onError("Can only divide ints");
+			}
+			FIntConstant(fold(tail(ints), ints[0], \acc, i -> acc / i), args[0].info);
+		}),
+		Pair("<=", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args) || length(ints) != 2) {
+				onError("Can only compare 2 ints");
+				// TODO: Fix for strings
+			FVoid();
+			} else {
+				FIntConstant(b2i(ints[0] <= ints[1]), FInfo(args[0].info with type = FTypeBool()));
+			}
+		}),
+		Pair("<", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args) || length(ints) != 2) {
+				onError("Can only compare 2 ints");
+				// TODO: Fix for strings
+				FVoid();
+			} else {
+				FIntConstant(b2i(ints[0] < ints[1]), FInfo(args[0].info with type = FTypeBool()));
+			}
+		}),
+		Pair("==", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args) || length(ints) != 2) {
+				onError("Can only compare 2 ints");
+				// TODO: Fix for strings
+				FVoid();
+			} else {
+				FIntConstant(b2i(ints[0] == ints[1]), FInfo(args[0].info with type = FTypeBool()));
+			}
+		}),
+		Pair("!=", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args) || length(ints) != 2) {
+				onError("Can only compare 2 ints");
+				// TODO: Fix for strings
+				FVoid();
+			} else {
+				FIntConstant(b2i(ints[0] != ints[1]), FInfo(args[0].info with type = FTypeBool()));
+			}
+		}),
+		Pair(">", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args) || length(ints) != 2) {
+				onError("Can only compare 2 ints");
+				// TODO: Fix for strings
+				FVoid();
+			} else {
+				FIntConstant(b2i(ints[0] > ints[1]), FInfo(args[0].info with type = FTypeBool()));
+			}
+		}),
+		Pair(">=", \args -> {
+			ints = getFInts(args);
+			if (length(ints) != length(args) || length(ints) != 2) {
+				onError("Can only compare 2 ints");
+				// TODO: Fix for strings
+				FVoid();
+			} else {
+				FIntConstant(b2i(ints[0] >= ints[1]), FInfo(args[0].info with type = FTypeBool()));
+			}
+		}),
+		Pair("println", \args -> {
+			println(superglue(args, fexp2string, "\n"));
+			FVoid();
+		}),
+		Pair("typeof", \args -> {
+			type = fastTypeInferFConstantType(println, args[0]).info.type;
+			FStringConstant(fastType2string(type), FInfo(args[0].info with type = FTypeCall("string", [])));
+		}),
+		Pair("startProcess", \args -> {
+			FFunctionPointer(getFString(args[0]), FInfo(args[0].info with type = FTypeCall("Promise", [])))
+		}),
+		Pair("getFreshIdCounter", \args -> {
+			if (length(args) > 0) {
+				onError("getFreshIdCounter should take no arguments");
+			}
+			id_counter := ^id_counter + 1;
+			FIntConstant(^id_counter, FInfo(FTypeInt(32), FEffectSet(makeSet()), -1, -1))
+		}),
+	])
+}
+
+id_counter : ref int = ref 0;
+
+getFInts(args : [FConstant]) -> [int] {
+	filtermap(args, \a -> {
+		switch (a) {
+			FIntConstant(c, __): Some(c);
+			default: None();
+		}
+	});
+}
+
+getFString(c : FConstant) -> string {
+	switch (c) {
+		FStringConstant(s, __): s;
+		default: "";
+	}
+}
+
+getFStrings(args : [FConstant]) -> [string] {
+	map(args, getFString);
+}

@@ -1,0 +1,1054 @@
+import fast/fast_lexer;
+import fast/fast_ast;
+import fast/backends/backends;
+
+export {
+	// Construct the structure needed for parsing and error reporting (does lexing)
+	// The line, col gives the starting line no and col. 1, 0 is a good default
+	prepareFastParse(filename : string, content : string, line : int, col : int) -> FastParse;
+		FastParse(lexemes : [FastLex], onError : (string, int) -> void);
+
+	// This parses the given lexemes and extends the FastFile. i is the lexeme index to start from
+	fastParser(acc : FastFile, p : FastParse, i : int) -> FastFile;
+
+	// Parse an expression
+	parseFastString(ex : string) -> FExp;
+}
+
+prepareFastParse(filename : string, content : string, line : int, col : int) -> FastParse {
+	lex = fastLex(content, line, col);
+	lexemes = list2array(lex);
+	// iter(lexemes, println);
+
+	FastParse(lexemes, \error, i -> {
+		message = if (i < length(lexemes)) {
+			lexeme = lexemes[i];
+			i2s(lexeme.line) + ":" + i2s(lexeme.col + 1) + ": " + error + ". Got " + flex2string(lexeme)
+		} else {
+			error;
+		}
+		println((if (filename != "") filename + ": " else "") + message);
+	});
+
+}
+
+// Parse this expression
+parseFastString(ex : string) -> FExp {
+	parse = prepareFastParse("", ex, 1, 0);
+	file = FastFile("", [], [], []);
+
+	expr = ref FVoid();
+	fastParseExp(file, parse, 0, \ei, e -> {
+		expr := e;
+		file
+	});
+
+	^expr;
+}
+
+// Parse from the top of our program
+fastParser(acc : FastFile, p : FastParse, i : int) -> FastFile {
+	h = fastGetLexeme(p, i);
+	// println(h);
+	switch (h) {
+		FLId(id, __, __): {
+			if (id == "typedef") {
+				fastParseTypeDef(acc, p, i, \ti, typedef -> {
+					nacc = FastFile(acc with toplevel = arrayPush(acc.toplevel, typedef));
+					fastParser(nacc, p, ti);
+				});
+			} else if (id == "import") {
+				fastParseImport(acc, p, "", i + 1);
+			} else if (id == "export") {
+				nextLex = fastGetLexeme(p, i + 1);
+				if (fastGetPunctuation(nextLex) == "{") {
+					fastParseExport(acc, p, i + 2);
+				} else {
+					p.onError("Expected { for export", i);
+					acc;
+				}
+			} else {
+				fastParseTopFunction(acc, p, "", "", i);
+			}
+		}
+		default: {
+			p.onError("Expected import, export, top-level", i);
+			acc;
+		}
+	}
+}
+
+fastParseTopFunction(acc : FastFile, p : FastParse, output : string, language : string, i : int) -> FastFile {
+	id = fastGetId(fastGetLexeme(p, i));
+	dotcolon = fastGetId(fastGetLexeme(p, i + 1));
+	if (dotcolon == ".") {
+		// Parse the output
+		fastParseTopFunction(acc, p, output + id, "", i + 2);
+	} else if (isFastLanguage(id)) {
+		// We have a language annotation
+		nid = fastGetId(fastGetLexeme(p, i + 2));
+		if (dotcolon == "::" && nid != "") {
+			if (nid == "inline") {
+				nid2 = fastGetId(fastGetLexeme(p, i + 3));
+				fastFunctionOrVar(acc, p, output, id, true, nid2, i + 4);
+			} else {
+				fastFunctionOrVar(acc, p, output, id, false, nid, i + 3);
+			}
+		} else {
+			p.onError("Expected :: after language " + id, i + 1);
+			acc;
+		}
+	} else if (dotcolon == "::") {
+		p.onError("Unknown language " + id, i);
+		fastParseTopFunction(acc, p, output, "", i + 2);
+	} else {
+		if (id == "inline") {
+			nid2 = fastGetId(fastGetLexeme(p, i + 1));
+			fastFunctionOrVar(acc, p, output, language, true, nid2, i + 2);
+		} else {
+			fastFunctionOrVar(acc, p, output, language, false, id, i + 1);
+		}
+	}
+}
+
+// (<args>) -> type <exp>
+// : <type> = <exp>
+fastFunctionOrVar(acc : FastFile, p : FastParse, output : string, language : string, inline : bool, id : string, i : int) -> FastFile {
+	lex1 = fastGetLexeme(p, i);
+	punc = fastGetIdOrPunc(lex1);
+	if (punc == "(") {
+		// fn(
+		fastParseFunction(acc, p, output, language, inline, id, i + 1);
+	} else if (punc == ":") {
+		// v : <type> = <exp>
+		fastParseType(acc, p, i + 1, \ni, type -> {
+			equal = fastGetIdOrPunc(fastGetLexeme(p, ni));
+			if (equal == "=") {
+				fastParseExp(acc, p, ni + 1, \ei, expr -> {
+					lex2 = fastGetLexeme(p, ei);
+					semi = fastGetIdOrPunc(lex2);
+					if (semi == ";") {
+						var = FastGlobalVar(0, id, expr, FInfo(type, FEffectInfer(), lex1.line, lex1.col));
+						nacc = FastFile(acc with toplevel = arrayPush(acc.toplevel, var));
+						fastParser(nacc, p, ei + 1);
+					} else {
+						p.onError("Expected ; for global " + id, ni);
+						acc;
+					}
+				});
+			} else {
+				p.onError("Expected = for global " + id, ni);
+				acc;
+			}
+		});
+	} else {
+		if (i < length(p.lexemes))  {
+			if (punc == "=") {
+				p.onError("Missing type. Expected " + id + " : <type> = <exp>. ", i);
+				acc;
+			} else if (punc != "") {
+				if (language == "" && !inline) {
+					// OK, it might be a long output name
+					fastParseTopFunction(acc, p, output + id + punc, language, i + 1);
+				} else {
+					p.onError("Expected ': <type> = <exp>'' or '(<args>) -> <type> <exp>' after " + id, i);
+					acc;
+				}
+			} else {
+				p.onError("Expected top-level function or global", i);
+				acc;
+			}
+		} else acc;
+	}
+}
+
+// path/path/path;
+fastParseImport(acc : FastFile, p : FastParse, path : string, i : int) -> FastFile {
+	h = fastGetLexeme(p, i);
+	id = fastGetId(h);
+	if (id == "") {
+		p.onError("Expected path for import", i);
+		acc;
+	} else {
+		sep = fastGetLexeme(p, i + 1);
+		if (fastGetPunctuation(sep) == ";") {
+			nacc = FastFile(
+				acc with imports = arrayPush(acc.imports, path + id)
+			);
+			fastParser(nacc, p, i + 2);
+		} else if (fastGetId(sep) == "/") {
+			fastParseImport(acc, p, path + id + "/", i + 2);
+		} else {
+			p.onError("Expected / or ; in import", i);
+			acc;
+		}
+	}
+}
+
+// export-decl; export-decl; }
+fastParseExport(acc : FastFile, p : FastParse, i : int) -> FastFile {
+	h = fastGetLexeme(p, i);
+	if (fastGetPunctuation(h) == "}") {
+		fastParser(acc, p, i + 1)
+	} else {
+		fastParseTypeDeclaration(acc, p, i, \ni : int, td : FastTypeDeclaration -> {
+			nacc = FastFile(acc with exports = arrayPush(acc.exports, td));
+			fastParseExport(nacc, p, ni)
+		});
+	}
+}
+
+
+// arg : type (with effect), arg : type (with effect)) -> type (with effect) {brace}
+fastParseFunction(acc : FastFile, p : FastParse, output : string, language : string, inline : bool, id : string, i : int) -> FastFile {
+	fastParseFunArgs(acc, p, [], i, \ni, args : [FFunctionArg] -> {
+		lex = fastGetLexeme(p, ni);
+		arrow = fastGetIdOrPunc(lex);
+		if (arrow == "->") {
+			fastParseType(acc, p, ni + 1, \ti, type -> {
+				fastParseOptionalEffect(acc, p, ti, \ei, effect -> {
+					lex2 = fastGetLexeme(p, ei);
+					brace = fastGetIdOrPunc(lex2);
+					if (brace == "{") {
+						fastParseBrace(acc, p, [], ei + 1, \bi, exprs -> {
+							expr = FSequence(exprs, makeFastInfo(lex2.line, lex2.col));
+							function = FastFunction(0, output, language, inline, id, args, type, effect, expr, makeFastInfo(lex.line, lex.col));
+							nacc = FastFile(acc with toplevel = arrayPush(acc.toplevel, function));
+							fastParser(nacc, p, bi);
+						});
+					} else {
+						p.onError("Expected { for function " + id, ei);
+						acc;
+					}
+				})
+			})
+		} else {
+			p.onError("Expected return type -> <type> in function " + id, ni);
+			if (arrow == "{") {
+				// We continue as if it is void
+				type = FTypeVoid();
+				effect = FEffectInfer();
+				fastParseBrace(acc, p, [], ni + 1, \bi, exprs -> {
+					expr = FSequence(exprs, makeFastInfo(lex.line, lex.col));
+					function = FastFunction(0, output, language, inline, id, args, type, effect, expr, makeFastInfo(lex.line, lex.col));
+					nacc = FastFile(acc with toplevel = arrayPush(acc.toplevel, function));
+					fastParser(nacc, p, bi);
+				});
+			} else acc;
+		}
+	});
+}
+
+// arg : type, arg : type, ... arg : type)
+fastParseFunArgs(acc : FastFile, p : FastParse, args : [FFunctionArg], i : int, onParse : (int, [FFunctionArg]) -> FastFile) -> FastFile {
+	idpunc = fastGetIdOrPunc(fastGetLexeme(p, i));
+	if (idpunc == ")") {
+		onParse(i + 1, args)
+	} else if (idpunc == "") {
+		p.onError("Expected argument or )", i);
+		acc;
+	} else {
+		// a : <type>
+		colon = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+		if (colon == ":") {
+			fastParseType(acc, p, i + 2, \ti, type -> {
+				fastParseOptionalEffect(acc, p, ti, \ei, effect -> {
+					// OK, we can have a , or ) here
+					comma = fastGetIdOrPunc(fastGetLexeme(p, ei));
+					funArg = FFunctionArg(idpunc, type, effect);
+					nargs = arrayPush(args, funArg);
+					if (comma == ",") {
+						fastParseFunArgs(acc, p, nargs, ei + 1, onParse)
+					} else if (comma == ")") {
+						// We are done
+						onParse(ei + 1, nargs);
+					} else {
+						p.onError("Expected , or ) after function argument #" + i2s(length(args) + 1), ei);
+						acc;
+					}
+				});
+			});
+		} else {
+			p.onError("Expected : after " + idpunc, i + 1);
+			acc;
+		}
+	}
+}
+
+/*
+typedecl = 
+	'typedef' id '=' ws type ';'
+	| id ':' type ';' 		// Global
+	| id (type) "->" type ";" // Function
+	;
+*/
+fastParseTypeDeclaration(acc : FastFile, p : FastParse, i : int, onParse : (int, FastTypeDeclaration) -> FastFile) -> FastFile {
+	id = fastGetId(fastGetLexeme(p, i));
+	if (id == "typedef") {
+		fastParseTypeDef(acc, p, i, onParse)
+	} else if (id == "") {
+		p.onError("Expected type declaration", i);
+		// Improvable: We could attempt to recover
+		acc;
+	} else {
+		colonOrPar = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+		if (colonOrPar == "(") {
+			// id (<args>) -> <type> ;
+			fastParseFnArgs(acc, p, [], i + 2, \ai, args -> {
+				arrow = fastGetIdOrPunc(fastGetLexeme(p, ai));
+				if (arrow == "->") {
+					fastParseType(acc, p, ai + 1, \ti, type -> {
+						fastParseOptionalEffect(acc, p, ti, \ei, effect -> {
+							fndec = FastFunctionDecl(id, args, type, effect);
+							semi = fastGetIdOrPunc(fastGetLexeme(p, ei));
+							if (semi == ";") {
+								onParse(ei + 1, fndec);
+							} else {
+								p.onError("Expected ; after function type", ei);
+								onParse(ei, fndec);
+							}
+						})
+					});
+				} else {
+					p.onError("Expected -> in function type for " + id, ai);
+					acc;
+				}
+			})
+		} else {
+			p.onError("Expected ( after id '" + id + "' for function declaration", i + 1);
+			acc;
+		}
+	}
+}
+
+// 'typedef' id '=' type ';'
+// 'typedef' id typars '=' type ';'
+// 'typedef' language '::' id '=' type ';'
+// 'typedef' language '::' id typars '=' type ';'
+
+fastParseTypeDef(acc : FastFile, p : FastParse, i : int, onParse : (int, FastTypeFunctor) -> FastFile) -> FastFile {
+	typedef = fastGetId(fastGetLexeme(p, i));
+	if (typedef == "typedef") {
+		fastParseOptionalTarget(acc, p, i + 1, \pi, language -> {
+			id = fastGetId(fastGetLexeme(p, pi));
+			equal = fastGetId(fastGetLexeme(p, pi + 1));
+			if (equal == "=") {
+				fastParseType(acc, p, pi + 2, \ni, type -> {
+					typeDef = FastTypeFunctor(0, language, id, [], type);
+					if (fastGetPunctuation(fastGetLexeme(p, ni)) == ";") {
+						onParse(ni + 1, typeDef)
+					} else {
+						p.onError("Expected ; after typedef", ni);
+						onParse(ni, typeDef);
+					}
+				});
+			} else if (equal == "<") {
+				fastParseTypeFunctorArgs(acc, p, [], pi + 2, \ti, fnargs -> {
+					equal2 = fastGetId(fastGetLexeme(p, ti));
+					if (equal2 == "=") {
+						fastParseType(acc, p, ti + 1, \ni, type -> {
+							typeFn = FastTypeFunctor(0, language, id, fnargs, type);
+							if (fastGetPunctuation(fastGetLexeme(p, ni)) == ";") {
+								onParse(ni + 1, typeFn)
+							} else {
+								p.onError("Expected ; after typedef", ni);
+								onParse(ni, typeFn);
+							}
+						});
+					} else {
+						p.onError("Expected =", ti);
+						acc;
+					}
+				})
+			} else {
+				p.onError("Expected typedef <id> = <type>;", pi + 1);
+				acc;
+			}
+		})
+	} else {
+		p.onError("Expected typedef <id> = <type>;", i);
+		acc;
+	}
+}
+
+fastParseOptionalTarget(acc : FastFile, p : FastParse, i : int, onParse : (int, string) -> FastFile) -> FastFile {
+	id = fastGetId(fastGetLexeme(p, i));
+	if (isFastLanguage(id)) {
+		semi = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+		if (semi == "::") {
+			onParse(i + 2, id);
+		} else {
+			p.onError("Expected :: after language", i + 1);
+			onParse(i, "");
+		}
+	} else {
+		onParse(i, "");
+	}
+}
+
+// arg, arg, arg>
+fastParseTypeFunctorArgs(acc : FastFile, p : FastParse, args : [string], i : int, onParse : (int, [string]) -> FastFile) -> FastFile {
+	id = fastGetIdOrPunc(fastGetLexeme(p, i));
+	if (id == ">") {
+		onParse(i + 1, args);
+	} else if (id == "") {
+		p.onError("Expected argument or >", i);
+		acc;
+	} else {
+		comma = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+		nargs = arrayPush(args, id);
+		if (comma == ",") {
+			fastParseTypeFunctorArgs(acc, p, nargs, i + 2, onParse);
+		} else if (comma == ">") {
+			onParse(i + 2, nargs);
+		} else {
+			p.onError("Expected , or > after id", i + 2);
+			onParse(i + 2, nargs);
+		}
+	}
+}
+
+// arg : type (with effect), arg : type, ..., arg : type)
+fastParseFnArgs(acc : FastFile, p : FastParse, args : [FFunctionArg], i : int, onParse : (int, [FFunctionArg]) -> FastFile) -> FastFile {
+	id = fastGetIdOrPunc(fastGetLexeme(p, i));
+	if (id == ")") {
+		onParse(i + 1, args);
+	} else if (id != "") {
+		colon = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+		if (colon == ":") {
+			fastParseType(acc, p, i + 2, \ti, type -> {
+				fastParseOptionalEffect(acc, p, ti, \ei, effect -> {
+					arg = FFunctionArg(id, type, effect);
+					nargs = arrayPush(args, arg);
+					comma = fastGetIdOrPunc(fastGetLexeme(p, ei));
+					if (comma == ",") {
+						fastParseFnArgs(acc, p, nargs, ei + 1, onParse);
+					} else if (comma == ")") {
+						onParse(ei + 1, nargs);
+					} else {
+						p.onError("Expected , or ) after function declaration arg #" + i2s(length(args) + 1), ei);
+						onParse(ei, nargs);
+					}
+				})
+			})
+		} else {
+			p.onError("Expected '<name> :' in function argument", i + 1);
+			onParse(i + 1, args);
+		}
+	} else {
+		p.onError("Expected fun arg or )", i);
+		acc;
+	}
+}
+
+
+//
+// Type
+//
+
+fastParseType(acc : FastFile, p : FastParse, i : int, onParse : (int, FastType) -> FastFile) -> FastFile {
+	h = fastGetLexeme(p, i);
+	switch (h) {
+		FLInt(n, line, col): {
+			// <int>
+			onParse(i + 1, FIntConstant(n, makeFastInfo(line, col)));
+		}
+		FLDouble(n, line, col): {
+			// <double>
+			p.onError("Do not support constant doubles as types", i);
+			onParse(i + 1, FIntConstant(floor(n), makeFastInfo(line, col)));
+		}
+		FLId(id, __, __): {
+			if (startsWith(id, "i") && isDigits(strRight(id, 1))) {
+				// i<int>
+				width = s2i(strRight(id, 1));
+				onParse(i + 1, FTypeInt(width));
+/*			} else if (id == "i") {
+				// i <intconst>
+				fastParseExp(acc, p, i + 1, \ni, ic -> {
+					onParse(ni, FTypeInt(ic));
+				});*/
+			} else if (id == "infer") {
+				onParse(i + 1, FTypeInfer());
+			} else if (id == "inline") {
+				fastParseInline(acc, p, i + 1, \ni, natform : FInlineCode -> {
+					cvn = \str -> {
+						map(str, \s : FInlineForm -> {
+							switch (s) {
+								FInlineString(__, __, __): s;
+								FInlineUnquote(e, sl, sc): {
+									fid = getFVar(e);
+									if (fid == "") {
+										p.onError("Only $id supported in type quotes", i + 2);
+									}
+									FInlineTypeUnquote(FTypeCall(fid, []), sl, sc);
+								}
+								FInlineTypeUnquote(__, __, __): s;
+							}
+						})
+					}
+
+					natType = FInlineType(natform.language, cvn(natform.stream), map(natform.dependencies, \d -> {
+						FInlineTypeDependency(d.language, d.name, cvn(d.stream))
+					}));
+					onParse(ni, natType);
+				});
+			} else {
+				colonLess = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+				if (colonLess == ":") {
+					// id ':' type	// named-field type
+					println("TODO: Parse named field for " + id);
+					println(h);
+					acc;
+				} else if (colonLess == "<") {
+					// id '<' type commaType* '>'
+					fastParseTypes(acc, p, [], ">", i + 2, \ai, types : [FastType] -> {
+						onParse(ai, FTypeCall(id, types));
+					});
+				} else {
+					// Named type
+					onParse(i + 1, FTypeCall(id, []))
+				}
+			}
+		}
+		FLString(n, line, col): {
+			p.onError("Expected type", i);
+			acc;
+		}
+		FLPunctuation(s, line, col): {
+			if (s == "(") {
+				// funType = (type, ... ) "->" type;
+				fastParseTypes(acc, p, [], ")", i + 1, \ti, types -> {
+					arrow = fastGetId(fastGetLexeme(p, ti));
+					if (arrow == "->") {
+						fastParseType(acc, p, ti + 1, \ri, rtype -> {
+							onParse(ri, FTypeFunction(types, rtype));
+						})
+					} else {
+						p.onError("Expected -> in function type", ti);
+						acc;
+					}
+				});
+			} else {
+				p.onError("Expected type", i);
+				acc;
+			}
+		}
+	}
+}
+
+
+// arg, arg, arg)   where end is ) or >
+fastParseTypes(acc : FastFile, p : FastParse, args : [FastType], end : string, i : int, onParse : (int, [FastType]) -> FastFile) -> FastFile {
+	id = fastGetIdOrPunc(fastGetLexeme(p, i));
+	if (id == end) {
+		onParse(i + 1, args);
+	} else if (id == "") {
+		p.onError("Expected type or " + end, i);
+		acc;
+	} else {
+		fastParseType(acc, p, i, \ti, type0 -> {
+			nargs = arrayPush(args, type0);
+			comma = fastGetIdOrPunc(fastGetLexeme(p, ti));
+			if (comma == ",") {
+				fastParseTypes(acc, p, nargs, end, ti + 1, onParse);
+			} else if (comma == end) {
+				onParse(ti + 1, nargs);
+			} else {
+				p.onError("Expected , or " + end + " after type", ti + 1);
+				onParse(ti + 1, nargs);
+			}
+		})
+	}
+}
+
+// with <effect> | none
+fastParseOptionalEffect(acc : FastFile, p : FastParse, i : int, onParse : (int, FastEffect) -> FastFile) -> FastFile {
+	semi = fastGetIdOrPunc(fastGetLexeme(p, i));
+	if (semi == "with") {
+		fastParseEffect(acc, p, i + 1, onParse)
+	} else {
+		onParse(i, FEffectInfer());
+	}
+}
+
+// id | { id, id ... }
+fastParseEffect(acc : FastFile, p : FastParse, i : int, onParse : (int, FastEffect) -> FastFile) -> FastFile {
+	l = fastGetLexeme(p, i);
+	punc = fastGetPunctuation(l);
+	id = fastGetId(l);
+	if (punc == "{") {
+		fastParseIds(acc, p, [], i + 1, \ei, effects -> {
+			onParse(ei, FEffectSet(buildSet(effects)))
+		})
+	} else if (id != "") {
+		onParse(i + 1, FEffectVar(id));
+	} else {
+		p.onError("Expected effect: id or {id, ..., id }", i);
+		acc;
+	}
+}
+
+// id, id, ... }
+fastParseIds(acc : FastFile, p : FastParse, ids : [string], i : int, onParse : (int, [string]) -> FastFile) -> FastFile {
+	l = fastGetLexeme(p, i);
+	punc = fastGetPunctuation(l);
+	id = fastGetId(l);
+	if (punc == "}") {
+		onParse(i + 1, ids)
+	} else if (id != "") {
+		comma = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+		if (comma == ",") {
+			fastParseIds(acc, p, arrayPush(ids, id), i + 2, onParse);
+		} else if (comma == "}") {
+			onParse(i + 2, arrayPush(ids, id))
+		} else {
+			p.onError("Expected , or } after ids", i + 1);
+			acc;
+		}
+	} else {
+		p.onError("Expected id or } when parsing ids", i );
+		acc;
+	}
+}
+
+//
+// Exp
+//
+
+fastParseExp(acc : FastFile, p : FastParse, i : int, onParse : (int, FExp) -> FastFile) -> FastFile {
+	h = fastGetLexeme(p, i);
+	switch (h) {
+		FLInt(n, line, col): {
+			// <int>
+			fastParseExpTail(acc, p, i + 1, FIntConstant(n, makeFastInfo(line, col)), onParse);
+		}
+		FLDouble(n, line, col): {
+			// <double>
+			fastParseExpTail(acc, p, i + 1, FDoubleConstant(n, makeFastInfo(line, col)), onParse);
+		}
+		FLString(s, line, col): {
+			// <string>
+			fastParseExpTail(acc, p, i + 1, FStringConstant(s, makeFastInfo(line, col)), onParse);
+		}
+		FLId(id, line, col): {
+			if (id == "sizeof") {
+				fastParseType(acc, p, i + 1, \ni, type -> {
+					fastParseExpTail(acc, p, ni, FSizeOf(type, makeFastInfo(line, col)), onParse);
+				});
+			} else if (id == "if") {
+				fastParseExp(acc, p, i + 1, \ni, cond -> {
+					fastParseExp(acc, p, ni, \ti, then_ -> {
+						elseword = fastGetId(fastGetLexeme(p, ti));
+						if (elseword == "else") {
+							fastParseExp(acc, p, ti + 1, \ei, else_ -> {
+								onParse(ei, FIf(cond, then_, else_, makeFastInfo(line, col)));
+							});
+						} else {
+							onParse(ti, FIf(cond, then_, FVoid(), makeFastInfo(line, col)));
+						}
+					});
+				});
+			} else if (id == "inline") {
+				fastParseInline(acc, p, i + 1, onParse);
+			} else {
+				// TODO: Lookup and see if this is a prefix operator
+				// println("Assuming this is not a prefix operator " + id);
+				fastParseExpTail(acc, p, i + 1, FVar(id, makeFastInfo(line, col)), onParse);
+			}
+		}
+		FLPunctuation(punct, line, col): {
+			if (punct == "(") {
+				end = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+				if (end == ")") {
+					onParse(i + 2, FVoid());
+				} else {
+					fastParseExp(acc, p, i + 1, \ti, expr -> {
+						end2 = fastGetIdOrPunc(fastGetLexeme(p, ti));
+						if (end2 == ")") {
+							fastParseExpTail(acc, p, ti + 1, expr, onParse)
+						} else {
+							p.onError("Expected )", ti);
+							acc;
+						}
+					});
+				}
+			} else if (punct == "{") {
+				fastParseBrace(acc, p, [], i + 1, \bi, exprs -> {
+					expr = FSequence(exprs, makeFastInfo(line, col));
+					fastParseExpTail(acc, p, bi, expr, onParse)
+				})
+			} else {
+				p.onError("Expected expression", i);
+				acc;
+			}
+		}
+	}
+}
+
+// exp; exp; ... }
+fastParseBrace(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : (int, [FExp]) -> FastFile) -> FastFile {
+	punc = fastGetPunctuation(fastGetLexeme(p, i));
+	if (punc == "}") {
+		onParse(i + 1, exps)
+	} else {
+		// exp
+		fastParseExp(acc, p, i, \ei, expr -> {
+			// OK, we can have a ; or } here
+			semi = fastGetPunctuation(fastGetLexeme(p, ei));
+			nexps = arrayPush(exps, expr);
+			if (semi == ";") {
+				fastParseBrace(acc, p, nexps, ei + 1, onParse)
+			} else if (semi == "}") {
+				// We are done
+				onParse(ei + 1, nexps);
+			} else {
+				p.onError("Expected ; or }", ei);
+				acc;
+			}
+		});
+	}
+}
+
+// Do we have something following the expression?
+// <op> exp
+// (exps); 
+// : type
+fastParseExpTail(acc : FastFile, p : FastParse, i : int, left : FExp, onParse : (int, FExp) -> FastFile) -> FastFile {
+	lex = fastGetLexeme(p, i);
+	id = fastGetId(lex);
+	if (id == ":") {
+		// Type annotation
+		fastParseType(acc, p, i + 1, \ti, type -> {
+			e = FTypeAnnotation(left, type, makeFastInfo(lex.line, lex.col));
+			onParse(ti, e);
+		});
+	} else if (id == "::") {
+		// Language annotation
+		isLanguage = switch (left) {
+			FVar(tid, __): isFastLanguage(tid);
+			default: false;
+		}
+		if (isLanguage) {
+			fastParseExp(acc, p, i + 1, \ei, epp -> {
+				switch (epp) {
+					FCall(fn, args, info): {
+						language = getFVar(left);
+						op = getFVar(fn);
+						if (language != "" && op != "") {
+							onParse(ei, FCallOp(language, op, args, info));
+						} else {
+							p.onError("We can only do language annotation for direct calls", i);
+							onParse(ei, epp);
+						}
+					}
+					default: {
+						p.onError("TODO: We have a language annotation for non-call", i);
+						onParse(ei, epp);
+					}
+				}
+			});
+		} else {
+			p.onError("Expected language before ::", i - 1);
+			onParse(i + 1, left);
+		}
+	} else if (id == "else") {
+		onParse(i, left);
+	} else if (id == "=") {
+		switch (left) {
+			FVar(v, __): {
+				fastParseLet(acc, p, v, i + 1, onParse);
+			}
+			default: {
+				p.onError("Expected id on the left hand side of =", i + 1);
+				acc;
+			}
+		}
+	} else if (id != "") {
+		if (isOperatorString(id)) {
+
+		} else {
+			println("Assuming " + id + " is a binop");
+		}
+		fastParseExp(acc, p, i + 1, \ri, ric -> {
+			onParse(ri, FCallOp("", id, [left, ric], makeFastInfo(lex.line, lex.col)));
+		})
+	} else {
+		punc = fastGetPunctuation(lex);
+		if (punc == "(") {
+			// We have ( for a call
+			fastParseExps(acc, p, [], i + 1, \ei, exps -> {
+				call = FCall(left, exps, makeFastInfo(lex.line, lex.col));
+				onParse(ei, call)
+			});
+		} else {
+			// OK, no more, we are done
+			onParse(i, left)
+		}
+	}
+}
+
+// exp, exp, ... exp )
+fastParseExps(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : (int, [FExp]) -> FastFile) -> FastFile {
+	idpunc = fastGetIdOrPunc(fastGetLexeme(p, i));
+	if (idpunc == ")") {
+		onParse(i + 1, exps)
+	} else {
+		// exp
+		fastParseExp(acc, p, i, \ei, expr -> {
+			// OK, we can have a , or ) here
+			semi = fastGetIdOrPunc(fastGetLexeme(p, ei));
+			nexps = arrayPush(exps, expr);
+			if (semi == ",") {
+				fastParseExps(acc, p, nexps, ei + 1, onParse)
+			} else if (semi == ")") {
+				// We are done
+				onParse(ei + 1, nexps);
+			} else {
+				p.onError("Expected , or )", ei);
+				acc;
+			}
+		});
+	}
+}
+
+// <exp>; <body> ; <body> } although we un-do the last }
+fastParseLet(acc : FastFile, p : FastParse, id : string, i : int, onParse : (int, FExp) -> FastFile) -> FastFile {
+	fastParseExp(acc, p, i, \vi, val -> {
+		lex = fastGetLexeme(p, vi);
+		punc = fastGetPunctuation(lex);
+		if (punc == ";") {
+			fastParseBrace(acc, p, [], vi + 1, \bi, bodyexs -> {
+				// We un-read the last }
+				body = if (length(bodyexs) == 1) bodyexs[0] else FSequence(bodyexs, makeFastInfo(lex.line, lex.col));
+				onParse(bi - 1, FLet(id, val, body, makeFastInfo(lex.line, lex.col)))
+			});
+		} else {
+			p.onError("Expected ; after let binding of " + id, vi);
+			acc;
+		}
+	});
+}
+
+
+// <language> { <tokens> }
+fastParseInline(acc : FastFile, p : FastParse, i : int, onParse : (int, FInlineCode) -> FastFile) -> FastFile {
+	language = fastGetId(fastGetLexeme(p, i));
+	if (isFastLanguage(language)) {
+		punc = fastGetIdOrPunc(fastGetLexeme(p, i + 1));
+		endpunc = fastGetEndPunc(punc);
+		fastParseGrabInline(acc, p, language, [], [endpunc], i + 2, onParse);
+	} else {
+		p.onError("Expected known inline language", i);
+		acc;
+	}
+}
+
+// <tokens> } require*
+fastParseGrabInline(acc : FastFile, p : FastParse, language : string, forms : [FInlineForm], braces : [string], i : int, onParse : (int, FInlineCode) -> FastFile) -> FastFile {
+	lex = fastGetLexeme(p, i);
+	punc = fastGetIdOrPunc(lex);
+	if (lastElement(braces, "<end>") == punc) {
+		// OK, pop
+		nbraces = take(braces, length(braces) - 1);
+		if (nbraces == []) {
+			// OK, we are done
+			fixupWhitespace = if (languageKeepWhitespace(language)) {
+				fixInlineWhitespace(forms);
+			} else forms;
+			fastParseDependencies(acc, p, i + 1, 
+				FInlineCode(language, fixupWhitespace, [], FTypeInfer(), makeFastInfo(lex.line, lex.col)), 
+				onParse
+			);
+		} else {
+			fastParseGrabInline(acc, p, language, arrayPush(forms, FInlineString(punc, lex.line, lex.col)), nbraces, i + 1, onParse);
+		}
+	} else {
+		switch (lex) {
+			FLId(id, line, col): {
+				if (id == "$") {
+					lex2 = fastGetLexeme(p, i + 1);
+					lex3 = fastGetLexeme(p, i + 2);
+					id2 = fastGetId(lex2);
+					punc3 = fastGetPunctuation(lex3);
+					if (id2 == "type") {
+						if (punc3 == "{") {
+							fastParseType(acc, p, i + 3, \ti, type -> {
+								punc4 = fastGetPunctuation(fastGetLexeme(p, ti));
+								if (punc4 == "}") {
+									nforms = arrayPush(forms, FInlineTypeUnquote(type, line, col));
+									fastParseGrabInline(acc, p, language, nforms, braces, ti + 1, onParse);
+								} else {
+									p.onError("Expected } for $type", ti);
+									acc;
+								}
+							});
+						} else {
+							p.onError("Expected { for $type", i + 2);
+							acc;
+						}
+					} else {
+						fastParseExp(acc, p, i + 1, \ei, ex -> {
+							nforms = arrayPush(forms, FInlineUnquote(ex, line, col));
+							fastParseGrabInline(acc, p, language, nforms, braces, ei, onParse);
+						});
+					}
+				} else if (id == "${") {
+					fastParseBrace(acc, p, [], i + 1, \ei, exps -> {
+						ex = if (length(exps) == 1) exps[0] else FSequence(exps, makeFastInfo(lex.line, lex.col));
+						nforms = arrayPush(forms, FInlineUnquote(ex, line, col));
+						fastParseGrabInline(acc, p, language, nforms, braces, ei, onParse);
+					});
+				} else if (id == "") {
+					p.onError("Could not find close of inline. Watch out for >} or similar combined end tokens", i - 1);
+					acc;
+				} else {
+					// If the previous is an id and this is an id, we have to keep a space
+					needsSpace = if (forms != []) {
+						prev = fastGetLexeme(p, i - 1);
+						previd = fastGetId(prev);
+						// We check if we are both ids
+						if (
+							previd != "" && isValidIdentifier(previd) && isValidIdentifier(id)
+							&& prev.line == lex.line
+						) " " else "";
+					} else "";
+					// · is replaced with space
+					nforms = arrayPush(forms, FInlineString(needsSpace + strReplace(id, "·", " "), lex.line, lex.col));
+					fastParseGrabInline(acc, p, language, nforms, braces, i + 1, onParse);
+				}
+			}
+			FLPunctuation(pu, __, __): {
+				end = fastGetEndPunc(pu);
+				if (end != pu) {
+					// If we get a new brace, we have to push it so we keep balanced
+					fastParseGrabInline(acc, p, language, arrayPush(forms, FInlineString(pu, lex.line, lex.col)), arrayPush(braces, end), i + 1, onParse);
+				} else {
+					fastParseGrabInline(acc, p, language, arrayPush(forms, FInlineString(pu, lex.line, lex.col)), braces, i + 1, onParse);
+				}
+			}
+			FLInt(n, line, col): {
+				fastParseGrabInline(acc, p, language, arrayPush(forms, FInlineString(i2s(n), lex.line, lex.col)), braces, i + 1, onParse);
+			}
+			FLDouble(n, line, col): {
+				fastParseGrabInline(acc, p, language, arrayPush(forms, FInlineString(d2s(n), lex.line, lex.col)), braces, i + 1, onParse);
+			}
+			FLString(n, line, col): {
+				// We have to keep the quotes
+				fastParseGrabInline(acc, p, language, arrayPush(forms, FInlineString(toString(n), lex.line, lex.col)), braces, i + 1, onParse);
+			}
+		}
+	}
+}
+
+// require language::name { stream } (: type)
+fastParseDependencies(acc : FastFile, p : FastParse, i : int, code : FInlineCode, onParse : (int, FInlineCode) -> FastFile) -> FastFile {
+	depword = fastGetId(fastGetLexeme(p, i));
+	if (depword == "require") {
+		// require language::name { stream }
+		// require name { stream }
+		fastParseOptionalTarget(acc, p, i + 1, \ti, language -> {
+			rlanguage = if (language == "") code.language else language;
+			name = fastGetId(fastGetLexeme(p, ti));
+			punc = fastGetIdOrPunc(fastGetLexeme(p, ti + 1));
+			endpunc = fastGetEndPunc(punc);
+			fastParseGrabInline(acc, p, rlanguage, [], [endpunc], ti + 2, \di, dcode : FInlineCode -> {
+				dep = FInlineDependency(rlanguage, name, dcode.stream);
+				ncode = FInlineCode(code with dependencies = arrayPush(code.dependencies, dep), type = dcode.type);
+				fastParseDependencies(acc, p, di, ncode, onParse)
+			});
+		});
+	} else if (depword == ":") {
+		// Type annotation
+		fastParseType(acc, p, i + 1, \ti, typ -> {
+			onParse(ti, FInlineCode(code with type = typ, info = FInfo(code.info with type = typ)))
+		});
+	} else {
+		onParse(i, code);
+	}
+}
+
+fastGetEndPunc(punc : string) -> string {
+	//if (punc == "(") ")" else 
+	if (punc == "{") "}"
+	else if (punc == "[") "]"
+	else if (punc == "<") ">"
+	else punc
+}
+
+fastGetId(l : FastLex) -> string {
+	switch (l) {
+		FLId(id, __, __): id;
+		default: "";
+	}
+}
+
+// { } ; , ( )
+fastGetPunctuation(l : FastLex) -> string {
+	switch (l) {
+		FLPunctuation(p, __, __): p;
+		default: "";
+	}
+}
+
+fastGetIdOrPunc(l : FastLex) -> string {
+	switch (l) {
+		FLId(id, __, __): id;
+		FLPunctuation(p, __, __): p;
+		default: "";
+	}
+}
+
+fastGetLexeme(p : FastParse, i : int) -> FastLex {
+	elementAt(p.lexemes, i, FLId("", 0, 0))
+}
+
+
+// OK, using the line/col of the tokens, make newlines and whitespace
+fixInlineWhitespace(f : [FInlineForm]) -> [FInlineForm] {
+	fold2(f, FWhitespace(-1, -1, -1), [], \lc, acc, form -> {
+		switch (form) {
+			FInlineString(s, line, col): {
+				nlc = if (lc.line == -1) FWhitespace(line, col, col) else lc;
+				indent = if (nlc.line == line) {
+					strRepeat(" ", max(0, col - nlc.lastCol));
+//					"" 
+				} else {
+					// OK, we have a new line
+					// println(s);
+					strRepeat(" ", col - nlc.indentCol);
+				}
+				newlines = strRepeat("\n", line - nlc.line);
+				ns = FInlineString(newlines + indent + s, line, col);
+				Pair(
+					FWhitespace(
+						line, nlc.indentCol, col + strlen(s)
+					),
+					arrayPush(acc, ns)
+				)
+			}
+			FInlineUnquote(__, line, col): {
+				nlc = if (lc.line == -1) FWhitespace(line, col, col) else lc;
+
+				indent = if (nlc.line == line) {
+					strRepeat(" ", max(0, col - nlc.lastCol));
+				} else {
+					// OK, we have a new line
+					// println(s);
+					strRepeat(" ", col - nlc.indentCol);
+				}
+				println(indent);
+				nacc = if (indent != "") {
+					arrayPush(acc, FInlineString(indent, line, col));
+				} else acc;
+				Pair(
+					FWhitespace(lc with line = line, lastCol=col),
+					arrayPush(nacc, form)
+				);
+			}
+			FInlineTypeUnquote(__, __, __): Pair(lc, arrayPush(acc, form));
+		}
+	}).second;
+}
+
+FWhitespace(line : int, indentCol : int, lastCol : int);

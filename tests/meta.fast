@@ -1,0 +1,133 @@
+import runtime;
+
+/*
+Game plan:
+
+- Make proof of concept for flow imports
+- Add growing a language syntactic sugar construct to allow extending syntax at program time
+
+	@while { dasfasdf asdfasfadsf }
+
+- Add syntax for Lingo-like language as syntactic sugar based on a parser generator library
+  and we have nice embedded DSLs in Fastlåst
+
+- Do SQL schema ORM from SHOW TABLE syntax
+- Do SQL DSL syntax
+
+- Record types: We allow the @name syntax in a global context as well.
+
+	@struct { Mystruct { foo: i32, bar : string } }
+
+	-> typedef Mystruct = Tuple<i32, string>;
+		mystruct(a : i32, b: string) -> Mystruct {
+			tuple(a, b);
+		}
+		foo(m : Mystruct) -> i32 {
+			first(m);
+		}
+		bar(m : Mystruct) -> string {
+			second(m);
+		}
+
+Future syntax to consider:
+
+meta.js::main() -> i0 {
+	println(inline fast {
+		fact(5)
+	} require function {
+		fact(i : i32) -> i32 {
+			if (i <= 1) 1
+			else i * fact(i - 1)
+		}
+	);
+}
+
+Consider to provide a "compile+run" function in the compiletime
+library to allow arbitrary strong code to be run and used.
+
+Figure out a meta-annotation to mark some ids as reserved, so
+we can avoid name collisions for "malloc", "free" and friends.
+
+compiletime::inline partial_apply(fn : (?) -> ??, arg : ?) -> () -> ?? {
+	id = gensym();
+	inline fast {
+		${id}
+	} require function {
+		${id}() -> $type{??} {
+			$(fn)($arg)
+		}
+	}
+}
+
+
+compiletime::inline partial_apply(fn : (?, ??) -> ???, arg : ?) -> (??) -> ??? {
+	id = gensym();
+	inline fast {
+		${id}
+	} require function {
+		${id}(b : ??) -> $type{???} {
+			$(fn)(${arg}, b)
+		}
+	}
+}
+
+
+foo() {
+   partial_apply(+, 1)(2)
+}
+
+and you end with:
+
+id_gensym(b) { 1 + b }
+foo() { id_gensym(2) }
+
+
+*/
+
+compiletime::main() -> i0 {
+	inline fast {
+	} require function {
+		fact(i : i32) -> i32 {
+			if (i <= 1) 1
+			else i * fact(i - 1)
+		}
+	} : i0;
+
+	makeStructType("Foo", "foo", 0);
+}
+
+makeStructType(name : string, arg1 : string, type1 : ?) -> i0 {
+	inline fast {
+	} require typedef {
+		typedef ${name} = Tuple< ${typeof(type1)} >;
+	} : i0
+/*
+	-> typedef Mystruct = Tuple<i32, string>;
+		mystruct(a : i32, b: string) -> Mystruct {
+			tuple(a, b);
+		}
+		foo(m : Mystruct) -> i32 {
+			first(m);
+		}
+		bar(m : Mystruct) -> string {
+			second(m);
+		}
+	}
+	*/
+}
+
+meta.js::main() -> i0 {
+	println(fact(5));
+}
+
+
+/*
+
+compiletime::main() -> i0 {
+	import_flow(read("file.flow"))
+}
+
+foo.fast:
+
+println(fact(5));
+*/

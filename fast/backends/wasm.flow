@@ -1,0 +1,328 @@
+import fast/backends/utils;
+import fast/fast_prettyprint;
+import fast/semantics/firstorder;
+import fast/typing/polymorphism;
+import fast/semantics/utils;
+import text/blueprint;
+import sys/system;
+
+export {
+	wasmbackend = FastBackend("wasm", false, fast2wasm, "wat", false, [
+			"i32", "i64", "f32", "f64",
+			"module", "func", "param", "result", "export", "loop",
+			"block", "if", "then", "else", "call", "call_indirect",
+			"import", "memory", "table", "global", "anyfunc", "mut",
+			"data", "type", "elem", "start", "offset"
+		], "", true, flinkWasm,
+		fDefaultSaveCode("wat")
+	);
+}
+
+fast2wasm(compile : FastCompile) -> string {
+	// Build our first-order function indexes
+	f = compile.code;
+	firstOrderNames = set2array(extractFirstOrder(f));
+	firstOrder = foldi(firstOrderNames, makeTree(), \i, acc, name -> {
+		setTree(acc, name, i)
+	});
+
+	// Construct the table with our function-order functions
+	firstOrderTable = if (firstOrderNames == []) "" 
+		else foldi(firstOrderNames, 
+			"(table anyfunc (elem ",
+			\i, acc, name -> {
+				acc + wasmFId(name) + ";; " + i2s(i) + "\n"
+		}) + "))\n";
+
+	// Find the types for all first-order calls
+	firstOrderTypes : Set<FastType> = foldi(firstOrderNames, makeSet(), \i, acc, name : string -> {
+		types = filtermap(f.functions, \fn : FastFunction -> {
+			if (fn.id == name) {
+				Some(fn.info.type)
+			} else None();
+		});
+		fold(types, acc, \acc2, type -> {
+			insertSet(acc2, type)
+		});
+	});
+
+	// Construct the type declarations for all functions we call as first-order
+	firstOrderTypeDecl : Tree<FastType, string> = foldi(set2array(firstOrderTypes), makeTree(), \i, acc, type -> {
+		name = "__type__" + i2s(i);
+		setTree(acc, type, name);
+	});
+
+	// Keep track of what functions we have to export
+	exportedCalls = foldSet(compile.crossCalls, makeSet(), \acc, cc -> {
+		if (cc.toLanguage == "wasm") insertSet(acc, cc.id) else acc;
+	})
+
+	// Keep track of what functions we import
+	importedCalls : Set<FCrossCall> = foldSet(compile.crossCalls, makeSet(), \acc, cc -> {
+		if (cc.fromLanguage == "wasm") insertSet(acc, cc) else acc;
+	});
+
+	// Keep track of names
+	env0 = FWasmEnv(makeSet(), mapSet(importedCalls, \ic -> wasmImportName(ic.id)), firstOrder, "", makeSet(), exportedCalls, firstOrderTypeDecl);
+
+	genv = fold(f.globals, env0, \acc, global -> {
+		FWasmEnv(acc with globalVars = insertSet(acc.globalVars, global.id))
+	});
+
+	env = fold(f.functions, genv, \acc, fn -> {
+		FWasmEnv(acc with globalFns = insertSet(acc.globalFns, fn.id))
+	});
+
+	superglue(set2array(importedCalls), \cc : FCrossCall -> {
+	  	//( func·$print·(import·"imports"·"print")·(param·i32))
+
+		if (isPolymorphicFastType(cc.callType)) {
+			// The types in cross-call should be specialized, and not polymorphic
+			println("TODO: WASM does not support calling polymorphic function " + cc.id + " in " + cc.toLanguage);
+		}
+
+		stype = ftype2wasm(cc.callType, true);
+		if (startsWith(stype, "(func")) {
+			strReplace(stype, "(func ", "(func " + wasmFId(wasmImportName(cc.id)) + " (import \"imports\" \"" + cc.id + "\")") + "\n";
+		} else {
+			"(func " + wasmFId(wasmImportName(cc.id)) + " (import \"imports\" \"" + cc.id + "\") " + stype + ")\n";
+		}
+	}, "")
+	+ foldTree(firstOrderTypeDecl, "", \type, name, acc -> {
+		acc +"(type " + wasmFId(name) + " " + ftype2wasm(type, true) + " )\n";
+	})
+	+ firstOrderTable 
+	+ superglue(f.globals, \global -> {
+		fexp2wasm(env, global.value)
+		+ "\nset_global " + wasmFId(global.id);
+	}, "")
+	+ superglue(f.functions, \tl -> fastFunctionDecl2wasm(env, tl), "");
+}
+
+FWasmEnv(
+	// Global variables
+	globalVars : Set<string>, 
+	// Global functions
+	globalFns : Set<string>,
+	// Functions used as first-order
+	firstOrder : Tree<string, int>,
+	// Calls to this function should be tail-calls
+	tailcall : string,
+	// Local names
+	locals : Set<string>,
+	// Names we export for calls
+	exported : Set<string>,
+	// A lookup from complex types to the name of the type
+	complexTypes : Tree<FastType, string>
+);
+
+fastFunctionDecl2wasm(env : FWasmEnv, fn : FastFunction) -> string {
+	tailRecursive = isFTailRecursive(fn);
+
+	id = fn.id;
+	locals = fexpLocals(makeTree(), fn.body);
+	nenv = fold(fn.args, env, \acc, arg -> {
+		FWasmEnv(acc with locals = insertSet(acc.locals, arg.name), tailcall = if (tailRecursive) id else "")
+	});
+	"(func " + wasmFId(id) + " " 
+		+ (if (containsSet(env.exported, id)) "(export \"" + id + "\") " else "")
+		+ superglue(fn.args, \a -> "(param " + wasmFId(a.name) + " " + ftype2wasm(a.type, false) + ")", " ")
+		+ (if (fn.returnType != FTypeVoid()) "(result " + ftype2wasm(fn.returnType, false) + ") " else "")
+		+ "\n"
+
+	// Declare all locals
+	+ foldTree(locals, "", \name, type, acc -> {
+		acc + "(local " + wasmFId(name) + " " + ftype2wasm(type, false) + ")\n"
+	})
+	+ (if (tailRecursive) {
+		"(block $exit (result i32) (loop $cont (result i32)\n"
+	} else "")
+
+		+ fexp2wasm(nenv, fn.body)
+
+	+ (if (tailRecursive) " br $exit))\n" else "")
+	+ ")\n";
+}
+
+fexp2wasm(env : FWasmEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in WASP backend: " + fexp2string(f));
+		"<todo>" + fexp2string(f);
+	}
+	switch (f) {
+		FIntConstant(value, info): {
+			switch (info.type) {
+				FTypeInt(nbits): {
+					if (nbits == 0) {
+						"";
+					} else if (nbits <= 32) {
+						"i32.const " + i2s(value);
+					} else if (nbits == 64) {
+						"i64.const " + i2s(value);
+					} else {
+						todo();
+					}
+				}
+				default: todo();
+			}
+		}
+		FDoubleConstant(value, info): {
+			switch (info.type) {
+				FTypeInt(nbits): {
+					if (nbits == 32) {
+						"f32.const " + double2string(value);
+					} else if (nbits == 64) {
+						"f64.const " + double2string(value);
+					} else todo();
+				}
+				default: todo();
+			}
+		}
+		FStringConstant(value, __): todo(); // This should go into the data section
+		FFunctionPointer(id, __): todo();
+
+		FVar(id, __): {
+			if (containsSet(env.globalVars, id)) {
+				"get_global " + wasmFId(id);
+			} else if (containsSet(env.locals, id)) { 
+				"get_local " + wasmFId(id);
+			} else if (containsKeyTree(env.firstOrder, id)) {
+				// OK, a lookup to a table-based dude
+				key = lookupTreeDef(env.firstOrder, id, 0);
+				"i32.const " + i2s(key) + " ;; " + id
+			} else {
+				todo();
+			}
+		}
+
+		FLet(id, value, body, __): {
+			fexp2wasm(env, value) + "\n"
+			+ "set_local " + wasmFId(id)+ "\n"
+			+ fexp2wasm(FWasmEnv(env with locals = insertSet(env.locals, id)), body)
+		}
+		FSizeOf(type, __): todo();
+		FCall(fn, args, __): {
+			superglue(args, \e -> fexp2wasm(env, e) + "\n", "")
+			+ switch (fn) {
+				FVar(id, __): {
+					if (env.tailcall == id) {
+						concatStrings(generate(0, length(args), \i -> {
+							"set_local " + i2s(length(args) - i - 1) + " "
+						})) + "br $cont";
+					} else if (containsSet(env.globalFns, id)) {
+						"call " + wasmFId(id);
+					} else {
+						// TODO: Look up the real argument type in the complex type
+						// and use that name
+						"get_local " + wasmFId(id) + "\n"
+						+ "call_indirect (type " + wasmFId("__type__0" + ) + ")\n";
+					}
+				}
+				default: todo(); // call_indirect somehow
+			}
+		}
+		FCallOp(language, op, args, __): {
+			superglue(args, \e -> fexp2wasm(env, e) + "\n", "")
+			+ "call " + (if (language != "" && language != "wasm") {
+				// OK, an imported call
+				wasmFId(wasmImportName(op));
+			} else {
+				wasmFId(op)
+			})
+		}
+		FSequence(exprs, __): {
+			supergluei(exprs, \i, e -> {
+				fexp2wasm(env, e) + "\n"
+				+ (if (i < length(exprs) - 1 && e.info.type != FTypeVoid()) {
+					"drop\n"
+				} else "")
+			}, "");
+		}
+		
+		FTypeAnnotation(e, type, __): fexp2wasm(env, e);
+		FIf(cond, then, else_, info): {
+			"(if " 
+				+ (if (info.type != FTypeVoid()) " (result " + ftype2wasm(info.type, false) + ")" else "") 
+				+ "\n"
+			+ "(block (result i32)" + fexp2wasm(env, cond) + ")\n"
+			+ "(then " + fexp2wasm(env, then) +")\n"
+			+ "(else " + fexp2wasm(env, else_) +")\n"
+			+ ")"
+			;
+		}
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, \e -> fexp2wasm(env, e), \t -> ftype2wasm(t, false))
+		}
+	}
+}
+
+// realFn is whether you want the full type for the function, or the runtime i32 "pointer" for it
+ftype2wasm(t : FastType, realFn : bool) -> string {
+	todo = \ -> {
+		println("TODO: Type for wasm " + toString(t));
+		"i32";
+	}
+	switch (t) {
+		FTypeInfer(): todo();
+		FIntConstant(value, info): todo();
+		FTypeInt(bits): {
+			if (bits == 0) {
+				todo();
+			} else if (bits <= 32) "i32"
+			else if (bits <= 64) "i64"
+			else todo();
+		}
+		FTypeVar(id): todo();
+		FTypeFunction(args, to): {
+			if (realFn) {
+				"(func " + superglue(args, \a -> "(param " + ftype2wasm(a, false) + ")", " ") 
+				+ (if (to != FTypeVoid()) " (result " + ftype2wasm(to, false) + ")" else "")
+				+ " )"
+			} else {
+				// Function pointers become integers
+				"i32"; 
+			}
+		}
+		FTypeCall(id, typars): todo();
+		FInlineType(language, stream, deps): {
+			ftypeInlineForm2string(stream, \e -> ftype2wasm(e, realFn));
+		}
+	}
+}
+
+wasmFId(n : string) -> string {
+	"$" + n;
+}
+
+// Functions that are imported are mangled to avoid collisions 
+wasmImportName(name : string) -> string {
+	"__import__" + name;
+}
+
+
+flinkWasm(compile : FastCompile, watfile : string, final : bool, callback : (bool) -> void) -> void {
+	wasmfile = changeFileExt(watfile, ".wasm");
+	ensureDirectoryExists(dirName(wasmfile));
+	startProcess("wat2wasm", 
+		[pathCombine(compile.objDir, fileNameOnly(watfile)), "--debug-names", "-o", wasmfile], 
+		".", "",
+		\c, o, e -> {
+			if (c != 0) {
+				println("Wasm failed");
+				println(e);
+				println(o);
+				println(i2s(c));
+				if (c == -200) {
+					println("Install wasm binary toolkit");
+					println("https://github.com/WebAssembly/wabt");
+				}
+				println("wat2wasm " + watfile + " -o " + wasmfile);
+				callback(false);
+			} else {
+				println("Made '" + wasmfile + "'");
+				// deleteFile(watfile);
+				callback(true);
+			}
+		}
+	);
+}

@@ -1,0 +1,17 @@
+import partial_call;
+import string_utils;
+
+plus(a : i32, b : i32) -> i32 {
+	a + b;
+}
+
+foo() -> i0 {
+	// TODO: Mark that partialCall is always compiletime so avoid doing it at each call site
+	fn = compiletime::partialCall(plus, 1);
+	println(fn(2))
+}
+
+partial_call.flow::main() -> i0 {
+	foo();
+	quit(0);
+}

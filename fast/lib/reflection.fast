@@ -1,0 +1,27 @@
+import string;
+
+// TODO: Add export
+
+// Poor man's reflection for some types
+
+inline isInt(i : i1) -> i1 { 1 : i1; }
+inline isInt(i : i8) -> i1 { 1 : i1; }
+inline isInt(i : i16) -> i1 { 1 : i1; }
+inline isInt(i : i32) -> i1 { 1 : i1; }
+inline isInt(i : i64) -> i1 { 1 : i1; }
+
+inline isInt(i : string) -> i1 { 0 : i1; }
+inline isInt(i : () -> ?) -> i1 { 0 : i1; }
+inline isInt(i : (?) -> ??) -> i1 { 0 : i1; }
+
+
+
+inline isString(i : string) -> i1 { 1 : i1; }
+
+inline isString(i : i1) -> i1 { 0 : i1; }
+inline isString(i : i8) -> i1 { 0 : i1; }
+inline isString(i : i16) -> i1 { 0 : i1; }
+inline isString(i : i32) -> i1 { 0 : i1; }
+inline isString(i : i64) -> i1 { 0 : i1; }
+inline isString(i : () -> ?) -> i1 { 0 : i1; }
+inline isString(i : (?) -> ??) -> i1 { 0 : i1; }

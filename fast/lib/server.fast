@@ -1,0 +1,74 @@
+import string;
+import tuples;
+import promise;
+
+/*
+TODO:
+- Figure out how to implement Record
+- Change to Promise. Check out the deno interface
+*/
+
+export {
+	createHttpServer(
+		port : i32,
+		onOpen : () -> i0,
+		onMessage : (HttpRequest, (HttpResponse) -> i0) -> i0
+	) -> () -> i0;
+
+	typedef flow::HttpRequest = inline flow { HttpRequest } require import { import server/http; };
+	typedef flow::HttpResponse = inline flow { HttpResponse } require import { import server/http; };
+
+	typedef flow::KeyValue = inline flow { KeyValue } require import { import ds/tuples; };
+
+/*
+	typedef HttpRequest = Record<
+		url : string,
+		body : string,
+		headers : Array<KeyValue>,
+		method : string
+	>;
+
+	typedef HttpResponse = Record<
+		status : i32,
+		body : string,
+		headers : Array<KeyValue>
+	>;*/
+
+	httpResponse(status : i32,
+		body : string,
+		headers : Array<KeyValue>) -> HttpResponse;
+}
+
+flow::inline createHttpServer(
+	port : i32,
+	onOpen : () -> i0,
+	onMessage : (HttpRequest, (HttpResponse) -> i0) -> i0
+) -> () -> i0 {
+	inline flow {
+		createHttpServer($port, $onOpen, $onMessage)
+	} require import {
+		import server/http;
+	}
+}
+
+httpResponse(status : i32,
+		body : string,
+		headers : Array<KeyValue>) -> HttpResponse {
+	inline flow {
+		HttpResponse($status, $body, $headers)
+	}
+}
+
+
+/*
+
+start_web_server(path : string) -> i0 {
+	inline httpd.conf {
+		($path)
+	}
+	inline dockerfile {
+		ADD httpd
+	}
+}
+
+*/

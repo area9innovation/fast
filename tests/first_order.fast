@@ -1,0 +1,19 @@
+c::println(s : i32) -> i0 {
+    inline c {
+        printf("%i", $s)
+    } require include {
+        #include·<stdio.h>
+    }
+}
+
+number() -> i32 {
+    0;
+}
+
+printfn(fn : () -> i32) -> i0 {
+    println(fn());
+}
+
+first_order.c::main() -> i0 {
+    printfn(number);
+}

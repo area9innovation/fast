@@ -1,0 +1,473 @@
+import sys/system;
+import fs/filesystem;
+import fast/backends/types;
+import fast/backends/utils;
+import fast/semantics/utils;
+import fast/fast_prettyprint;
+import fast/semantics/firstorder;
+import fast/fast_path;
+import text/blueprint;
+import sys/target;
+import string_utils;
+import fast/backends/utils;
+
+export {
+	javabackend = FastBackend("java", false, fast2java, "java", true, [
+			"abstract", "assert", "boolean", "break",
+			"byte", "case", "catch", "char",
+			"class", "const", "continue", "default",
+			"do", "double", "else", "enum",
+			"extends", "final", "finally", "float",
+			"for", "goto", "if", "implements",
+			"import", "instanceof", "int", "interface",
+			"long", "native", "new", "package",
+			"private", "protected", "public", "return",
+			"short", "static", "strictfp", "super",
+			"switch", "synchronized", "this", "throw",
+			"throws", "transient", "try", "void",
+			"volatile", "while", " true", " false",
+			"null"
+		], "", true, flinkJava,
+		\compile, code -> {
+			file = pathCombine(compile.filename, compile.filename);
+			path = pathCombine(compile.objDir, changeFileExt(file, ".java"));
+			fSaveCode(path, code);
+			sources_path = pathCombine(compile.objDir, "sources_gen");
+			if (!setFileContent(sources_path, resolveRelativePath(path))) {
+				println("failed to save " + sources_path);
+			}
+		}
+	); 
+}
+
+fast2java(compile : FastCompile) -> string {
+	// Find all names used as first-order functions
+	firstOrderTypes = extractFirstOrderTypes(compile.code);
+
+	// Come up with a unique name for each first-order function type
+	firstOrderTypeNames = foldTree(firstOrderTypes, makeTree(), \name, type, acc -> {
+		if (containsKeyTree(acc, type)) {
+			acc;
+		} else {
+			typeName = "First_order_fn_type" + i2s(sizeTree(acc));
+			setTree(acc, type, typeName)
+		}
+	});
+
+	env = FJavaEnv(compile, fold(compile.code.functions, makeSet(), \acc, fn -> insertSet(acc, fn.id)), firstOrderTypes, firstOrderTypeNames);
+
+	// Do we have a main?
+	hasMain = exists(compile.code.functions, \fn -> fn.id == "main");
+	needsFlow = fHasCall(compile.crossCalls, "flow");
+
+	"package " + compile.filename + ";\n\n" + 
+
+	generateFDependency(compile, "import", \e -> fexp2java(env, e), \e -> ftype2java(env, e), "\n", true) + "\n"
+
+	+ "public final class " + compile.filename
+	+ (if (needsFlow) " extends com.area9innovation.flow.NativeHost " else "")
+	+ "{\n"
+
+	+ generateFDependency(compile, "classes", \e -> fexp2java(env, e), \e -> ftype2java(env, e), "\n", true) + "\n"
+
+	// Generate first-order function interfaces
+	+ foldTree(env.firstOrderTypeName, "", \type, name, acc -> {
+		acc + "interface " + name + " {\n\t" 
+		+ fastJavaFunDecl(env, type) + ";\n}\n"
+	})
+	// Generate first order wrappers
+	+ foldTree(env.firstOrderNames, "", \name, type, acc -> {
+		/*
+		static final First_order_fn_type0 eulerFirstFn = new First_order_fn_type0() {
+			final public int invoke(int a0, int a1) {
+				return eulerFn(a0, a1);	
+			}
+		};
+		*/
+		fnargs = switch (type) {
+			FTypeFunction(a, rt): a;
+			default: [];
+		}
+		returnType = switch (type) {
+			FTypeFunction(args, rt): rt;
+			default: type;
+		}
+		typename = lookupTreeDef(env.firstOrderTypeName, type, name);
+		"static final " + typename + " " + name + "_first_order_fn = new " + typename + "() {\n"
+		+ "\tfinal public " + fastJavaFunDecl(env, type) + "{\n"
+		+ "\t\t" + (if (returnType == FTypeVoid()) {
+			""
+		} else {
+			"return "
+		}) + name + "(" + strGlue(mapi(fnargs, \i, a -> "a" + i2s(i)), ", ") + ");\n"
+		+ "\t}\n};\n"
+	})
+
+	// Generate globals
+	+ superglue(compile.code.globals, \tl -> fastDecl2java(env, true, needsFlow, tl), "\n") 
+
+	// then produce the code for functions
+	+ superglue(compile.code.functions, \tl -> fastDecl2java(env, true, needsFlow, tl), "\n")
+
+	+ "}\n";
+}
+
+
+FJavaEnv(
+	compile : FastCompile,
+	// All top-level functions
+	toplevel : Set<string>,
+	// Functions that are used as first order - find the name
+	firstOrderNames : Tree<string, FastType>,
+	// For each first order function type, we give it an interface name
+	firstOrderTypeName : Tree<FastType, string>,
+);
+
+
+fastJavaFunDecl(env : FJavaEnv, type : FastType) -> string {
+	switch (type) {
+		FTypeFunction(args, to): {
+			ftype2java(env, to) + " invoke(" + strGlue(mapi(args, \i, a -> ftype2java(env, a) + " a" + i2s(i)), ", ") + ")"
+		}
+		default: {
+			ftype2java(env, type)
+		}
+	}
+}
+fastDecl2java(env : FJavaEnv, withBody : bool, needsFlow : bool, c : FastDeclaration) -> string {
+	switch (c) {
+		FastTypeFunctor(__, language, id, typars, type): "";
+		FastGlobalVar(__, id, value, info): {
+			ftype2java(env, info.type) + " " + id + (if (withBody) "=" + fexp2java(env, value) else "") + ";\n";
+		}
+		FastFunction(__, output, language, inline, id, args, returnType, effect, body, __): {
+			locals = fexpLocals(makeTree(), body);
+			strIndent("public static "
+			+ ftype2java(env, returnType) + " " + id + "("
+			+ superglue(args, \a -> {
+				ftype2java(env, a.type) + " " + a.name
+			}, ", ") 
+			+ ")"
+			+ (if (withBody) {
+				" {\n" +
+				(if (id != "main" || !needsFlow) "" 
+				 else {
+					name = env.compile.filename;
+					"\t" + name + "_lib.init(" + superglue(args, \a -> a.name, ", ") + ");\n";
+				})
+				// Declare locals
+				+ strIndent(foldTree(locals, "", \local, type, acc -> {
+					acc + ftype2java(env, type) + " " + local + ";\n"
+				}))
+				+ fexp2javareturn(env, body)
+				+ "}\n";
+			} else ";\n"))
+		}
+	}
+}
+
+// Should end in a return
+fexp2javareturn(env : FJavaEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in Java return backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FLet(id, value, body, info): blueprint("
+			%id% = %value%;
+			%body%
+			", [
+				"type", ftype2java(env, info.type),
+				"id", id,
+				"value", fexp2java(env, value),
+				"body", fexp2javareturn(env, body)
+			]);
+
+		FSequence(exprs, __): {
+			foldi(exprs, "", \i, acc, e -> {
+				if (i < length(exprs) - 1) {
+					acc + fexp2java(env, e) + ";\n"
+				} else {
+					acc + fexp2javareturn(env, e)
+				}
+			});
+		}
+		FIf(cond, then, else_, __): blueprint("
+			if (%cond%) {
+				%then%
+			} else {
+				%else%
+			}
+			", [
+				"cond", fexp2java(env, cond),
+				"then", fexp2javareturn(env, then),
+				"else", fexp2javareturn(env, else_)
+			]);
+
+		FSizeOf(type, __): todo();
+		FFunctionPointer(id, __): todo();
+
+		FConstant(): {
+			if (isFVoid(f)) {
+				"return;";
+			} else {
+				"return " + fexp2java(env, f) + ";";
+			}
+		}
+		FVar(id, __): "return " + fexp2java(env, f) + ";";
+		FCall(fn, args, info): {
+			makeFReturn(fexp2java(env, f), info.type);
+		}
+		FCallOp(language, op, args, info): {
+			makeFReturn(fexp2java(env, f), info.type);
+		}
+		FTypeAnnotation(e, type, __): fexp2javareturn(env, e);
+		FInlineCode(language, stream, deps, type, __): {
+			makeFReturn(fexp2java(env, f), type);
+		}
+	}
+}
+
+fexp2java(env : FJavaEnv, f : FExp) -> string {
+	todo = \ -> {
+		println("Implement in Java backend: " + fexp2string(f));
+		"<todo>";
+	}
+	switch (f) {
+		FIntConstant(value, info): {
+			switch (info.type) {
+				FTypeInt(nbits): {
+					if (nbits == 0) {
+						"";
+					} else if (nbits == 1) {
+						b2s(i2b(value));
+					} else if (nbits == 64) {
+						i2s(value) + "L"
+					} else if (nbits == 32) {
+						i2s(value)
+					} else if (nbits == 16) {
+						"(short) "+ i2s(value)
+					} else if (nbits == 8) {
+						"(byte) "+ i2s(value)
+					} else {
+						todo();
+					}
+				}
+				default: i2s(value);
+			}
+		}
+		FDoubleConstant(value, __): double2string(value);
+		FStringConstant(value, __): toString(value);
+		FFunctionPointer(id, __): id;
+		FVar(id, info): {
+			if (containsKeyTree(env.firstOrderNames, id)) {
+				id + "_first_order_fn";
+			} else {
+				id;
+			}
+		}
+
+		FLet(id, value, body, __): {
+			id + " = "  + fexp2java(env, value) 
+			+ (
+				if (body != FVoid()) {
+					"; " + fexp2java(env, body);
+				} else ""
+			)
+		}
+		FSizeOf(type, __): todo();
+
+ 		FCall(fn, args, __): {
+			// If this is a direct name, we do not want the first-order treatment
+			var = getFVar(fn);
+			(if (var != "") {
+				if (containsSet(env.toplevel, var)) {
+					var
+				} else {
+					var + ".invoke"
+				}
+			} else fexp2java(env, fn))
+			+ "(" + superglue(args, \a -> fexp2java(env, a), ", ") + ")";
+		}
+		FCallOp(language, op, args, __): {
+			prefix = if (language == "java") "" else 
+				if (language == "flow") env.compile.filename + "_lib.fast__" 
+				else env.compile.filename + "_lib.";
+			css = map(args, \a -> fexp2java(env, a));
+			prefix + op + "(" + strGlue(css, ", ") + ")";
+		}
+
+		FSequence(exprs, __): {
+			superglue(exprs, \e -> fexp2java(env, e), ";\n")
+		}
+		FTypeAnnotation(e, type, __): fexp2java(env, e);
+		FIf(cond, then, else_, __): {
+			blueprint("
+			((%cond%) ? (%then%) : (%else%))
+			", [
+				"cond", fexp2java(env, cond),
+				"then", fexp2java(env, then),
+				"else", if (isFVoid(else_)) "null" else fexp2java(env, else_)
+			]);
+		}
+		FInlineCode(language, stream, deps, type, __): {
+			finlineForm2string(stream, \e -> fexp2java(env, e), \t -> ftype2java(env, t))
+		}
+	}
+}
+
+ftype2java(env : FJavaEnv, t : FastType) -> string {
+	todo = \ -> {
+		println("TODO: Type for Java " + toString(t));
+		"int";
+	}
+	switch (t) {
+		FTypeInfer(): todo();
+		FIntConstant(value, info): todo();
+		FTypeInt(len): {
+			if (len == 0) {
+				"void"			
+			} else if (len == 1) {
+				"boolean"
+			} else if (len == 8) {
+				"byte"
+			} else if (len == 16) {
+				"short"
+			} else if (len == 32) {
+				"int"
+			} else if (len == 64) {
+				"long"
+			} else {
+				todo();
+			}
+		}
+		FTypeVar(id): todo();
+		FTypeFunction(args, to): {
+			mfirstOrder = lookupTree(env.firstOrderTypeName, t);
+			mfirstOrder ?? mfirstOrder : {
+				println("Could not find first-order type " + fastType2string(t));
+				traverseInOrder(env.firstOrderTypeName, \tp, n -> {
+					println("  " +n + ":" + fastType2string(tp));
+				});
+				todo();
+			}
+		}
+		FTypeCall(id, typars): todo();
+		FInlineType(language, stream, deps): {
+			ftypeInlineForm2string(stream, \tp -> ftype2java(env, tp));
+		}
+	}
+}
+
+flinkJava(compile : FastCompile, javafile : string, final : bool, callback : (bool) -> void) -> void {	
+	if (final) {
+		fbuildJava(compile, javafile, callback);
+	} else {
+		fgenJava(compile, javafile, callback);
+	}
+}
+
+fgenJava(compile : FastCompile, javafile : string, callback : (bool) -> void) -> void {
+	needsFlow = fHasCall(compile.crossCalls, "flow");
+	// OK, what host languages are we in?
+	hostLanguages = fHostLanguages(compile.crossCalls, "java");
+	flowfile = changeFileExt(javafile, ".flow");
+	folder = dirName(flowfile);
+	out_dir = compile.objDir;
+	if (contains(hostLanguages, "flow")) {
+		name = changeFileExt(fileNameOnly(flowfile), "");
+		flowc = "flowc1" + (if (hasTargetName("windows")) ".bat" else "");
+		flowc_args = [
+			fileNameOnly(flowfile), 
+			"java=.", 
+			"java-package=" + name, 
+			"java-main=" + name + "_host"
+		];
+		startProcess(flowc, flowc_args, out_dir, "",
+			\c, o, e -> {
+				if (c != 0) {
+					println("Flow failed at java host compilation '" + flowc + " " + strGlue(flowc_args, " ") + "'");
+					println(e);
+					println(o);
+					println(i2s(c));
+					callback(false);
+				} else {
+					println("Made '" + name + "' host java runtime");
+					setFileContent(
+						pathCombine(out_dir, "sources_host"), 
+						getFileContent(pathCombineMany([out_dir, name, "sources"]))
+					);
+					callback(true);
+				}
+			}
+		);
+	} else callback(true) 
+}
+
+fbuildJava(compile : FastCompile, javafile : string, callback : (bool) -> void) -> void {
+	needsFlow = fHasCall(compile.crossCalls, "flow");
+
+	flowdir = if (needsFlow) getFlowDir() else "";
+	folder = dirName(javafile);
+	out_dir = compile.objDir;
+	file = fileNameOnly(javafile);
+	name = changeFileExt(file, "");
+	jarfile = changeFileExt(file, ".jar");
+
+	// Prepare all possible sources: from host, library and generated files
+	host_sources = getFileContent(pathCombine(out_dir, "sources_host"));
+	lib_sources = getFileContent(pathCombine(out_dir, "sources_lib"));
+	gen_sources = getFileContent(pathCombine(out_dir, "sources_gen"));
+	sources = strGlue(
+		filtermap(
+			strSplit(host_sources + "\n" + lib_sources + "\n" + gen_sources, "\n"), 
+			\line -> if (line == "") None() else Some(resolveRelativePath(line))
+		),
+		"\n"
+	);
+	setFileContent(pathCombine(out_dir, "sources_" + name), sources);
+	// Remove all tmp source files
+	deleteFile(pathCombine(out_dir, "sources_host"));
+	deleteFile(pathCombine(out_dir, "sources_lib"));
+	deleteFile(pathCombine(out_dir, "sources_gen"));
+
+	cp_sep = if (hasTargetName("windows")) ";" else ":";
+	javac_args = ["-cp", if (needsFlow) flowdir + "/platforms/java/" + cp_sep + "." else ".", "@sources_" + name, "-encoding", "UTF-8"];
+	hostLanguages = fHostLanguages(compile.crossCalls, "java");
+	startProcess("javac", javac_args, out_dir, "",
+		\cc, co, ce -> {
+			if (cc != 0) {
+				println("javac failed: " + strGlue(javac_args, " ")); println(ce); println(co); println(i2s(cc)); callback(false);
+			} else {
+				println("Java succeeded");
+				// OK, next step is to make the jar file
+				main_class = name + (if (hostLanguages == []) "" else "_host");
+				jar_args = concat3(["cfe", jarfile, name + "." + main_class],
+					if (flowdir != "") {
+						["-C", flowdir + "/platforms/java/", "com/area9innovation/flow"]
+					} else [], 
+					[name]
+				);
+				startProcess("jar", jar_args, out_dir, "",
+					\jc, jo, je -> {
+						if (jc != 0) {
+							println("jar failed: " + strGlue(jar_args, " ")); println(je); println(jo); println(i2s(jc)); callback(false);
+						} else {
+							progname = changeFileExt(fileNameOnly(jarfile), "");
+							ensureDirectoryExists(dirName(javafile));
+							if (!setFileContentBytes(
+									changeFileExt(javafile, ".jar"),
+									getFileContentBinary(pathCombine(out_dir, jarfile))
+								)) {
+								println("Failed to copy '" + jarfile + "' to " + changeFileExt(javafile, ".jar"));
+							}
+							println("Made executable '" + jarfile + "'");
+							println("Run with 'java -cp " + jarfile + " " + progname + "." + progname + "'");
+							callback(true);
+						}
+					}
+				);
+			}
+		}
+	);
+}

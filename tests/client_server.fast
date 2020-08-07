@@ -1,0 +1,99 @@
+import runtime;
+import promise;
+import array;
+import server;
+import system;
+
+/*
+TODO:
+- Fix the docker compose file contents
+- Fix "run" to do the right thing
+*/
+
+server.java::main(args : inline java { String[] }) -> i0 { 
+	//un = flow::start_server();
+	flow::start_server();
+	{}
+}
+
+start_server() -> () -> i0 {
+	createHttpServer(80, onServerOpen, onServerMessage);
+}
+
+onServerOpen() -> i0 {
+	println("Server ready");
+}
+
+onServerMessage(request : HttpRequest, fn : (HttpResponse) -> i0) -> i0 {
+	response = httpResponse(400, "Hello", array());
+	fn(response);
+}
+
+client.html::main() -> i0 { 
+    flow::client_main();
+}
+
+client_main() -> i0 {
+   println("Hello world");
+   p = fetch("http://localhost/server/hello");
+   done(p, println);
+}
+
+docker-compose.yaml::main() -> i0 {
+	inline yaml {
+		version: "2.2"
+		services:
+		  web:
+		    container_name: client
+		    image: "client"
+		    ports:
+		      - "80:80"
+		    volumes:
+		      - "./www2:/var/www/html/fast"
+	}
+}
+
+buildDockerFile(withBinaries : i1) -> i0 {
+	inline dockerfile {
+	} require aptget {
+		openjdk-11-jdk
+	} : i0;
+
+	if (withBinaries) {
+		inline dockerfile {
+			ADD client.html
+			ADD server.jar
+		} : i0
+	};
+}
+
+dockerfile_production.dockerfile::main() -> i0 {
+	compiletime::buildDockerFile(1 : i1);
+}
+
+dockerfile_local.dockerfile::main() -> i0 {
+	compiletime::buildDockerFile(0 : i1);
+}
+
+
+compiletime::run() -> Promise<string, string> {
+	startProcess("docker build -f dockerfile_local -t client");
+}
+
+compiletime::clean() -> i0 {
+	// deleteFile("dockerfile_local");
+}
+
+
+/*
+Secrets -> placed in AWS
+
+AMI configuration (.json) with Packer
+-> Terraform (create and destroy instances - provisioning based on AMIs)
+	-> Ansible (manage hosts on instance -> cron runs in AMI. A hack is to use web-requests to the docker container)
+		-> Docker (deploy your software)
+
+jenkins::main() {
+	
+}
+*/

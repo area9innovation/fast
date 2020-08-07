@@ -1,0 +1,46 @@
+import fast/fast_ast;
+
+export {
+	FastBackend(
+		// Name of the backend
+		name : string, 
+		// Keep whitespace for inlines
+		keepWhitespace : bool,
+		// The function that generates the code
+		genCode : (compile : FastCompile) -> string, 
+		// The suffix for the end file
+		suffix : string,
+		// Is this backend an statement-based language?
+		statementBased : bool,
+		// Keywords in this backend we should avoid as names
+		keywords : [string],
+		// Should we use a prefix for all names?
+		idPrefix : string,
+		// Should we specialize polymorphic calls?
+		specializePolymorphism : bool,
+		// The function to link the code
+		link : (compile : FastCompile, file : string, final : bool, callback : (bool) -> void) -> void,
+		// Save code to a proper destination (like a file or a directory) for a backend.
+		// Generally use 'fDefaultSaveCode' to generate it.
+		saveCode : (compile : FastCompile, code : string) -> void,
+	);
+
+	// The information required to compile to a given backend
+	FastCompile(
+		// The specific code we need for this particular compile
+		code : FastAst,
+		// Calls in and out of this language in this output
+		crossCalls : Set<FCrossCall>,
+		// From native section to dependency. I.e. "imports" or other things required in the backends
+		inlineDependencies : Tree<string, [FInlineDependency]>,
+		inlineTypeDependencies : Tree<string, [FInlineTypeDependency]>,
+		onError : (string) -> void,
+		// The filename (no path) of the output we are producing
+		filename : string,
+		// Directory which stores intermediate sources and other files.
+		objDir : string,
+		// Directory which stores the resulting files (e.g. executables).
+		outDir : string
+	);
+}
+

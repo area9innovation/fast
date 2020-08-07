@@ -1,0 +1,62 @@
+
+// https://github.com/rizo/transducers/blob/master/src/transducers.ml
+
+import maybe;
+import ds/tuples;
+import ds/array;
+
+
+Iterator(data: flow, next: (flow) -> Maybe< Pair<?, flow> >);
+
+from_array(a : [?]) -> Iterator<?> {
+	Iterator(0, \i -> {
+		if (i < length(a)) {
+			Some(
+				Pair(a[i], i + 1)
+			)
+		} else None();
+	});
+}
+
+
+Reduced<?> ::= Continue<?>, Done<?>;
+	Continue(v : ?);
+	Done(v : ?);
+
+Reducer(
+	data : flow, 
+	step : (data : flow, acc : ??, value : ?) -> Pair<flow, Reduced<??>>
+);
+
+Transducer(
+	fn : (Reducer<?, ??>) -> Reducer<???, ??>
+);
+
+
+/*
+into
+sequence
+transduce
+chan
+*/
+/*
+mapping(f : (?) -> ??) -> flow {
+	\step : (???, ??) -> flow -> {
+		\r : ???, value : ? -> {
+			step(r, f(value))
+		}
+	}
+}
+
+filtering(pred: (?) -> bool) -> flow {
+	\step : (??, ???) -> {
+		\r : ???, value : ? -> {
+			if (pred(value))
+		}
+	}
+}
+
+foo(fn) {
+	mapping(fn)
+}
+*/

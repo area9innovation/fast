@@ -1,0 +1,116 @@
+import ds/set;
+
+export {
+	// When we parse a program, this is where we collect the files
+	FastProgram(includes : [string], files : Tree<string, FastFile>);
+
+	// This is what we parse from a single file
+	FastFile(file : string, imports : [string], exports : [FastTypeDeclaration], toplevel : [FastDeclaration]);
+
+		FastTypeDeclaration	::= FastTypeFunctor, FastFunctionDecl;
+			// This defines a type functor
+			FastTypeFunctor(sourceFile : int, language : string, id : string, typars : [string], type : FastType);
+			// An exported, global function
+			FastFunctionDecl(id : string, args : [FFunctionArg], returnType : FastType, effect : FastEffect);
+
+		FastDeclaration ::= FastTypeFunctor, FastGlobalVar, FastFunction;
+
+	// This is what we send to the backends: A consolidated view of the entire program
+	// The sourceFile entry in FastTypeFunctor, FastGlobalVar, and FastFunction refer to
+	// the sourceFiles array
+	FastAst(sourceFiles : [string], types : [FastTypeFunctor], globals : [FastGlobalVar], functions : [FastFunction]);
+
+		// TODO: Do we need a language-specific thing here? TODO: Maybe we should add the type and info back
+		FastGlobalVar(sourceFile : int, id : string, value : FExp, info : FInfo);
+
+		// Defining a top-level function. 
+		// The output tag marks if we want to save the function (and everything it calls) into an
+		// executable of this name.
+		// The language defines if this only exist in certain languages
+		FastFunction(sourceFile : int, output : string, language : string, inline : bool, id : string, args : [FFunctionArg], 
+				returnType : FastType, effect : FastEffect, body : FExp, info : FInfo);
+			FFunctionArg(name : string, type : FastType, effect : FastEffect);
+
+	FastType ::= FTypeInfer, FIntConstant, FTypeVar, FTypeInt, FTypeFunction, FTypeCall, FInlineType;
+		// We do not know what the type is. It should be inferred
+		FTypeInfer();
+
+		// An integer with the given number of bits
+		FTypeInt(bits : int);
+
+		// An alpha, unknown type
+		FTypeVar(id : int);
+
+		// A normal function
+		FTypeFunction(args : [FastType], to : FastType);
+
+		// This is calling a type functor
+		FTypeCall(id : string, typars : [FastType]);
+
+		// Native code for how to define a type
+		FInlineType(language : string, stream : [FInlineTypeForm], dependencies : [FInlineTypeDependency]);
+			FInlineTypeDependency(language : string, name : string, stream : [FInlineTypeForm]);
+			FInlineTypeForm ::= FInlineString, FInlineTypeUnquote;
+				FInlineTypeUnquote(type : FastType, startLine : int, startCol : int);
+
+	FastEffect ::= FEffectInfer, FEffectVar, FEffectSet;
+		// When we should infer the effects
+		FEffectInfer();
+		// Bind the effects to this name
+		FEffectVar(id : string);
+		// A set of specific effects
+		FEffectSet(effects : Set<string>);
+
+	FExp ::= FConstant, FVar, FLet, FSizeOf, FCallOp, FCall, FSequence, FTypeAnnotation, FIf, FInlineCode;
+		FVar(id : string, info : FInfo);
+		FLet(id : string, value : FExp, body : FExp, info : FInfo);
+		FSizeOf(type : FastType, info : FInfo);
+		// The language is optional annotation about what language to call the function in
+		// The op is always a global name, so never first-order call. 
+		// TODO: We have not place to store the overloaded, resolved type
+		FCallOp(language : string, op : string, args : [FExp], info : FInfo);
+		FCall(fn : FExp, args : [FExp], info : FInfo);
+		FSequence(exprs : [FExp], info : FInfo);
+		FTypeAnnotation(e : FExp, type : FastType, info : FInfo);
+		FIf(cond : FExp, then : FExp, else_ : FExp, info : FInfo);
+		// Code for a specific language
+		FInlineCode(language : string, stream : [FInlineForm], dependencies : [FInlineDependency], type : FastType, info : FInfo);
+			FInlineDependency(language : string, name : string, stream : [FInlineForm]);
+			FInlineForm ::= FInlineString, FInlineUnquote, FInlineTypeUnquote;
+				// line and col is where the string starts
+				FInlineString(v : string, startLine : int, startCol : int);
+				FInlineUnquote(e : FExp, startLine : int, startCol : int);
+
+	FConstant ::= FIntConstant, FDoubleConstant, FStringConstant, FFunctionPointer;
+		FIntConstant(value : int, info : FInfo);
+		// We need to allow this directly in the source code
+		FDoubleConstant(value : double, info : FInfo);
+		// We assume source code files are UTF-8
+		FStringConstant(value : string, info : FInfo);
+		// Only used in interpreter
+		FFunctionPointer(id : string, info : FInfo);
+
+	FInfo(type : FastType, effect : FastEffect, line : int, col : int);
+	// A call to a function of type from one language to another language with a call site of callType
+	FCrossCall(fromLanguage : string, toLanguage : string, id : string, type : FastType, callType : FastType);
+
+	// Useful values
+
+	inferFastInfo = FInfo(FTypeInfer(), FEffectInfer(), 0, 0);
+
+	makeFastInfo(line : int, col : int) -> FInfo {
+		FInfo(FTypeInfer(), FEffectInfer(), line, col);
+	}
+
+	FVoid() {
+		FIntConstant(0, FInfo(FTypeVoid(), FEffectInfer(), 0, 0));
+	}
+
+	FTypeVoid() {
+		FTypeInt(0);
+	}
+
+	FTypeBool() {
+		FTypeInt(1);
+	}
+}

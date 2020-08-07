@@ -1,0 +1,54 @@
+import fast/fast_ast;
+import fast/semantics/helpers;
+import ds/simplegraph;
+
+export {
+	// Construct a static estimate of the call graph. Gives us a topological order to evalute the program in
+	makeFastCallGraph(f : FastAst) -> FastCallGraph;
+
+	FastCallGraph(graph : SimpleGraph<string, bool>, topologicalOrder : [string]);
+}
+
+
+makeFastCallGraph(f : FastAst) -> FastCallGraph {
+	graph0 = FastCallGraph(makeSimpleGraph(), []);
+	graph1 = fold(f.globals, graph0, \acc, g : FastGlobalVar -> {
+		acc2 = addFastCallGraph(acc, g.id, g.value);
+		// Add a node with the name
+		FastCallGraph(acc2 with graph = addSimpleNode(acc2.graph, g.id));
+	});
+	graph2 = fold(f.functions, graph1, \acc, fn : FastFunction -> { 
+		acc2 = addFastCallGraph(acc, fn.id, fn.body);
+		// Add a node with the name
+		FastCallGraph(acc2 with graph = addSimpleNode(acc2.graph, fn.id));
+	});
+
+	// setFileContent("callgraph.dot", simpleGraph2dot(graph2.graph, "", [], \n -> [DotLabel(n)], \e -> []));
+
+	// This does not include functions in a loop, so we have to add those manually
+	order : [string] = topoSortSimpleGraph(graph2.graph);
+	allNodes = getTreeKeys(graph2.graph.nodes);
+	missing = set2array(differenceSets(buildSet(allNodes), buildSet(order)));
+
+	FastCallGraph(graph2 with topologicalOrder = concat(order, missing));
+}
+
+addFastCallGraph(acc : FastCallGraph, caller : string, e : FExp) -> FastCallGraph {
+	foldFExp(e, acc, \acc2, ee -> {
+		switch (ee) {
+			FCallOp(lan, op, args, info): {
+				FastCallGraph(acc2 with graph = addSimpleEdge(acc2.graph, caller, op, false, 0));
+			}
+			FVar(v, info): {
+				switch (info.type) {
+					FTypeFunction(__, __): {
+						// TODO: Check if this is a top-level name or not
+						FastCallGraph(acc2 with graph = addSimpleEdge(acc2.graph, caller, v, false, 0));
+					}
+					default: acc2;
+				}
+			}
+			default: acc2;
+		}
+	})
+}

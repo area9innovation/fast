@@ -1,0 +1,288 @@
+import fast/semantics/dce;
+import fast/semantics/inline;
+import fast/semantics/overloading;
+import fast/semantics/cross_calls;
+import fast/semantics/unfold;
+import fast/semantics/rename_var;
+import fast/semantics/specialize;
+import fast/semantics/specialize_types;
+import fast/typing/instantiate_types;
+import fast/backends/backends;
+
+import fast/fast_ast;
+import fs/filesystem;
+
+export {
+	// Given a program, compile and link all the outputs
+	compileFastProgram(program : FastAst, outputFolder : string, onOK : () -> void) -> void;
+}
+
+compileFastProgram(program : FastAst, outputFolder : string, onOK : () -> void) -> void {
+	outputs = fold(program.functions, makeSet(), \acc, fn -> {
+		if (fn.output != "") insertSet(acc, fn.output) else acc;
+	});
+
+	if (isEmptySet(outputs)) {
+		println("ERROR: No output found");
+		onOK();
+	} else {
+		ensureDirectoryExists(outputFolder);
+
+		applyAllSync(map(set2array(outputs), \output -> {
+			\done -> {
+				compileFastOutput(program, outputFolder, output, done);
+			}
+		}), onOK);
+	}
+}
+
+// Produce the given output in the given folder
+compileFastOutput(program : FastAst, folder : string, output : string, onOK : () -> void) -> void {
+	verbose = s2i(getUrlParameterDef("verbose", "0"));
+
+	if (verbose > 0) {
+		println("\nPreparing output: " + output);
+	}
+
+	// Find out what cross-calls we do for each language
+	calls : FastCalls = fastCrossLanguageCalls(program, output);
+
+	// Prepare the program for all backends
+	prepared : Tree<string, FastAst> = fold(fastBackends, makeTree(), \acc, backend -> {
+		codeError = ref "";
+		onError = \error, location -> {
+			codeError := error;
+			errorMessage = "ERROR: " + backend.name + " backend: " + error;
+			println(elementAt(program.sourceFiles, location.sourceFile, "") + ".fast:" + i2s(location.line) + ":" + i2s(location.col) + ": " + errorMessage);
+		}
+
+		// OK, determine the set of names we have to preserve
+		selfcalls = lookupMultimap(calls.calls, backend.name);
+
+		// and cross-language calls into us
+		aliveCalls = filterSet(calls.crossCalls, \cc -> cc.toLanguage == backend.name);
+		alive0 = mapSet(aliveCalls, \c -> c.id);
+		alive = mergeSets(alive0, selfcalls);
+
+		if (verbose > 3 && !isEmptySet(alive)) {
+			println(backend.name + " needs " + toString(set2array(alive)));
+		}
+
+		code = prepareFastBackend(output, program, backend, alive, onError);
+		if (^codeError == "") {
+			setTree(acc, backend.name, code)
+		} else {
+			acc;
+		}
+	});
+
+	if (verbose > 2) {
+		println("Alive after preparation");
+		traverseInOrder(prepared, \language, p -> {
+			if (p.types != [] || p.globals != [] || p.functions != []) {
+				println(language + ": " 
+					+ superglue(p.types, \t -> t.id, ", ")
+					+ superglue(p.globals, \g -> g.id, ", ")
+					+ superglue(p.functions, \f -> f.id, ", ")
+				);
+			}
+		});
+	}
+
+	// Extract all inline dependencies per language
+	inlineFormDependencies : Tree<string, [FInlineDependency]> = foldTree(prepared, makeTree(), \language, prog, acc -> {
+		forms = extractFastInlineForms(prog);
+		fold(forms, acc, \acc2, form : FInlineCode -> {
+			fold(form.dependencies, acc2, \acc3, dep : FInlineDependency -> {
+				treePushToArrayValue(acc3, dep.language, dep)
+			})
+		})
+	});
+	// And the same for types
+	inlineTypeFormDependencies : Tree<string, [FInlineTypeDependency]> = foldTree(prepared, makeTree(), \language, prog, acc -> {
+		forms = extractFastInlineTypeForms(prog);
+		fold(forms, acc, \acc2, form : FInlineType -> {
+			fold(form.dependencies, acc2, \acc3, dep : FInlineTypeDependency -> {
+				treePushToArrayValue(acc3, dep.language, dep)
+			})
+		})
+	});
+
+	// Now, generate code for all backends
+	ready = filtermap(fastBackends, \backend -> 
+		maybeBind(lookupTree(prepared, backend.name), \prog -> 
+			prepareCompile(backend, calls, inlineFormDependencies, inlineTypeFormDependencies, prog, verbose > 3, folder, output)
+		)
+	);
+	// Compile output code
+	iter(ready, \env -> {
+		code = env.backend.genCode(env.compile);
+		if (code != "") {
+			env.backend.saveCode(env.compile, code);
+		} 
+	});
+	// Link output code: first pass
+	success = ref true;
+	applyAllSync(map(ready, \env -> \ok ->
+			if (!^success) ok() else {
+				file = pathCombine(folder, changeFileExt(output, "." + env.backend.suffix));
+				env.backend.link(env.compile, file, false, \ret -> { 
+					success := ^success && ret;
+					ok();
+				});
+			}
+		),
+		// Link output code: second (final) pass
+		\ -> applyAllSync(
+			map(ready, \env -> \ok ->
+				if (!^success) ok() else {
+					file = pathCombine(folder, changeFileExt(output, "." + env.backend.suffix));
+					env.backend.link(env.compile, file, true, \ret -> {
+						success := ^success && ret;
+						ok();
+					});
+				}
+			),
+			\ -> {
+				if (^success) {
+					println("All done");
+				} else {
+					println("Compilation failed");
+				}
+				onOK();
+			}
+		)
+	);
+}
+
+FCompileEnv(
+	backend : FastBackend,
+	compile : FastCompile
+);
+
+prepareCompile(backend : FastBackend, calls : FastCalls, 
+	inlineFormDependencies : Tree<string, [FInlineDependency]>, 
+	inlineTypeFormDependencies : Tree<string, [FInlineTypeDependency]>, 
+	program : FastAst, verbose : bool, folder : string, output : string
+) -> Maybe<FCompileEnv> {
+	codeError = ref "";
+	onError = \error -> {
+		codeError := error;
+		println("ERROR: " + backend.name + " backend: " + error);
+	}
+
+	crossCalls = filterSet(calls.crossCalls, \cc -> cc.toLanguage == backend.name || cc.fromLanguage == backend.name);
+	inlineDeps = getTreeArrayValue(inlineFormDependencies, backend.name);
+	inlineNamedDeps = fold(inlineDeps, makeTree(), \acc, dep : FInlineDependency -> {
+		treePushToArrayValue(acc, dep.name, dep)
+	});
+	inlineTypeDeps = getTreeArrayValue(inlineTypeFormDependencies, backend.name);
+	inlineTypeNamedDeps = fold(inlineTypeDeps, makeTree(), \acc, dep : FInlineTypeDependency -> {
+		treePushToArrayValue(acc, dep.name, dep)
+	});
+
+	if (verbose) {
+		iterSet(crossCalls, \cc -> {
+			if (cc.fromLanguage == backend.name) {
+				println("  Import from " + cc.toLanguage + " of " + cc.id + " : " + fastType2string(cc.type));
+			} else {
+				println("  Export to " + cc.fromLanguage + " of " + cc.id + " : " + fastType2string(cc.type));
+			}
+		});
+		traverseInOrder(inlineNamedDeps, \name, deps -> {
+			code = FInlineCode(backend.name, [], deps, FTypeInfer(), inferFastInfo);
+			println(fexp2string(code));
+		});
+		traverseInOrder(inlineTypeNamedDeps, \name, deps -> {
+			type = FInlineType(backend.name, [], deps);
+			println(fastType2string(type));
+		});
+	}
+
+	if (^codeError != "" || (isEmptySet(crossCalls) && /* mprogram.globals == [] && */ program.functions == [])) {
+		// Error or nothing to do
+		// println("Nothing to do for " + backend.name + ". " + ^codeError);
+		None();
+	} else {
+		filename = fileNameOnly(output);
+		objDir = if (isUrlParameterSet("obj-dir")) {
+			getUrlParameter("obj-dir") 
+		} else {
+			pathCombineMany([folder, "..", "obj"]);
+		}
+		compile = FastCompile(program, crossCalls, inlineNamedDeps, inlineTypeNamedDeps, onError, filename, objDir, folder);
+		Some(FCompileEnv(backend, compile));
+	}
+}
+
+// Do dead-code elimination for each language: Remove everything but "required" names,
+// resolve overloading, and inline as required
+prepareFastBackend(output : string, program : FastAst, backend : FastBackend, required : Set<string>, onError : (string, FLocation) -> void) -> FastAst {
+	language = backend.name;
+
+	verbose = s2i(getUrlParameterDef("verbose", "0"));
+
+	if (verbose > 0 && !isEmptySet(required)) {
+		println("Preparing " + output + " for " + backend.name + ". Needs " + strGlue(set2array(required), ", "));
+	}
+	// First DCE reduces the program to those ids we need in this language
+	// and filters types to specific types for each language
+	dce = fastDce(output, language, program, required, \mes -> onError(mes, FLocation(-1, -1, -1)));
+
+	if (verbose > 2 && backend.specializePolymorphism) {
+		printFastAst("After DCE of " + language + ":", dce);
+	}
+
+	// Now, resolve polymorphism
+	spec = if (backend.specializePolymorphism) specializeFastAst(dce, onError) else dce;
+
+	if (verbose > 2 && backend.specializePolymorphism) {
+		printFastAst("After specialization of " + language + ":", spec);
+	}
+
+	// Next, resolve overloading by doing name mangling
+	over = overloadFastAst(spec);
+
+	if (false) {
+		printFastAst("After overloading of " + language + ":", over);
+	}
+
+	// Now, inline and propagate locals
+	inlined = inlineFast(over, onError);
+
+	if (verbose > 2) {
+		printFastAst("After inlining of " + language + ":", inlined);
+	}
+
+	// If the backend is an statement-based language, unfold expressions
+	unfold = if (backend.statementBased) unfoldFastAst(inlined) else inlined;
+
+	// Rename to avoid name conflicts and keywords
+	renamed = renameFastAst(buildSet(backend.keywords), backend.idPrefix, unfold);
+
+	if (verbose > 2) {
+		printFastAst("After renaming of " + language + ":", renamed);
+	}
+
+	typeSpecial = if (backend.specializePolymorphism) specializeFastTypes(renamed) else renamed;
+
+	if (verbose > 2 && backend.specializePolymorphism) {
+		printFastAst("After type specialization of " + language + ":", typeSpecial);
+	}
+
+	// Now, evaluate type constructors
+	typeEval = evaluateFastTypes(typeSpecial);
+
+	if (verbose > 1) {
+		printFastAst("After preparation of " + language + ":", typeEval);
+	}
+
+	typeEval;
+}
+
+printFastAst(message : string, f : FastAst) -> void {
+	if (length(f.globals) > 0 || length(f.functions) > 0) {
+		println(message);
+		println(fast2string(f));
+	}
+}
