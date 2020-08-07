@@ -16,14 +16,14 @@ test() -> i0 {
 	printTuple(p);
 }
 
-tuples.c::main() -> i0 {
+out/tuples.c::main() -> i0 {
 	test();
 }
-tuples.java::main() -> i0 {
+out/tuples.java::main() -> i0 {
 	test();
 }
 
-tuples.js::main() -> i0 {
+www/tuples.js::main() -> i0 {
 	test();
 	flow::test();
 }

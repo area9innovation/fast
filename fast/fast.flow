@@ -13,7 +13,7 @@ main() {
 	file = if (!fileExists(file1)) pathCombine(folder, file1) else file1;
 
 	includes = [pathCombine(getFastDir(), "lib"), getFastDir(), "."];
-	outputFolder = getUrlParameterDef("output", "www2");
+	outputFolder = getUrlParameterDef("output", ".");
 
 	if (!isUrlParameterTrue("test")) {
 		// Compile a single program

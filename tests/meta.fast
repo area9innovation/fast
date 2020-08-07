@@ -116,7 +116,7 @@ makeStructType(name : string, arg1 : string, type1 : ?) -> i0 {
 	*/
 }
 
-meta.js::main() -> i0 {
+www/meta.js::main() -> i0 {
 	println(fact(5));
 }
 

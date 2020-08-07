@@ -12,7 +12,7 @@ square(i : i32) -> i32 {
 	i * i
 }
 
-test.js::main() -> i0 {
+www/test.js::main() -> i0 {
 	println(fact(5));
 	println(rust::fact(4));
 

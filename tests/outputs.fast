@@ -1,13 +1,13 @@
 import string;
 import runtime;
 
-output1.js::main() -> i0 {
+www/output1.js::main() -> i0 {
     println("Hello from 1");
     for1();
     both();
 }
 
-output2.js::main() -> i0 {
+www/output2.js::main() -> i0 {
     println("Hello from 2");
     for2();
     both();

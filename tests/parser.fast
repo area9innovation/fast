@@ -5,7 +5,7 @@ import system;
 // Run with
 // flowcpp fast/fast.flow -- file=parser eval=run()
 
-parser.js::main() -> i0 {
+www/parser.js::main() -> i0 {
 	println("Hello world");
 }
 

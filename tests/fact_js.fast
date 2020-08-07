@@ -8,7 +8,7 @@ fact(i : i32) -> i32 {
 	}
 }
 
-xxx/yyy/fact_js.html::main() -> i0 {
+www/fact_js.html::main() -> i0 {
 	js::main();
 	inline html {
 		<html>

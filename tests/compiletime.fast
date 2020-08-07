@@ -7,6 +7,6 @@ fact(n : i32) -> i32 {
 }
 
 // Save the result in "output".fast
-output.compiletime::main() -> i32 {
+out/output.compiletime::main() -> i32 {
 	fact(5);
 }

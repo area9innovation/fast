@@ -11,6 +11,7 @@ Currently, it is still alpha, but it shows some interesting promise.
 
 - [Fastlåst](#fastlåst)
 	- [Introduction](#introduction)
+		- [Requirements](#requirements)
 		- [Usage](#usage)
 		- [Alternative pitches](#alternative-pitches)
 		- [Meta thoughts](#meta-thoughts)
@@ -58,6 +59,12 @@ Currently, it is still alpha, but it shows some interesting promise.
 Fastlåst is a strongly typed, minimal language in the functional family of languages.
 It supports a range of backends, and helps make code in these languages work
 together.
+
+### Requirements
+
+- flow. Check out https://github.com/area9innovation/flow9
+- Java JDK, Rust C, Wasm toolkit depending on your requirements
+- Docker to host the www folder
 
 ### Usage
 

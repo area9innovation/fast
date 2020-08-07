@@ -2,7 +2,7 @@ import runtime;
 import dynamic_loading;
 
 // This is main
-dynamic_loading.js::main() -> i0 {
+www/dynamic_loading.js::main() -> i0 {
     println("This is main code");
 	both();
     // Gives promise
@@ -26,12 +26,12 @@ both() -> i0 {
 }
 
 // This goes to the library
-dynamic_library.js::main() -> i0 {
+www/dynamic_library.js::main() -> i0 {
     println("Hello from library");
 	both();
 }
 
-dynamic_library.js::foo() -> i0 {
+www/dynamic_library.js::foo() -> i0 {
     println("This is in the library");
 }
 

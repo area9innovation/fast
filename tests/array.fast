@@ -4,17 +4,17 @@ import runtime;
 // TODO: Report on "array" functions missing in C, Wasm targets
 // Fix wasm target
 
-array.java::main(args : inline java { String[] }) -> i0 {
+out/array.java::main(args : inline java { String[] }) -> i0 {
 	test();
 	flow::test();
 }
 
-array.js::main() -> i0 {
+www/array.js::main() -> i0 {
 	test();
 //	wasm::test();
 }
 
-array.c::main() -> i0 {
+out/array.c::main() -> i0 {
 	test();
 }
 

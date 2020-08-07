@@ -12,7 +12,7 @@ idfn(i : ?) -> ? {
 	i;
 }
 
-specialize.java::main() -> i0 {
+out/specialize.java::main() -> i0 {
 	square(1 : i1);
 	square(1 : i8);
 	square(1 : i16);

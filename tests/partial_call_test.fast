@@ -11,7 +11,7 @@ foo() -> i0 {
 	println(fn(2))
 }
 
-partial_call.flow::main() -> i0 {
+www/partial_call.flow::main() -> i0 {
 	foo();
 	quit(0);
 }

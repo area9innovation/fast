@@ -15,16 +15,16 @@ test() -> i0 {
 
 }
 
-statement.java::main(args : inline java { String[] }) -> i0 {
+out/statement.java::main(args : inline java { String[] }) -> i0 {
 	test();
 	flow::test();
 }
 
-statement.c::main() -> i0 {
+out/statement.c::main() -> i0 {
 	test();
 }
 
-statement.js::main() -> i0 {
+www/statement.js::main() -> i0 {
 	test();
 	flow::test();
 	wasm::test();

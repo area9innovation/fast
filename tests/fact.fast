@@ -32,7 +32,7 @@ js::main() -> i0 {
 	println(flow::fact(3));
 }
 
-fact.html::main() -> i0 {
+www/fact.html::main() -> i0 {
 	js::main();
 	// For now, this is required. Later, we can hopefully avoid it
 	flow::main();	

@@ -1,6 +1,6 @@
 import runtime;
 
-overload.java::main() -> i0 {
+out/overload.java::main() -> i0 {
     i = 1 : i32;
     l = 1 : i64;
 

@@ -2,7 +2,9 @@
 
 Compiling tests/array.fast
 
-array.fast:31:59: a15 = Array<a44> which was already Array<a38>
+array.fast:43:18: a43 = Array<a38> which was already Array<a44>
+array.fast:43:18: a43 = Array<a44> which was already Array<a38>
+array.fast:43:18: a43 = Array<a38> which was already Array<a44>
 array.fast:33:8: a15 = Array<a44> which was already Array<a38>
 TODO: When inlining, we should instantiate the polymorphism in the body like this:
 ?: i32
@@ -14,18 +16,7 @@ TODO: When inlining, we should instantiate the polymorphism in the body like thi
 ?: i32
 TODO: When inlining, we should instantiate the polymorphism in the body like this:
 ?: i32
-TODO: When inlining, we should instantiate the polymorphism in the body like this:
-?: i32
-TODO: When inlining, we should instantiate the polymorphism in the body like this:
-?: i32
-TODO: When inlining, we should instantiate the polymorphism in the body like this:
-?: i32
-TODO: When inlining, we should instantiate the polymorphism in the body like this:
-?: i32
-TODO: When inlining, we should instantiate the polymorphism in the body like this:
-?: i32
-Saved www2/../obj/array.js
-Saved www2/../obj/array.flow
+Saved ./obj/array.flow (already had correct content)
 TODO: Type for C FTypeCall("?", [])
 TODO: Type for C FTypeCall("??", [])
 TODO: Type for C FTypeCall("?", [])
@@ -33,7 +24,7 @@ TODO: Type for C FTypeCall("??", [])
 TODO: Type for C FTypeCall("Array", [FTypeInt(32)])
 TODO: Type for C FTypeCall("Array", [FTypeInt(32)])
 TODO: Type for C FTypeCall("Array", [FTypeInt(32)])
-Saved www2/../obj/array.c
+Saved ./obj/array.c (already had correct content)
 TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
 TODO: Type for Java FTypeCall("?", [])
@@ -42,45 +33,57 @@ TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
 TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
-Saved www2/../obj/array/array.java
+Saved ./obj/array/array.java (already had correct content)
 Made 'array' java library
-Saved www2/array.js
 GCC failed
-www2/../obj/array.c: In function ‘test’:
-www2/../obj/array.c:22:9: warning: incompatible implicit declaration of built-in function ‘index’ [enabled by default]
+./obj/array.c: In function ‘test’:
+./obj/array.c:22:9: warning: incompatible implicit declaration of built-in function ‘index’ [enabled by default]
  println(index(c0, 0, 0));
          ^
-www2/../obj/array.c:22:1: warning: passing argument 1 of ‘index’ makes pointer from integer without a cast [enabled by default]
+./obj/array.c:22:1: warning: passing argument 1 of ‘index’ makes pointer from integer without a cast [enabled by default]
  println(index(c0, 0, 0));
  ^
-www2/../obj/array.c:22:1: note: expected ‘const char *’ but argument is of type ‘int32_t’
-www2/../obj/array.c:22:1: error: too many arguments to function ‘index’
-www2/../obj/array.c:22:1: warning: passing argument 1 of ‘println’ makes integer from pointer without a cast [enabled by default]
-www2/../obj/array.c:9:6: note: expected ‘int32_t’ but argument is of type ‘char *’
+./obj/array.c:22:1: note: expected ‘const char *’ but argument is of type ‘int32_t’
+./obj/array.c:22:1: error: too many arguments to function ‘index’
+./obj/array.c:22:1: warning: passing argument 1 of ‘println’ makes integer from pointer without a cast [enabled by default]
+./obj/array.c:9:6: note: expected ‘int32_t’ but argument is of type ‘char *’
  void println(int32_t s) {
       ^
-www2/../obj/array.c:23:1: warning: passing argument 1 of ‘index’ makes pointer from integer without a cast [enabled by default]
+./obj/array.c:23:1: warning: passing argument 1 of ‘index’ makes pointer from integer without a cast [enabled by default]
  println(index(c0, 1, 0));
  ^
-www2/../obj/array.c:23:1: note: expected ‘const char *’ but argument is of type ‘int32_t’
-www2/../obj/array.c:23:1: error: too many arguments to function ‘index’
-www2/../obj/array.c:23:1: warning: passing argument 1 of ‘println’ makes integer from pointer without a cast [enabled by default]
-www2/../obj/array.c:9:6: note: expected ‘int32_t’ but argument is of type ‘char *’
+./obj/array.c:23:1: note: expected ‘const char *’ but argument is of type ‘int32_t’
+./obj/array.c:23:1: error: too many arguments to function ‘index’
+./obj/array.c:23:1: warning: passing argument 1 of ‘println’ makes integer from pointer without a cast [enabled by default]
+./obj/array.c:9:6: note: expected ‘int32_t’ but argument is of type ‘char *’
  void println(int32_t s) {
       ^
-www2/../obj/array.c:24:1: warning: passing argument 1 of ‘index’ makes pointer from integer without a cast [enabled by default]
+./obj/array.c:24:1: warning: passing argument 1 of ‘index’ makes pointer from integer without a cast [enabled by default]
  println(index(c0, 2, 0));return;
  ^
-www2/../obj/array.c:24:1: note: expected ‘const char *’ but argument is of type ‘int32_t’
-www2/../obj/array.c:24:1: error: too many arguments to function ‘index’
-www2/../obj/array.c:24:1: warning: passing argument 1 of ‘println’ makes integer from pointer without a cast [enabled by default]
-www2/../obj/array.c:9:6: note: expected ‘int32_t’ but argument is of type ‘char *’
+./obj/array.c:24:1: note: expected ‘const char *’ but argument is of type ‘int32_t’
+./obj/array.c:24:1: error: too many arguments to function ‘index’
+./obj/array.c:24:1: warning: passing argument 1 of ‘println’ makes integer from pointer without a cast [enabled by default]
+./obj/array.c:9:6: note: expected ‘int32_t’ but argument is of type ‘char *’
  void println(int32_t s) {
       ^
 
 
 1
 Compilation failed
+TODO: When inlining, we should instantiate the polymorphism in the body like this:
+?: i32
+TODO: When inlining, we should instantiate the polymorphism in the body like this:
+?: i32
+TODO: When inlining, we should instantiate the polymorphism in the body like this:
+?: i32
+TODO: When inlining, we should instantiate the polymorphism in the body like this:
+?: i32
+TODO: When inlining, we should instantiate the polymorphism in the body like this:
+?: i32
+Saved ./obj/array.js (already had correct content)
+Saved ./www/array.js
+All done
 
 
 Compiling tests/client_server.fast
@@ -91,21 +94,16 @@ array.fast:43:18: a43 = Array<a44> which was already Array<a38>
 array.fast:43:18: a43 = Array<a38> which was already Array<a44>
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
-Implement in HTML backend: flow::client_main()/* i0*/ 
-Saved www2/../obj/client.html
-Saved www2/../obj/client.flow
-Saved www2/client.html
+Saved ./obj/docker-compose.yaml (already had correct content)
+Saved ./out/docker-compose.yaml
 All done
-Saved www2/../obj/docker-compose.yaml
-Saved www2/docker-compose.yaml
+Saved ./obj/dockerfile_local (already had correct content)
+Saved ./out/dockerfile_local.
 All done
-Saved www2/../obj/dockerfile_local
-Saved www2/dockerfile_local.
+Saved ./obj/dockerfile_production (already had correct content)
+Saved ./out/dockerfile_production.
 All done
-Saved www2/../obj/dockerfile_production
-Saved www2/dockerfile_production.
-All done
-Saved www2/../obj/server.flow
+Saved ./obj/server.flow (already had correct content)
 TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
 TODO: Type for Java FTypeCall("?", [])
@@ -114,18 +112,23 @@ TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
 TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
-Saved www2/../obj/server/server.java
+Saved ./obj/server/server.java (already had correct content)
 Made 'server' java library
 Java succeeded
 Made executable 'server.jar'
 Run with 'java -cp server.jar server.server'
 All done
+Implement in HTML backend: flow::client_main()/* i0*/ 
+Saved ./obj/client.html (already had correct content)
+Saved ./obj/client.flow (already had correct content)
+Saved ./www/client.html
+All done
 
 
 Compiling tests/compiletime.fast
 
-Saved www2/../obj/output.fast
-Saved www2/output.fast
+Saved ./obj/output.fast (already had correct content)
+Saved ./out/output.fast
 All done
 
 
@@ -138,11 +141,11 @@ promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
 tests/dynamic_loading.fast:10:4: Type check: Unresolved overload of 'done : (Promise<i0, string>, () -> i0, () -> i0) -> i0'. Candidates: (Promise<?, ??>, (?) -> i0) -> i0, (Promise<?, ??>, (?) -> i0, (??) -> i0) -> i0
 tests/dynamic_loading.fast:10:4: Type check: Unresolved overload of 'done : (Promise<i0, string>, () -> i0, () -> i0) -> i0'. Candidates: (Promise<?, ??>, (?) -> i0) -> i0, (Promise<?, ??>, (?) -> i0, (??) -> i0) -> i0
-Saved www2/../obj/dynamic_library.js
-Saved www2/dynamic_library.js
+Saved ./obj/dynamic_library.js (already had correct content)
+Saved ./www/dynamic_library.js
 All done
-Saved www2/../obj/dynamic_loading.js
-Saved www2/dynamic_loading.js
+Saved ./obj/dynamic_loading.js (already had correct content)
+Saved ./www/dynamic_loading.js
 All done
 
 
@@ -150,16 +153,11 @@ Compiling tests/euler1.fast
 
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
-Saved www2/../obj/euler1.html
-Saved www2/../obj/euler1.js
-Saved www2/../obj/euler1.flow
 TODO: Type for C FTypeCall("?", [])
 TODO: Type for C FTypeCall("??", [])
 TODO: Type for C FTypeCall("?", [])
 TODO: Type for C FTypeCall("??", [])
-Saved www2/../obj/euler1.c
-TODO: We assume recursion in foldRange is tail-recursion
-Saved www2/../obj/euler1.wat
+Saved ./obj/euler1.c (already had correct content)
 TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
 TODO: Type for Java FTypeCall("?", [])
@@ -168,16 +166,22 @@ TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
 TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
-Saved www2/../obj/euler1/euler1.java
-Made 'euler1_lib.flow.js'
-Made 'www2/euler1.wasm'
-Saved www2/euler1.html
-Saved www2/euler1.js
-Made executable 'www2/euler1'
-Made 'www2/euler1.wasm'
+Saved ./obj/euler1/euler1.java (already had correct content)
+Made executable './out/euler1'
 Java succeeded
 Made executable 'euler1.jar'
 Run with 'java -cp euler1.jar euler1.euler1'
+All done
+Saved ./obj/euler1.html (already had correct content)
+Saved ./obj/euler1.js (already had correct content)
+Saved ./obj/euler1.flow (already had correct content)
+TODO: We assume recursion in foldRange is tail-recursion
+Saved ./obj/euler1.wat (already had correct content)
+Made 'euler1_lib.flow.js'
+Made './www/euler1.wasm'
+Saved ./www/euler1.html
+Saved ./www/euler1.js
+Made './www/euler1.wasm'
 All done
 
 
@@ -186,25 +190,25 @@ Compiling tests/fact.fast
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 12, 29))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 12, 29))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 12, 29))
-Saved www2/../obj/fact.html
-Saved www2/../obj/fact.js
-Saved www2/../obj/fact.flow
+Saved ./obj/fact.html (already had correct content)
+Saved ./obj/fact.js (already had correct content)
+Saved ./obj/fact.flow (already had correct content)
 TODO: WASM does not support calling polymorphic function println in js
 TODO: Type for wasm FTypeCall("?", [])
-Saved www2/../obj/fact.wat
+Saved ./obj/fact.wat (already had correct content)
 Made 'fact_lib.flow.js'
-Made 'www2/fact.wasm'
-Saved www2/fact.html
-Saved www2/fact.js
-Made 'www2/fact.wasm'
+Made './www/fact.wasm'
+Saved ./www/fact.html
+Saved ./www/fact.js
+Made './www/fact.wasm'
 All done
 
 
 Compiling tests/fact_c.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
-Saved www2/../obj/fact.c
-Made executable 'www2/fact'
+Saved ./obj/fact.c (already had correct content)
+Made executable './out/fact'
 All done
 
 
@@ -212,8 +216,8 @@ Compiling tests/fact_flow.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
-Saved www2/../obj/fact_flow.flow
-Saved www2/../obj/fact_flow/fact_flow.java
+Saved ./obj/fact_flow.flow (already had correct content)
+Saved ./obj/fact_flow/fact_flow.java (already had correct content)
 Made 'fact_flow' host java runtime
 Java succeeded
 Made executable 'fact_flow.jar'
@@ -225,17 +229,17 @@ Compiling tests/fact_flow_js.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
-Saved www2/../obj/fact1JS.js
-Saved www2/../obj/fact1JS.flow
+Saved ./obj/fact1JS.js (already had correct content)
+Saved ./obj/fact1JS.flow (already had correct content)
 Made 'fact1JS_lib.flow.js'
-Saved www2/xxx/yyy/fact1JS.js
+Saved ./www/fact1JS.js
 All done
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
-Saved www2/../obj/fact2JS.js
-Saved www2/../obj/fact2JS.flow
+Saved ./obj/fact2JS.js (already had correct content)
+Saved ./obj/fact2JS.flow (already had correct content)
 Made 'fact2JS_host.flow.js' host JS runtime
-Saved www2/yyy/zzz/fact2JS.js
+Saved ./www/fact2JS.js
 All done
 
 
@@ -243,8 +247,8 @@ Compiling tests/fact_java.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
-Saved www2/../obj/fact_java.flow
-Saved www2/../obj/fact_java/fact_java.java
+Saved ./obj/fact_java.flow (already had correct content)
+Saved ./obj/fact_java/fact_java.java (already had correct content)
 Made 'fact_java' java library
 Java succeeded
 Made executable 'fact_java.jar'
@@ -256,8 +260,8 @@ Compiling tests/fact_java_specialized.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
-Saved www2/../obj/fact1.flow
-Saved www2/../obj/fact1/fact1.java
+Saved ./obj/fact1.flow (already had correct content)
+Saved ./obj/fact1/fact1.java (already had correct content)
 Made 'fact1' java library
 Java succeeded
 Made executable 'fact1.jar'
@@ -265,8 +269,8 @@ Run with 'java -cp fact1.jar fact1.fact1'
 All done
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 4, 29))
-Saved www2/../obj/fact2.flow
-Saved www2/../obj/fact2/fact2.java
+Saved ./obj/fact2.flow (already had correct content)
+Saved ./obj/fact2/fact2.java (already had correct content)
 Made 'fact2' host java runtime
 Java succeeded
 Made executable 'fact2.jar'
@@ -277,10 +281,10 @@ All done
 Compiling tests/fact_js.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
-Saved www2/../obj/fact_js.html
-Saved www2/../obj/fact_js.js
-Saved www2/xxx/yyy/fact_js.html
-Saved www2/xxx/yyy/fact_js.js
+Saved ./obj/fact_js.html (already had correct content)
+Saved ./obj/fact_js.js (already had correct content)
+Saved ./www/fact_js.html
+Saved ./www/fact_js.js
 All done
 
 
@@ -288,9 +292,9 @@ Compiling tests/fact_js_calls_c.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
-Saved www2/../obj/test.js
-Saved www2/../obj/test.c
-Saved www2/test.js
+Saved ./obj/test.js (overwrote existing file)
+Saved ./obj/test.c (already had correct content)
+Saved ./www/test.js
 EMCC failed
 /bin/bash: emcc: command not found
 
@@ -303,9 +307,9 @@ Compiling tests/fact_js_calls_rust.fast
 
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 7, 12))
-Saved www2/../obj/test.js (overwrote existing file)
-Saved www2/../obj/test.rs
-Saved www2/test.js (overwrote existing file)
+Saved ./obj/test.js (overwrote existing file)
+Saved ./obj/test.rs (already had correct content)
+Saved ./www/test.js (overwrote existing file)
 Creating a rust library 'rust_lib_test' with cargo failed
 Maybe cargo is not installed?
 /bin/bash: cargo: command not found
@@ -317,10 +321,14 @@ Compilation failed
 
 Compiling tests/fact_rust.fast
 
-array.fast:31:59: a15 = Array<a44> which was already Array<a38>
-array.fast:33:8: a15 = Array<a44> which was already Array<a38>
+array.fast:43:18: a43 = Array<a38> which was already Array<a44>
+array.fast:43:18: a43 = Array<a44> which was already Array<a38>
+array.fast:43:18: a43 = Array<a38> which was already Array<a44>
+array.fast:43:18: a43 = Array<a38> which was already Array<a44>
+array.fast:43:18: a43 = Array<a44> which was already Array<a38>
+array.fast:43:18: a43 = Array<a38> which was already Array<a44>
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 5, 29))
-Saved www2/../obj/fact.rs
+Saved ./obj/fact.rs (already had correct content)
 rustc failed
 /bin/bash: rustc: command not found
 
@@ -331,14 +339,14 @@ Compilation failed
 
 Compiling tests/first_order.fast
 
-Saved www2/../obj/first_order.c
-Made executable 'www2/first_order'
+Saved ./obj/first_order.c (already had correct content)
+Made executable './out/first_order'
 All done
 
 
 Compiling tests/floats.fast
 
-Saved www2/../obj/floats/floats.java
+Saved ./obj/floats/floats.java (already had correct content)
 Java succeeded
 Made executable 'floats.jar'
 Run with 'java -cp floats.jar floats.floats'
@@ -347,7 +355,7 @@ All done
 
 Compiling tests/inference.fast
 
-Saved www2/../obj/inference/inference.java
+Saved ./obj/inference/inference.java (already had correct content)
 Java succeeded
 Made executable 'inference.jar'
 Run with 'java -cp inference.jar inference.inference'
@@ -356,8 +364,8 @@ All done
 
 Compiling tests/keywords.fast
 
-Saved www2/../obj/keywords.c
-Made executable 'www2/keywords'
+Saved ./obj/keywords.c (already had correct content)
+Made executable './out/keywords'
 All done
 
 
@@ -404,24 +412,24 @@ FastOverload("", "fact", [FTypeInt(32)], [FEffectInfer()])
 FastOverload("", "fact__fi32ri0", [FTypeInt(32)], [FEffectInfer()])
 FastOverload("", "fact__fi32ri0", [FTypeInt(32)], [FEffectInfer()])
 TODO: Assuming side effects in call to FVar("fact", FInfo(FTypeFunction([FTypeInt(32)], FTypeInt(32)), FEffectInfer(), 92, 13))
-Saved www2/../obj/meta.js
-Saved www2/meta.js
+Saved ./obj/meta.js (already had correct content)
+Saved ./www/meta.js
 All done
 
 
 Compiling tests/outputs.fast
 
-Saved www2/../obj/output1.js
-Saved www2/output1.js
+Saved ./obj/output1.js (already had correct content)
+Saved ./www/output1.js
 All done
-Saved www2/../obj/output2.js
-Saved www2/output2.js
+Saved ./obj/output2.js (already had correct content)
+Saved ./www/output2.js
 All done
 
 
 Compiling tests/overload.fast
 
-Saved www2/../obj/overload/overload.java
+Saved ./obj/overload/overload.java (already had correct content)
 Java succeeded
 Made executable 'overload.jar'
 Run with 'java -cp overload.jar overload.overload'
@@ -432,8 +440,8 @@ Compiling tests/parser.fast
 
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
-Saved www2/../obj/parser.js
-Saved www2/parser.js
+Saved ./obj/parser.js (already had correct content)
+Saved ./www/parser.js
 All done
 
 
@@ -450,11 +458,9 @@ Compiling tests/partial_call_test.fast
 array.fast:43:18: a43 = Array<a38> which was already Array<a44>
 array.fast:43:18: a43 = Array<a44> which was already Array<a38>
 array.fast:43:18: a43 = Array<a38> which was already Array<a44>
-array.fast:43:18: a43 = Array<a38> which was already Array<a44>
-array.fast:43:18: a43 = Array<a44> which was already Array<a38>
+array.fast:33:8: a15 = Array<a44> which was already Array<a38>
 tests/partial_call_test.fast:24:44: TODO: Unify ?? and i32
 tests/partial_call_test.fast:24:44: TODO: Unify ??? and i32
-array.fast:43:18: a43 = Array<a38> which was already Array<a44>
 partial_call.fast:31:25: Type check: Unknown id getFreshIdCounter
 partial_call.fast:31:25: Type check: Can only call function type, not infer
 partial_call.fast:31:25: Type check: Unknown id getFreshIdCounter
@@ -470,29 +476,30 @@ Unresolved tyvar 527
 Unresolved tyvar 528
 Unresolved tyvar 528
 Unresolved tyvar 528
-Saved www2/../obj/partial_call.flow
+Saved ./obj/partial_call.flow (already had correct content)
 All done
 
 
 Compiling tests/pointers.fast
 
-Saved www2/../obj/pointers.c
-Made executable 'www2/pointers'
+Saved ./obj/pointers.c (already had correct content)
+Made executable './out/pointers'
 All done
 
 
 Compiling tests/polymorphism.fast
 
-Saved www2/../obj/polymorphism.js
-Saved www2/../obj/polymorphism.flow
-Saved www2/../obj/polymorphism.wat
-Saved www2/../obj/polymorphism/polymorphism.java
-Made 'www2/polymorphism.wasm'
-Saved www2/polymorphism.js
-Made 'www2/polymorphism.wasm'
+Saved ./obj/polymorphism/polymorphism.java (already had correct content)
 Java succeeded
 Made executable 'polymorphism.jar'
 Run with 'java -cp polymorphism.jar polymorphism.polymorphism'
+All done
+Saved ./obj/polymorphism.js (already had correct content)
+Saved ./obj/polymorphism.flow (already had correct content)
+Saved ./obj/polymorphism.wat (already had correct content)
+Made './www/polymorphism.wasm'
+Saved ./www/polymorphism.js
+Made './www/polymorphism.wasm'
 All done
 
 
@@ -500,8 +507,6 @@ Compiling tests/promise.fast
 
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
 promise.fast:41:4: Type check: Can only call function type, not Promise<?, ??>
-Saved www2/../obj/promise.js
-Saved www2/../obj/promise.flow
 TODO: Type for Java FTypeCall("?", [])
 TODO: Type for Java FTypeCall("??", [])
 TODO: Type for Java FTypeCall("?", [])
@@ -519,9 +524,7 @@ TODO: Type for Java FTypeFunction([FTypeFunction([FInlineType("java", [FInlineSt
 Could not find first-order type ((inline java{String}) -> i0, (inline java{String}) -> i0) -> i0
   First_order_fn_type0:(inline java{String}) -> i0
 TODO: Type for Java FTypeFunction([FTypeFunction([FInlineType("java", [FInlineString("String", 14, 37)], [])], FTypeInt(0)), FTypeFunction([FInlineType("java", [FInlineString("String", 14, 37)], [])], FTypeInt(0))], FTypeInt(0))
-Saved www2/../obj/promise/promise.java
-Made 'promise_lib.flow.js'
-Saved www2/promise.js
+Saved ./obj/promise/promise.java (already had correct content)
 javac failed: -cp . @sources_promise -encoding UTF-8
 C:\fast\obj\promise\promise.java:22: error: int cannot be dereferenced
 		promise.invoke(fulfill, reject);return;}
@@ -541,18 +544,23 @@ C:\fast\obj\promise\promise.java:29: error: cannot find symbol
 
 1
 Compilation failed
+Saved ./obj/promise.js (already had correct content)
+Saved ./obj/promise.flow (already had correct content)
+Made 'promise_lib.flow.js'
+Saved ./www/promise.js
+All done
 
 
 Compiling tests/reflection.fast
 
-Saved www2/../obj/reflection.c
-Made executable 'www2/reflection'
+Saved ./obj/reflection.c (already had correct content)
+Made executable './out/reflection'
 All done
 
 
 Compiling tests/specialize.fast
 
-Saved www2/../obj/specialize/specialize.java
+Saved ./obj/specialize/specialize.java (already had correct content)
 Java succeeded
 Made executable 'specialize.jar'
 Run with 'java -cp specialize.jar specialize.specialize'
@@ -561,20 +569,22 @@ All done
 
 Compiling tests/statement.fast
 
-Saved www2/../obj/statement.js
-Saved www2/../obj/statement.flow
-Saved www2/../obj/statement.c
-Saved www2/../obj/statement.wat
-Saved www2/../obj/statement/statement.java
-Made 'statement_lib.flow.js'
+Saved ./obj/statement.flow (already had correct content)
+Saved ./obj/statement.c (already had correct content)
+Saved ./obj/statement/statement.java (already had correct content)
 Made 'statement' java library
-Made 'www2/statement.wasm'
-Saved www2/statement.js
-Made executable 'www2/statement'
-Made 'www2/statement.wasm'
+Made executable './out/statement'
 Java succeeded
 Made executable 'statement.jar'
 Run with 'java -cp statement.jar statement.statement'
+All done
+Saved ./obj/statement.js (already had correct content)
+Saved ./obj/statement.flow (already had correct content)
+Saved ./obj/statement.wat (already had correct content)
+Made 'statement_lib.flow.js'
+Made './www/statement.wasm'
+Saved ./www/statement.js
+Made './www/statement.wasm'
 All done
 
 
@@ -583,9 +593,7 @@ Compiling tests/string2int.fast
 array.fast:43:18: a43 = Array<a38> which was already Array<a44>
 array.fast:43:18: a43 = Array<a44> which was already Array<a38>
 array.fast:43:18: a43 = Array<a38> which was already Array<a44>
-array.fast:43:18: a43 = Array<a38> which was already Array<a44>
-array.fast:43:18: a43 = Array<a44> which was already Array<a38>
-array.fast:43:18: a43 = Array<a38> which was already Array<a44>
+array.fast:33:8: a15 = Array<a44> which was already Array<a38>
 tests/string2int.fast:34:4: Type check: Unknown id quit
 tests/string2int.fast:34:4: Type check: Can only call function type, not infer
 tests/string2int.fast:34:4: Type check: Unknown id quit
@@ -607,39 +615,41 @@ TODO: When inlining, we should instantiate the polymorphism in the body like thi
 ?: ?
 TODO: When inlining, we should instantiate the polymorphism in the body like this:
 ?: ?
-Saved www2/../obj/str2i_test.flow
+Saved ./obj/str2i_test.flow (already had correct content)
 All done
 
 
 Compiling tests/string_test.fast
 
-Saved www2/../obj/string_test.js
-Saved www2/../obj/string_test/string_test.java
-Saved www2/string_test.js
+Saved ./obj/string_test/string_test.java (already had correct content)
 Java succeeded
 Made executable 'string_test.jar'
 Run with 'java -cp string_test.jar string_test.string_test'
+All done
+Saved ./obj/string_test.js (already had correct content)
+Saved ./www/string_test.js
 All done
 
 
 Compiling tests/tuples.fast
 
-Saved www2/../obj/tuples.js (already had correct content)
-Saved www2/../obj/tuples.flow (already had correct content)
-Saved www2/../obj/tuples.c (already had correct content)
-Saved www2/../obj/tuples/tuples.java (already had correct content)
-Made 'tuples_lib.flow.js'
-Saved www2/tuples.js (already had correct content)
-Made executable 'www2/tuples'
+Saved ./obj/tuples.c (already had correct content)
+Saved ./obj/tuples/tuples.java (already had correct content)
+Made executable './out/tuples'
 Java succeeded
 Made executable 'tuples.jar'
 Run with 'java -cp tuples.jar tuples.tuples'
+All done
+Saved ./obj/tuples.js (already had correct content)
+Saved ./obj/tuples.flow (already had correct content)
+Made 'tuples_lib.flow.js'
+Saved ./www/tuples.js
 All done
 
 
 Compiling tests/type_expr.fast
 
-Saved www2/../obj/type_expr/type_expr.java
+Saved ./obj/type_expr/type_expr.java (already had correct content)
 Java succeeded
 Made executable 'type_expr.jar'
 Run with 'java -cp type_expr.jar type_expr.type_expr'

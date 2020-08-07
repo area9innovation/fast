@@ -12,7 +12,7 @@ fact(i : i32) -> i32 {
 //	println(fact(5));
 //}
 
-test.js::main() -> i0 {
+www/test.js::main() -> i0 {
 	println(fact(3));
 	println(c::fact(4));
 }

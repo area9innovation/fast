@@ -29,7 +29,7 @@ java::println(s : ?) -> i0 {
     }
 }
 
-type_expr.java::main(args : inline java { String[] }) -> i0 {
+out/type_expr.java::main(args : inline java { String[] }) -> i0 {
 	p = pair(1, 2);
 	println(p);
 }

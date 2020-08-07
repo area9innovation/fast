@@ -38,15 +38,15 @@ js::main() -> i0 {
 	println(flow::euler1(1000));
 }
 
-euler1.html::main() -> i0 {
+www/euler1.html::main() -> i0 {
 	js::main();
 }
 
-euler1.c::main() -> i0 {
+out/euler1.c::main() -> i0 {
 	println(euler1(1000));
 }
 
-euler1.java::main(args : inline java { String[] }) -> i0 {
+out/euler1.java::main(args : inline java { String[] }) -> i0 {
 	println(euler1(1000));
 }
 

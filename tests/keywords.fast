@@ -1,6 +1,6 @@
 import runtime;
 
-keywords.c::main() -> i0 {
+out/keywords.c::main() -> i0 {
     int = 0;
     auto = 1;
     break = 2;

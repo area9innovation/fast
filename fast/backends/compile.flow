@@ -208,7 +208,7 @@ prepareCompile(backend : FastBackend, calls : FastCalls,
 		objDir = if (isUrlParameterSet("obj-dir")) {
 			getUrlParameter("obj-dir") 
 		} else {
-			pathCombineMany([folder, "..", "obj"]);
+			pathCombineMany([folder, "obj"]);
 		}
 		compile = FastCompile(program, crossCalls, inlineNamedDeps, inlineTypeNamedDeps, onError, filename, objDir, folder);
 		Some(FCompileEnv(backend, compile));

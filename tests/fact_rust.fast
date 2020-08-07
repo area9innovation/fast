@@ -33,7 +33,7 @@ testArrays() -> i0 {
 }
 
 
-fact.rust::main() -> i0 {
+out/fact.rust::main() -> i0 {
 	println("Hello from rust");
 	println(fact(4));
 	testArrays();

@@ -17,7 +17,7 @@ floats.c::main() -> i0 {
 	test();
 }*/
 
-floats.java::main(args : inline java { String[] }) -> i0 {
+out/floats.java::main(args : inline java { String[] }) -> i0 {
 	test();
 }
 /*

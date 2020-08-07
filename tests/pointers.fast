@@ -43,7 +43,7 @@ foo() -> i0 {
 	free(mem);
 }
 
-pointers.c::main() -> i0 {
+out/pointers.c::main() -> i0 {
 	foo();
 }
 

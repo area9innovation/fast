@@ -3,7 +3,7 @@ import promise;
 import runtime;
 
 // Run with deno like this:
-// 	deno run --allow-net tools\fast\www2\promise.js
+// 	deno run --allow-net www\promise.js
 // We promise that a done function with 3 argument exists
 
 // If you want a deno-specific version, you can use this:
@@ -17,11 +17,11 @@ get() -> i0 {
 	done(p, println);
 }
 
-promise.js::main() -> i0 {
+www/promise.js::main() -> i0 {
 	get();
 	flow::get();
 }
 
-promise.java::main() -> i0 {
+out/promise.java::main() -> i0 {
 	get();
 }

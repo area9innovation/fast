@@ -1,6 +1,6 @@
 import c;
 
-reflection.c::main() -> i0 {
+out/reflection.c::main() -> i0 {
 	println("Hello world");
 	println(1);
 }

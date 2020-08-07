@@ -10,7 +10,7 @@ TODO:
 - Fix "run" to do the right thing
 */
 
-server.java::main(args : inline java { String[] }) -> i0 { 
+out/server.java::main(args : inline java { String[] }) -> i0 { 
 	//un = flow::start_server();
 	flow::start_server();
 	{}
@@ -29,7 +29,7 @@ onServerMessage(request : HttpRequest, fn : (HttpResponse) -> i0) -> i0 {
 	fn(response);
 }
 
-client.html::main() -> i0 { 
+www/client.html::main() -> i0 { 
     flow::client_main();
 }
 
@@ -39,17 +39,17 @@ client_main() -> i0 {
    done(p, println);
 }
 
-docker-compose.yaml::main() -> i0 {
+out/docker-compose.yaml::main() -> i0 {
 	inline yaml {
 		version: "2.2"
 		services:
 		  web:
 		    container_name: client
-		    image: "client"
+		    image: "nginx:latest"
 		    ports:
 		      - "80:80"
 		    volumes:
-		      - "./www2:/var/www/html/fast"
+		      - "./www:/usr/share/nginx/html"
 	}
 }
 
@@ -67,11 +67,11 @@ buildDockerFile(withBinaries : i1) -> i0 {
 	};
 }
 
-dockerfile_production.dockerfile::main() -> i0 {
+out/dockerfile_production.dockerfile::main() -> i0 {
 	compiletime::buildDockerFile(1 : i1);
 }
 
-dockerfile_local.dockerfile::main() -> i0 {
+out/dockerfile_local.dockerfile::main() -> i0 {
 	compiletime::buildDockerFile(0 : i1);
 }
 

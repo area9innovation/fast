@@ -27,7 +27,7 @@ test2() -> i0 {
 }
 
 
-str2i_test.flow::main() -> i0 {
+www/str2i_test.flow::main() -> i0 {
     test1();
     println("-----------");
     test2();

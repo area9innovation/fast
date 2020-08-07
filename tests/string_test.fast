@@ -5,18 +5,18 @@ import runtime;
 // We get a cyclic import problem with flow
 // Implement in C and Wasm
 
-string_test.java::main(args : inline java { String[] }) -> i0 {
+out/string_test.java::main(args : inline java { String[] }) -> i0 {
 	test();
 //	flow::test();
 }
 
-string_test.js::main() -> i0 {
+www/string_test.js::main() -> i0 {
 	test();
 //	wasm::test();
 }
 
 /*
-string.c::main() -> i0 {
+out/string.c::main() -> i0 {
 	test();
 }
 */
