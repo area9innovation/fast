@@ -30,7 +30,7 @@ reverseA(a : Array<?>, def : ?) -> Array<?> {
 
 doReverseA(a : Array<?>, i : i32, acc : Array<?>, def : ?) -> Array<?> {
     if (i == length(a)) { 
-        acc; 
+        acc : Array<?>; 
     } else {
         // Uncommenting followig line causes errors:
         //

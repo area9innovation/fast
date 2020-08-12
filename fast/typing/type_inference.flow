@@ -28,10 +28,7 @@ export {
 }
 
 fastTypeInference(f : FastAst) -> FastAst {
-	env = FastInference(makeTree(), buildGeneralTypedefEnv(f), makeSimpleGraph(), makeTree(), 0, makeTree(), 
-			makeTree(), makeUnionFind(128), makeTree(), \error, location -> {
-		println(elementAt(f.sourceFiles, location.sourceFile, "") + ".fast:" + i2s(location.line) + ":" + i2s(location.col) + ": " + error);
-	});
+	env = makeFastInference(f);
 
 	// Instantiate type vars for all "infer" types in declared globals
 	// but not the value. This ensures we have tyvars ready for their overall type

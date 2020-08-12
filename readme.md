@@ -1193,6 +1193,29 @@ TODO:
   - https://github.com/suiginsoft/hebimath
 - Clang has arbitrary bit-width ints
 
+### Syntax ideas
+
+1) Compile time code gen to add definitions. Meta-programming
+
+	compiletime::import_sql(read("schema.sql") )
+
+2) Easy way to parse and produce code
+
+3) Extend Fastlåst with new syntax at program time:
+
+	syntax "while" exp1 "{" exp2 "}" = inline fast {
+		fn() { 
+			if (exp1) {
+				exp2();
+				fn();
+			}
+		}
+	}
+
+	syntax "struct" name "{" (type name ";")* } = inline fast { 
+		typedef name = Record<list>; 
+	};
+
 ### Random todos
 
 - Get Python with some game library running in the browser with 2d graphics
