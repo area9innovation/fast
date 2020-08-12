@@ -1,0 +1,6 @@
+import runtime;
+
+out/precendence.fast::main() -> i0 {
+	a = 1 + 2 * 3 + 4;
+	println(a);
+}

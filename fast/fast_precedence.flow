@@ -1,0 +1,53 @@
+import ds/tree;
+
+export {
+	getInfixPower(op : string) -> InfixPower;
+
+	InfixPower(left : int, right : int);
+}
+
+infixPowers = pairs2tree([
+	// semi-colon 	left to right
+	// comma  		left to right
+
+	// += *=  ...   right to left
+
+	// ? :   right to left
+
+	Pair("||", InfixPower(1, 2)),
+
+	Pair("&&", InfixPower(3, 4)),
+
+	// |
+	// ^
+	// &
+
+	Pair("==", InfixPower(5, 6)),
+	Pair("!=", InfixPower(5, 6)),
+
+	Pair("<=", InfixPower(7, 8)),
+	Pair("<", InfixPower(7, 8)),
+	Pair(">", InfixPower(7, 8)),
+	Pair(">=", InfixPower(7, 8)),
+
+	// << >>
+
+	Pair("+", InfixPower(9, 10)),
+	Pair("-", InfixPower(9, 10)),
+
+	Pair("*", InfixPower(11, 12)),
+	Pair("/", InfixPower(11, 12)),
+	Pair("%", InfixPower(11, 12)),
+
+	// Unary
+
+	// Postfix
+]);
+
+getInfixPower(op : string) -> InfixPower {
+	mpower = lookupTree(infixPowers, op);
+	mpower ?? mpower : {
+		println("Unknown op: " + op);
+		InfixPower(0, 0);
+	}
+}

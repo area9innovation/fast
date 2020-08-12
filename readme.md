@@ -60,6 +60,15 @@ Fastlåst is a strongly typed, minimal language in the functional family of lang
 It supports a range of backends, and helps make code in these languages work
 together.
 
+It provides seamless integration of many languages into the same source code, 
+even across client and server. One program can contain everything you need everywhere.
+
+It does that by allowing you to use code from any language in your program, produce
+all executables from one source base, and mix everything together using Fastlåst.
+
+It will handle the separate compiling and linking of the executables, as well as help
+send data across library, language, and instance/computer barriers.
+
 ### Requirements
 
 - flow. Check out https://github.com/area9innovation/flow9
@@ -72,23 +81,24 @@ Works with current working directory as "c:\fast".
 
 Examples:
 
+	bin/fast.bat file=client_server
+
+or explicitly:
+
 	flowcpp fast/fast.flow -- file=client_server
 
 will compile the tests/client_server.fast file and produce a range of outputs.
 
-	flowcpp fast/fast.flow -- test=1 >out.flow
+	bin/fast.bat test=1 >out.flow
 
 compiles all programs in the tests folder. Useful for unit tests.
 
-	flowcpp fast/fast.flow -- file=client_server eval=run()
+	bin/fast.bat file=client_server eval=run()
 
 compiles the program, but also evaluates the "run()" expression in the compile-time
 setting.
 
 ### Alternative pitches
-
-Seamless integration of many languages into the same source code, even across
-client and server. One program should contain everything you need everywhere.
 
 Do you want to want to make different languages work together, then Fastlåst is for you. 
 Fastlåst allows you to write one program for everything you need for installation, 
@@ -101,6 +111,7 @@ Do you want to learn 20 programming languages? Then learn Fastlåst, and you wil
 Do you want Yatta-style async code? Then Fastlåst is for you.
 Are you the author of some cool language, but it is isolated from the rest of the world? 
 Then Fastlåst is for you.
+Is your language being left out because GPT-3 does not understand it? Then Fastlåst is for you.
 
 ### Meta thoughts
 
@@ -113,8 +124,9 @@ aims at many different problems. Normally, we want a tool to do one thing, and d
 Fastlåst is not in this tradition. It is a tool, which hardly can do anything at the moment,
 but it has the grand goal of allowing all languages to work together in practice.
 
-The first goal is to leverage the strength of existing languages and platforms with Fastlåst. It aims to be
-a one-stop solution for front-end, backend, database, development, deployment, testing and documentation.
+The first goal is to leverage the strength of existing languages and platforms with Fastlåst. 
+It aims to be a one-stop solution for tying together the front-end, backend, database, development, 
+deployment, testing and documentation.
 
 ### Status
 
@@ -122,7 +134,9 @@ We have a simple language with ints implemented in these backends:
 - flow, js, wasm, c, html, rust
 
 We can use the native inlines to implement data structures, such as tuples, 
-floats, string, arrays, specific structs.
+floats, string, arrays, and specific structs.
+
+We can integrate a range of languages in the JS and Java worlds.
 
 ### Potential next goals
 
@@ -133,7 +147,6 @@ floats, string, arrays, specific structs.
 - Fix cross-callbacks somewhere
 
 - Reach production quality for the current set of features
-  - Fix parsing precedence
   - Fix all todos when compiling test suite
   - Fix todos in test cases
 
@@ -146,7 +159,7 @@ floats, string, arrays, specific structs.
   - with
   - switch
 
-- Meta-programmering
+- Meta-programming
    - Lambda
    - Closures
    - Good syntax for structs, arrays
@@ -210,12 +223,10 @@ No switch, no lambdas (no closures). No refs, no structs, no arrays.
 All of those are done in the standard library using native inlines.
 
 TODO:
-- Fix precendence and associativity, as well as prefix. This is not done,
-  so -1 does not work, while -(1) will work. 1+2*3+4 will not parse as expected.
+- Fix prefix & postfix parsing. This is not done right, so -1 does not work, while -(1) will work.
   Add parenthesis explicitly for now.
-  To fix, have a syntax operator table with arg count, associativity and precedence table for parsing
   
-  There is a nice way to do it here:
+- Allow user to extend operators. There is a nice way to do it here:
   https://matklad.github.io//2020/04/13/simple-but-powerful-pratt-parsing.html
 
   Maybe have this syntax:
@@ -276,6 +287,7 @@ languages.  Currently, we have these language targets in order of maturity:
 - WASM (experimental)
 - C (experimental)
 - Rust (experimental)
+- Fast (experimental)
 
 In addition, we have a range of languages, which are basically text files:
 - HTML
