@@ -7,9 +7,9 @@ export {
 
 js::loadCode(name : string) -> Promise<i0, string> {
 	if (isNode()) {
-		promise(couldNotLoad)
+		(promise(couldNotLoad)) : Promise<i0, string>
 	} else if (isDeno()) {
-		promise(couldNotLoad)
+		(promise(couldNotLoad)) : Promise<i0, string>
 	} else {
 		// Browser based
 		inline js {
