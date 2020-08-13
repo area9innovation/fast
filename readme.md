@@ -1216,6 +1216,41 @@ TODO:
 		typedef name = Record<list>; 
 	};
 
+
+	exp = 
+		// Bin ops
+		exp(1) "||" exp(2)
+		| exp(3) "&&" exp(4)
+
+		| exp(5) "==" exp(6)
+		| exp(5) "!=" exp(6)
+
+		| exp(7) "<=" exp(8)
+		| exp(7) "<" exp(8)
+		| exp(7) ">=" exp(8)
+		| exp(7) ">" exp(8)
+
+		| exp(9) "+" exp(10)
+		| exp(9) "-" exp(10)
+
+		| exp(11) "*" exp(12)
+		| exp(11) "/" exp(12)
+		| exp(11) "%" exp(12)
+
+		| exp(13) ":" type(0)
+
+		// Prefix
+		| "-" exp(14)
+		| "if" exp(0) exp(2) "else" exp(1)
+		| "if" exp(0) exp(1)
+
+		// Postfix
+		| exp(14) "[" exp(0) "]"
+		| exp(15) "." exp(14)		// Right associative
+
+		| exp(15) "?" exp(0) ":" exp(14)	
+		;
+
 ### Random todos
 
 - Get Python with some game library running in the browser with 2d graphics
