@@ -1219,8 +1219,8 @@ TODO:
 
 	exp = 
 		// Bin ops
-		exp(1) "||" exp(2)
-		| exp(3) "&&" exp(4)
+		exp(1) "||" exp(2)		{ ||($1, $2) }
+		| exp(3) "&&" exp(4)	{ &&($3, $4) }
 
 		| exp(5) "==" exp(6)
 		| exp(5) "!=" exp(6)
@@ -1250,6 +1250,26 @@ TODO:
 
 		| exp(15) "?" exp(0) ":" exp(14)	
 		;
+
+Lingo2:
+
+term = id "=" term(0) ";"
+	| term(1) "|" term(2)	// Choice
+	| term(10) term(11)		// Sequence
+	| term(12) "*"			// 0 or more
+	| term(12) "+"			// One or more
+	| term(12) "?"			// Optional
+	| term(13) ":" type		// Type annotation
+	| "!" term(0)			// Negation
+	| "(" term(0) ")" 		// Grouping
+	| "{" form* "}"			// Semantic action
+	| string				// Constant string
+	| char "-" char			// Range
+	| id "(" int ")"		// Rule ref with power
+	| id					// Rule ref
+	;
+
+form = "$" int | "$" id | anychar;
 
 ### Random todos
 
