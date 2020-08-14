@@ -163,20 +163,15 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 				env;
 			}
 		}
-		GRange(lower, upper): {
-			// If we match, we are good
-			code = getCharCodeAt(env.input, env.i);
-			if (lower <= code && code <= upper) {
-				GringoEnv(
-					env with i = env.i + 1, output = env.output + getCharAt(env.input, env.i)
-				)
-			} else {
-				GringoEnv(env with fail = true)
-			}
-		}
 		default: {
-			println("Could not unquote");
-			env;
+			starti = env.i;
+			rec = gringoParse(env, term);
+			if (rec.fail) {
+				rec;
+			} else {
+				matched = substring(env.input, starti, rec.i - starti);
+				GringoEnv(rec with output = rec.output + matched)
+			}
 		}
 	}
 }

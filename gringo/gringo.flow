@@ -21,14 +21,14 @@ main() {
 						GVar("exp", 4),
 						GUnquote(GString("*")),
 					]),
-					GUnquote(GRange(48, 57)),
+					GUnquote(GPlus(GRange(48, 57))),
 				]),
 			),
 			GVar("exp", 0)
 		]);
 
 	env = GringoEnv(
-		"1+3", makeTree(), makeTree(), 0, "", false, false
+		"123+456", makeTree(), makeTree(), 0, "", false, false
 	);
 
 	genv = gringoParse(env, grammar);
