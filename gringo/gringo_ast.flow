@@ -1,3 +1,5 @@
+import ds/array;
+
 export {
 	GTerm ::= GBind, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote,
 		GString, GRange, GVar;
@@ -13,4 +15,21 @@ export {
 	GString(text : string);
 	GRange(lower : int, upper : int);
 	GVar(id : string, power : int);
+
+	gchoices(rt : [GTerm]) -> GTerm;
+	gseq(rt : [GTerm]) -> GTerm;
+}
+
+gchoices(rt : [GTerm]) -> GTerm {
+	t = reverseA(rt);
+	fold(tail(t), t[0], \acc, tt -> {
+		GChoice(tt, acc)
+	})
+}
+
+gseq(rt : [GTerm]) -> GTerm {
+	t = reverseA(rt);
+	fold(tail(t), t[0], \acc, tt -> {
+		GSeq(tt, acc)
+	})
 }

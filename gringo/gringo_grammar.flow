@@ -1,5 +1,5 @@
 import gringo/gringo_ast;
-import ds/array;
+import runtime;
 
 export {
 	gringoGrammar() -> GTerm;
@@ -13,7 +13,7 @@ gringoGrammar() -> GTerm {
 				gseq([
 					GVar("id", 0),
 					GString("="),
-					GVar("term", 0),
+					GVar("term", 1),
 					GString(";")
 				]),
 				// term(1) "|" term(2)	// Choice
@@ -86,29 +86,20 @@ gringoGrammar() -> GTerm {
 				]),
 				// id					// Rule ref
 				GVar("id", 0),
-			])
+			]),
 		),
 
 		// id: 'a'-'z'+
 		GBind("id", GPlus(
-			GRange(97, 90),
+			GRange(97, 122),
 		)),
 
 		// int: '0'-'9'+
 		GBind("int", GPlus(
 			GRange(48, 57)
 		)),
+
+		// Parse a term!
+		GVar("term", 0),
 	])
-}
-
-gchoices(t : [GTerm]) -> GTerm {
-	fold(tail(t), t[0], \acc, tt -> {
-		GChoice(acc, tt)
-	})
-}
-
-gseq(t : [GTerm]) -> GTerm {
-	fold(tail(t), t[0], \acc, tt -> {
-		GSeq(acc, tt)
-	})
 }

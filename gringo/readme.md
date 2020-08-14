@@ -33,6 +33,12 @@ form = "$" int | "$" id | string;
 
 A gringo program takes a string, and produces a new string.
 
+## TODO
+
+Reconstruct grammar so term(1) -> term1, and so forth,
+so we specialize the precendence and associativity into
+separate rules.
+
 ## Optimization
 
 https://mpickering.github.io/papers/parsley-icfp.pdf
