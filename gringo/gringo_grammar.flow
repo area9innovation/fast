@@ -1,0 +1,114 @@
+import gringo/gringo_ast;
+import ds/array;
+
+export {
+	gringoGrammar() -> GTerm;
+}
+
+gringoGrammar() -> GTerm {
+	gseq([
+		GBind("term", 
+			gchoices([
+				// id "=" term(0) ";"	// Binding
+				gseq([
+					GVar("id", 0),
+					GString("="),
+					GVar("term", 0),
+					GString(";")
+				]),
+				// term(1) "|" term(2)	// Choice
+				gseq([
+					GVar("term", 1),
+					GString("|"),
+					GVar("term", 2),
+				]),
+				// term(10) term(11)		// Sequence
+				GSeq(
+					GVar("term", 10),
+					GVar("term", 11),
+				),
+				// term(12) "*"			// 0 or more
+				GSeq(
+					GVar("term", 12),
+					GString("*"),
+				),
+				// term(12) "+"			// One or more
+				GSeq(
+					GVar("term", 12),
+					GString("+"),
+				),
+				// term(12) "?"			// Optional
+				GSeq(
+					GVar("term", 12),
+					GString("?"),
+				),
+				//	| term(13) ":" type		// Type annotation
+				// "!" term(0)			// Negation
+				GSeq(
+					GString("!"),
+					GVar("term", 0),
+				),
+				// "(" term(0) ")" 		// Grouping
+				gseq([
+					GString("("),
+					GVar("term", 0),
+					GString(")"),
+				]),
+				// "$" unquote
+				GSeq(
+					GString("$"),
+					GVar("term", 0),
+				),
+				// string				// Constant string
+				gseq([
+					GString("\""),
+					GStar(
+						GRange(0, 0xffff)
+					),
+					GString("\""),
+				]),
+				// char "-" char			// Range
+				gseq([
+					GString("'"),
+					GRange(0, 0xffff),
+					GString("'"),
+					GString("-"),
+					GString("'"),
+					GRange(0, 0xffff),
+					GString("'"),
+				]),
+				// id "(" int ")"		// Rule ref with power
+				gseq([
+					GVar("id", 0),
+					GString("("),
+					GVar("int", 0),
+					GString(")"),
+				]),
+				// id					// Rule ref
+				GVar("id", 0),
+			])
+		),
+
+		// id: 'a'-'z'+
+		GBind("id", GPlus(
+			GRange(97, 90),
+		)),
+
+		// int: '0'-'9'+
+		GBind("int", GPlus(
+			GRange(48, 57)
+		)),
+	])
+}
+
+gchoices(t : [GTerm]) -> GTerm {
+	fold(tail(t), t[0], \acc, tt -> {
+		GChoice(acc, tt)
+	})
+}
+
+gseq(t : [GTerm]) -> GTerm {
+	fold(tail(t), t[0], \acc, tt -> {
+		GSeq(acc, tt)
+	})
+}

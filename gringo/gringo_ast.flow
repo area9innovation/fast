@@ -1,0 +1,16 @@
+export {
+	GTerm ::= GBind, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote,
+		GString, GRange, GVar;
+
+	GBind(id : string, term : GTerm);
+	GChoice(left : GTerm, right : GTerm);
+	GSeq(left : GTerm, right : GTerm);
+	GStar(term : GTerm);
+	GPlus(term : GTerm);
+	GOpt(term : GTerm);
+	GNegate(term : GTerm);
+	GUnquote(term : GTerm);
+	GString(text : string);
+	GRange(lower : int, upper : int);
+	GVar(id : string, power : int);
+}

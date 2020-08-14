@@ -1,0 +1,7 @@
+import gringo/gringo_pretty;
+import gringo/gringo_grammar;
+
+main() {
+	println(gterm2string(gringoGrammar()));
+	quit(0);
+}
