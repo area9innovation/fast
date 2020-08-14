@@ -39,6 +39,38 @@ Reconstruct grammar so term(1) -> term1, and so forth,
 so we specialize the precendence and associativity into
 separate rules.
 
+	exp = exp(1) "+" exp(2)
+		| exp(3) "*" exp(4)
+		| int;
+	int = '0'-'9';
+
+Parsing "1+3", we should get this trace:
+
+	exp(0) ->
+		exp(1) -> 
+			exp(1) is skipped, since power[exp] = 1, and 1 <= 1
+		
+			exp(3) -> int, fail at "*"
+			int -> int
+
+		"+" matches
+
+		exp(2) -> 
+			exp(3) -> int, fail at "*", since we have nothing
+			int -> int
+
+Parsing "1*3", we should get this trace:
+
+	exp(0) ->
+		exp(1) ->
+			exp(1) is skipped, since power[exp] = 1, and 1 <= 1
+			exp(3) -> int
+			"*"
+			exp(4) ->
+				exp(1) is skipped, since power[exp] = 4, and 1 <= 4
+				exp(3) is skipped, since power[exp] = 4, and 3 <= 4
+				int -> int
+
 ## Optimization
 
 https://mpickering.github.io/papers/parsley-icfp.pdf

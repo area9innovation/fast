@@ -7,36 +7,34 @@ main() {
 
 	grammar = 
 		gseq([
-			GBind("term", 
+			GBind("exp", 
 				gchoices([
-					// id "=" term(0) ";"	// Binding
 					gseq([
-						GVar("id", 0),
-						GString("="),
-						GVar("term", 1),
-						GString(";")
-					]),
-					// term(1) "|" term(2)	// Choice
-					gseq([
-						GVar("term", 1),
-						GString("|"),
-						GVar("term", 2),
+						GVar("exp", 1),
+						GString("+"),
+						GVar("exp", 2),
+						GUnquote(GString("+")),
 					]),
 					gseq([
-						GVar("id", 0),
-						GUnquote(GVar("id", 0)),
-					])
+						GVar("exp", 3),
+						GString("*"),
+						GVar("exp", 4),
+						GUnquote(GString("*")),
+					]),
+					GSeq(
+						GRange(48, 57),
+						GUnquote(GString("1")),
+					)
 				]),
 			),
-			GBind("id", GRange(97, 122)),
-			GVar("term", 0)
+			GVar("exp", 0)
 		]);
 
 	env = GringoEnv(
-		"t", makeTree(), makeSet(), 0, "", false,
+		"1+3", makeTree(), makeTree(), 0, "", false,
 	);
 
-	genv = gringoParse(env, 0, grammar);
+	genv = gringoParse(env, grammar);
 
 	println("");
 

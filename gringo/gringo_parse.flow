@@ -5,12 +5,13 @@ import string;
 import ds/set;
 
 export {
-	gringoParse(env : GringoEnv, minPower : int, term : GTerm) -> GringoEnv;
+	gringoParse(env : GringoEnv, term : GTerm) -> GringoEnv;
 
 	GringoEnv(
 		input : string,
 		names : Tree<string, GTerm>,
-		failCache : Set<Pair<int, GTerm>>,
+		// What power is each name at?
+		power : Tree<string, int>,
 		i : int,
 		output : string,
 		fail : bool
@@ -19,116 +20,121 @@ export {
 
 indent = ref "";
 
-// The power tracking should probably be a stack with names instead
-gringoParse(env : GringoEnv, minPower : int, gterm : GTerm) -> GringoEnv {
-	if (containsSet(env.failCache, Pair(env.i, gterm)) || strlen(^indent) > 20) {
-		GringoEnv(env with fail = true)
-	} else {
-		oindent = ^indent;
-		println(oindent + "Parsing " + i2s(env.i) + " at power "  + i2s(minPower) + " with " + gterm2summary(gterm));
-		indent := oindent + " ";
-		res = switch (gterm) {
-			GBind(id, term): {
-				println(oindent + "Bound " + id);
-				GringoEnv(
-					env with names = setTree(env.names, id, term)
-				);
-			}
-			GChoice(left, right): {
-				lenv = gringoParse(env, minPower, left);
-				if (lenv.fail) {
-					gringoParse(env, minPower, right);
-				} else lenv
-			}
-			GSeq(left, right): {
-				lenv = gringoParse(env, minPower, left);
-				if (lenv.fail) lenv
-				else gringoParse(lenv, minPower, right);
-			}
-			GStar(term): {
-				senv = gringoParse(env, minPower, term);
-				if (senv.fail) {
-					env;
-				} else {
-					gringoParse(senv, minPower, gterm);
-				}
-			}
-			GPlus(term): {
-				senv = gringoParse(env, minPower, term);
-				if (senv.fail) {
-					println(oindent + "Could not parse plus");
-					senv;
-				} else {
-					gringoParse(senv, minPower, GStar(term));
-				}
-			}
-			GOpt(term): {
-				senv = gringoParse(env, minPower, term);
-				if (senv.fail) {
-					env;
-				} else {
-					senv;
-				}
-			}
-			GNegate(term): {
-				senv = gringoParse(env, minPower, term);
-				if (senv.fail) {
-					GringoEnv(senv with fail = false);
-				} else {
-					println(oindent + "Do not accept term");
-					GringoEnv(env with fail = true);
-				}
-			}
-			GUnquote(term): {
-				un = unquoteGTerm(env, term);
-				GringoEnv(
-					env with output = env.output + un
-				)
-			}
-			GString(text): {
-				if (strContainsAt(env.input, env.i, text)) {
-					GringoEnv(
-						env with i = env.i + strlen(text)
-					)
-				} else {
-					println(oindent + "Could not parse " + text);
-					GringoEnv(env with fail = true)
-				}
-			}
-			GRange(lower, upper): {
-				code = getCharCodeAt(env.input, env.i);
-				if (lower <= code && code <= upper) {
-					GringoEnv(
-						env with i = env.i + 1
-					)
-				} else {
-					GringoEnv(env with fail = true)
-				}
-			}
-			GVar(id, power): {
-				mterm = lookupTree(env.names, id);
-				mterm ?? {
-					if (false && power < minPower) {
-						println(oindent + "Should we recurse into " + id + " at power " + i2s(power) + " when we have " + i2s(minPower));
-						env;
-					} else {
-						res = gringoParse(env, power, mterm);
-						if (!res.fail) {
-							println(oindent + "Parsed " + id);
-						}
-						res;
-					}
-				} : {
-					println(oindent + "Unknown name");
-					GringoEnv(env with fail = true);
-				}
+gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
+	switch (gterm) {
+		GBind(id, term): {
+			println(^indent + "Bound " + id);
+			GringoEnv(
+				env with names = setTree(env.names, id, term)
+			);
+		}
+		GChoice(left, right): {
+			lenv = gringoParse(env,left);
+			if (lenv.fail) {
+				gringoParse(env, right);
+			} else lenv
+		}
+		GSeq(left, right): {
+			lenv = gringoParse(env, left);
+			if (lenv.fail) GringoEnv(env with fail = true)
+			else gringoParse(lenv, right);
+		}
+		GStar(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				env;
+			} else {
+				gringoParse(senv, gterm);
 			}
 		}
-		// println(oindent + "Parsed " + i2s(res.i) + " " + if(res.fail) " failed" else "");
+		GPlus(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				println(^indent + "Could not parse plus");
+				senv;
+			} else {
+				gringoParse(senv, GStar(term));
+			}
+		}
+		GOpt(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				env;
+			} else {
+				senv;
+			}
+		}
+		GNegate(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				GringoEnv(senv with fail = false);
+			} else {
+				println(^indent + "Do not accept term");
+				GringoEnv(env with fail = true);
+			}
+		}
+		GUnquote(term): {
+			un = unquoteGTerm(env, term);
+			GringoEnv(
+				env with output = env.output + un
+			)
+		}
+		GString(text): {
+			if (strContainsAt(env.input, env.i, text)) {
+				GringoEnv(
+					env with i = env.i + strlen(text)
+				)
+			} else {
+				println(^indent + "Could not parse '" + text + "'");
+				GringoEnv(env with fail = true)
+			}
+		}
+		GRange(lower, upper): {
+			code = getCharCodeAt(env.input, env.i);
+			if (lower <= code && code <= upper) {
+				// println(^indent + "Parsed " + getCharAt(env.input, env.i));
+				GringoEnv(
+					env with i = env.i + 1
+				)
+			} else {
+				GringoEnv(env with fail = true)
+			}
+		}
+		GVar(id, power): {
+			// If the power of this id is <= the power in our tree, abort
+			mterm = lookupTree(env.names, id);
+			mterm ?? {
 
-		indent := oindent;
-		res;
+				oindent = ^indent;
+				indent := oindent + "  ";
+				termPower = lookupTreeDef(env.power, id, -1);
 
+				println(oindent + "Parse " + id + " with i=" + i2s(env.i) + " with power " + i2s(power) + " in scope " + i2s(termPower));
+
+				rec = if (power == termPower) {
+					env;
+				} else if (power < termPower) {
+					GringoEnv(env with fail = true);
+				} else {
+					nenv = GringoEnv(env with power = setTree(env.power, id, power));
+					gringoParse(nenv, mterm);
+				};
+
+				indent := oindent;
+
+				if (rec.fail) {
+					println(oindent + "FAILED " + id);
+					GringoEnv(env with fail = true);
+				} else {
+					println(oindent + "SUCCESS " + id + " at " + i2s(rec.i) + " with " + rec.output);
+					rec;
+				}
+
+			} : {
+				println(^indent + "Unknown name");
+				GringoEnv(env with fail = true);
+			}
+		}
 	}
 }
 
