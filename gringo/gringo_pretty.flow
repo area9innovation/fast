@@ -10,8 +10,8 @@ gterm2string(g : GTerm) -> string {
 	switch (g) {
 		GRule(id, term): "\n" + id + " = " + gterm2string(term) + ";";
 		GChoice(left, right): gterm2string(left) + "\n | " + gterm2string(right);
-		GSeq(left, right): "(" + gterm2string(left) + " " + gterm2string(right) + ")";
-		GStar(term): gterm2string(term) + "*";
+		GSeq(left, right): gterm2string(left) + " " + gterm2string(right);
+		GStar(term): "(" + gterm2string(term) + ")*";
 		GPlus(term): gterm2string(term) + "+";
 		GOpt(term): gterm2string(term) + "?";
 		GNegate(term): "!" + gterm2string(term);

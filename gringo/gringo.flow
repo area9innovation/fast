@@ -33,6 +33,10 @@ main() {
 
 	genv = gringoParse(env, grammar);
 
+	if (false) {
+		println(gterm2string(grammar));
+	}
+
 	println("");
 
 	if (genv.fail) {
