@@ -8,7 +8,7 @@ export {
 
 gterm2string(g : GTerm) -> string {
 	switch (g) {
-		GBind(id, term): "\n" + id + " = " + gterm2string(term) + ";";
+		GRule(id, term): "\n" + id + " = " + gterm2string(term) + ";";
 		GChoice(left, right): gterm2string(left) + "\n | " + gterm2string(right);
 		GSeq(left, right): "(" + gterm2string(left) + " " + gterm2string(right) + ")";
 		GStar(term): gterm2string(term) + "*";
@@ -36,11 +36,11 @@ gterm2summary(g : GTerm) -> string {
 	switch (g) {
 		GSeq(left, right): {
 			switch (left) {
-				GBind(id, v): gterm2summary(left) + "...";
+				GRule(id, v): gterm2summary(left) + "...";
 				default: gterm2string(g);
 			}
 		}
-		GBind(id, v): id + "=";
+		GRule(id, v): id + "=";
 		GChoice(left, right): {
 			gterm2summary(left) + "|";
 		}

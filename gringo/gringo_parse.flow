@@ -23,7 +23,7 @@ indent = ref "";
 
 gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 	switch (gterm) {
-		GBind(id, term): {
+		GRule(id, term): {
 			if (env.verbose) {
 				println(^indent + "Bound " + id);
 			}

@@ -7,7 +7,7 @@ export {
 
 gringoGrammar() -> GTerm {
 	gseq([
-		GBind("term", 
+		GRule("term", 
 			gchoices([
 				// id "=" term(0) ";"	// Binding
 				gseq([
@@ -90,12 +90,12 @@ gringoGrammar() -> GTerm {
 		),
 
 		// id: 'a'-'z'+
-		GBind("id", GPlus(
+		GRule("id", GPlus(
 			GRange(97, 122),
 		)),
 
 		// int: '0'-'9'+
-		GBind("int", GPlus(
+		GRule("int", GPlus(
 			GRange(48, 57)
 		)),
 

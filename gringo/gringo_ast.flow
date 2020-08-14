@@ -1,10 +1,10 @@
 import ds/array;
 
 export {
-	GTerm ::= GBind, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote,
+	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote,
 		GString, GRange, GVar;
 
-	GBind(id : string, term : GTerm);
+	GRule(id : string, term : GTerm);
 	GChoice(left : GTerm, right : GTerm);
 	GSeq(left : GTerm, right : GTerm);
 	GStar(term : GTerm);

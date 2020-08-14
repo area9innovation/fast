@@ -3,11 +3,11 @@ import gringo/gringo_grammar;
 import gringo/gringo_parse;
 
 main() {
-	grammar2 = gringoGrammar();
+	grammar = gringoGrammar();
 
-	grammar = 
+	grammar2 = 
 		gseq([
-			GBind("exp", 
+			GRule("exp", 
 				gchoices([
 					gseq([
 						GVar("exp", 1),
