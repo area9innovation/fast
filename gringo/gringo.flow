@@ -28,7 +28,7 @@ main() {
 		]);
 
 	env = GringoEnv(
-		"123+456", makeTree(), makeTree(), 0, "", false, false
+		"\"abc\"", makeTree(), makeTree(), 0, "", false, false
 	);
 
 	genv = gringoParse(env, grammar);

@@ -63,7 +63,10 @@ gringoGrammar() -> GTerm {
 				gseq([
 					GString("\""),
 					GStar(
-						GRange(0, 0xffff)
+						GSeq(
+							GNegate(GString("\"")),
+							GRange(0, 0xffff)
+						)
 					),
 					GString("\""),
 				]),
