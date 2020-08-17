@@ -51,7 +51,7 @@ expandPowers(g : GTerm) -> GTerm {
 		mrule = lookupTree(rules, rule);
 		mrule ?? {
 			foldSet(powers, acc, \acc2, power -> {
-				erule = expandRulePower(mrule, rule, power);
+				erule = expandRulePower(rule, mrule, power);
 				setTree(acc2, rule + i2s(power), erule)
 			})
 		} : {
@@ -70,6 +70,10 @@ reduceCommon(g : GTerm) -> GTerm {
 		g
 	} else {
 		// TODO: This does not work.
+
+		// We should do this from small rules up to bigger rules
+		// so we do not have to iterate
+
 		// Also, nop rules like "a = b" should be inlined.
 		newRules = findRules(makeTree(), g);
 		reversed = foldTree(newRules, makeTree(), \id, rule, acc -> {
@@ -103,14 +107,19 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 	}
 }
 
-// We only support a seq of rules. Not deeply nested rules.
+// Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
 findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 	switch (g) {
-		GRule(id, term): setTree(acc, id, term);
+		GRule(id, term): {
+			if (containsKeyTree(acc, id)) {
+				println("Duplicate rule " + id);
+			}
+			setTree(acc, id, term);
+		}
 
 		GSeq(left, right): findRules(findRules(acc, left), right);
 
-		// TODO: Check that these do not have recusive rules
+		// TODO: Check that these do not have recursive rules
 		GChoice(left, right): acc;
 		GStar(term): acc;
 		GPlus(term): acc;
@@ -124,16 +133,17 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 	}	
 }
 
-expandRulePower(g : GTerm, rule : string, minPower : int) -> GTerm {
-	todo = \ -> {
-		println("Figure out " + rule + ": " + gterm2string(g));
-		g
-	}
+// Give a rule, filter out all the parts that require a lower
+// power than minPower. GString("") is epsilon
+expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 	switch (g) {
-		GRule(id, term): todo();
+		GRule(id, term): {
+			println("In rule " + rule + ", we do not allow a nested rule " + id);
+			g
+		}
 		GChoice(left, right): {
-			lexpand = expandRulePower(left, rule, minPower);
-			rexpand = expandRulePower(right, rule, minPower);
+			lexpand = expandRulePower(rule, left, minPower);
+			rexpand = expandRulePower(rule, right, minPower);
 			if (lexpand == GString("") && rexpand == GString("")) {
 				lexpand;
 			} else if (lexpand == GString("")) {
@@ -145,8 +155,8 @@ expandRulePower(g : GTerm, rule : string, minPower : int) -> GTerm {
 			}
 		}
 		GSeq(left, right): {
-			lexpand = expandRulePower(left, rule, minPower);
-			rexpand = expandRulePower(right, rule, minPower);
+			lexpand = expandRulePower(rule, left, minPower);
+			rexpand = expandRulePower(rule, right, minPower);
 			if (lexpand == GString("") || rexpand == GString("")) {
 				GString("");
 			} else {
@@ -154,31 +164,31 @@ expandRulePower(g : GTerm, rule : string, minPower : int) -> GTerm {
 			}
 		}
 		GStar(term): {
-			expand = expandRulePower(term, rule, minPower);
+			expand = expandRulePower(rule, term, minPower);
 			if (expand == GString("")) {
 				expand
 			} else GStar(expand);
 		}
 		GPlus(term): {
-			expand = expandRulePower(term, rule, minPower);
+			expand = expandRulePower(rule, term, minPower);
 			if (expand == GString("")) {
 				expand
 			} else GPlus(expand);
 		}
 		GOpt(term): {
-			expand = expandRulePower(term, rule, minPower);
+			expand = expandRulePower(rule, term, minPower);
 			if (expand == GString("")) {
 				expand
 			} else GOpt(expand);
 		}
 		GNegate(term): {
-			expand = expandRulePower(term, rule, minPower);
+			expand = expandRulePower(rule, term, minPower);
 			if (expand == GString("")) {
 				expand
 			} else GNegate(expand);
 		}
 		GUnquote(term): {
-			expand = expandRulePower(term, rule, minPower);
+			expand = expandRulePower(rule, term, minPower);
 			if (expand == GString("")) {
 				expand
 			} else GUnquote(expand);
@@ -192,33 +202,7 @@ expandRulePower(g : GTerm, rule : string, minPower : int) -> GTerm {
 	}
 }
 
-lowerRulePower(g : GTerm, rule : string, minPower : int) -> bool {
-	switch (g) {
-		GRule(id, term): {
-			println("Does not support nested rules " + id);
-			false;
-		}
-		GChoice(left, right): {
-			lowerRulePower(left, rule, minPower)
-			|| lowerRulePower(right, rule, minPower)
-		}
-		GSeq(left, right): {
-			lowerRulePower(left, rule, minPower)
-			|| lowerRulePower(right, rule, minPower)
-		}
-		GStar(term): lowerRulePower(term, rule, minPower);
-		GPlus(term): lowerRulePower(term, rule, minPower);
-		GOpt(term): lowerRulePower(term, rule, minPower);
-		GNegate(term): lowerRulePower(term, rule, minPower);
-
-		GUnquote(term): false;
-		GString(text): false;
-		GRange(lower, upper): false;
-
-		GVar(id, power): rule == id && power < minPower;
-	}
-}
-
+// In this term, replace all rules with the expanded rules
 replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GTerm>, g : GTerm) -> GTerm {
 	switch (g) {
 		GRule(id, term): {
@@ -243,8 +227,8 @@ replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GT
 			replaceRules(expanders, expandedRules, right)
 		);
 
+		// Thse are not supposed to have rules inside
 		GChoice(left, right): g;
-
 		GStar(term): g;
 		GPlus(term): g;
 		GOpt(term): g;
@@ -252,21 +236,28 @@ replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GT
 		GUnquote(term): g;
 		GString(text): g;
 		GRange(lower, upper): g;
+
+		// Rewrite the final ref to be headed to the rule
 		GVar(id, power): GVar(id + i2s(power), 0);
 	}
 }
 
-// Replace occurences of a term with the id
+
+// Replace occurences of a term with the id. This is for common subexpression elimination
 commonReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
 	switch (g) {
 		GRule(id, term): {
-			rep = findReplacement(reversed, id, term);
+			// Do we have a direct replacement?
+			rep = findDirectReplacement(reversed, id, term);
 			if (rep != term) GRule(id, rep)
 			else GRule(id, commonReplacement(reversed, id, term));
 		}
 		GChoice(left, right): {
-			lreplaced = findReplacement(reversed, rule, left);
-			rreplaced = findReplacement(reversed, rule, right);
+			lreplaced0 = findDirectReplacement(reversed, rule, left);
+			rreplaced0 = findDirectReplacement(reversed, rule, right);
+
+			lreplaced = commonReplacement(reversed, rule, lreplaced0);
+			rreplaced = commonReplacement(reversed, rule, rreplaced0);
 			GChoice(lreplaced, rreplaced);
 		}
 		GSeq(left, right): {
@@ -288,7 +279,7 @@ commonReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) ->
 	}
 }
 
-findReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
+findDirectReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
 	rules = getTreeArrayValue(reversed, g);
 	if (rules == []) g
 	else {
