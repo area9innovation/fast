@@ -3,9 +3,7 @@ import gringo/gringo_grammar;
 import gringo/gringo_parse;
 
 main() {
-	grammar = gringoGrammar();
-
-	grammar2 = 
+	grammar1 = 
 		gseq([
 			GRule("exp", 
 				gchoices([
@@ -26,10 +24,18 @@ main() {
 			),
 			GVar("exp", 0)
 		]);
+	text1 = "4+1*2+3";
 
-	// TODO: Send in the grammar for gringo itself
+	grammar2 = gringoGrammar();
+	text2 = "#include gringo/gringo2.gringo";
+
+	// What example to run?
+	grammar = grammar1;
+	text = text1;
+
 	env = GringoEnv(
-		"\"abc\"", makeTree(), makeTree(), 0, "", false, false
+		text, makeTree(), makeTree(), 0, "", false, 
+		true	// Verbose or not
 	);
 
 	genv = gringoParse(env, grammar);

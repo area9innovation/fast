@@ -85,6 +85,9 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 		}
 		GString(text): {
 			if (strContainsAt(env.input, env.i, text)) {
+				if (env.verbose) {
+					println(^indent + "Parsed '" + text + "'");
+				}
 				GringoEnv(
 					env with i = env.i + strlen(text)
 				)
@@ -112,37 +115,29 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 			mterm ?? {
 				termPower = lookupTreeDef(env.power, id, -1);
 
-				oindent = ^indent;
-				if (env.verbose) {
-					indent := oindent + "  ";
-					println(oindent + "Parse " + id + " with i=" + i2s(env.i) + " with power " + i2s(power) + " in scope " + i2s(termPower));
-				}
-
-				rec = if (power == termPower) {
+				if (power <= termPower) {
 					env;
-				} else if (power < termPower) {
-					GringoEnv(env with fail = true);
 				} else {
+					oindent = ^indent;
+					if (env.verbose) {
+						indent := oindent + "  ";
+						println(oindent + "Parse " + id + " with i=" + i2s(env.i) + " with power " + i2s(power) + " in scope " + i2s(termPower));
+					}
+
 					nenv = GringoEnv(env with power = setTree(env.power, id, power));
-					gringoParse(nenv, mterm);
+					rec = gringoParse(nenv, mterm);
+
+					if (env.verbose) {
+						if (rec.fail) {
+							println(oindent + "FAILED rec " + id + " at " + i2s(rec.i) + " with " + rec.output);
+						} else {
+							println(oindent + "SUCCESS " + id + " at " + i2s(rec.i) + " with " + rec.output);
+						}
+						indent := oindent;
+					}
+					// Revert the power
+					GringoEnv(rec with power = setTree(env.power, id, termPower));
 				};
-
-				if (env.verbose) {
-					indent := oindent;
-				}
-
-				if (rec.fail) {
-					if (env.verbose) {
-						println(oindent + "FAILED " + id);
-					}
-					GringoEnv(env with fail = true);
-				} else {
-					if (env.verbose) {
-						println(oindent + "SUCCESS " + id + " at " + i2s(rec.i) + " with " + rec.output);
-					}
-					rec;
-				}
-
 			} : {
 				println(^indent + "Unknown name");
 				GringoEnv(env with fail = true);

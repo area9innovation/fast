@@ -89,6 +89,8 @@ Parsing "1*2+3", we should get this trace:
 
 ## TODO
 
+- Get 4+1*2+3 to parse correctly in the simple exp grammar
+
 - Get the grammar for Gringo parsed and compiled instead
   of hardcoded. I.e. replace gringo_grammar.flow to be 
   produced from gringo.gringo:
