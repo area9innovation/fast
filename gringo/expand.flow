@@ -1,0 +1,235 @@
+import gringo/gringo_ast;
+import gringo/gringo_pretty;
+import ds/set;
+import ds/treeutils;
+
+export {
+	/*
+	Resolving precendence and associativity annotations:
+
+	1) Find all n's of e(m).
+
+	2) For each n, filter the rule to keep sequences
+       where e(m) where m >= n.
+
+   Example:
+
+	e(0) = e(1) "+" e(2)
+		| e(3) "*" e(4)
+		| '0'-'9';
+
+	->
+
+	e0 = e1 "+" e2
+		| e3 "*" e4
+		| '0'-'9';
+	
+	// Left recursion to be resolved
+	e1 = e1 "+" e2
+		| e3 "*" e4
+		| '0'-'9';
+
+	e2 = e3 "*" e4
+		| '0'-'9';
+
+	// Left recursion to be resolved
+	e3 = e3 "*" e4
+		| '0'-'9';
+
+	e4 = '0'-'9';
+
+	*/
+	expandPowers(g : GTerm) -> GTerm;
+}
+
+expandPowers(g : GTerm) -> GTerm {
+	expanders : Tree<string, Set<int>> = findExpanders(makeTree(), g);
+
+	rules = findRules(makeTree(), g);
+
+	expandedRules : Tree<string, GTerm> = foldTree(expanders, makeTree(), \rule : string, powers : Set<int>, acc -> {
+		mrule = lookupTree(rules, rule);
+		mrule ?? {
+			foldSet(powers, acc, \acc2, power -> {
+				erule = expandRulePower(mrule, rule, power);
+				setTree(acc2, rule + i2s(power), erule)
+			})
+		} : {
+			println("Unknown rule " + rule);
+			acc;
+		}
+	});
+
+	replaceRules(expanders, expandedRules, g);
+}
+
+
+// For each rule, collect what powers are required
+findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>> {
+	switch (g) {
+		GRule(id, term): findExpanders(acc, term);
+		GChoice(left, right): findExpanders(findExpanders(acc, left), right);
+		GSeq(left, right): findExpanders(findExpanders(acc, left), right);
+		GStar(term): findExpanders(acc, term);
+		GPlus(term): findExpanders(acc, term);
+		GOpt(term): findExpanders(acc, term);
+		GNegate(term): findExpanders(acc, term);
+		GUnquote(term): acc;
+		GString(text): acc;
+		GRange(lower, upper): acc;
+		GVar(id, power): insertMultimap(acc, id, power);	
+	}
+}
+
+// We only support a seq of rules. Not deeply nested rules.
+findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
+	switch (g) {
+		GRule(id, term): setTree(acc, id, term);
+
+		GSeq(left, right): findRules(findRules(acc, left), right);
+
+		// TODO: Check that these do not have recusive rules
+		GChoice(left, right): acc;
+		GStar(term): acc;
+		GPlus(term): acc;
+		GOpt(term): acc;
+		GNegate(term): acc;
+
+		GUnquote(term): acc;
+		GString(text): acc;
+		GRange(lower, upper): acc;
+		GVar(id, power): acc;
+	}	
+}
+
+expandRulePower(g : GTerm, rule : string, minPower : int) -> GTerm {
+	todo = \ -> {
+		println("Figure out " + rule + ": " + gterm2string(g));
+		g
+	}
+	switch (g) {
+		GRule(id, term): todo();
+		GChoice(left, right): {
+			lexpand = expandRulePower(left, rule, minPower);
+			rexpand = expandRulePower(right, rule, minPower);
+			if (lexpand == GString("") && rexpand == GString("")) {
+				lexpand;
+			} else if (lexpand == GString("")) {
+				rexpand;
+			} else if (rexpand == GString("")) {
+				lexpand;
+			} else {
+				GChoice(lexpand, rexpand)
+			}
+		}
+		GSeq(left, right): {
+			lexpand = expandRulePower(left, rule, minPower);
+			rexpand = expandRulePower(right, rule, minPower);
+			if (lexpand == GString("") || rexpand == GString("")) {
+				GString("");
+			} else {
+				GSeq(lexpand, rexpand);
+			}
+		}
+		GStar(term): {
+			expand = expandRulePower(term, rule, minPower);
+			if (expand == GString("")) {
+				expand
+			} else GStar(expand);
+		}
+		GPlus(term): {
+			expand = expandRulePower(term, rule, minPower);
+			if (expand == GString("")) {
+				expand
+			} else GPlus(expand);
+		}
+		GOpt(term): {
+			expand = expandRulePower(term, rule, minPower);
+			if (expand == GString("")) {
+				expand
+			} else GOpt(expand);
+		}
+		GNegate(term): {
+			expand = expandRulePower(term, rule, minPower);
+			if (expand == GString("")) {
+				expand
+			} else GNegate(expand);
+		}
+		GUnquote(term): {
+			expand = expandRulePower(term, rule, minPower);
+			if (expand == GString("")) {
+				expand
+			} else GUnquote(expand);
+		};
+		GString(text): g;
+		GRange(lower, upper): g;
+		GVar(id, power): {
+			if (rule == id && power < minPower) GString("")
+			else GVar(id + i2s(power), 0);
+		}
+	}
+}
+
+lowerRulePower(g : GTerm, rule : string, minPower : int) -> bool {
+	switch (g) {
+		GRule(id, term): {
+			println("Does not support nested rules " + id);
+			false;
+		}
+		GChoice(left, right): {
+			lowerRulePower(left, rule, minPower)
+			|| lowerRulePower(right, rule, minPower)
+		}
+		GSeq(left, right): {
+			lowerRulePower(left, rule, minPower)
+			|| lowerRulePower(right, rule, minPower)
+		}
+		GStar(term): lowerRulePower(term, rule, minPower);
+		GPlus(term): lowerRulePower(term, rule, minPower);
+		GOpt(term): lowerRulePower(term, rule, minPower);
+		GNegate(term): lowerRulePower(term, rule, minPower);
+
+		GUnquote(term): false;
+		GString(text): false;
+		GRange(lower, upper): false;
+
+		GVar(id, power): rule == id && power < minPower;
+	}
+}
+
+replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GTerm>, g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(id, term): {
+			powers = lookupMultimap(expanders, id);
+			rules : [GTerm] = foldSet(powers, [], \acc, power -> {
+				name = id + i2s(power);
+				mrule = lookupTree(expandedRules, name);
+				mrule ?? {
+					arrayPush(acc, GRule(name, mrule));
+				} : {
+					acc;
+				}
+			});
+			if (rules == []) {
+				GString("")
+			} else {
+				gseq(rules);
+			}
+		}
+		GSeq(left, right): GSeq(
+			replaceRules(expanders, expandedRules, left),
+			replaceRules(expanders, expandedRules, right)
+		);
+
+		GChoice(left, right): g;
+
+		GStar(term): g;
+		GPlus(term): g;
+		GOpt(term): g;
+		GNegate(term): g;
+		GUnquote(term): g;
+		GString(text): g;
+		GRange(lower, upper): g;
+		GVar(id, power): GVar(id + i2s(power), 0);
+	}
+}

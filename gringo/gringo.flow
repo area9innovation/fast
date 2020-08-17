@@ -1,6 +1,7 @@
 import gringo/gringo_pretty;
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
+import gringo/expand;
 
 main() {
 	grammar1 = 
@@ -37,6 +38,12 @@ main() {
 		text, makeTree(), makeTree(), 0, "", false, 
 		true	// Verbose or not
 	);
+
+	egrammar = expandPowers(grammar2);
+	// TODO: Do common sub-expression eliminiation from rules
+	if (false) {
+		println(gterm2string(egrammar));
+	}
 
 	genv = gringoParse(env, grammar);
 
