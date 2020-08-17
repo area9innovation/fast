@@ -66,13 +66,13 @@ expandPowers(g : GTerm) -> GTerm {
 }
 
 reduceCommon(g : GTerm) -> GTerm {
-	if (true) {
+	if (false) {
 		g
 	} else {
 		// TODO: This does not work.
 
 		// We should do this from small rules up to bigger rules
-		// so we do not have to iterate
+		// so we do not have to iterate and maximize overlap
 
 		// Also, nop rules like "a = b" should be inlined.
 		newRules = findRules(makeTree(), g);
@@ -253,12 +253,16 @@ commonReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) ->
 			else GRule(id, commonReplacement(reversed, id, term));
 		}
 		GChoice(left, right): {
-			lreplaced0 = findDirectReplacement(reversed, rule, left);
-			rreplaced0 = findDirectReplacement(reversed, rule, right);
+			rep = findDirectReplacement(reversed, rule, g);
+			if (rep != g) rep
+			else {
+				lreplaced0 = findDirectReplacement(reversed, rule, left);
+				rreplaced0 = findDirectReplacement(reversed, rule, right);
 
-			lreplaced = commonReplacement(reversed, rule, lreplaced0);
-			rreplaced = commonReplacement(reversed, rule, rreplaced0);
-			GChoice(lreplaced, rreplaced);
+				lreplaced = commonReplacement(reversed, rule, lreplaced0);
+				rreplaced = commonReplacement(reversed, rule, rreplaced0);
+				GChoice(lreplaced, rreplaced);
+			}
 		}
 		GSeq(left, right): {
 			lreplaced = commonReplacement(reversed, rule, left);
