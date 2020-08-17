@@ -60,7 +60,29 @@ expandPowers(g : GTerm) -> GTerm {
 		}
 	});
 
-	replaceRules(expanders, expandedRules, g);
+	replaced = replaceRules(expanders, expandedRules, g);
+
+	reduceCommon(replaced);
+}
+
+reduceCommon(g : GTerm) -> GTerm {
+	if (true) {
+		g
+	} else {
+		// TODO: This does not work.
+		// Also, nop rules like "a = b" should be inlined.
+		newRules = findRules(makeTree(), g);
+		reversed = foldTree(newRules, makeTree(), \id, rule, acc -> {
+			// println(gterm2string(rule) + " is " + id);
+			treePushToArrayValue(acc, rule, id)
+		});
+
+		// Do common sub-expression eliminiation
+		n = commonReplacement(reversed, "", g);
+		if (n != g) {
+			reduceCommon(n);
+		} else g;
+	}
 }
 
 
@@ -231,5 +253,46 @@ replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GT
 		GString(text): g;
 		GRange(lower, upper): g;
 		GVar(id, power): GVar(id + i2s(power), 0);
+	}
+}
+
+// Replace occurences of a term with the id
+commonReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(id, term): {
+			rep = findReplacement(reversed, id, term);
+			if (rep != term) GRule(id, rep)
+			else GRule(id, commonReplacement(reversed, id, term));
+		}
+		GChoice(left, right): {
+			lreplaced = findReplacement(reversed, rule, left);
+			rreplaced = findReplacement(reversed, rule, right);
+			GChoice(lreplaced, rreplaced);
+		}
+		GSeq(left, right): {
+			lreplaced = commonReplacement(reversed, rule, left);
+			rreplaced = commonReplacement(reversed, rule, right);
+			GSeq(lreplaced, rreplaced);
+		}
+
+		// Well, there is a theoretical change we can do something in these
+		GStar(term): g;
+		GPlus(term): g;
+		GOpt(term): g;
+		GNegate(term): g;
+		GUnquote(term): g;
+		GVar(id, power): g;
+
+		GString(text): g;
+		GRange(lower, upper): g;
+	}
+}
+
+findReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
+	rules = getTreeArrayValue(reversed, g);
+	if (rules == []) g
+	else {
+		if (rules[0] == rule) g
+		else GVar(rules[0], 0);
 	}
 }
