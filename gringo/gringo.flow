@@ -27,6 +27,7 @@ main() {
 			GVar("exp", 0)
 		]);
 
+	// TODO: Send in the grammar for gringo itself
 	env = GringoEnv(
 		"\"abc\"", makeTree(), makeTree(), 0, "", false, false
 	);
