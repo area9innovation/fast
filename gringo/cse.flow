@@ -7,51 +7,46 @@ export {
 }
 
 reduceCommon(g : GTerm) -> GTerm {
+	// We should do this from small rules up to bigger rules
+	// so we do not have to iterate and maximize overlap
+	rules : Tree<string, GTerm> = findRules(makeTree(), g);
+
+	// Build the dependency graph of rules
+	graph0 = dependencyGraph(rules);
+	source = mainRule(g);
+	// OK, we get a loop-free graph
+	graph = simpleLoopFree(graph0, source);
+
 	if (false) {
-		g
-	} else {
-		// TODO: This does not work.
-
-		// We should do this from small rules up to bigger rules
-		// so we do not have to iterate and maximize overlap
-		rules : Tree<string, GTerm> = findRules(makeTree(), g);
-
-		// Build the dependency graph of rules
-		graph0 = dependencyGraph(rules);
-		source = mainRule(g);
-		// OK, we get a loop-free, simplified graph
-		graph1 = simpleLoopFree(graph0, source);
-		graph = simpleTransitiveReduction(graph1);
-
-		if (false) {
-			dot = simpleGraph2dot(graph, "", [], \node -> [DotLabel(node)], \edge -> []);
-			setFileContent("deps.dot", dot);
-			{}
-		}
-
-		// Find a topological order, and start from the leaves
-		order = reverseA(topoSortSimpleGraph(graph));
-
-				
-		reversed = foldTree(rules, makeTree(), \id, rule, acc -> {
-			// println(gterm2string(rule) + " is " + id);
-			treePushToArrayValue(acc, rule, id)
-		});
-
-		// Do common sub-expression eliminiation
-		n = commonReplacement(reversed, "", g);
-		if (n != g) {
-			reduceCommon(n);
-		} else g;
+		dot = simpleGraph2dot(graph, "", [], \node -> [DotLabel(node)], \edge -> []);
+		setFileContent("deps.dot", dot);
+		{}
 	}
+
+	// Find a topological order, and start from the leaves
+	order = reverseA(topoSortSimpleGraph(graph));
+	// println(order);
+
+	// Replace them in this order
+	fold(order, g, \acc, rule -> {
+		// TODO: Replace with simpler search for just one rule
+		nrules : Tree<string, GTerm> = findRules(makeTree(), acc);
+		mterm = lookupTree(nrules, rule);
+
+		mterm ?? {
+			//	println(rule);
+			replaceTerm(mterm, GVar(rule, 0), rule, acc)
+		} : acc
+	});
 }
 
 dependencyGraph(rules : Tree<string, GTerm>) -> SimpleGraph<string, bool> {
 	foldTree(rules, makeSimpleGraph(), \rule, term, acc -> {
 		deps = ruleDependencies(makeSet(), term);
-		println(set2array(deps));
 		foldSet(deps, acc, \acc2, dep -> {
-			addSimpleEdge(acc2, rule, dep, true, 0);
+			if (rule != dep) {
+				addSimpleEdge(acc2, rule, dep, true, 0);
+			} else acc2;
 		})
 	});
 }
@@ -73,6 +68,27 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 		GString(text): acc;
 		GRange(lower, upper): acc;
 		GVar(id, power): insertSet(acc, id);
+	}
+}
+
+// Does basic replacement in the term
+replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> GTerm {
+	if (g == find) replace
+	else switch (g) {
+		GRule(id, term): {
+			if (exceptInRule == id) g
+			else GRule(id, replaceTerm(find, replace, exceptInRule, term));
+		}
+		GChoice(left, right): GChoice(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right)); 
+		GSeq(left, right): GSeq(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right));
+		GStar(term): GStar(replaceTerm(find, replace, exceptInRule, term));
+		GPlus(term): GPlus(replaceTerm(find, replace, exceptInRule, term));
+		GOpt(term): GOpt(replaceTerm(find, replace, exceptInRule, term));
+		GNegate(term): GNegate(replaceTerm(find, replace, exceptInRule, term));
+		GUnquote(term): GUnquote(replaceTerm(find, replace, exceptInRule, term));
+		GString(text): g;
+		GRange(lower, upper): g;
+		GVar(id, power): g;
 	}
 }
 
