@@ -41,9 +41,17 @@ pullOutCommonPrefix(g : GTerm) -> GTerm {
 		firstDifferent = findiDef(seq, \s -> s[0] != prefix, 0);
 
 		if (firstDifferent > 1) {
-			println("TODO: We have a common prefix for " + i2s(firstDifferent) + " rules!");
-			println(prefix);
-			g;
+			first = subrange(seq, 0, firstDifferent);
+			rest = tailFrom(seq, firstDifferent);
+
+			firstChoice = GSeq(
+				prefix,
+				gchoices(
+					map(first, \s : [GTerm] -> gseq(tail(s)))
+				)
+			);
+
+			gchoices(concat([firstChoice], map(rest, \r -> gseq(r))));
 		} else {
 			g;
 		}

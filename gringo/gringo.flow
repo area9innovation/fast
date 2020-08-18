@@ -33,15 +33,15 @@ main() {
 	text2 = "#include gringo/gringo2.gringo";
 
 	// What example to run?
-	grammar = grammar2;
-	text = text2;
+	grammar = grammar1;
+	text = text1;
 
 	env = GringoEnv(
 		text, makeTree(), 0, "", false, 
 		true	// Verbose or not
 	);
 
-	if (true) {
+	if (false) {
 		println("Original:");
 		println(gterm2string(grammar));
 	}
@@ -53,12 +53,12 @@ main() {
 	}
 	pgrammar = commonPrefix(egrammar);
 	lgrammar = rewriteLeftRecursion(pgrammar);
-	if (true) {
-		println("Left recursion:");
+	if (false) {
+		println("Prefix + left recursion:");
 		println(gterm2string(lgrammar));
 	}
 
-	if (false) {
+	if (true) {
 		genv = gringoParse(env, lgrammar);
 
 		println("");
