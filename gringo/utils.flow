@@ -4,6 +4,8 @@ import ds/treeutils;
 export {
 	findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm>;
 
+	findRule(rule : string, g : GTerm) -> GTerm;
+
 	mainRule(g : GTerm) -> string;
 }
 
@@ -31,6 +33,30 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 		GRange(lower, upper): acc;
 		GVar(id, power): acc;
 	}	
+}
+
+findRule(rule : string, g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(id, term): if (id == rule) term else g;
+		GChoice(left, right): {
+			fleft = findRule(rule, left);
+			if (fleft != left) fleft
+			else findRule(rule, right);
+		}
+		GSeq(left, right): {
+			fleft = findRule(rule, left);
+			if (fleft != left) fleft
+			else findRule(rule, right);
+		}
+		GStar(term): findRule(rule, term);
+		GPlus(term): findRule(rule, term);
+		GOpt(term): findRule(rule, term);
+		GNegate(term): findRule(rule, term);
+		GUnquote(term): findRule(rule, term);
+		GString(text): g;
+		GRange(lower, upper): g;
+		GVar(id, power): g;
+	}
 }
 
 mainRule(g : GTerm) -> string {

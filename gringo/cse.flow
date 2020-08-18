@@ -3,6 +3,7 @@ import gringo/gringo_pretty;
 import ds/simplegraph;
 
 export {
+	// Does common subexpression elimination as well as dead rule removal
 	reduceCommon(g : GTerm) -> GTerm;
 }
 
@@ -28,16 +29,50 @@ reduceCommon(g : GTerm) -> GTerm {
 	// println(order);
 
 	// Replace them in this order
-	fold(order, g, \acc, rule -> {
-		// TODO: Replace with simpler search for just one rule
-		nrules : Tree<string, GTerm> = findRules(makeTree(), acc);
-		mterm = lookupTree(nrules, rule);
-
-		mterm ?? {
-			//	println(rule);
-			replaceTerm(mterm, GVar(rule, 0), rule, acc)
-		} : acc
+	reduced = fold(order, g, \acc, rule -> {
+		term = findRule(rule, acc);
+		if (term != acc) {
+			// println(rule);
+			replaceTerm(term, GVar(rule, 0), rule, acc)
+		} else acc
 	});
+
+	// Next, find identity rules
+
+	inlined = fold(order, reduced, \acc, rule -> {
+		term = findRule(rule, acc);
+		if (term != acc) {
+			switch (term) {
+				GVar(r, p): {
+					// It is just a basic assignment.
+					// Let us rewrite
+					replaceTerm(GVar(rule, 0), term, rule, acc)
+				}
+				default: acc;
+			}
+		} else acc;
+	});
+
+	// Finally, do dead code elimination
+	deadCodeElimination(inlined);
+}
+
+// Remove all dead rules
+deadCodeElimination(g : GTerm) -> GTerm {
+	rules : Tree<string, GTerm> = findRules(makeTree(), g);
+
+	// Build the dependency graph of rules
+	graph = dependencyGraph(rules);
+	source = mainRule(g);
+
+	alive = insertSet(reachableClosureFromSimpleNode(graph, source), source);
+
+	if (false) {
+		dead = differenceSets(buildSet(getTreeKeys(rules)), alive);
+		println("Dead rules: " + strGlue(set2array(dead), ", "));
+	}
+	
+	removeDeadRules(alive, g);
 }
 
 dependencyGraph(rules : Tree<string, GTerm>) -> SimpleGraph<string, bool> {
@@ -92,51 +127,41 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 	}
 }
 
-// Replace occurences of a term with the id. This is for common subexpression elimination
-commonReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
+removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 	switch (g) {
-		GRule(id, term): {
-			// Do we have a direct replacement?
-			rep = findDirectReplacement(reversed, id, term);
-			if (rep != term) GRule(id, rep)
-			else GRule(id, commonReplacement(reversed, id, term));
-		}
-		GChoice(left, right): {
-			rep = findDirectReplacement(reversed, rule, g);
-			if (rep != g) rep
-			else {
-				lreplaced0 = findDirectReplacement(reversed, rule, left);
-				rreplaced0 = findDirectReplacement(reversed, rule, right);
-
-				lreplaced = commonReplacement(reversed, rule, lreplaced0);
-				rreplaced = commonReplacement(reversed, rule, rreplaced0);
-				GChoice(lreplaced, rreplaced);
+		GRule(id, term): g;
+		GChoice(left, right): g;
+		GSeq(left, right): {
+			lrule = getGRule(left);
+			if (lrule != "" && !containsSet(alive, lrule)) {
+				// It is dead!
+				removeDeadRules(alive, right);
+			} else {
+				rrule = getGRule(right);
+				if (rrule != "" && !containsSet(alive, rrule)) {
+					removeDeadRules(alive, left);	
+				} else {
+					GSeq(
+						removeDeadRules(alive, left),
+						removeDeadRules(alive, right),
+					)
+				}
 			}
 		}
-		GSeq(left, right): {
-			lreplaced = commonReplacement(reversed, rule, left);
-			rreplaced = commonReplacement(reversed, rule, right);
-			GSeq(lreplaced, rreplaced);
-		}
-
-		// Well, there is a theoretical change we can do something in these
 		GStar(term): g;
 		GPlus(term): g;
 		GOpt(term): g;
 		GNegate(term): g;
 		GUnquote(term): g;
-		GVar(id, power): g;
-
 		GString(text): g;
 		GRange(lower, upper): g;
+		GVar(id, power): g;
 	}
 }
 
-findDirectReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
-	rules = getTreeArrayValue(reversed, g);
-	if (rules == []) g
-	else {
-		if (rules[0] == rule) g
-		else GVar(rules[0], 0);
+getGRule(g : GTerm) -> string {
+	switch (g) {
+		GRule(id, __): id;
+		default: "";
 	}
 }
