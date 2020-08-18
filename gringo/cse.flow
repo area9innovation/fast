@@ -24,34 +24,46 @@ reduceCommon(g : GTerm) -> GTerm {
 		{}
 	}
 
+	if (false) {
+		println("Expanded, not optimized:");
+		println(gterm2string(g));
+	}
+
 	// Find a topological order, and start from the leaves
 	order = reverseA(topoSortSimpleGraph(graph));
 	// println(order);
 
 	// Replace them in this order
 	reduced = fold(order, g, \acc, rule -> {
-		term = findRule(rule, acc);
-		if (term != acc) {
-			// println(rule);
-			replaceTerm(term, GVar(rule, 0), rule, acc)
-		} else acc
+		mterm = findRule(rule, acc);
+		mterm ?? {
+			// println(rule + " is ");
+			// println(gterm2string(mterm));
+			replaceTerm(mterm, GVar(rule, 0), rule, acc)
+		} : acc
 	});
+
+	if (false) {
+		println("After CSE:");
+		println(gterm2string(reduced));
+	}
 
 	// Next, find identity rules
 
 	inlined = fold(order, reduced, \acc, rule -> {
-		term = findRule(rule, acc);
-		if (term != acc) {
-			switch (term) {
+		mterm = findRule(rule, acc);
+		mterm ?? {
+			switch (mterm) {
 				GVar(r, p): {
 					// It is just a basic assignment.
 					// Let us rewrite
-					replaceTerm(GVar(rule, 0), term, rule, acc)
+					replaceTerm(GVar(rule, 0), mterm, rule, acc)
 				}
 				default: acc;
 			}
-		} else acc;
+		} : acc;
 	});
+
 
 	// Finally, do dead code elimination
 	deadCodeElimination(inlined);

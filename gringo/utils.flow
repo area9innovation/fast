@@ -4,7 +4,7 @@ import ds/treeutils;
 export {
 	findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm>;
 
-	findRule(rule : string, g : GTerm) -> GTerm;
+	findRule(rule : string, g : GTerm) -> Maybe<GTerm>;
 
 	mainRule(g : GTerm) -> string;
 }
@@ -35,27 +35,29 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 	}	
 }
 
-findRule(rule : string, g : GTerm) -> GTerm {
+findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 	switch (g) {
-		GRule(id, term): if (id == rule) term else g;
+		GRule(id, term): if (id == rule) Some(term) else None();
 		GChoice(left, right): {
-			fleft = findRule(rule, left);
-			if (fleft != left) fleft
-			else findRule(rule, right);
+			mleft = findRule(rule, left);
+			mleft ?? Some(mleft) : {
+				findRule(rule, right);
+			}
 		}
 		GSeq(left, right): {
-			fleft = findRule(rule, left);
-			if (fleft != left) fleft
-			else findRule(rule, right);
+			mleft = findRule(rule, left);
+			mleft ?? Some(mleft) : {
+				findRule(rule, right);
+			}
 		}
 		GStar(term): findRule(rule, term);
 		GPlus(term): findRule(rule, term);
 		GOpt(term): findRule(rule, term);
 		GNegate(term): findRule(rule, term);
 		GUnquote(term): findRule(rule, term);
-		GString(text): g;
-		GRange(lower, upper): g;
-		GVar(id, power): g;
+		GString(text): None();
+		GRange(lower, upper): None();
+		GVar(id, power): None();
 	}
 }
 

@@ -31,24 +31,26 @@ main() {
 	text2 = "#include gringo/gringo2.gringo";
 
 	// What example to run?
-	grammar = grammar1;
-	text = text1;
+	grammar = grammar2;
+	text = text2;
 
 	env = GringoEnv(
 		text, makeTree(), makeTree(), 0, "", false, 
 		true	// Verbose or not
 	);
 
+	if (false) {
+		println("Original:");
+		println(gterm2string(grammar));
+	}
+
 	egrammar = expandPowers(grammar);
 	if (true) {
+		println("Expanded:");
 		println(gterm2string(egrammar));
 	}
 
 	genv = gringoParse(env, egrammar);
-
-	if (false) {
-		println(gterm2string(grammar));
-	}
 
 	println("");
 
