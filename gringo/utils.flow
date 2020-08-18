@@ -2,11 +2,17 @@ import gringo/gringo_ast;
 import ds/treeutils;
 
 export {
+	// Construct a map of all rules
 	findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm>;
 
+	// Find the definition of this rule
 	findRule(rule : string, g : GTerm) -> Maybe<GTerm>;
 
+	// What is the main rule we should run?
 	mainRule(g : GTerm) -> string;
+
+	// Does basic replacement in the term, except in a named rule
+	replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> GTerm;
 }
 
 // Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
@@ -74,5 +80,27 @@ mainRule(g : GTerm) -> string {
 		GString(text): "";
 		GRange(lower, upper): "";
 		GVar(id, power): id;
+	}
+}
+
+
+// Does basic replacement in the term
+replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> GTerm {
+	if (g == find) replace
+	else switch (g) {
+		GRule(id, term): {
+			if (exceptInRule == id) g
+			else GRule(id, replaceTerm(find, replace, exceptInRule, term));
+		}
+		GChoice(left, right): GChoice(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right)); 
+		GSeq(left, right): GSeq(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right));
+		GStar(term): GStar(replaceTerm(find, replace, exceptInRule, term));
+		GPlus(term): GPlus(replaceTerm(find, replace, exceptInRule, term));
+		GOpt(term): GOpt(replaceTerm(find, replace, exceptInRule, term));
+		GNegate(term): GNegate(replaceTerm(find, replace, exceptInRule, term));
+		GUnquote(term): GUnquote(replaceTerm(find, replace, exceptInRule, term));
+		GString(text): g;
+		GRange(lower, upper): g;
+		GVar(id, power): g;
 	}
 }

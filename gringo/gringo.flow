@@ -2,6 +2,7 @@ import gringo/gringo_pretty;
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
 import gringo/expand;
+import gringo/left_recursion;
 
 main() {
 	grammar1 = 
@@ -31,8 +32,8 @@ main() {
 	text2 = "#include gringo/gringo2.gringo";
 
 	// What example to run?
-	grammar = grammar2;
-	text = text2;
+	grammar = grammar1;
+	text = text1;
 
 	env = GringoEnv(
 		text, makeTree(), makeTree(), 0, "", false, 
@@ -45,12 +46,17 @@ main() {
 	}
 
 	egrammar = expandPowers(grammar);
-	if (true) {
+	if (false) {
 		println("Expanded:");
 		println(gterm2string(egrammar));
 	}
+	lgrammar = rewriteLeftRecursion(egrammar);
+	if (true) {
+		println("Left recursion:");
+		println(gterm2string(lgrammar));
+	}
 
-	genv = gringoParse(env, egrammar);
+	genv = gringoParse(env, lgrammar);
 
 	println("");
 

@@ -37,7 +37,6 @@ export {
 		| '0'-'9';
 
 	e4 = '0'-'9';
-
 	*/
 	expandPowers(g : GTerm) -> GTerm;
 }

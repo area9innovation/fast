@@ -118,27 +118,6 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 	}
 }
 
-// Does basic replacement in the term
-replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> GTerm {
-	if (g == find) replace
-	else switch (g) {
-		GRule(id, term): {
-			if (exceptInRule == id) g
-			else GRule(id, replaceTerm(find, replace, exceptInRule, term));
-		}
-		GChoice(left, right): GChoice(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right)); 
-		GSeq(left, right): GSeq(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right));
-		GStar(term): GStar(replaceTerm(find, replace, exceptInRule, term));
-		GPlus(term): GPlus(replaceTerm(find, replace, exceptInRule, term));
-		GOpt(term): GOpt(replaceTerm(find, replace, exceptInRule, term));
-		GNegate(term): GNegate(replaceTerm(find, replace, exceptInRule, term));
-		GUnquote(term): GUnquote(replaceTerm(find, replace, exceptInRule, term));
-		GString(text): g;
-		GRange(lower, upper): g;
-		GVar(id, power): g;
-	}
-}
-
 removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 	switch (g) {
 		GRule(id, term): g;

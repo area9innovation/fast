@@ -1,0 +1,88 @@
+import gringo/utils;
+
+export {
+	/*
+	This does left recursion rewriting
+	e1 = e1 "+" e2
+		| rest
+	
+	->
+
+	e1 = rest e1-temp;
+	e1-temp = ("+" e2 )*;
+	*/
+	rewriteLeftRecursion(g : GTerm) -> GTerm;
+
+	/* 
+	TODO: We should factor common prefixes first:
+
+	e1 = e1 tail1
+		| e1 tail2
+		| rest
+
+		->
+
+	e1 = e1 (tail1 | tail2) 
+		| rest
+	*/
+
+}
+
+rewriteLeftRecursion(g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(id, term): {
+			switch (term) {
+				GChoice(left, rest): {
+					switch (left) {
+						GSeq(first, rtail): {
+							switch (first) {
+								GVar(lid, lpower): {
+									if (lid == id) {
+										replaceLeftRecursion(id, first, rtail, rest);
+									} else {
+										g
+									}
+								}
+								default: g;
+							}
+						}
+						default: g;
+					}
+				}
+				default: g;
+			}
+		}
+		GSeq(left, right): {
+			GSeq(rewriteLeftRecursion(left), rewriteLeftRecursion(right));
+		}
+		default: g;
+	}
+}
+
+/*
+We want to do this transformation:
+
+	e1 = e1 tail | rest
+
+	== GRule(e1, GChoice(GSeq(GVar(rule, 0), tail), rest))
+
+	-> 
+
+	e1 = rest e1-temp;
+	e1-temp = ("+" e2 )*;
+
+	{
+		nid = gensym();
+		GSeq(
+			GRule(e1, GSeq(rest, GVar(nid, 0)))
+			GRule(nid, GStar(tail))
+		)
+	}
+*/
+
+replaceLeftRecursion(rule : string, var : GVar, rtail : GTerm, rest : GTerm) -> GTerm {
+	nid = rule + "_" + d2s();
+}
+
+
+										replaceLeftRecursion(id, first, rtail, rest);
