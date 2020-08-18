@@ -1,0 +1,126 @@
+import gringo/utils;
+import gringo/gringo_pretty;
+import ds/simplegraph;
+
+export {
+	reduceCommon(g : GTerm) -> GTerm;
+}
+
+reduceCommon(g : GTerm) -> GTerm {
+	if (false) {
+		g
+	} else {
+		// TODO: This does not work.
+
+		// We should do this from small rules up to bigger rules
+		// so we do not have to iterate and maximize overlap
+		rules : Tree<string, GTerm> = findRules(makeTree(), g);
+
+		// Build the dependency graph of rules
+		graph0 = dependencyGraph(rules);
+		source = mainRule(g);
+		// OK, we get a loop-free, simplified graph
+		graph1 = simpleLoopFree(graph0, source);
+		graph = simpleTransitiveReduction(graph1);
+
+		if (false) {
+			dot = simpleGraph2dot(graph, "", [], \node -> [DotLabel(node)], \edge -> []);
+			setFileContent("deps.dot", dot);
+			{}
+		}
+
+		// Find a topological order, and start from the leaves
+		order = reverseA(topoSortSimpleGraph(graph));
+
+				
+		reversed = foldTree(rules, makeTree(), \id, rule, acc -> {
+			// println(gterm2string(rule) + " is " + id);
+			treePushToArrayValue(acc, rule, id)
+		});
+
+		// Do common sub-expression eliminiation
+		n = commonReplacement(reversed, "", g);
+		if (n != g) {
+			reduceCommon(n);
+		} else g;
+	}
+}
+
+dependencyGraph(rules : Tree<string, GTerm>) -> SimpleGraph<string, bool> {
+	foldTree(rules, makeSimpleGraph(), \rule, term, acc -> {
+		deps = ruleDependencies(makeSet(), term);
+		println(set2array(deps));
+		foldSet(deps, acc, \acc2, dep -> {
+			addSimpleEdge(acc2, rule, dep, true, 0);
+		})
+	});
+}
+
+ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
+	switch (g) {
+		GRule(id, term): {
+			println("Unexpected");
+			acc;
+		}
+
+		GChoice(left, right): ruleDependencies(ruleDependencies(acc, left), right);
+		GSeq(left, right): ruleDependencies(ruleDependencies(acc, left), right);
+		GStar(term): ruleDependencies(acc, term);
+		GPlus(term): ruleDependencies(acc, term);
+		GOpt(term): ruleDependencies(acc, term);
+		GNegate(term): ruleDependencies(acc, term);
+		GUnquote(term): ruleDependencies(acc, term);
+		GString(text): acc;
+		GRange(lower, upper): acc;
+		GVar(id, power): insertSet(acc, id);
+	}
+}
+
+// Replace occurences of a term with the id. This is for common subexpression elimination
+commonReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(id, term): {
+			// Do we have a direct replacement?
+			rep = findDirectReplacement(reversed, id, term);
+			if (rep != term) GRule(id, rep)
+			else GRule(id, commonReplacement(reversed, id, term));
+		}
+		GChoice(left, right): {
+			rep = findDirectReplacement(reversed, rule, g);
+			if (rep != g) rep
+			else {
+				lreplaced0 = findDirectReplacement(reversed, rule, left);
+				rreplaced0 = findDirectReplacement(reversed, rule, right);
+
+				lreplaced = commonReplacement(reversed, rule, lreplaced0);
+				rreplaced = commonReplacement(reversed, rule, rreplaced0);
+				GChoice(lreplaced, rreplaced);
+			}
+		}
+		GSeq(left, right): {
+			lreplaced = commonReplacement(reversed, rule, left);
+			rreplaced = commonReplacement(reversed, rule, right);
+			GSeq(lreplaced, rreplaced);
+		}
+
+		// Well, there is a theoretical change we can do something in these
+		GStar(term): g;
+		GPlus(term): g;
+		GOpt(term): g;
+		GNegate(term): g;
+		GUnquote(term): g;
+		GVar(id, power): g;
+
+		GString(text): g;
+		GRange(lower, upper): g;
+	}
+}
+
+findDirectReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
+	rules = getTreeArrayValue(reversed, g);
+	if (rules == []) g
+	else {
+		if (rules[0] == rule) g
+		else GVar(rules[0], 0);
+	}
+}

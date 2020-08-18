@@ -39,12 +39,12 @@ main() {
 		true	// Verbose or not
 	);
 
-	egrammar = expandPowers(grammar2);
+	egrammar = expandPowers(grammar);
 	if (true) {
 		println(gterm2string(egrammar));
 	}
 
-	genv = gringoParse(env, grammar);
+	genv = gringoParse(env, egrammar);
 
 	if (false) {
 		println(gterm2string(grammar));

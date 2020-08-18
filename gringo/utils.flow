@@ -1,0 +1,50 @@
+import gringo/gringo_ast;
+import ds/treeutils;
+
+export {
+	findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm>;
+
+	mainRule(g : GTerm) -> string;
+}
+
+// Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
+findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
+	switch (g) {
+		GRule(id, term): {
+			if (containsKeyTree(acc, id)) {
+				println("Duplicate rule " + id);
+			}
+			setTree(acc, id, term);
+		}
+
+		GSeq(left, right): findRules(findRules(acc, left), right);
+
+		// TODO: Check that these do not have recursive rules
+		GChoice(left, right): acc;
+		GStar(term): acc;
+		GPlus(term): acc;
+		GOpt(term): acc;
+		GNegate(term): acc;
+
+		GUnquote(term): acc;
+		GString(text): acc;
+		GRange(lower, upper): acc;
+		GVar(id, power): acc;
+	}	
+}
+
+mainRule(g : GTerm) -> string {
+	switch (g) {
+		GRule(id, term): mainRule(term);
+		GChoice(left, right): mainRule(right);
+		GSeq(left, right): mainRule(right);
+		GStar(term): mainRule(term);
+		GPlus(term): mainRule(term);
+		GOpt(term): mainRule(term);
+		GNegate(term): mainRule(term);
+		GUnquote(term): mainRule(term);
+		GString(text): "";
+		GRange(lower, upper): "";
+		GVar(id, power): id;
+	}
+}

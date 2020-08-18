@@ -1,4 +1,4 @@
-import gringo/gringo_ast;
+import gringo/cse;
 import gringo/gringo_pretty;
 import ds/set;
 import ds/treeutils;
@@ -65,31 +65,6 @@ expandPowers(g : GTerm) -> GTerm {
 	reduceCommon(replaced);
 }
 
-reduceCommon(g : GTerm) -> GTerm {
-	if (false) {
-		g
-	} else {
-		// TODO: This does not work.
-
-		// We should do this from small rules up to bigger rules
-		// so we do not have to iterate and maximize overlap
-
-		// Also, nop rules like "a = b" should be inlined.
-		newRules = findRules(makeTree(), g);
-		reversed = foldTree(newRules, makeTree(), \id, rule, acc -> {
-			// println(gterm2string(rule) + " is " + id);
-			treePushToArrayValue(acc, rule, id)
-		});
-
-		// Do common sub-expression eliminiation
-		n = commonReplacement(reversed, "", g);
-		if (n != g) {
-			reduceCommon(n);
-		} else g;
-	}
-}
-
-
 // For each rule, collect what powers are required
 findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>> {
 	switch (g) {
@@ -105,32 +80,6 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 		GRange(lower, upper): acc;
 		GVar(id, power): insertMultimap(acc, id, power);	
 	}
-}
-
-// Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
-findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
-	switch (g) {
-		GRule(id, term): {
-			if (containsKeyTree(acc, id)) {
-				println("Duplicate rule " + id);
-			}
-			setTree(acc, id, term);
-		}
-
-		GSeq(left, right): findRules(findRules(acc, left), right);
-
-		// TODO: Check that these do not have recursive rules
-		GChoice(left, right): acc;
-		GStar(term): acc;
-		GPlus(term): acc;
-		GOpt(term): acc;
-		GNegate(term): acc;
-
-		GUnquote(term): acc;
-		GString(text): acc;
-		GRange(lower, upper): acc;
-		GVar(id, power): acc;
-	}	
 }
 
 // Give a rule, filter out all the parts that require a lower
@@ -239,55 +188,5 @@ replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GT
 
 		// Rewrite the final ref to be headed to the rule
 		GVar(id, power): GVar(id + i2s(power), 0);
-	}
-}
-
-
-// Replace occurences of a term with the id. This is for common subexpression elimination
-commonReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
-	switch (g) {
-		GRule(id, term): {
-			// Do we have a direct replacement?
-			rep = findDirectReplacement(reversed, id, term);
-			if (rep != term) GRule(id, rep)
-			else GRule(id, commonReplacement(reversed, id, term));
-		}
-		GChoice(left, right): {
-			rep = findDirectReplacement(reversed, rule, g);
-			if (rep != g) rep
-			else {
-				lreplaced0 = findDirectReplacement(reversed, rule, left);
-				rreplaced0 = findDirectReplacement(reversed, rule, right);
-
-				lreplaced = commonReplacement(reversed, rule, lreplaced0);
-				rreplaced = commonReplacement(reversed, rule, rreplaced0);
-				GChoice(lreplaced, rreplaced);
-			}
-		}
-		GSeq(left, right): {
-			lreplaced = commonReplacement(reversed, rule, left);
-			rreplaced = commonReplacement(reversed, rule, right);
-			GSeq(lreplaced, rreplaced);
-		}
-
-		// Well, there is a theoretical change we can do something in these
-		GStar(term): g;
-		GPlus(term): g;
-		GOpt(term): g;
-		GNegate(term): g;
-		GUnquote(term): g;
-		GVar(id, power): g;
-
-		GString(text): g;
-		GRange(lower, upper): g;
-	}
-}
-
-findDirectReplacement(reversed : Tree<GTerm, [string]>, rule : string, g : GTerm) -> GTerm {
-	rules = getTreeArrayValue(reversed, g);
-	if (rules == []) g
-	else {
-		if (rules[0] == rule) g
-		else GVar(rules[0], 0);
 	}
 }

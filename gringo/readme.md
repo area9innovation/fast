@@ -93,38 +93,6 @@ Parsing "1*2+3", we should get this trace:
   The problem seems to be left recursion, which somehow should
   turn into a loop
 
-	// Resolving the precendence thing:
-
-	1) Find all n's of e(m).
-	2) For each n, filter the rule to keep sequences
-       where e(m) where m >= n.
-
-	   Example:
-
-	e(0) = e(1) "+" e(2)
-		| e(3) "*" e(4)
-		| '0'-'9';
-
-	->
-
-	e0 = e1 "+" e2
-		| e3 "*" e4
-		| '0'-'9';
-	
-	// Left recursion to be resolved
-	e1 = e1 "+" e2
-		| e3 "*" e4
-		| '0'-'9';
-
-	e2 = e3 "*" e4
-		| '0'-'9';
-
-	// Left recursion to be resolved
-	e3 = e3 "*" e4
-		| '0'-'9';
-
-	e4 = '0'-'9';
-
 Resolving left recursion:
 
 	e1 = e1 "+" e2
