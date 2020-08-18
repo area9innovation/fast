@@ -31,15 +31,26 @@ export {
 
 rewriteLeftRecursion(g : GTerm) -> GTerm {
 	switch (g) {
-		GRule(id, term): {
+		GRule(rule, term): {
 			switch (term) {
 				GChoice(left, rest): {
 					switch (left) {
 						GSeq(first, rtail): {
 							switch (first) {
 								GVar(lid, lpower): {
-									if (lid == id) {
-										replaceLeftRecursion(id, rtail, rest);
+									if (lid == rule) {
+										/*
+										We do this transformation:
+
+											e1 = e1 tail | rest
+											== GRule(e1, GChoice(GSeq(GVar(rule, 0), tail), rest))
+
+											-> 
+
+											e1 = rest tail*;
+											== GRule(e1, GSeq(rest, GStar(tail)))
+										*/
+										GRule(rule, GSeq(rest, GStar(rtail)))
 									} else {
 										g
 									}
@@ -58,32 +69,4 @@ rewriteLeftRecursion(g : GTerm) -> GTerm {
 		}
 		default: g;
 	}
-}
-
-/*
-We want to do this transformation:
-
-	e1 = e1 tail | rest
-
-	== GRule(e1, GChoice(GSeq(GVar(rule, 0), tail), rest))
-
-	-> 
-
-	e1 = rest e1-temp;
-	e1-temp = ("+" e2 )*;
-
-	{
-		nid = gensym();
-		GSeq(
-			GRule(e1, GSeq(rest, GVar(nid, 0)))
-			GRule(nid, GStar(tail))
-		)
-	}
-*/
-replaceLeftRecursion(rule : string, rtail : GTerm, rest : GTerm) -> GTerm {
-	nid = rule + "_" + i2s(floor(random() * 10000000.0));
-	GSeq(
-		GRule(rule, GSeq(rest, GVar(nid, 0))),
-		GRule(nid, GStar(rtail))
-	)
 }

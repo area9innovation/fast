@@ -40,7 +40,7 @@ main() {
 		true	// Verbose or not
 	);
 
-	if (false) {
+	if (true) {
 		println("Original:");
 		println(gterm2string(grammar));
 	}
