@@ -9,13 +9,6 @@ gringoGrammar() -> GTerm {
 	gseq([
 		GRule("term", 
 			gchoices([
-				// id "=" term(0) ";"	// Binding
-				gseq([
-					GVar("id", 0),
-					GString("="),
-					GVar("term", 1),
-					GString(";")
-				]),
 				// term(1) "|" term(2)	// Choice
 				gseq([
 					GVar("term", 1),
@@ -42,6 +35,13 @@ gringoGrammar() -> GTerm {
 					GVar("term", 12),
 					GString("?"),
 				),
+				// id "=" term(0) ";"	// Binding
+				gseq([
+					GVar("id", 0),
+					GString("="),
+					GVar("term", 1),
+					GString(";")
+				]),
 				//	| term(13) ":" type		// Type annotation
 				// "!" term(0)			// Negation
 				GSeq(

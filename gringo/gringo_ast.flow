@@ -1,8 +1,7 @@
 import ds/array;
 
 export {
-	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote,
-		GString, GRange, GVar;
+	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GString, GRange, GVar;
 
 	GRule(id : string, term : GTerm);
 	GChoice(left : GTerm, right : GTerm);

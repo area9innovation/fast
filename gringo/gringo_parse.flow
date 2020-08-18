@@ -8,13 +8,17 @@ export {
 	gringoParse(env : GringoEnv, term : GTerm) -> GringoEnv;
 
 	GringoEnv(
+		// The string we are parsing
 		input : string,
+		// The rules
 		names : Tree<string, GTerm>,
-		// What power is each name at?
-		power : Tree<string, int>,
+		// The position in the input
 		i : int,
+		// The output produced so far
 		output : string,
+		// Did parsing fail?
 		fail : bool,
+		// Should we print debugging output?
 		verbose : bool,
 	);
 }
@@ -113,31 +117,23 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 			// If the power of this id is <= the power in our tree, abort
 			mterm = lookupTree(env.names, id);
 			mterm ?? {
-				termPower = lookupTreeDef(env.power, id, -1);
+				oindent = ^indent;
+				if (env.verbose) {
+					indent := oindent + "  ";
+					println(oindent + "Parse " + id + " with i=" + i2s(env.i));
+				}
 
-				if (power <= termPower) {
-					env;
-				} else {
-					oindent = ^indent;
-					if (env.verbose) {
-						indent := oindent + "  ";
-						println(oindent + "Parse " + id + " with i=" + i2s(env.i) + " with power " + i2s(power) + " in scope " + i2s(termPower));
+				rec = gringoParse(env, mterm);
+
+				if (env.verbose) {
+					if (rec.fail) {
+						println(oindent + "FAILED rec " + id + " at " + i2s(rec.i) + " with " + rec.output);
+					} else {
+						println(oindent + "SUCCESS " + id + " at " + i2s(rec.i) + " with " + rec.output);
 					}
-
-					nenv = GringoEnv(env with power = setTree(env.power, id, power));
-					rec = gringoParse(nenv, mterm);
-
-					if (env.verbose) {
-						if (rec.fail) {
-							println(oindent + "FAILED rec " + id + " at " + i2s(rec.i) + " with " + rec.output);
-						} else {
-							println(oindent + "SUCCESS " + id + " at " + i2s(rec.i) + " with " + rec.output);
-						}
-						indent := oindent;
-					}
-					// Revert the power
-					GringoEnv(rec with power = setTree(env.power, id, termPower));
-				};
+					indent := oindent;
+				}
+				rec
 			} : {
 				println(^indent + "Unknown name");
 				GringoEnv(env with fail = true);

@@ -1,0 +1,67 @@
+import gringo/gringo_ast;
+import gringo/utils;
+
+export {
+	commonPrefix(g : GTerm) -> GTerm;
+}
+
+commonPrefix(g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(rule, term): {
+			GRule(rule, pullOutCommonPrefix(term));
+		}
+		GSeq(left, right): {
+			GSeq(commonPrefix(left), commonPrefix(right));
+		}
+		default: g;
+	}
+}
+
+/* 
+	TODO: We should factor common prefixes first:
+	e1 = e1 tail1
+		| e1 tail2
+		| rest
+
+		->
+
+	e1 = e1 (tail1 | tail2) 
+		| rest
+*/
+
+pullOutCommonPrefix(g : GTerm) -> GTerm {
+	choices = getChoices(g);
+
+	seq : [[GTerm]]= map(choices, getSequence);
+
+	if (length(seq) <= 1) {
+		g
+	} else {
+		prefix = seq[0][0];
+		firstDifferent = findiDef(seq, \s -> s[0] != prefix, 0);
+
+		if (firstDifferent > 1) {
+			println("TODO: We have a common prefix for " + i2s(firstDifferent) + " rules!");
+			println(prefix);
+			g;
+		} else {
+			g;
+		}
+	}
+}
+
+
+
+getChoices(g : GTerm) -> [GTerm] {
+	switch (g) {
+		GChoice(left, right): concat(getChoices(left), getChoices(right));
+		default: [g];
+	}
+}
+
+getSequence(g : GTerm) -> [GTerm] {
+	switch (g) {
+		GSeq(left, right): concat(getSequence(left), getSequence(right));
+		default: [g];
+	}
+}

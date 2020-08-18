@@ -52,6 +52,7 @@ Currently, it is still alpha, but it shows some interesting promise.
 		- [Interoperability of native types](#interoperability-of-native-types)
 		- [Fallback implementation of data structures](#fallback-implementation-of-data-structures)
 		- [Arbitrary bitwidth integers](#arbitrary-bitwidth-integers)
+		- [Syntax ideas](#syntax-ideas)
 		- [Random todos](#random-todos)
 
 ## Introduction
@@ -309,6 +310,7 @@ TODO:
 - SQL
 - Erlang - great at distributed
 - Python? Special challenge with indentation-based syntax
+  - Pytov could be a workaround https://github.com/Yuvix25/pytov
 - Haskell
 - PHP - easy way to get client/server
 - WebGL

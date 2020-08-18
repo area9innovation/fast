@@ -3,6 +3,7 @@ import gringo/gringo_grammar;
 import gringo/gringo_parse;
 import gringo/expand;
 import gringo/left_recursion;
+import gringo/prefix;
 
 main() {
 	grammar1 = 
@@ -32,11 +33,11 @@ main() {
 	text2 = "#include gringo/gringo2.gringo";
 
 	// What example to run?
-	grammar = grammar1;
-	text = text1;
+	grammar = grammar2;
+	text = text2;
 
 	env = GringoEnv(
-		text, makeTree(), makeTree(), 0, "", false, 
+		text, makeTree(), 0, "", false, 
 		true	// Verbose or not
 	);
 
@@ -50,23 +51,27 @@ main() {
 		println("Expanded:");
 		println(gterm2string(egrammar));
 	}
-	lgrammar = rewriteLeftRecursion(egrammar);
+	pgrammar = commonPrefix(egrammar);
+	lgrammar = rewriteLeftRecursion(pgrammar);
 	if (true) {
 		println("Left recursion:");
 		println(gterm2string(lgrammar));
 	}
 
-	genv = gringoParse(env, lgrammar);
+	if (false) {
+		genv = gringoParse(env, lgrammar);
 
-	println("");
+		println("");
 
-	if (genv.fail) {
-		println("Parsing failed");
+		if (genv.fail) {
+			println("Parsing failed");
+		}
+		remaining = strRight(env.input, genv.i);
+		if (remaining != "") {
+			println("Did not parse: " + remaining);
+		}
+		println("Output: " + genv.output);
+
 	}
-	remaining = strRight(env.input, genv.i);
-	if (remaining != "") {
-		println("Did not parse: " + remaining);
-	}
-	println("Output: " + genv.output);
 	quit(0);
 }

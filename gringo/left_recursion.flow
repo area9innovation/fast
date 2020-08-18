@@ -26,7 +26,6 @@ export {
 	e1 = e1 (tail1 | tail2) 
 		| rest
 	*/
-
 }
 
 rewriteLeftRecursion(g : GTerm) -> GTerm {
