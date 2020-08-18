@@ -1,4 +1,5 @@
 import gringo/utils;
+import math/math;
 
 export {
 	/*
@@ -38,7 +39,7 @@ rewriteLeftRecursion(g : GTerm) -> GTerm {
 							switch (first) {
 								GVar(lid, lpower): {
 									if (lid == id) {
-										replaceLeftRecursion(id, first, rtail, rest);
+										replaceLeftRecursion(id, rtail, rest);
 									} else {
 										g
 									}
@@ -79,10 +80,10 @@ We want to do this transformation:
 		)
 	}
 */
-
-replaceLeftRecursion(rule : string, var : GVar, rtail : GTerm, rest : GTerm) -> GTerm {
-	nid = rule + "_" + d2s();
+replaceLeftRecursion(rule : string, rtail : GTerm, rest : GTerm) -> GTerm {
+	nid = rule + "_" + i2s(floor(random() * 10000000.0));
+	GSeq(
+		GRule(rule, GSeq(rest, GVar(nid, 0))),
+		GRule(nid, GStar(rtail))
+	)
 }
-
-
-										replaceLeftRecursion(id, first, rtail, rest);
