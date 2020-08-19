@@ -23,15 +23,21 @@ export {
 }
 
 gchoices(rt : [GTerm]) -> GTerm {
-	t = reverseA(rt);
-	fold(tail(t), t[0], \acc, tt -> {
-		GChoice(tt, acc)
-	})
+	if (rt == []) GEpsilon()
+	else {
+		t = reverseA(rt);
+		fold(tail(t), t[0], \acc, tt -> {
+			GChoice(tt, acc)
+		})
+	}
 }
 
 gseq(rt : [GTerm]) -> GTerm {
-	t = reverseA(rt);
-	fold(tail(t), t[0], \acc, tt -> {
-		GSeq(tt, acc)
-	})
+	if (rt == []) GEpsilon()
+	else {
+		t = reverseA(rt);
+		fold(tail(t), t[0], \acc, tt -> {
+			GSeq(tt, acc)
+		})
+	}
 }

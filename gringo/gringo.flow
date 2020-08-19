@@ -14,7 +14,6 @@ main() {
 				gseq([GVar("exp", 3), GString("*"), GVar("exp", 4), GUnquote(GString("*"))]),
 				gseq([GVar("exp", 3), GString("/"), GVar("exp", 4), GUnquote(GString("/"))]),
 				gseq([GString("-"), GVar("exp", 4), GUnquote(GString("neg"))]),
-				// This should not go into exp0, but into exp7, since there is a distinguishing prefix
 				gseq([GString("("), GVar("exp", 0), GString(")"), GUnquote(GString("par"))]),
 				gseq([GString("if"), GVar("exp", 0), GVar("exp", 6), GString("else"), GVar("exp", 7), GUnquote(GString("ifelse"))]),
 				GUnquote(GPlus(GRange(48, 57))),
@@ -24,11 +23,11 @@ main() {
 	text1 = "if(1)3else4";
 
 	grammar2 = gringoGrammar();
-	text2 = "#include gringo/gringo2.gringo";
+	text2 = if (true) "#include gringo/gringo2.gringo" else "!('\"'-'\"')";
 
 	// What example to run?
-	grammar = grammar1;
-	text = text1;
+	grammar = grammar2;
+	text = text2;
 	verbose = false;
 
 	env = GringoEnv(text, makeTree(), 0, "", false, verbose);
@@ -45,7 +44,7 @@ main() {
 	}
 	pgrammar = commonPrefix(egrammar);
 	lgrammar = rewriteLeftRecursion(pgrammar);
-	if (true) {
+	if (false) {
 		println("Fully optimized:");
 		println(gterm2string(lgrammar));
 	}
