@@ -33,10 +33,11 @@ reduceCommon(g : GTerm) -> GTerm {
 	order = reverseA(topoSortSimpleGraph(graph));
 	// println(order);
 
-	// Replace them in this order
+	// Do CSE of the rules in this order
 	reduced = fold(order, g, \acc, rule -> {
 		mterm = findRule(rule, acc);
 		mterm ?? {
+			// Replace the occurrences of the term of a rule with the name to compress it
 			// println(rule + " is ");
 			// println(gterm2string(mterm));
 			replaceTerm(mterm, GVar(rule, 0), rule, acc)
@@ -48,7 +49,7 @@ reduceCommon(g : GTerm) -> GTerm {
 		println(gterm2string(reduced));
 	}
 
-	// Next, find identity rules
+	// Next, find identity rules and "inline" such references
 
 	inlined = fold(order, reduced, \acc, rule -> {
 		mterm = findRule(rule, acc);
@@ -57,7 +58,7 @@ reduceCommon(g : GTerm) -> GTerm {
 				GVar(r, p): {
 					// It is just a basic assignment.
 					// println("Rewrite inlining " + rule);
-					// Let us rewrite
+					// Let us rewrite to avoid referencing the identity rules
 					replaceTerm(GVar(rule, 0), mterm, rule, acc)
 				}
 				default: acc;
@@ -70,7 +71,7 @@ reduceCommon(g : GTerm) -> GTerm {
 		println(gterm2string(inlined));
 	}
 
-	// Finally, do dead code elimination
+	// Finally, do dead code elimination, where identity rules (and other dead rules) will be removed
 	deadCodeElimination(inlined);
 }
 

@@ -50,7 +50,7 @@ expandPowers(g : GTerm) -> GTerm {
 		mrule = lookupTree(rules, rule);
 		mrule ?? {
 			foldSet(powers, acc, \acc2, power -> {
-				erule = expandRulePower(rule, mrule, power);
+				erule = expandRulePower(rule, true, mrule, power);
 				setTree(acc2, rule + i2s(power), erule)
 			})
 		} : {
@@ -60,6 +60,11 @@ expandPowers(g : GTerm) -> GTerm {
 	});
 
 	replaced = replaceRules(expanders, expandedRules, g);
+
+	if (false) {
+		println("Raw expansion");
+		println(gterm2string(replaced));
+	}
 
 	reduceCommon(replaced);
 }
@@ -89,15 +94,15 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 
 // Give a rule, filter out all the parts that require a lower
 // power than minPower.
-expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
+expandRulePower(rule : string, firstPlace : bool, g : GTerm, minPower : int) -> GTerm {
 	switch (g) {
 		GRule(id, term, body): {
 			println("In rule " + rule + ", we do not allow a nested rule " + id);
 			g
 		}
 		GChoice(left, right): {
-			lexpand = expandRulePower(rule, left, minPower);
-			rexpand = expandRulePower(rule, right, minPower);
+			lexpand = expandRulePower(rule, firstPlace, left, minPower);
+			rexpand = expandRulePower(rule, firstPlace, right, minPower);
 			if (lexpand == GEpsilon() && rexpand == GEpsilon()) {
 				lexpand;
 			} else if (lexpand == GEpsilon()) {
@@ -109,8 +114,8 @@ expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 			}
 		}
 		GSeq(left, right): {
-			lexpand = expandRulePower(rule, left, minPower);
-			rexpand = expandRulePower(rule, right, minPower);
+			lexpand = expandRulePower(rule, firstPlace, left, minPower);
+			rexpand = expandRulePower(rule, false, right, minPower);
 			if (lexpand == GEpsilon() || rexpand == GEpsilon()) {
 				GEpsilon();
 			} else {
@@ -118,31 +123,31 @@ expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 			}
 		}
 		GStar(term): {
-			expand = expandRulePower(rule, term, minPower);
+			expand = expandRulePower(rule, firstPlace, term, minPower);
 			if (expand == GEpsilon()) {
 				expand
 			} else GStar(expand);
 		}
 		GPlus(term): {
-			expand = expandRulePower(rule, term, minPower);
+			expand = expandRulePower(rule, firstPlace, term, minPower);
 			if (expand == GEpsilon()) {
 				expand
 			} else GPlus(expand);
 		}
 		GOpt(term): {
-			expand = expandRulePower(rule, term, minPower);
+			expand = expandRulePower(rule, firstPlace, term, minPower);
 			if (expand == GEpsilon()) {
 				expand
 			} else GOpt(expand);
 		}
 		GNegate(term): {
-			expand = expandRulePower(rule, term, minPower);
+			expand = expandRulePower(rule, firstPlace, term, minPower);
 			if (expand == GEpsilon()) {
 				expand
 			} else GNegate(expand);
 		}
 		GUnquote(term): {
-			expand = expandRulePower(rule, term, minPower);
+			expand = expandRulePower(rule, firstPlace, term, minPower);
 			if (expand == GEpsilon()) {
 				expand
 			} else GUnquote(expand);
@@ -150,7 +155,7 @@ expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 		GString(text): g;
 		GRange(lower, upper): g;
 		GVar(id, power): {
-			if (rule == id && power < minPower) GEpsilon()
+			if (rule == id && power < minPower && firstPlace) GEpsilon()
 			else GVar(id + i2s(power), 0);
 		}
 		GEpsilon(): g;
