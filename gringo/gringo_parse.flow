@@ -27,13 +27,14 @@ indent = ref "";
 
 gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 	switch (gterm) {
-		GRule(id, term): {
+		GRule(id, term, body): {
 			if (env.verbose) {
 				println(^indent + "Bound " + id);
 			}
-			GringoEnv(
+			nenv = GringoEnv(
 				env with names = setTree(env.names, id, term)
 			);
+			gringoParse(nenv, body);
 		}
 		GChoice(left, right): {
 			lenv = gringoParse(env,left);

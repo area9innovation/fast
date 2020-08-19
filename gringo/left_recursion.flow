@@ -30,8 +30,8 @@ export {
 
 rewriteLeftRecursion(g : GTerm) -> GTerm {
 	switch (g) {
-		GRule(rule, term): {
-			switch (term) {
+		GRule(rule, term, body): {
+			nterm = switch (term) {
 				GChoice(left, rest): {
 					switch (left) {
 						GSeq(first, rtail): {
@@ -49,19 +49,20 @@ rewriteLeftRecursion(g : GTerm) -> GTerm {
 											e1 = rest tail*;
 											== GRule(e1, GSeq(rest, GStar(tail)))
 										*/
-										GRule(rule, GSeq(rest, GStar(rtail)))
+										GSeq(rest, GStar(rtail))
 									} else {
-										g
+										term
 									}
 								}
-								default: g;
+								default: term;
 							}
 						}
-						default: g;
+						default: term;
 					}
 				}
-				default: g;
+				default: term;
 			}
+			GRule(rule, nterm, rewriteLeftRecursion(body));
 		}
 		GSeq(left, right): {
 			GSeq(rewriteLeftRecursion(left), rewriteLeftRecursion(right));

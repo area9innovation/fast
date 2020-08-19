@@ -21,11 +21,12 @@ export {
 // Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
 findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 	switch (g) {
-		GRule(id, term): {
+		GRule(id, term, body): {
 			if (containsKeyTree(acc, id)) {
 				println("Duplicate rule " + id);
 			}
-			setTree(acc, id, term);
+			nacc = setTree(acc, id, term);
+			findRules(nacc, body);
 		}
 
 		GSeq(left, right): findRules(findRules(acc, left), right);
@@ -47,7 +48,7 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 
 findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 	switch (g) {
-		GRule(id, term): if (id == rule) Some(term) else None();
+		GRule(id, term, body): if (id == rule) Some(term) else findRule(rule, body);
 		GChoice(left, right): {
 			mleft = findRule(rule, left);
 			mleft ?? Some(mleft) : {
@@ -74,7 +75,7 @@ findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 
 mainRule(g : GTerm) -> string {
 	switch (g) {
-		GRule(id, term): mainRule(term);
+		GRule(id, term, body): mainRule(body);
 		GChoice(left, right): mainRule(right);
 		GSeq(left, right): mainRule(right);
 		GStar(term): mainRule(term);
@@ -93,9 +94,10 @@ mainRule(g : GTerm) -> string {
 replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> GTerm {
 	if (g == find) replace
 	else switch (g) {
-		GRule(id, term): {
-			if (exceptInRule == id) g
-			else GRule(id, replaceTerm(find, replace, exceptInRule, term));
+		GRule(id, term, body): {
+			nbody = replaceTerm(find, replace, exceptInRule, body);
+			nterm = if (exceptInRule == id) term else replaceTerm(find, replace, exceptInRule, term);
+			GRule(id, nterm, nbody);
 		}
 		GChoice(left, right): GChoice(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right)); 
 		GSeq(left, right): GSeq(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right));
@@ -113,7 +115,7 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 
 firstTerms(g : GTerm) -> Set<GToken> {
 	switch (g) {
-		GRule(id, term): makeSet();
+		GRule(id, term, body): firstTerms(body);
 		GChoice(left, right): mergeSets(firstTerms(left), firstTerms(right));
 		GSeq(left, right): {
 			t = firstTerms(left);

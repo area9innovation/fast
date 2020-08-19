@@ -56,6 +56,7 @@ reduceCommon(g : GTerm) -> GTerm {
 			switch (mterm) {
 				GVar(r, p): {
 					// It is just a basic assignment.
+					// println("Rewrite inlining " + rule);
 					// Let us rewrite
 					replaceTerm(GVar(rule, 0), mterm, rule, acc)
 				}
@@ -64,6 +65,10 @@ reduceCommon(g : GTerm) -> GTerm {
 		} : acc;
 	});
 
+	if (false) {
+		println("After renaming for inlining:");
+		println(gterm2string(inlined));
+	}
 
 	// Finally, do dead code elimination
 	deadCodeElimination(inlined);
@@ -87,6 +92,7 @@ deadCodeElimination(g : GTerm) -> GTerm {
 	removeDeadRules(alive, g);
 }
 
+// Given these rules, what dependencies do each have?
 dependencyGraph(rules : Tree<string, GTerm>) -> SimpleGraph<string, bool> {
 	foldTree(rules, makeSimpleGraph(), \rule, term, acc -> {
 		deps = ruleDependencies(makeSet(), term);
@@ -100,7 +106,7 @@ dependencyGraph(rules : Tree<string, GTerm>) -> SimpleGraph<string, bool> {
 
 ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 	switch (g) {
-		GRule(id, term): {
+		GRule(id, term, body): {
 			println("Unexpected");
 			acc;
 		}
@@ -121,7 +127,14 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 
 removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 	switch (g) {
-		GRule(id, term): g;
+		GRule(id, term, body): {
+			nbody = removeDeadRules(alive, body);
+			if (!containsSet(alive, id)) {
+				nbody;
+			} else {
+				GRule(id, term, nbody)
+			}
+		}
 		GChoice(left, right): g;
 		GSeq(left, right): {
 			lrule = getGRule(left);
@@ -154,7 +167,7 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 
 getGRule(g : GTerm) -> string {
 	switch (g) {
-		GRule(id, __): id;
+		GRule(id, __, body): id;
 		default: "";
 	}
 }

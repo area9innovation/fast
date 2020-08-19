@@ -6,103 +6,56 @@ export {
 }
 
 gringoGrammar() -> GTerm {
-	gseq([
-		GRule("term", 
-			gchoices([
-				// term(1) "|" term(2)	// Choice
-				gseq([
-					GVar("term", 1),
-					GString("|"),
-					GVar("term", 2),
-				]),
-				// term(10) term(11)		// Sequence
-				GSeq(
-					GVar("term", 10),
-					GVar("term", 11),
+	GRule("term", 
+		gchoices([
+			// term(1) "|" term(2)	// Choice
+			gseq([GVar("term", 1), GString("|"), GVar("term", 2)]),
+			// term(10) term(11)		// Sequence
+			GSeq(GVar("term", 10), GVar("term", 11)),
+			// term(12) "*"			// 0 or more
+			GSeq(GVar("term", 12), GString("*")),
+			// term(12) "+"			// One or more
+			GSeq(GVar("term", 12), GString("+")),
+			// term(12) "?"			// Optional
+			GSeq(GVar("term", 12), GString("?")),
+			// id "=" term(0) ";"	// Binding
+			gseq([GVar("id", 0), GString("="), GVar("term", 1), GString(";")]),
+			//	| term(13) ":" type		// Type annotation
+			// "!" term(0)			// Negation
+			GSeq(GString("!"), GVar("term", 0)),
+			// "(" term(0) ")" 		// Grouping
+			gseq([GString("("), GVar("term", 0), GString(")")]),
+			// "$" unquote
+			GSeq(GString("$"), GVar("term", 0)),
+			// string				// Constant string
+			gseq([GString("\""), GStar(
+					GSeq(
+						GNegate(GString("\"")),
+						GRange(0, 0xffff)
+					)
 				),
-				// term(12) "*"			// 0 or more
-				GSeq(
-					GVar("term", 12),
-					GString("*"),
-				),
-				// term(12) "+"			// One or more
-				GSeq(
-					GVar("term", 12),
-					GString("+"),
-				),
-				// term(12) "?"			// Optional
-				GSeq(
-					GVar("term", 12),
-					GString("?"),
-				),
-				// id "=" term(0) ";"	// Binding
-				gseq([
-					GVar("id", 0),
-					GString("="),
-					GVar("term", 1),
-					GString(";")
-				]),
-				//	| term(13) ":" type		// Type annotation
-				// "!" term(0)			// Negation
-				GSeq(
-					GString("!"),
-					GVar("term", 0),
-				),
-				// "(" term(0) ")" 		// Grouping
-				gseq([
-					GString("("),
-					GVar("term", 0),
-					GString(")"),
-				]),
-				// "$" unquote
-				GSeq(
-					GString("$"),
-					GVar("term", 0),
-				),
-				// string				// Constant string
-				gseq([
-					GString("\""),
-					GStar(
-						GSeq(
-							GNegate(GString("\"")),
-							GRange(0, 0xffff)
-						)
-					),
-					GString("\""),
-				]),
-				// char "-" char			// Range
-				gseq([
-					GString("'"),
-					GRange(0, 0xffff),
-					GString("'"),
-					GString("-"),
-					GString("'"),
-					GRange(0, 0xffff),
-					GString("'"),
-				]),
-				// id "(" int ")"		// Rule ref with power
-				gseq([
-					GVar("id", 0),
-					GString("("),
-					GVar("int", 0),
-					GString(")"),
-				]),
-				// id					// Rule ref
-				GVar("id", 0),
+				GString("\""),
 			]),
-		),
+			// char "-" char			// Range
+			gseq([GString("'"), GRange(0, 0xffff), GString("'"), GString("-"), GString("'"), GRange(0, 0xffff), GString("'")]),
+			// id "(" int ")"		// Rule ref with power
+			gseq([GVar("id", 0), GString("("), GVar("int", 0), GString(")"),]),
+			// id					// Rule ref
+			GVar("id", 0),
+		]),
 
 		// id: 'a'-'z'+
 		GRule("id", GPlus(
 			GRange(97, 122),
-		)),
+		),
 
 		// int: '0'-'9'+
 		GRule("int", GPlus(
 			GRange(48, 57)
-		)),
+		),
 
 		// Parse a term!
-		GVar("term", 0),
-	])
+		GVar("term", 0)
+		))
+	);
 }

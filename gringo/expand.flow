@@ -67,7 +67,10 @@ expandPowers(g : GTerm) -> GTerm {
 // For each rule, collect what powers are required
 findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>> {
 	switch (g) {
-		GRule(id, term): findExpanders(acc, term);
+		GRule(id, term, body): {
+			nacc = findExpanders(acc, term);
+			findExpanders(nacc, body);
+		}
 		GChoice(left, right): findExpanders(findExpanders(acc, left), right);
 		GSeq(left, right): {
 			findExpanders(findExpanders(acc, left), right);
@@ -88,7 +91,7 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 // power than minPower.
 expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 	switch (g) {
-		GRule(id, term): {
+		GRule(id, term, body): {
 			println("In rule " + rule + ", we do not allow a nested rule " + id);
 			g
 		}
@@ -157,22 +160,20 @@ expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 // In this term, replace all rules with the expanded rules
 replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GTerm>, g : GTerm) -> GTerm {
 	switch (g) {
-		GRule(id, term): {
+		GRule(id, term, body): {
+			nbody = replaceRules(expanders, expandedRules, body);
+			// What powers are defined for this rule?
 			powers = lookupMultimap(expanders, id);
-			rules : [GTerm] = foldSet(powers, [], \acc, power -> {
+			// For each power, construct the new rules
+			fold(reverseA(set2array(powers)), nbody, \acc, power : int -> {
 				name = id + i2s(power);
 				mrule = lookupTree(expandedRules, name);
 				mrule ?? {
-					arrayPush(acc, GRule(name, mrule));
+					GRule(name, mrule, acc)
 				} : {
 					acc;
 				}
 			});
-			if (rules == []) {
-				GEpsilon()
-			} else {
-				gseq(rules);
-			}
 		}
 		GSeq(left, right): GSeq(
 			replaceRules(expanders, expandedRules, left),

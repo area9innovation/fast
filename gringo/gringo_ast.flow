@@ -5,7 +5,7 @@ export {
 
 	GToken ::= GString, GRange, GVar, GEpsilon, GNegate;
 
-	GRule(id : string, term : GTerm);
+	GRule(id : string, term : GTerm, body : GTerm);
 	GChoice(left : GTerm, right : GTerm);
 	GSeq(left : GTerm, right : GTerm);
 	GStar(term : GTerm);

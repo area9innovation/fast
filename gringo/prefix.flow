@@ -7,8 +7,8 @@ export {
 
 commonPrefix(g : GTerm) -> GTerm {
 	switch (g) {
-		GRule(rule, term): {
-			GRule(rule, pullOutCommonPrefix(term));
+		GRule(rule, term, body): {
+			GRule(rule, pullOutCommonPrefix(term), commonPrefix(body));
 		}
 		GSeq(left, right): {
 			GSeq(commonPrefix(left), commonPrefix(right));
