@@ -69,7 +69,9 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 	switch (g) {
 		GRule(id, term): findExpanders(acc, term);
 		GChoice(left, right): findExpanders(findExpanders(acc, left), right);
-		GSeq(left, right): findExpanders(findExpanders(acc, left), right);
+		GSeq(left, right): {
+			findExpanders(findExpanders(acc, left), right);
+		}
 		GStar(term): findExpanders(acc, term);
 		GPlus(term): findExpanders(acc, term);
 		GOpt(term): findExpanders(acc, term);
@@ -83,7 +85,7 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 }
 
 // Give a rule, filter out all the parts that require a lower
-// power than minPower. GString("") is epsilon
+// power than minPower.
 expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 	switch (g) {
 		GRule(id, term): {
@@ -93,11 +95,11 @@ expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 		GChoice(left, right): {
 			lexpand = expandRulePower(rule, left, minPower);
 			rexpand = expandRulePower(rule, right, minPower);
-			if (lexpand == GString("") && rexpand == GString("")) {
+			if (lexpand == GEpsilon() && rexpand == GEpsilon()) {
 				lexpand;
-			} else if (lexpand == GString("")) {
+			} else if (lexpand == GEpsilon()) {
 				rexpand;
-			} else if (rexpand == GString("")) {
+			} else if (rexpand == GEpsilon()) {
 				lexpand;
 			} else {
 				GChoice(lexpand, rexpand)
@@ -106,46 +108,46 @@ expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 		GSeq(left, right): {
 			lexpand = expandRulePower(rule, left, minPower);
 			rexpand = expandRulePower(rule, right, minPower);
-			if (lexpand == GString("") || rexpand == GString("")) {
-				GString("");
+			if (lexpand == GEpsilon() || rexpand == GEpsilon()) {
+				GEpsilon();
 			} else {
 				GSeq(lexpand, rexpand);
 			}
 		}
 		GStar(term): {
 			expand = expandRulePower(rule, term, minPower);
-			if (expand == GString("")) {
+			if (expand == GEpsilon()) {
 				expand
 			} else GStar(expand);
 		}
 		GPlus(term): {
 			expand = expandRulePower(rule, term, minPower);
-			if (expand == GString("")) {
+			if (expand == GEpsilon()) {
 				expand
 			} else GPlus(expand);
 		}
 		GOpt(term): {
 			expand = expandRulePower(rule, term, minPower);
-			if (expand == GString("")) {
+			if (expand == GEpsilon()) {
 				expand
 			} else GOpt(expand);
 		}
 		GNegate(term): {
 			expand = expandRulePower(rule, term, minPower);
-			if (expand == GString("")) {
+			if (expand == GEpsilon()) {
 				expand
 			} else GNegate(expand);
 		}
 		GUnquote(term): {
 			expand = expandRulePower(rule, term, minPower);
-			if (expand == GString("")) {
+			if (expand == GEpsilon()) {
 				expand
 			} else GUnquote(expand);
 		};
 		GString(text): g;
 		GRange(lower, upper): g;
 		GVar(id, power): {
-			if (rule == id && power < minPower) GString("")
+			if (rule == id && power < minPower) GEpsilon()
 			else GVar(id + i2s(power), 0);
 		}
 		GEpsilon(): g;
@@ -167,7 +169,7 @@ replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GT
 				}
 			});
 			if (rules == []) {
-				GString("")
+				GEpsilon()
 			} else {
 				gseq(rules);
 			}
