@@ -10,24 +10,17 @@ main() {
 		gseq([
 			GRule("exp", 
 				gchoices([
-					gseq([
-						GVar("exp", 1),
-						GString("+"),
-						GVar("exp", 2),
-						GUnquote(GString("+")),
-					]),
-					gseq([
-						GVar("exp", 3),
-						GString("*"),
-						GVar("exp", 4),
-						GUnquote(GString("*")),
-					]),
+					gseq([GVar("exp", 1), GString("+"), GVar("exp", 2), GUnquote(GString("+"))]),
+					gseq([GVar("exp", 1), GString("-"), GVar("exp", 2), GUnquote(GString("-"))]),
+					gseq([GVar("exp", 3), GString("*"), GVar("exp", 4), GUnquote(GString("*"))]),
+					gseq([GVar("exp", 3), GString("/"), GVar("exp", 4), GUnquote(GString("/"))]),
+					gseq([GString("-"), GVar("exp", 4), GUnquote(GString("neg"))]),
 					GUnquote(GPlus(GRange(48, 57))),
 				]),
 			),
 			GVar("exp", 0)
 		]);
-	text1 = "4+1*2+3";
+	text1 = "1+-2---3";
 
 	grammar2 = gringoGrammar();
 	text2 = "#include gringo/gringo2.gringo";
@@ -35,11 +28,9 @@ main() {
 	// What example to run?
 	grammar = grammar1;
 	text = text1;
+	verbose = false;
 
-	env = GringoEnv(
-		text, makeTree(), 0, "", false, 
-		true	// Verbose or not
-	);
+	env = GringoEnv(text, makeTree(), 0, "", false, verbose);
 
 	if (false) {
 		println("Original:");
