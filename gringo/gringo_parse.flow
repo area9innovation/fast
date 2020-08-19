@@ -139,6 +139,7 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 				GringoEnv(env with fail = true);
 			}
 		}
+		GEpsilon(): env;
 	}
 }
 

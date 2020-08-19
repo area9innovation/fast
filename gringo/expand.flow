@@ -77,7 +77,8 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 		GUnquote(term): acc;
 		GString(text): acc;
 		GRange(lower, upper): acc;
-		GVar(id, power): insertMultimap(acc, id, power);	
+		GVar(id, power): insertMultimap(acc, id, power);
+		GEpsilon(): acc;
 	}
 }
 
@@ -147,6 +148,7 @@ expandRulePower(rule : string, g : GTerm, minPower : int) -> GTerm {
 			if (rule == id && power < minPower) GString("")
 			else GVar(id + i2s(power), 0);
 		}
+		GEpsilon(): g;
 	}
 }
 
@@ -175,15 +177,17 @@ replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GT
 			replaceRules(expanders, expandedRules, right)
 		);
 
-		// Thse are not supposed to have rules inside
+		// These are not supposed to have rules inside
 		GChoice(left, right): g;
 		GStar(term): g;
 		GPlus(term): g;
 		GOpt(term): g;
 		GNegate(term): g;
 		GUnquote(term): g;
+
 		GString(text): g;
 		GRange(lower, upper): g;
+		GEpsilon(): g;
 
 		// Rewrite the final ref to be headed to the rule
 		GVar(id, power): GVar(id + i2s(power), 0);

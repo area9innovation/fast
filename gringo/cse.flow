@@ -115,6 +115,7 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 		GString(text): acc;
 		GRange(lower, upper): acc;
 		GVar(id, power): insertSet(acc, id);
+		GEpsilon(): acc;
 	}
 }
 
@@ -147,6 +148,7 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 		GString(text): g;
 		GRange(lower, upper): g;
 		GVar(id, power): g;
+		GEpsilon(): g;
 	}
 }
 
