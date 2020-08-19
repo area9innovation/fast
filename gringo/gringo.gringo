@@ -3,7 +3,7 @@ term = term(1) "|" term(2)
 	| term(12) "*"
 	| term(12) "+"
 	| term(12) "?"
-	| id "=" term(1) ";"
+	| id "=" term(1) ";" term(2)
 	| "!" term
 	| "(" term ")"
 	| "$" term

@@ -141,7 +141,15 @@ We can integrate a range of languages in the JS and Java worlds.
 
 ### Potential next goals
 
+- Add Algebraic Data Types to the type system
+- Attempt to use the ML Sub algorithm to do ADT and overloading
+	https://dl.acm.org/doi/abs/10.1145/3409006
+
+- Add syntax for lambdas - potentially using Gringo by adding "require"
+
 - Get closures to work, using partialCall and refs
+
+- Add flow syntax frontend to Fastlåst using Gringo
 
 - Send structured data between languages
 
