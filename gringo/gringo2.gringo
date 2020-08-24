@@ -1,0 +1,30 @@
+term = term(1) "|" ws term(2) 						{ GChoice($term(1), $term(2)) }
+	| term(10) term(11)								{ GSeq($term(10), $term(11)) }
+	| term(12) "*" ws								{ GStar($term(12)) }
+	| term(12) "+" ws								{ GPlus($term(12)) }
+	| term(12) "?" ws								{ GOpt($term(12)) }
+	| id ws "=" ws term(1) ";" ws term(2)			{ GBind($id, $term(1), $term(2)) }
+	| "!" ws term									{ GNeg($term) }
+	| "(" ws term ")" ws							{ $term }
+	| "$" ws term									{ GUnquote($term) }
+	| "{" ws form+ "}" ws term						{ GAction($form+) }
+	| ('"'-'"') string ('"'-'"') ws 				{ GString($string) }
+	| "'" char(0) "'" ws "-" ws "'" char(1) "'" ws	{ GRange($char(0), $char(1)) }
+	| id ws "(" ws int ")" ws						{ GVar($id, $int) }
+	| id ws											{ GVar($id, 0) };
+
+string = $((!('"'-'"') '0x0'-'0xFFFF')*);
+
+char = $'0x0'-'0xFFFF';
+
+form = "$" term(0) | formtext;
+
+formtext = $(!("$" | "}") '0x0'-'0xFFFF');
+
+id = 'a'-'z'+; 
+int = '0'-'9'+;
+ws = s*;
+s = " " | "	" | "
+" ;
+grammar = ws term;
+term

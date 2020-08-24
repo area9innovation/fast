@@ -26,6 +26,9 @@ gringoGrammar() -> GTerm {
 			gseq([GString("("), ws, GVar("term", 0), GString(")"), ws]),
 			// "$" unquote
 			gseq([GString("$"), ws, GVar("term", 0), GUnquote(GString("unquote"))]),
+			//	"{" ws form+ "}" ws term						{ GAction($form+) }
+			gseq([GString("{"), ws, GPlus(GVar("form", 0)), GString("}"), ws]),
+
 			// string				// Constant string
 			gseq([GString("\""), GUnquote(GStar(
 					GSeq(
@@ -44,6 +47,23 @@ gringoGrammar() -> GTerm {
 			// id					// Rule ref
 			gseq([GVar("id", 0), ws])
 		]),
+
+		// form = "$" term(0) | formtext;
+		GRule("form", 
+			GChoice(
+				gseq([GString("$"), ws, GVar("term", 0)]),
+				GVar("formtext", 0)
+			),
+
+		// formtext = $((!("$" | "}") char)*)
+		GRule("formtext", GUnquote(
+			gseq([
+				GNegate(
+					GChoice(GString("$"), GString("}"))
+				),
+				GVar("char", 0)
+			])
+		),
 
 		// id: 'a'-'z'+
 		GRule("id", GUnquote(GPlus(
@@ -75,6 +95,6 @@ gringoGrammar() -> GTerm {
 		// Parse a term!
 		GVar("grammar", 0)
 		
-		))))))
+		))))))))
 	));
 }

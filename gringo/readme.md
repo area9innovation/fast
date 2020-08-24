@@ -8,7 +8,7 @@ written.
 
 ## Grammar
 
-The grammar for Gringo is given here:
+The (simplified)  grammar for Gringo is given here:
 
 	term = id "=" term(0) ";"	// Binding
 		| term(1) "|" term(2)	// Choice
@@ -25,10 +25,13 @@ The grammar for Gringo is given here:
 		| id					// Rule ref
 		;
 
+See `gringo.gringo` for the real grammar, with white-space handling.
+
 We might consider to add:
 
 		| term(13) ":" type		// Type annotation
 		| expect term string	// Construct for error recovery?
+		| "{" term+ "}"
 
 ## Semantics
 
@@ -97,6 +100,7 @@ Parsing "1*2+3", we should get this trace:
 - Check that it works
 
 - Redo semantic actions to a shorter form
+
   - Using names as shortcuts for results:
 
 		| id "(" int ")"		{ Rule($int, $id) }
