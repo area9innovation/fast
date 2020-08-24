@@ -3,6 +3,7 @@ import fast/semantics/utils;
 import fast/semantics/constant_prop;
 import fast/backends/utils;
 import fast/typing/polymorphism;
+import fast/typing/instantiate_types;
 import ds/arrayutils;
 import ds/set;
 import fast/semantics/call_graph;
@@ -185,20 +186,34 @@ inlineFastCall(env : FastAst, fn : FastFunction, args : [FExp], rinfo : FInfo) -
 	polymorphicBindings = bindPolymorphism(makeTree(), FTypeFunction(map(args, \a -> a.info.type), rinfo.type), fn.info.type);
 	// println("Inlining " + fn.id + fastType2string(FTypeFunction(map(args, \a -> a.info.type), rinfo.type)) + " for " + 
 	//	fastType2string(fn.info.type));
-	if (!isEmptyTree(polymorphicBindings)) {
-		// TODO: We have to instantiate polymorphic types as well
-		// We have instantiateTypeParameters in typing/polymorphism which can help with this
-		// in a mapFastTypeInFExp
-		println("TODO: When inlining, we should instantiate the polymorphism in the body like this:");
-		traverseInOrder(polymorphicBindings, \name, type -> {
-			println(name + ": " + fastType2string(type));
-		})
-	}
+	body = if (!isEmptyTree(polymorphicBindings)) {
+		// We have to instantiate polymorphic types as well
+		inf = makeFastInference(env);
 
-	inlined = foldi(args, fn.body, \i, acc : FExp, arg -> {
+		typars = ref polymorphicBindings;
+
+		nbody = mapFastTypeInFExp(fn.body, \type -> {
+			// TODO: Find the sourceFile
+			instantiateTypeParameters(inf, FLocation(-1, rinfo.line, rinfo.col), typars, type);
+		});
+
+		if (false) {
+			println("When inlining, we instantiated the polymorphism in the body like this:");
+			traverseInOrder(polymorphicBindings, \name, type -> {
+				println(name + ": " + fastType2string(type));
+			})
+			println(fexp2string(fn.body));
+			println(fexp2string(nbody));
+		}
+		nbody;
+	} else fn.body;
+
+	inlined = foldi(args, body, \i, acc : FExp, arg -> {
 		farg = fn.args[i];
 		FLet(farg.name, arg, acc, arg.info)
 	});
 
 	propagateFast(env, makeTree(), inlined);
 }
+
+

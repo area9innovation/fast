@@ -1,0 +1,1 @@
+term=term(1)"|"term(2)|term(10)term(11)|term(12)"*"|term(12)"+"|term(12)"?"|id"="term(1)";"|"!"term|"("term")"|"$"term|('"'-'"')(!('"'-'"')'0x0'-'0xFFFF')*('"'-'"')|"'"'0x0'-'0xFFFF'"'""-""'"'0x0'-'0xFFFF'"'"|id"("int")"|id;id='a'-'z'+;int='0'-'9'+;term

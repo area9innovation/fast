@@ -1,0 +1,170 @@
+import gringo/gringo_ast;
+import gringo/gringo_pretty;
+import ds/tree;
+import string;
+import ds/set;
+
+export {
+	gringoParse(env : GringoEnv, term : GTerm) -> GringoEnv;
+
+	GringoEnv(
+		// The string we are parsing
+		input : string,
+		// The rules
+		names : Tree<string, GTerm>,
+		// The position in the input
+		i : int,
+		// The output produced so far
+		output : string,
+		// Did parsing fail?
+		fail : bool,
+		// Should we print debugging output?
+		verbose : bool,
+	);
+}
+
+indent = ref "";
+
+gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
+	switch (gterm) {
+		GRule(id, term, body): {
+			if (env.verbose) {
+				println(^indent + "Bound " + id);
+			}
+			nenv = GringoEnv(
+				env with names = setTree(env.names, id, term)
+			);
+			gringoParse(nenv, body);
+		}
+		GChoice(left, right): {
+			lenv = gringoParse(env,left);
+			if (lenv.fail) {
+				gringoParse(env, right);
+			} else lenv
+		}
+		GSeq(left, right): {
+			lenv = gringoParse(env, left);
+			if (lenv.fail) GringoEnv(env with fail = true)
+			else gringoParse(lenv, right);
+		}
+		GStar(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				env;
+			} else {
+				gringoParse(senv, gterm);
+			}
+		}
+		GPlus(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				if (env.verbose) {
+					println(^indent + "Could not parse plus");
+				}
+				senv;
+			} else {
+				gringoParse(senv, GStar(term));
+			}
+		}
+		GOpt(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				env;
+			} else {
+				senv;
+			}
+		}
+		GNegate(term): {
+			senv = gringoParse(env, term);
+			if (senv.fail) {
+				GringoEnv(senv with fail = false);
+			} else {
+				if (env.verbose) {
+					println(^indent + "Do not accept term");
+				}
+				GringoEnv(env with fail = true);
+			}
+		}
+		GUnquote(term): {
+			unquoteGTerm(env, term);
+		}
+		GString(text): {
+			if (strContainsAt(env.input, env.i, text)) {
+				if (env.verbose) {
+					println(^indent + "Parsed '" + text + "'");
+				}
+				GringoEnv(
+					env with i = env.i + strlen(text)
+				)
+			} else {
+				if (env.verbose) {
+					println(^indent + "Could not parse '" + text + "'");
+				}
+				GringoEnv(env with fail = true)
+			}
+		}
+		GRange(lower, upper): {
+			code = getCharCodeAt(env.input, env.i);
+			if (lower <= code && code <= upper) {
+				// println(^indent + "Parsed " + getCharAt(env.input, env.i));
+				GringoEnv(
+					env with i = env.i + 1
+				)
+			} else {
+				GringoEnv(env with fail = true)
+			}
+		}
+		GVar(id, power): {
+			// If the power of this id is <= the power in our tree, abort
+			mterm = lookupTree(env.names, id);
+			mterm ?? {
+				oindent = ^indent;
+				if (env.verbose) {
+					indent := oindent + "  ";
+					println(oindent + "Parse " + id + " with i=" + i2s(env.i));
+				}
+
+				rec = gringoParse(env, mterm);
+
+				if (env.verbose) {
+					if (rec.fail) {
+						println(oindent + "FAILED rec " + id + " at " + i2s(rec.i) + " with " + rec.output);
+					} else {
+						println(oindent + "SUCCESS " + id + " at " + i2s(rec.i) + " with " + rec.output);
+					}
+					indent := oindent;
+				}
+				rec
+			} : {
+				println(^indent + "Unknown name");
+				GringoEnv(env with fail = true);
+			}
+		}
+		GEpsilon(): env;
+	}
+}
+
+unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
+	switch (term) {
+		GString(text): GringoEnv(env with output = env.output + text);
+		GVar(id, power): {
+			mbind = lookupTree(env.names, id);
+			mbind ?? {
+				unquoteGTerm(env, mbind)
+			} : {
+				println("Could not unquote " + id);
+				env;
+			}
+		}
+		default: {
+			starti = env.i;
+			rec = gringoParse(env, term);
+			if (rec.fail) {
+				rec;
+			} else {
+				matched = substring(env.input, starti, rec.i - starti);
+				GringoEnv(rec with output = rec.output + matched)
+			}
+		}
+	}
+}

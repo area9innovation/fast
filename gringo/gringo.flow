@@ -1,0 +1,68 @@
+import gringo/gringo_pretty;
+import gringo/gringo_grammar;
+import gringo/gringo_parse;
+import gringo/expand;
+import gringo/left_recursion;
+import gringo/prefix;
+
+main() {
+	grammar1 = 
+		GRule("exp", 
+			gchoices([
+				gseq([GVar("exp", 1), GString("+"), GVar("exp", 2), GUnquote(GString("+"))]),
+				gseq([GVar("exp", 1), GString("-"), GVar("exp", 2), GUnquote(GString("-"))]),
+				gseq([GVar("exp", 3), GString("*"), GVar("exp", 4), GUnquote(GString("*"))]),
+				gseq([GVar("exp", 3), GString("/"), GVar("exp", 4), GUnquote(GString("/"))]),
+				gseq([GString("-"), GVar("exp", 4), GUnquote(GString("neg"))]),
+				gseq([GString("("), GVar("exp", 0), GString(")"), GUnquote(GString("par"))]),
+				gseq([GString("if"), GVar("exp", 0), GVar("exp", 6), GString("else"), GVar("exp", 7), GUnquote(GString("ifelse"))]),
+				GUnquote(GPlus(GRange(48, 57))),
+			]),
+			GVar("exp", 0)
+		);
+	text1 = "if(1)3else4";
+
+	grammar2 = gringoGrammar();
+	text2 = if (true) "#include gringo/gringo2.gringo" else "!('\"'-'\"')";
+
+	// What example to run?
+	grammar = grammar2;
+	text = text2;
+	verbose = false;
+
+	env = GringoEnv(text, makeTree(), 0, "", false, verbose);
+
+	if (false) {
+		println("Original:");
+		println(gterm2string(grammar));
+	}
+
+	egrammar = expandPowers(grammar);
+	if (false) {
+		println("Expanded:");
+		println(gterm2string(egrammar));
+	}
+	pgrammar = commonPrefix(egrammar);
+	lgrammar = rewriteLeftRecursion(pgrammar);
+	if (false) {
+		println("Fully optimized:");
+		println(gterm2string(lgrammar));
+	}
+
+	if (true) {
+		genv = gringoParse(env, lgrammar);
+
+		println("");
+
+		if (genv.fail) {
+			println("Parsing failed");
+		}
+		remaining = strRight(env.input, genv.i);
+		if (remaining != "") {
+			println("Did not parse: " + remaining);
+		}
+		println("Output: " + genv.output);
+
+	}
+	quit(0);
+}

@@ -1,4 +1,4 @@
-import c;
+import lang/c;
 
 out/reflection.c::main() -> i0 {
 	println("Hello world");

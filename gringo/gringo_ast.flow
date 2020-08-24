@@ -1,0 +1,43 @@
+import ds/array;
+
+export {
+	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GString, GRange, GVar, GEpsilon;
+
+	GToken ::= GString, GRange, GVar, GEpsilon, GNegate;
+
+	GRule(id : string, term : GTerm, body : GTerm);
+	GChoice(left : GTerm, right : GTerm);
+	GSeq(left : GTerm, right : GTerm);
+	GStar(term : GTerm);
+	GPlus(term : GTerm);
+	GOpt(term : GTerm);
+	GNegate(term : GTerm);
+	GUnquote(term : GTerm);
+	GString(text : string);
+	GRange(lower : int, upper : int);
+	GVar(id : string, power : int);
+	GEpsilon();
+
+	gchoices(rt : [GTerm]) -> GTerm;
+	gseq(rt : [GTerm]) -> GTerm;
+}
+
+gchoices(rt : [GTerm]) -> GTerm {
+	if (rt == []) GEpsilon()
+	else {
+		t = reverseA(rt);
+		fold(tail(t), t[0], \acc, tt -> {
+			GChoice(tt, acc)
+		})
+	}
+}
+
+gseq(rt : [GTerm]) -> GTerm {
+	if (rt == []) GEpsilon()
+	else {
+		t = reverseA(rt);
+		fold(tail(t), t[0], \acc, tt -> {
+			GSeq(tt, acc)
+		})
+	}
+}

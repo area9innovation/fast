@@ -1,5 +1,6 @@
 import fast/fast_lexer;
 import fast/fast_ast;
+import fast/fast_precedence;
 import fast/backends/backends;
 
 export {
@@ -38,7 +39,7 @@ parseFastString(ex : string) -> FExp {
 	file = FastFile("", [], [], []);
 
 	expr = ref FVoid();
-	fastParseExp(file, parse, 0, \ei, e -> {
+	fastParseExp(file, parse, 0, 0, \ei, e -> {
 		expr := e;
 		file
 	});
@@ -124,7 +125,7 @@ fastFunctionOrVar(acc : FastFile, p : FastParse, output : string, language : str
 		fastParseType(acc, p, i + 1, \ni, type -> {
 			equal = fastGetIdOrPunc(fastGetLexeme(p, ni));
 			if (equal == "=") {
-				fastParseExp(acc, p, ni + 1, \ei, expr -> {
+				fastParseExp(acc, p, ni + 1, 0, \ei, expr -> {
 					lex2 = fastGetLexeme(p, ei);
 					semi = fastGetIdOrPunc(lex2);
 					if (semi == ";") {
@@ -616,32 +617,32 @@ fastParseIds(acc : FastFile, p : FastParse, ids : [string], i : int, onParse : (
 // Exp
 //
 
-fastParseExp(acc : FastFile, p : FastParse, i : int, onParse : (int, FExp) -> FastFile) -> FastFile {
+fastParseExp(acc : FastFile, p : FastParse, i : int, minBindingPower : int, onParse : (int, FExp) -> FastFile) -> FastFile {
 	h = fastGetLexeme(p, i);
 	switch (h) {
 		FLInt(n, line, col): {
 			// <int>
-			fastParseExpTail(acc, p, i + 1, FIntConstant(n, makeFastInfo(line, col)), onParse);
+			fastParseExpTail(acc, p, i + 1, minBindingPower, FIntConstant(n, makeFastInfo(line, col)), onParse);
 		}
 		FLDouble(n, line, col): {
 			// <double>
-			fastParseExpTail(acc, p, i + 1, FDoubleConstant(n, makeFastInfo(line, col)), onParse);
+			fastParseExpTail(acc, p, i + 1, minBindingPower, FDoubleConstant(n, makeFastInfo(line, col)), onParse);
 		}
 		FLString(s, line, col): {
 			// <string>
-			fastParseExpTail(acc, p, i + 1, FStringConstant(s, makeFastInfo(line, col)), onParse);
+			fastParseExpTail(acc, p, i + 1, minBindingPower, FStringConstant(s, makeFastInfo(line, col)), onParse);
 		}
 		FLId(id, line, col): {
 			if (id == "sizeof") {
 				fastParseType(acc, p, i + 1, \ni, type -> {
-					fastParseExpTail(acc, p, ni, FSizeOf(type, makeFastInfo(line, col)), onParse);
+					fastParseExpTail(acc, p, ni, minBindingPower, FSizeOf(type, makeFastInfo(line, col)), onParse);
 				});
 			} else if (id == "if") {
-				fastParseExp(acc, p, i + 1, \ni, cond -> {
-					fastParseExp(acc, p, ni, \ti, then_ -> {
+				fastParseExp(acc, p, i + 1, 0, \ni, cond -> {
+					fastParseExp(acc, p, ni, 0, \ti, then_ -> {
 						elseword = fastGetId(fastGetLexeme(p, ti));
 						if (elseword == "else") {
-							fastParseExp(acc, p, ti + 1, \ei, else_ -> {
+							fastParseExp(acc, p, ti + 1, 0, \ei, else_ -> {
 								onParse(ei, FIf(cond, then_, else_, makeFastInfo(line, col)));
 							});
 						} else {
@@ -654,7 +655,7 @@ fastParseExp(acc : FastFile, p : FastParse, i : int, onParse : (int, FExp) -> Fa
 			} else {
 				// TODO: Lookup and see if this is a prefix operator
 				// println("Assuming this is not a prefix operator " + id);
-				fastParseExpTail(acc, p, i + 1, FVar(id, makeFastInfo(line, col)), onParse);
+				fastParseExpTail(acc, p, i + 1, minBindingPower, FVar(id, makeFastInfo(line, col)), onParse);
 			}
 		}
 		FLPunctuation(punct, line, col): {
@@ -663,10 +664,10 @@ fastParseExp(acc : FastFile, p : FastParse, i : int, onParse : (int, FExp) -> Fa
 				if (end == ")") {
 					onParse(i + 2, FVoid());
 				} else {
-					fastParseExp(acc, p, i + 1, \ti, expr -> {
+					fastParseExp(acc, p, i + 1, 0, \ti, expr -> {
 						end2 = fastGetIdOrPunc(fastGetLexeme(p, ti));
 						if (end2 == ")") {
-							fastParseExpTail(acc, p, ti + 1, expr, onParse)
+							fastParseExpTail(acc, p, ti + 1, minBindingPower, expr, onParse)
 						} else {
 							p.onError("Expected )", ti);
 							acc;
@@ -676,7 +677,7 @@ fastParseExp(acc : FastFile, p : FastParse, i : int, onParse : (int, FExp) -> Fa
 			} else if (punct == "{") {
 				fastParseBrace(acc, p, [], i + 1, \bi, exprs -> {
 					expr = FSequence(exprs, makeFastInfo(line, col));
-					fastParseExpTail(acc, p, bi, expr, onParse)
+					fastParseExpTail(acc, p, bi, minBindingPower, expr, onParse)
 				})
 			} else {
 				p.onError("Expected expression", i);
@@ -693,7 +694,7 @@ fastParseBrace(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : 
 		onParse(i + 1, exps)
 	} else {
 		// exp
-		fastParseExp(acc, p, i, \ei, expr -> {
+		fastParseExp(acc, p, i, 0, \ei, expr -> {
 			// OK, we can have a ; or } here
 			semi = fastGetPunctuation(fastGetLexeme(p, ei));
 			nexps = arrayPush(exps, expr);
@@ -714,7 +715,7 @@ fastParseBrace(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : 
 // <op> exp
 // (exps); 
 // : type
-fastParseExpTail(acc : FastFile, p : FastParse, i : int, left : FExp, onParse : (int, FExp) -> FastFile) -> FastFile {
+fastParseExpTail(acc : FastFile, p : FastParse, i : int, minBindingPower : int, left : FExp, onParse : (int, FExp) -> FastFile) -> FastFile {
 	lex = fastGetLexeme(p, i);
 	id = fastGetId(lex);
 	if (id == ":") {
@@ -730,7 +731,7 @@ fastParseExpTail(acc : FastFile, p : FastParse, i : int, left : FExp, onParse : 
 			default: false;
 		}
 		if (isLanguage) {
-			fastParseExp(acc, p, i + 1, \ei, epp -> {
+			fastParseExp(acc, p, i + 1, 0, \ei, epp -> {
 				switch (epp) {
 					FCall(fn, args, info): {
 						language = getFVar(left);
@@ -765,14 +766,7 @@ fastParseExpTail(acc : FastFile, p : FastParse, i : int, left : FExp, onParse : 
 			}
 		}
 	} else if (id != "") {
-		if (isOperatorString(id)) {
-
-		} else {
-			println("Assuming " + id + " is a binop");
-		}
-		fastParseExp(acc, p, i + 1, \ri, ric -> {
-			onParse(ri, FCallOp("", id, [left, ric], makeFastInfo(lex.line, lex.col)));
-		})
+		fastParseBinOps(acc, p, left, i, minBindingPower, onParse)
 	} else {
 		punc = fastGetPunctuation(lex);
 		if (punc == "(") {
@@ -788,6 +782,31 @@ fastParseExpTail(acc : FastFile, p : FastParse, i : int, left : FExp, onParse : 
 	}
 }
 
+// Based on this thing
+// https://matklad.github.io//2020/04/13/simple-but-powerful-pratt-parsing.html
+fastParseBinOps(acc : FastFile, p : FastParse, left : FExp, i : int, minBindingPower : int, onParse : (int, FExp) -> FastFile) -> FastFile {
+	lex = fastGetLexeme(p, i);
+	id = fastGetId(lex);
+	if (isOperatorString(id)) {
+		power = getInfixPower(id);
+
+		if (power.left < minBindingPower) {
+			// Here, we want to return "left"
+			onParse(i, left)
+		} else {
+			fastParseExp(acc, p, i + 1, power.right, \ri, ric -> {
+				nleft = FCallOp("", id, [left, ric], makeFastInfo(lex.line, lex.col));
+				fastParseBinOps(acc, p, nleft, ri, minBindingPower, onParse)
+			})
+		}
+	} else {
+		if (id != "") {
+			println("Assuming " + id + " is not a binop");
+		}
+		onParse(i, left);
+	}
+}
+
 // exp, exp, ... exp )
 fastParseExps(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : (int, [FExp]) -> FastFile) -> FastFile {
 	idpunc = fastGetIdOrPunc(fastGetLexeme(p, i));
@@ -795,7 +814,7 @@ fastParseExps(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : (
 		onParse(i + 1, exps)
 	} else {
 		// exp
-		fastParseExp(acc, p, i, \ei, expr -> {
+		fastParseExp(acc, p, i, 0, \ei, expr -> {
 			// OK, we can have a , or ) here
 			semi = fastGetIdOrPunc(fastGetLexeme(p, ei));
 			nexps = arrayPush(exps, expr);
@@ -814,7 +833,7 @@ fastParseExps(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : (
 
 // <exp>; <body> ; <body> } although we un-do the last }
 fastParseLet(acc : FastFile, p : FastParse, id : string, i : int, onParse : (int, FExp) -> FastFile) -> FastFile {
-	fastParseExp(acc, p, i, \vi, val -> {
+	fastParseExp(acc, p, i, 0, \vi, val -> {
 		lex = fastGetLexeme(p, vi);
 		punc = fastGetPunctuation(lex);
 		if (punc == ";") {
@@ -888,7 +907,7 @@ fastParseGrabInline(acc : FastFile, p : FastParse, language : string, forms : [F
 							acc;
 						}
 					} else {
-						fastParseExp(acc, p, i + 1, \ei, ex -> {
+						fastParseExp(acc, p, i + 1, 0, \ei, ex -> {
 							nforms = arrayPush(forms, FInlineUnquote(ex, line, col));
 							fastParseGrabInline(acc, p, language, nforms, braces, ei, onParse);
 						});
