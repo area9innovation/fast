@@ -123,6 +123,12 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 		GRange(lower, upper): acc;
 		GVar(id, power): insertSet(acc, id);
 		GEpsilon(): acc;
+		GAction(forms): fold(forms, acc, \acc2, form -> {
+			switch (form) {
+				GString(__): acc2;
+				GUnquote(ut): ruleDependencies(acc2, ut);
+			}
+		})
 	}
 }
 
@@ -159,6 +165,7 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 		GOpt(term): g;
 		GNegate(term): g;
 		GUnquote(term): g;
+		GAction(__): g;
 		GString(text): g;
 		GRange(lower, upper): g;
 		GVar(id, power): g;

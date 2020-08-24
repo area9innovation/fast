@@ -13,9 +13,6 @@ export {
 
 	// Does basic replacement in the term, except in a named rule
 	replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> GTerm;
-
-	// What is the set of tokens that can be first in this sequence?
-	firstTerms(g : GTerm) -> Set<GToken>;
 }
 
 // Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
@@ -43,6 +40,7 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 		GRange(lower, upper): acc;
 		GVar(id, power): acc;
 		GEpsilon(): acc;
+		GAction(__): acc;
 	}	
 }
 
@@ -70,6 +68,7 @@ findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 		GRange(lower, upper): None();
 		GVar(id, power): None();
 		GEpsilon(): None();
+		GAction(__): None();
 	}
 }
 
@@ -87,6 +86,7 @@ mainRule(g : GTerm) -> string {
 		GRange(lower, upper): "";
 		GVar(id, power): id;
 		GEpsilon(): "";
+		GAction(__): "";
 	}
 }
 
@@ -110,37 +110,11 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 		GRange(lower, upper): g;
 		GVar(id, power): g;
 		GEpsilon(): g;
-	}
-}
-
-firstTerms(g : GTerm) -> Set<GToken> {
-	switch (g) {
-		GRule(id, term, body): firstTerms(body);
-		GChoice(left, right): mergeSets(firstTerms(left), firstTerms(right));
-		GSeq(left, right): {
-			t = firstTerms(left);
-			nt = filterSet(t, \tt -> {
-				switch (tt) {
-					GNegate(__): true;
-					default: false;
-				}
-			});
-			if (containsSet(t, GEpsilon()) || !isEmptySet(nt)) {
-				// TODO: Consider to remove nt frmo the set
-				mergeSets(t, firstTerms(right))
-			} else t;
-		}
-		GStar(term): insertSet(firstTerms(term), GEpsilon());
-		GPlus(term): firstTerms(term);
-		GOpt(term): insertSet(firstTerms(term), GEpsilon());
-		GNegate(term): {
-			nf = firstTerms(term);
-			mapSet(nf, \t -> GNegate(t));
-		}
-		GUnquote(term): makeSet1(GEpsilon());
-		GString(text): makeSet1(g);
-		GRange(lower, upper): makeSet1(g);
-		GVar(id, power): makeSet1(g);
-		GEpsilon(): makeSet1(GEpsilon());
+		GAction(forms): GAction(map(forms, \f -> {
+			switch (f) {
+				GString(__): f;
+				GUnquote(ut): GUnquote(replaceTerm(find, replace, exceptInRule, ut));
+			}
+		}));
 	}
 }

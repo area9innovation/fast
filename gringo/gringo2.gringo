@@ -17,7 +17,7 @@ string = $((!('"'-'"') '0x0'-'0xFFFF')*);
 
 char = $'0x0'-'0xFFFF';
 
-form = "$" term(0) | formtext;
+form = "$" term(0) | formtext { GString($formtext) };
 
 formtext = $(!("$" | "}") '0x0'-'0xFFFF');
 
