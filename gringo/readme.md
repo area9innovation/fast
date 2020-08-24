@@ -8,7 +8,7 @@ written.
 
 ## Grammar
 
-The (simplified)  grammar for Gringo is given here:
+The (simplified) grammar for Gringo is given here:
 
 	term = id "=" term(0) ";"	// Binding
 		| term(1) "|" term(2)	// Choice
@@ -110,6 +110,10 @@ Parsing "1*2+3", we should get this trace:
 		exp(1) "||" exp(2)		{ ||($1, $2) }
 
 - Add error recovery
+
+- Add syntax requirement for the semantic actions, so we can statically
+  check that the outputs will comply with some syntax, such as flow values,
+  s-expressions, lisp, whatever you want to have as the output
 
 ## Inspiration
 

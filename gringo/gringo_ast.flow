@@ -3,8 +3,6 @@ import ds/array;
 export {
 	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GAction,GString, GRange, GVar, GEpsilon;
 
-	GToken ::= GString, GRange, GVar, GEpsilon, GNegate;
-
 	GRule(id : string, term : GTerm, body : GTerm);
 	GChoice(left : GTerm, right : GTerm);
 	GSeq(left : GTerm, right : GTerm);

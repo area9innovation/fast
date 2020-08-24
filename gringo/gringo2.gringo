@@ -27,4 +27,4 @@ ws = s*;
 s = " " | "	" | "
 " ;
 grammar = ws term;
-term
+grammar
