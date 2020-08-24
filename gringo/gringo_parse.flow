@@ -180,7 +180,7 @@ runGAction(env : GringoEnv, forms : [GForm]) -> GringoEnv {
 				switch (ut) {
 					GString(text): acc + text;
 					default: {
-						acc + "<lookup " + gterm2string(ut) + ">";
+						acc + "<" + gterm2string(ut) + ">";
 					}
 				}
 			}
