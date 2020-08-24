@@ -136,7 +136,7 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 				}
 				rec
 			} : {
-				println(^indent + "Unknown name");
+				println(^indent + "Unknown name: " + id);
 				GringoEnv(env with fail = true);
 			}
 		}

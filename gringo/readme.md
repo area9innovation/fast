@@ -89,26 +89,11 @@ Parsing "1*2+3", we should get this trace:
 
 ## TODO
 
-- Get 4+1*2+3 to parse correctly in the simple exp grammar
-  The problem seems to be left recursion, which somehow should
-  turn into a loop
-
-Resolving left recursion:
-
-	e1 = e1 "+" e2
-		| rest
-	
-	->
-
-	e1 = rest e1-temp;
-	e1-temp = ("+" e2 )*;
-
-
 - Get the grammar for Gringo parsed and compiled instead
   of hardcoded. I.e. replace gringo_grammar.flow to be 
   produced from gringo.gringo:
-   - Add white-space handling to the grammar
    - Add semantic actions
+
 - Check that it works
 
 - Redo semantic actions to a shorter form

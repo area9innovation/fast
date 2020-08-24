@@ -23,7 +23,7 @@ main() {
 	text1 = "if(1)3else4";
 
 	grammar2 = gringoGrammar();
-	text2 = if (true) "#include gringo/gringo2.gringo" else "!('\"'-'\"')";
+	text2 = if (true) "#include gringo/gringo.gringo" else "!('\"'-'\"')";
 
 	// What example to run?
 	grammar = grammar2;
