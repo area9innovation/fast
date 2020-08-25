@@ -8,7 +8,7 @@ written.
 
 ## Grammar
 
-The grammar for Gringo is given here:
+The (simplified) grammar for Gringo is given here:
 
 	term = id "=" term(0) ";"	// Binding
 		| term(1) "|" term(2)	// Choice
@@ -25,10 +25,13 @@ The grammar for Gringo is given here:
 		| id					// Rule ref
 		;
 
+See `gringo.gringo` for the real grammar, with white-space handling.
+
 We might consider to add:
 
 		| term(13) ":" type		// Type annotation
 		| expect term string	// Construct for error recovery?
+		| "{" term+ "}"
 
 ## Semantics
 
@@ -89,29 +92,15 @@ Parsing "1*2+3", we should get this trace:
 
 ## TODO
 
-- Get 4+1*2+3 to parse correctly in the simple exp grammar
-  The problem seems to be left recursion, which somehow should
-  turn into a loop
-
-Resolving left recursion:
-
-	e1 = e1 "+" e2
-		| rest
-	
-	->
-
-	e1 = rest e1-temp;
-	e1-temp = ("+" e2 )*;
-
-
 - Get the grammar for Gringo parsed and compiled instead
   of hardcoded. I.e. replace gringo_grammar.flow to be 
   produced from gringo.gringo:
-   - Add white-space handling to the grammar
    - Add semantic actions
+
 - Check that it works
 
 - Redo semantic actions to a shorter form
+
   - Using names as shortcuts for results:
 
 		| id "(" int ")"		{ Rule($int, $id) }
@@ -121,6 +110,10 @@ Resolving left recursion:
 		exp(1) "||" exp(2)		{ ||($1, $2) }
 
 - Add error recovery
+
+- Add syntax requirement for the semantic actions, so we can statically
+  check that the outputs will comply with some syntax, such as flow values,
+  s-expressions, lisp, whatever you want to have as the output
 
 ## Inspiration
 

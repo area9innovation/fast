@@ -1,9 +1,7 @@
 import ds/array;
 
 export {
-	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GString, GRange, GVar, GEpsilon;
-
-	GToken ::= GString, GRange, GVar, GEpsilon, GNegate;
+	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GAction,GString, GRange, GVar, GEpsilon;
 
 	GRule(id : string, term : GTerm, body : GTerm);
 	GChoice(left : GTerm, right : GTerm);
@@ -13,6 +11,9 @@ export {
 	GOpt(term : GTerm);
 	GNegate(term : GTerm);
 	GUnquote(term : GTerm);
+	GAction(forms : [GForm]);
+		GForm ::= GString, GUnquote;
+
 	GString(text : string);
 	GRange(lower : int, upper : int);
 	GVar(id : string, power : int);

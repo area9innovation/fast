@@ -1,16 +1,20 @@
-term = term(1) "|" term(2)
+term = term(1) "|" ws term(2)
 	| term(10) term(11)
-	| term(12) "*"
-	| term(12) "+"
-	| term(12) "?"
-	| id "=" term(1) ";" term(2)
-	| "!" term
-	| "(" term ")"
-	| "$" term
-	| ('"'-'"') (!('"'-'"') '0x0'-'0xFFFF')* ('"'-'"')
-	| "'" '0x0'-'0xFFFF' "'" "-" "'" '0x0'-'0xFFFF' "'"
-	| id "(" int ")"
-	| id; 
+	| term(12) "*" ws
+	| term(12) "+" ws
+	| term(12) "?" ws
+	| id ws "=" ws term(1) ";" ws term(2)
+	| "!" ws term
+	| "(" ws term ")" ws
+	| "$" ws term
+	| ('"'-'"') (!('"'-'"') '0x0'-'0xFFFF')* ('"'-'"') ws
+	| "'" '0x0'-'0xFFFF' "'" ws "-" ws "'" '0x0'-'0xFFFF' "'" ws
+	| id ws "(" ws int ")" ws
+	| id ws;
 id = 'a'-'z'+; 
 int = '0'-'9'+;
+ws = s*;
+s = " " | "	" | "
+" ;
+grammar = ws term;
 term

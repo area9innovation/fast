@@ -85,6 +85,7 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 		GOpt(term): findExpanders(acc, term);
 		GNegate(term): findExpanders(acc, term);
 		GUnquote(term): acc;
+		GAction(__): acc;
 		GString(text): acc;
 		GRange(lower, upper): acc;
 		GVar(id, power): insertMultimap(acc, id, power);
@@ -152,6 +153,7 @@ expandRulePower(rule : string, firstPlace : bool, g : GTerm, minPower : int) -> 
 				expand
 			} else GUnquote(expand);
 		};
+		GAction(forms): g;
 		GString(text): g;
 		GRange(lower, upper): g;
 		GVar(id, power): {
@@ -192,6 +194,7 @@ replaceRules(expanders : Tree<string, Set<int>>, expandedRules : Tree<string, GT
 		GOpt(term): g;
 		GNegate(term): g;
 		GUnquote(term): g;
+		GAction(__): g;
 
 		GString(text): g;
 		GRange(lower, upper): g;
