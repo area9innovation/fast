@@ -1,31 +1,30 @@
 import gringo/utils;
+import gringo/gringo_pretty;
 import math/math;
 
 export {
 	/*
 	This does left recursion rewriting
-	e1 = e1 "+" e2
-		| rest
-	
-	->
+		e1 = e1 "+" e2 | rest
+		->
+		e1 = rest ("+" e2 )*;
 
-	e1 = rest e1-temp;
-	e1-temp = ("+" e2 )*;
+	This is unfortunately wrong in the light of semantic actions
+
+		e1 = e1 "+" e2 { $e2+$1 } | rest;
+		->
+		e1 = rest ("+" e2 { $e2+$e1 } )*;
+
+	where $e1 is not defined anymore.
+
+	We should have
+
+		e1 = rest $rest ("+" e2 { + $e2 })+;
+
+	since e1 is not defined.
 	*/
 	rewriteLeftRecursion(g : GTerm) -> GTerm;
 
-	/* 
-	TODO: We should factor common prefixes first:
-
-	e1 = e1 tail1
-		| e1 tail2
-		| rest
-
-		->
-
-	e1 = e1 (tail1 | tail2) 
-		| rest
-	*/
 }
 
 rewriteLeftRecursion(g : GTerm) -> GTerm {

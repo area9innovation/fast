@@ -109,6 +109,15 @@ Parsing "1*2+3", we should get this trace:
 
 		exp(1) "||" exp(2)		{ ||($1, $2) }
 
+  - There is a problem with our rewrite rules, so we get
+
+	  term1 = term2 ("|" ws0 term2 { GChoice($term(1), $term(2)) })*;
+
+	Consequence: Maybe we should switch to a stack-based semantic
+	action metaphor, instead of binding style.
+	So the actions are just GUnquote, no GAction.
+	I.e. we can not produce prefix notation, only postfix notation.
+
 - Add error recovery
 
 - Add syntax requirement for the semantic actions, so we can statically
