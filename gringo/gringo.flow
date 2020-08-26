@@ -61,7 +61,7 @@ main() {
 		if (remaining != "") {
 			println("Did not parse: " + remaining);
 		}
-		println("Output: " + genv.output);
+		println("Output:\n" + genv.output);
 
 	}
 	quit(0);

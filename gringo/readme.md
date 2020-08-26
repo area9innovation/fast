@@ -118,6 +118,10 @@ Parsing "1*2+3", we should get this trace:
 	So the actions are just GUnquote, no GAction.
 	I.e. we can not produce prefix notation, only postfix notation.
 
+   We change Gringo to be event based, and then we can have default
+   event handlers that produce Forth, or others which take a type
+   definition of your AST, and produces an AST.
+
 - Add error recovery
 
 - Add syntax requirement for the semantic actions, so we can statically

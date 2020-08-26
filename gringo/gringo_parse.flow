@@ -149,7 +149,7 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 
 unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 	switch (term) {
-		GString(text): GringoEnv(env with output = env.output + text);
+		GString(text): GringoEnv(env with output = env.output + text + "\n");
 		GVar(id, power): {
 			mbind = lookupTree(env.names, id);
 			mbind ?? {
@@ -166,7 +166,7 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 				rec;
 			} else {
 				matched = substring(env.input, starti, rec.i - starti);
-				GringoEnv(rec with output = rec.output + matched)
+				GringoEnv(rec with output = rec.output + "\"" + matched + "\"\n")
 			}
 		}
 	}
