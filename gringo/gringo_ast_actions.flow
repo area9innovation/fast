@@ -66,8 +66,9 @@ export {
 		}
 	);
 
+	getAstResult(s : GringoAstAcc) -> GTerm;
+
 	GringoAstAcc(
-		tree : GTerm,
 		stack : List<GTerm>,
 	);
 
@@ -78,7 +79,7 @@ export {
 
 pushAstStack(a : GringoAstAcc, e : GTerm) -> GringoAstAcc {
 	GringoAstAcc(
-		a with stack = Cons(e, a.stack)
+		a with stack = Cons(e, a.stack),
 	);
 }
 
@@ -90,6 +91,18 @@ popAstStack(a : GringoAstAcc) -> Pair<GTerm, GringoAstAcc> {
 		}
 		Cons(head, tailL): {
 			Pair(head, GringoAstAcc(a with stack = tailL))
+		}
+	}
+}
+
+getAstResult(s : GringoAstAcc) -> GTerm {
+	switch (s.stack) {
+		EmptyList(): {
+			println("Stack underflow");
+			GEpsilon()
+		}
+		Cons(head, tailL): {
+			head;
 		}
 	}
 }
@@ -109,3 +122,4 @@ gtermAsString(g : GTerm) -> string {
 	GRange(lower : int, upper : int);
 	GEpsilon();
 */
+

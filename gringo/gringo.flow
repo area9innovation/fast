@@ -24,7 +24,7 @@ main() {
 	text1 = "if(1)3else4";
 
 	grammar2 = gringoGrammar();
-	text2 = if (true) "#include gringo/gringo2.gringo" else "!('\"'-'\"')";
+	text2 = if (false) "#include gringo/gringo2.gringo" else "a*";
 
 	// What example to run?
 	gringoGrammar = true;
@@ -38,8 +38,11 @@ main() {
 	}
 
 	if (true) {
-		env2 = doGringoParse(grammar, gringoAstAction, GringoAstAcc(GEpsilon(), makeList()), text, verbose);
-		println(gterm2string(env2.output.tree));
+		debugAct = debugActions(gringoAstAction, \acc -> {
+			gterm2string(getAstResult(acc))
+		});
+		env2 = doGringoParse(grammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose);
+		println(gterm2string(getAstResult(env2.output)));
 	}
 
 	quit(0);

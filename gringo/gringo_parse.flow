@@ -152,7 +152,9 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 		GString(text): GringoEnv(env with output = env.action.addVerbatim(env.output, text));
 		GUnquote(nt): {
 			switch (nt) {
-				GString(text): GringoEnv(env with output = env.action.addMatched(env.output, text));
+				GString(text): {
+					GringoEnv(env with output = env.action.addMatched(env.output, text));
+				}
 				default: {
 					println("Does not support double unquote of anything but strings");
 					env;
