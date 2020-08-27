@@ -18,20 +18,22 @@ The (simplified) grammar for Gringo is given here:
 		| term(12) "?"			// Optional
 		| "!" term(0)			// Negation
 		| "(" term(0) ")" 		// Grouping
-		| "$" term              // Semantic action
+		| "$" term              // Unquoting
+		| "{" form+ "}"        // Semantic action
 		| string				// Constant string
 		| char "-" char			// Range
 		| id "(" int ")"		// Rule ref with power
 		| id					// Rule ref
 		;
 
+	form = "$" term | !("$" | "}" ) char;
+
 See `gringo.gringo` for the real grammar, with white-space handling.
 
 We might consider to add:
 
-		| term(13) ":" type		// Type annotation
 		| expect term string	// Construct for error recovery?
-		| "{" term+ "}"
+		| term(13) ":" type		// Type annotation
 
 ## Semantics
 
@@ -59,61 +61,42 @@ An example:
 This grammar makes sure that * binds closer than +, and that these binary
 operators are left associate.
 
-Parsing "1+3", we should get this trace:
+This is implemented by expanding the exp rule into exp1, exp2, exp3 and exp4
+rules appropriately nested. The result is then optimized in a number of ways,
+with the result being a correct and efficient grammar.
 
-	exp(0) ->
-		exp(1) -> 
-			exp(1) is skipped, since power[exp] = 1, and 1 <= 1
-		
-			exp(3) -> int, fail at "*"
-			int -> int
+## Actions
 
-		"+" matches
+The $<term> construct is used to produce semantic output. This will produce
+the matched output of the <term> as a string. As a special case, if you use
+$"string", it will produce the verbatim output "string" instead.
 
-		exp(2) -> 
-			exp(3) -> int, fail at "*", since we have nothing
-			int -> int
+These actions are defined through an event-based API. By default, we use a
+Forth-like output where the matched tokens are pushed on a stack as strings, 
+and then semantic actions are pushed as operations.
 
-Parsing "1*3", we should get this trace:
+Concretely, strings are written as "string" on a separate line, and then 
+operations are produced verbatim.
 
-	exp(0) ->
-		exp(1) ->
-			exp(1) is skipped, since power[exp] = 1, and 1 <= 1
-			exp(3) -> int
-			"*"
-			exp(4) ->
-				exp(1) is skipped, since power[exp] = 4, and 1 <= 4
-				exp(3) is skipped, since power[exp] = 4, and 3 <= 4
-				int -> int
-
-Parsing "1*2+3", we should get this trace:
-
-	- TODO: Add the trace
+	$"operation"	-> will call addVerbatim with "operation", but match epsilon
+	$$"fakematch"	-> will call addMatched with "fakematch", but match epsilon
+	$term			-> will call addMatched with the string matched by term
 
 ## TODO
 
 - Get the grammar for Gringo parsed and compiled instead
   of hardcoded. I.e. replace gringo_grammar.flow to be 
-  produced from gringo.gringo:
-   - Add semantic actions
-
-- Check that it works
-
-- Redo semantic actions to a shorter form
-
-  - Using names as shortcuts for results:
-
-		| id "(" int ")"		{ Rule($int, $id) }
-
-  - Using the numbers as shortcuts for results:
-
-		exp(1) "||" exp(2)		{ ||($1, $2) }
+  produced from gringo.gringo
+  - It seems right association does not work for GSeq and GChoice,
+    in particular, left-recursion optimization of 
+		e = ((e | b) | c) 
+	does not work.
+	It has to be 
+		e = (e | (b | c))
 
 - Add error recovery
 
-- Add syntax requirement for the semantic actions, so we can statically
-  check that the outputs will comply with some syntax, such as flow values,
-  s-expressions, lisp, whatever you want to have as the output
+- Add JSON action output, parse flow types, and construct actions for that
 
 ## Inspiration
 

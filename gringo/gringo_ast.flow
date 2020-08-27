@@ -1,7 +1,7 @@
 import ds/array;
 
 export {
-	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GAction,GString, GRange, GVar, GEpsilon;
+	GTerm ::= GRule, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GString, GRange, GVar, GEpsilon;
 
 	GRule(id : string, term : GTerm, body : GTerm);
 	GChoice(left : GTerm, right : GTerm);
@@ -10,10 +10,7 @@ export {
 	GPlus(term : GTerm);
 	GOpt(term : GTerm);
 	GNegate(term : GTerm);
-	GUnquote(term : GTerm);
-	GAction(forms : [GForm]);
-		GForm ::= GString, GUnquote;
-
+	GUnquote(term : GTerm);	// Produces the matched output, except for GString, which is literally written out
 	GString(text : string);
 	GRange(lower : int, upper : int);
 	GVar(id : string, power : int);

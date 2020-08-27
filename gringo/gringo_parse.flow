@@ -1,11 +1,12 @@
 import gringo/gringo_ast;
+import gringo/gringo_action;
 import gringo/gringo_pretty;
 import ds/tree;
 import string;
 import ds/set;
 
 export {
-	gringoParse(env : GringoEnv, term : GTerm) -> GringoEnv;
+	gringoParse(env : GringoEnv<?>, term : GTerm) -> GringoEnv<?>;
 
 	GringoEnv(
 		// The string we are parsing
@@ -14,8 +15,10 @@ export {
 		names : Tree<string, GTerm>,
 		// The position in the input
 		i : int,
+		// The action function
+		action : GringoAction<?>,
 		// The output produced so far
-		output : string,
+		output : ?,
 		// Did parsing fail?
 		fail : bool,
 		// Should we print debugging output?
@@ -25,7 +28,7 @@ export {
 
 indent = ref "";
 
-gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
+gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 	switch (gterm) {
 		GRule(id, term, body): {
 			if (env.verbose) {
@@ -88,9 +91,6 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 		GUnquote(term): {
 			unquoteGTerm(env, term);
 		}
-		GAction(forms): {
-			runGAction(env, forms);
-		}
 		GString(text): {
 			if (strContainsAt(env.input, env.i, text)) {
 				if (env.verbose) {
@@ -131,9 +131,9 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 
 				if (env.verbose) {
 					if (rec.fail) {
-						println(oindent + "FAILED rec " + id + " at " + i2s(rec.i) + " with " + rec.output);
+						println(oindent + "FAILED rec " + id + " at " + i2s(rec.i));
 					} else {
-						println(oindent + "SUCCESS " + id + " at " + i2s(rec.i) + " with " + rec.output);
+						println(oindent + "SUCCESS " + id + " at " + i2s(rec.i));
 					}
 					indent := oindent;
 				}
@@ -149,14 +149,16 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 
 unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 	switch (term) {
-		GString(text): GringoEnv(env with output = env.output + text);
-		GVar(id, power): {
-			mbind = lookupTree(env.names, id);
-			mbind ?? {
-				unquoteGTerm(env, mbind)
-			} : {
-				println("Could not unquote " + id);
-				env;
+		GString(text): GringoEnv(env with output = env.action.addVerbatim(env.output, text));
+		GUnquote(nt): {
+			switch (nt) {
+				GString(text): {
+					GringoEnv(env with output = env.action.addMatched(env.output, text));
+				}
+				default: {
+					println("Does not support double unquote of anything but strings");
+					env;
+				}
 			}
 		}
 		default: {
@@ -166,25 +168,8 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 				rec;
 			} else {
 				matched = substring(env.input, starti, rec.i - starti);
-				GringoEnv(rec with output = rec.output + matched)
+				GringoEnv(rec with output = env.action.addMatched(rec.output, matched))
 			}
 		}
 	}
-}
-
-runGAction(env : GringoEnv, forms : [GForm]) -> GringoEnv {
-	res = fold(forms, "", \acc, form -> {
-		switch (form) {
-			GString(t): acc + t;
-			GUnquote(ut): {
-				switch (ut) {
-					GString(text): acc + text;
-					default: {
-						acc + "<" + gterm2string(ut) + ">";
-					}
-				}
-			}
-		}
-	});
-	GringoEnv(env with output = env.output + res);
 }
