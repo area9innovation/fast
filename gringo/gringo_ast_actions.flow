@@ -60,7 +60,7 @@ export {
 				// GRange(lower : int, upper : int);
 				pupper = popAstStack(acc);
 				plower = popAstStack(pupper.second);
-				str = GRange(s2i(gtermAsString(plower.first)), s2i(gtermAsString(pupper.first)));
+				str = GRange(parseHex(gtermAsString(plower.first)), parseHex(gtermAsString(pupper.first)));
 				pushAstStack(plower.second, str);
 			} else {
 				println("TODO: Handle "+ v);

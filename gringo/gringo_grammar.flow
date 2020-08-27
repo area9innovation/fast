@@ -36,8 +36,8 @@ gringoGrammar() -> GTerm {
 			]),
 			// "(" term(0) ")" 		// Grouping
 			gseq([GString("("), ws, GVar("term", 0), GString(")"), ws]),
-			// "$" unquote
-			gseq([GString("$"), ws, GVar("term", 0), 
+			// "$" term(15)
+			gseq([GString("$"), ws, GVar("term", 15), 
 				GUnquote(GString("GUnquote"))
 			]),
 

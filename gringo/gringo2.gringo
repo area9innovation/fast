@@ -6,18 +6,18 @@ term = term(1) "|" ws term(2) 						$"GChoice"
 	| id ws "=" ws term(1) ";" ws term(2)			$"GBind"
 	| "!" ws term									$"GNeg"
 	| "(" ws term ")" ws							
-	| "$" ws term									$"GUnquote"
-	| ('"'-'"') string ('"'-'"') ws 				$"GString"
+	| "$" ws term(15)									$"GUnquote"
+	| ('0x22'-'0x22') string ('0x22'-'0x22') ws 				$"GString"
 	| "'" char(0) "'" ws "-" ws "'" char(1) "'" ws	$"GRange"
 	| $id ws "(" ws $int ")" ws						$"GVar"
 	| $id ws										$$"0" $"GVar";
 
-string = $((!('"'-'"') '0x0'-'0xFFFF')*);
+string = $((!('0x22'-'0x22') '0x0'-'0xFFFF')*);
 
 char = $'0x0'-'0xFFFF';
 
-id = 'a'-'z'+; 
-int = '0'-'9'+;
+id = '0x61'-'0x7a'+; 
+int = '0x30'-'0x39'+;
 ws = s*;
 s = " " | "	" | "
 " ;
