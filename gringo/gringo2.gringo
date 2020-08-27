@@ -1,25 +1,20 @@
-term = term(1) "|" ws term(2) 						{ GChoice }
-	| term(10) term(11)								{ GSeq }
-	| term(12) "*" ws								{ GStar }
-	| term(12) "+" ws								{ GPlus }
-	| term(12) "?" ws								{ GOpt }
-	| id ws "=" ws term(1) ";" ws term(2)			{ GBind }
-	| "!" ws term									{ GNeg }
+term = term(1) "|" ws term(2) 						$"GChoice"
+	| term(10) term(11)								$"GSeq"
+	| term(12) "*" ws								$"GStar"
+	| term(12) "+" ws								$"GPlus"
+	| term(12) "?" ws								$"GOpt"
+	| id ws "=" ws term(1) ";" ws term(2)			$"GBind"
+	| "!" ws term									$"GNeg"
 	| "(" ws term ")" ws							
-	| "$" ws term									{ GUnquote }
-	| "{" ws form+ "}" ws term						{ GAction }
-	| ('"'-'"') string ('"'-'"') ws 				{ GString }
-	| "'" char(0) "'" ws "-" ws "'" char(1) "'" ws	{ GRange }
+	| "$" ws term									$"GUnquote"
+	| ('"'-'"') string ('"'-'"') ws 				$"GString"
+	| "'" char(0) "'" ws "-" ws "'" char(1) "'" ws	$"GRange"
 	| $id ws "(" ws $int ")" ws						$"GVar"
 	| $id ws										$"0" $"GVar";
 
 string = $((!('"'-'"') '0x0'-'0xFFFF')*);
 
 char = $'0x0'-'0xFFFF';
-
-form = "$" term(0) | formtext { GString($formtext) };
-
-formtext = $(!("$" | "}") '0x0'-'0xFFFF');
 
 id = 'a'-'z'+; 
 int = '0'-'9'+;

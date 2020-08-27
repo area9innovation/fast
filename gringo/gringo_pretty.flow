@@ -17,12 +17,6 @@ gterm2string(g : GTerm) -> string {
 		GOpt(term): gterm2string(term) + "?";
 		GNegate(term): "!" + gterm2string(term);
 		GUnquote(term): "$" + gterm2string(term);
-		GAction(forms): "{ " + superglue(forms, \f -> {
-			switch (f) {
-				GString(s): s;
-				GUnquote(tt): "$" + gterm2string(tt);
-			}
-		}, "") + " }";
 		GString(text): {
 			if (text == "\"") "'\"'"
 			else toString(text);

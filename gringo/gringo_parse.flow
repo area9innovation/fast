@@ -88,9 +88,6 @@ gringoParse(env : GringoEnv, gterm : GTerm) -> GringoEnv {
 		GUnquote(term): {
 			unquoteGTerm(env, term);
 		}
-		GAction(forms): {
-			runGAction(env, forms);
-		}
 		GString(text): {
 			if (strContainsAt(env.input, env.i, text)) {
 				if (env.verbose) {
@@ -172,19 +169,3 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 	}
 }
 
-runGAction(env : GringoEnv, forms : [GForm]) -> GringoEnv {
-	res = fold(forms, "", \acc, form -> {
-		switch (form) {
-			GString(t): acc + t;
-			GUnquote(ut): {
-				switch (ut) {
-					GString(text): acc + text;
-					default: {
-						acc + "<" + gterm2string(ut) + ">";
-					}
-				}
-			}
-		}
-	});
-	GringoEnv(env with output = env.output + res);
-}

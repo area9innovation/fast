@@ -40,7 +40,6 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 		GRange(lower, upper): acc;
 		GVar(id, power): acc;
 		GEpsilon(): acc;
-		GAction(__): acc;
 	}	
 }
 
@@ -68,7 +67,6 @@ findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 		GRange(lower, upper): None();
 		GVar(id, power): None();
 		GEpsilon(): None();
-		GAction(__): None();
 	}
 }
 
@@ -86,7 +84,6 @@ mainRule(g : GTerm) -> string {
 		GRange(lower, upper): "";
 		GVar(id, power): id;
 		GEpsilon(): "";
-		GAction(__): "";
 	}
 }
 
@@ -110,11 +107,5 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 		GRange(lower, upper): g;
 		GVar(id, power): g;
 		GEpsilon(): g;
-		GAction(forms): GAction(map(forms, \f -> {
-			switch (f) {
-				GString(__): f;
-				GUnquote(ut): GUnquote(replaceTerm(find, replace, exceptInRule, ut));
-			}
-		}));
 	}
 }
