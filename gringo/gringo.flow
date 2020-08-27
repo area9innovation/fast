@@ -57,7 +57,7 @@ main() {
 
 		if (false) {
 			// OK, try to parse with the result
-			env3 = doGringoParse(resGrammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose);
+			env3 = doGringoParse(resGrammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose, false);
 			println(gterm2string(getAstResult(env3.output)));
 		}
 

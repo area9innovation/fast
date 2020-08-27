@@ -94,6 +94,8 @@ operations are produced verbatim.
 	It has to be 
 		e = (e | (b | c))
 
+- Add error message when we have left recursion deep inside a choice
+
 - Add error recovery
 
 - Add JSON action output, parse flow types, and construct actions for that

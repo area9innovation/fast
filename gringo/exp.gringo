@@ -11,14 +11,14 @@ exp =
 
 	| exp(11) "*" exp(12) $"*" | exp(11) "/" exp(12) $"/" | exp(11) "%" exp(12) $"%"
 
-	| "-" exp(14) $"negate"
-	| "if" exp(0) exp(2) "else" exp(1) $"ifelse"
-	| "if" exp(0) exp(1)	$"if"
-
 	| exp(14) "[" exp(0) "]" $"index"
+
 	| exp(15) "." exp(14) $"dot"
 
 	| exp(15) "?" exp(0) ":" exp(14) $"ifelse"
+	| "-" exp(14) $"negate"
+	| "if" exp(0) exp(2) "else" exp(1) $"ifelse"
+	| "if" exp(0) exp(1)	$"if"
 	| $('0x30'-'0x39'+)
 	;
 exp
