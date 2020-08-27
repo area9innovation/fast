@@ -10,7 +10,7 @@ term = term(1) "|" ws term(2) 						$"GChoice"
 	| ('"'-'"') string ('"'-'"') ws 				$"GString"
 	| "'" char(0) "'" ws "-" ws "'" char(1) "'" ws	$"GRange"
 	| $id ws "(" ws $int ")" ws						$"GVar"
-	| $id ws										$"0" $"GVar";
+	| $id ws										$$"0" $"GVar";
 
 string = $((!('"'-'"') '0x0'-'0xFFFF')*);
 

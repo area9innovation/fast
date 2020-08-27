@@ -55,7 +55,7 @@ gringoGrammar() -> GTerm {
 			gseq([GString("'"), GVar("char", 0), GString("'"), GString("-"), GString("'"), GVar("char", 0), GString("'"), ws]),
 			// id "=" term(0) ";"	// Binding
 			gseq([GVar("id", 0), ws, GString("="), ws, GVar("term", 1), GString(";"), ws, GVar("term", 2), 
-				GUnquote(GString("GBind"))
+				GUnquote(GString("GRule"))
 			]),
 			// id "(" int ")"		// Rule ref with power
 			gseq([GVar("id", 0), ws, GString("("), ws, GVar("int", 0), ws, GString(")"), ws, 
@@ -63,7 +63,7 @@ gringoGrammar() -> GTerm {
 			]),
 			// id					// Rule ref
 			gseq([GVar("id", 0), ws, 
-				GUnquote(GString("0")),
+				GUnquote(GUnquote(GString("0"))),
 				GUnquote(GString("GVar"))
 			])
 		]),

@@ -4,6 +4,7 @@ import gringo/gringo_parse;
 import gringo/expand;
 import gringo/left_recursion;
 import gringo/prefix;
+import gringo/gringo_ast_actions;
 
 main() {
 	grammar1 = 
@@ -26,11 +27,26 @@ main() {
 	text2 = if (true) "#include gringo/gringo2.gringo" else "!('\"'-'\"')";
 
 	// What example to run?
-	grammar = grammar2;
-	text = text2;
+	gringoGrammar = true;
+	grammar = if (gringoGrammar) grammar2 else grammar2;
+	text = if (gringoGrammar) text2 else text1;
 	verbose = false;
 
-	env = GringoEnv(text, makeTree(), 0, forthAction, "", false, verbose);
+	if (false) {
+		env1 = doGringoParse(grammar, forthAction, "", text, verbose);
+		println(env1.output);
+	}
+
+	if (true) {
+		env2 = doGringoParse(grammar, gringoAstAction, GringoAstAcc(GEpsilon(), makeList()), text, verbose);
+		println(gterm2string(env2.output.tree));
+	}
+
+	quit(0);
+}
+
+doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool) -> GringoEnv<?> {
+	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose);
 
 	if (false) {
 		println("Original:");
@@ -61,8 +77,8 @@ main() {
 		if (remaining != "") {
 			println("Did not parse: " + remaining);
 		}
-		println("Output:\n" + genv.output);
-
+		genv;
+	} else {
+		env;
 	}
-	quit(0);
 }

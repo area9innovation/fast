@@ -78,6 +78,10 @@ and then semantic actions are pushed as operations.
 Concretely, strings are written as "string" on a separate line, and then 
 operations are produced verbatim.
 
+	$"operation"	-> will call addVerbatim with "operation", but match epsilon
+	$$"fakematch"	-> will call addMatched with "fakematch", but match epsilon
+	$term			-> will call addMatched with the string matched by term
+
 ## TODO
 
 - Get the grammar for Gringo parsed and compiled instead
