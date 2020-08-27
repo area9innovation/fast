@@ -24,7 +24,7 @@ main() {
 	text1 = "if(1)3else4";
 
 	grammar2 = gringoGrammar();
-	text2 = if (false) "#include gringo/gringo2.gringo" else "a*";
+	text2 = if (true) "#include gringo/gringo2.gringo" else "'1'-'9'";
 
 	// What example to run?
 	gringoGrammar = true;

@@ -84,7 +84,7 @@ findExpanders(acc : Tree<string, Set<int>>, g : GTerm) -> Tree<string, Set<int>>
 		GPlus(term): findExpanders(acc, term);
 		GOpt(term): findExpanders(acc, term);
 		GNegate(term): findExpanders(acc, term);
-		GUnquote(term): acc;
+		GUnquote(term): findExpanders(acc, term);
 		GString(text): acc;
 		GRange(lower, upper): acc;
 		GVar(id, power): insertMultimap(acc, id, power);

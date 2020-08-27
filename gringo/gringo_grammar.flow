@@ -52,7 +52,10 @@ gringoGrammar() -> GTerm {
 				GUnquote(GString("GString"))
 			]),
 			// char "-" char			// Range
-			gseq([GString("'"), GVar("char", 0), GString("'"), GString("-"), GString("'"), GVar("char", 0), GString("'"), ws]),
+			gseq([GString("'"), GUnquote(GVar("char", 0)), GString("'"), GString("-"), 
+				GString("'"), GUnquote(GVar("char", 0)), GString("'"), ws, 
+				GUnquote(GString("GRange"))
+			]),
 			// id "=" term(0) ";"	// Binding
 			gseq([GVar("id", 0), ws, GString("="), ws, GVar("term", 1), GString(";"), ws, GVar("term", 2), 
 				GUnquote(GString("GRule"))

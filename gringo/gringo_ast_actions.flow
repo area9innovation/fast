@@ -56,6 +56,12 @@ export {
 				pstring = popAstStack(acc);
 				str = GString(gtermAsString(pstring.first));
 				pushAstStack(pstring.second, str);
+			} else if (v == "GRange") {
+				// GRange(lower : int, upper : int);
+				pupper = popAstStack(acc);
+				plower = popAstStack(pupper.second);
+				str = GRange(s2i(gtermAsString(plower.first)), s2i(gtermAsString(pupper.first)));
+				pushAstStack(plower.second, str);
 			} else {
 				println("TODO: Handle "+ v);
 				acc;
@@ -119,7 +125,6 @@ gtermAsString(g : GTerm) -> string {
 
 /*
 	GOpt(term : GTerm);
-	GRange(lower : int, upper : int);
 	GEpsilon();
 */
 
