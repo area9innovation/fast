@@ -42,7 +42,17 @@ main() {
 			gterm2string(getAstResult(acc))
 		});
 		env2 = doGringoParse(grammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose);
+
+		// OK, we have the result of our grammar. Try to parse using this one
+		resGrammar = getAstResult(env2.output);
 		println(gterm2string(getAstResult(env2.output)));
+
+		// env3 = doGringoParse(resGrammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose);
+
+		// println(gterm2string(getAstResult(env3.output)));
+
+		println(gterm2string(grammar));
+
 	}
 
 	quit(0);

@@ -87,15 +87,11 @@ operations are produced verbatim.
 - Get the grammar for Gringo parsed and compiled instead
   of hardcoded. I.e. replace gringo_grammar.flow to be 
   produced from gringo.gringo
-  - Add semantic actions that knows about GTerm constructs
-
-- Check that it works
+  - It seems right association does not work for GSeq and GChoice
 
 - Add error recovery
 
-- Add syntax requirement for the semantic actions, so we can statically
-  check that the outputs will comply with some syntax, such as flow values,
-  s-expressions, lisp, whatever you want to have as the output
+- Add JSON action output, parse flow types, and construct actions for that
 
 ## Inspiration
 
