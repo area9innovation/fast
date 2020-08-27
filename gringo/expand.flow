@@ -54,7 +54,7 @@ expandPowers(g : GTerm) -> GTerm {
 				setTree(acc2, rule + i2s(power), erule)
 			})
 		} : {
-			println("Unknown rule " + rule);
+			println("Unknown rule: " + rule);
 			acc;
 		}
 	});

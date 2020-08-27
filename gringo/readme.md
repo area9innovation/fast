@@ -87,7 +87,12 @@ operations are produced verbatim.
 - Get the grammar for Gringo parsed and compiled instead
   of hardcoded. I.e. replace gringo_grammar.flow to be 
   produced from gringo.gringo
-  - It seems right association does not work for GSeq and GChoice
+  - It seems right association does not work for GSeq and GChoice,
+    in particular, left-recursion optimization of 
+		e = ((e | b) | c) 
+	does not work.
+	It has to be 
+		e = (e | (b | c))
 
 - Add error recovery
 

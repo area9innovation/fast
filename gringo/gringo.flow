@@ -3,6 +3,7 @@ import gringo/gringo_grammar;
 import gringo/gringo_parse;
 import gringo/expand;
 import gringo/left_recursion;
+import gringo/right_assoc;
 import gringo/prefix;
 import gringo/gringo_ast_actions;
 
@@ -24,7 +25,7 @@ main() {
 	text1 = "if(1)3else4";
 
 	grammar2 = gringoGrammar();
-	text2 = if (true) "#include gringo/gringo2.gringo" else "'1'-'9'";
+	text2 = if (false) "#include gringo/gringo2.gringo" else "#include gringo/exp.gringo";
 
 	// What example to run?
 	gringoGrammar = true;
@@ -33,7 +34,7 @@ main() {
 	verbose = false;
 
 	if (false) {
-		env1 = doGringoParse(grammar, forthAction, "", text, verbose);
+		env1 = doGringoParse(grammar, forthAction, "", text, verbose, false);
 		println(env1.output);
 	}
 
@@ -41,24 +42,33 @@ main() {
 		debugAct = debugActions(gringoAstAction, \acc -> {
 			gterm2string(getAstResult(acc))
 		});
-		env2 = doGringoParse(grammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose);
+		env2 = doGringoParse(grammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose, false);
 
 		// OK, we have the result of our grammar. Try to parse using this one
 		resGrammar = getAstResult(env2.output);
 		println(gterm2string(getAstResult(env2.output)));
 
-		// env3 = doGringoParse(resGrammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose);
+		if (true) {
+			// OK, try to parse with the result
+			text3 = "1+2";
+			env3 = doGringoParse(resGrammar, forthAction, "", text3, false, true);
+			println(env3.output);
+		}
 
-		// println(gterm2string(getAstResult(env3.output)));
+		if (false) {
+			// OK, try to parse with the result
+			env3 = doGringoParse(resGrammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose);
+			println(gterm2string(getAstResult(env3.output)));
+		}
 
-		println(gterm2string(grammar));
+		// println(gterm2string(grammar));
 
 	}
 
 	quit(0);
 }
 
-doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool) -> GringoEnv<?> {
+doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool, debugGrammar : bool) -> GringoEnv<?> {
 	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose);
 
 	if (false) {
@@ -72,8 +82,9 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 		println(gterm2string(egrammar));
 	}
 	pgrammar = commonPrefix(egrammar);
-	lgrammar = rewriteLeftRecursion(pgrammar);
-	if (false) {
+	rgrammar = rightAssociateGTerm(pgrammar);
+	lgrammar = rewriteLeftRecursion(rgrammar);
+	if (debugGrammar) {
 		println("Fully optimized:");
 		println(gterm2string(lgrammar));
 	}
