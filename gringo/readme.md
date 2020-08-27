@@ -65,37 +65,27 @@ This is implemented by expanding the exp rule into exp1, exp2, exp3 and exp4
 rules appropriately nested. The result is then optimized in a number of ways,
 with the result being a correct and efficient grammar.
 
+## Actions
+
+The $<term> construct is used to produce semantic output. This will produce
+the matched output of the <term> as a string. As a special case, if you use
+$"string", it will produce the verbatim output "string" instead.
+
+These actions are defined through an event-based API. By default, we use a
+Forth-like output where the matched tokens are pushed on a stack as strings, 
+and then semantic actions are pushed as operations.
+
+Concretely, strings are written as "string" on a separate line, and then 
+operations are produced verbatim.
+
 ## TODO
 
 - Get the grammar for Gringo parsed and compiled instead
   of hardcoded. I.e. replace gringo_grammar.flow to be 
-  produced from gringo.gringo:
-   - Add semantic actions
+  produced from gringo.gringo
+  - Add semantic actions that knows about GTerm constructs
 
 - Check that it works
-
-- Redo semantic actions to a shorter form
-
-  - Using names as shortcuts for results:
-
-		| id "(" int ")"		{ Rule($int, $id) }
-
-  - Using the numbers as shortcuts for results:
-
-		exp(1) "||" exp(2)		{ ||($1, $2) }
-
-  - There is a problem with our rewrite rules, so we get
-
-	  term1 = term2 ("|" ws0 term2 { GChoice($term(1), $term(2)) })*;
-
-	Consequence: Maybe we should switch to a stack-based semantic
-	action metaphor, instead of binding style.
-	So the actions are just GUnquote, no GAction.
-	I.e. we can not produce prefix notation, only postfix notation.
-
-   We change Gringo to be event based, and then we can have default
-   event handlers that produce Forth, or others which take a type
-   definition of your AST, and produces an AST.
 
 - Add error recovery
 

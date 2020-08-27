@@ -30,7 +30,7 @@ main() {
 	text = text2;
 	verbose = false;
 
-	env = GringoEnv(text, makeTree(), 0, "", false, verbose);
+	env = GringoEnv(text, makeTree(), 0, forthAction, "", false, verbose);
 
 	if (false) {
 		println("Original:");

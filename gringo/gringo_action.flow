@@ -1,0 +1,13 @@
+import runtime;
+
+export {
+	GringoAction(
+		addVerbatim : (acc : ?, s : string) -> ?,
+		addMatched : (acc : ?, s : string) -> ?,
+	);
+
+	forthAction = GringoAction(
+		\output, v -> output + v + "\n",
+		\output, m -> output + toString(m) + "\n"
+	);
+}
