@@ -18,20 +18,22 @@ The (simplified) grammar for Gringo is given here:
 		| term(12) "?"			// Optional
 		| "!" term(0)			// Negation
 		| "(" term(0) ")" 		// Grouping
-		| "$" term              // Semantic action
+		| "$" term              // Unquoting
+		| "{" form+ "}"        // Semantic action
 		| string				// Constant string
 		| char "-" char			// Range
 		| id "(" int ")"		// Rule ref with power
 		| id					// Rule ref
 		;
 
+	form = "$" term | !("$" | "}" ) char;
+
 See `gringo.gringo` for the real grammar, with white-space handling.
 
 We might consider to add:
 
-		| term(13) ":" type		// Type annotation
 		| expect term string	// Construct for error recovery?
-		| "{" term+ "}"
+		| term(13) ":" type		// Type annotation
 
 ## Semantics
 
@@ -59,36 +61,9 @@ An example:
 This grammar makes sure that * binds closer than +, and that these binary
 operators are left associate.
 
-Parsing "1+3", we should get this trace:
-
-	exp(0) ->
-		exp(1) -> 
-			exp(1) is skipped, since power[exp] = 1, and 1 <= 1
-		
-			exp(3) -> int, fail at "*"
-			int -> int
-
-		"+" matches
-
-		exp(2) -> 
-			exp(3) -> int, fail at "*", since we have nothing
-			int -> int
-
-Parsing "1*3", we should get this trace:
-
-	exp(0) ->
-		exp(1) ->
-			exp(1) is skipped, since power[exp] = 1, and 1 <= 1
-			exp(3) -> int
-			"*"
-			exp(4) ->
-				exp(1) is skipped, since power[exp] = 4, and 1 <= 4
-				exp(3) is skipped, since power[exp] = 4, and 3 <= 4
-				int -> int
-
-Parsing "1*2+3", we should get this trace:
-
-	- TODO: Add the trace
+This is implemented by expanding the exp rule into exp1, exp2, exp3 and exp4
+rules appropriately nested. The result is then optimized in a number of ways,
+with the result being a correct and efficient grammar.
 
 ## TODO
 
