@@ -39,6 +39,12 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 			);
 			gringoParse(nenv, body);
 		}
+		GPrecedence(left, right): {
+			lenv = gringoParse(env,left);
+			if (lenv.fail) {
+				gringoParse(env, right);
+			} else lenv
+		}
 		GChoice(left, right): {
 			lenv = gringoParse(env,left);
 			if (lenv.fail) {

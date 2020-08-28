@@ -7,6 +7,18 @@ export {
 
 rightAssociateGTerm(g : GTerm) -> GTerm {
 	switch (g) {
+		GPrecedence(a, b): {
+			ra = rightAssociateGTerm(a);
+			rb = rightAssociateGTerm(b);
+			switch (ra) {
+				GPrecedence(ra0, ra1): {
+					GPrecedence(ra0, rightAssociateGTerm(GChoice(ra1, rb)));
+				}
+				default: {
+					GPrecedence(ra, rb);
+				}
+			}
+		}
 		GChoice(a, b): {
 			ra = rightAssociateGTerm(a);
 			rb = rightAssociateGTerm(b);

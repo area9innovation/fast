@@ -100,6 +100,7 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 			acc;
 		}
 
+		GPrecedence(left, right): ruleDependencies(ruleDependencies(acc, left), right);
 		GChoice(left, right): ruleDependencies(ruleDependencies(acc, left), right);
 		GSeq(left, right): ruleDependencies(ruleDependencies(acc, left), right);
 		GStar(term): ruleDependencies(acc, term);
@@ -124,6 +125,7 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 				GRule(id, term, nbody)
 			}
 		}
+		GPrecedence(left, right): g;
 		GChoice(left, right): g;
 		GSeq(left, right): {
 			lrule = getGRule(left);

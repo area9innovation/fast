@@ -19,6 +19,12 @@ export {
 				pleft = popAstStack(pright.second);
 				seq = GSeq(pleft.first, pright.first);
 				pushAstStack(pleft.second, seq);
+			} else if (v == "GPrecedence") {
+				// GPrecedence(left : GTerm, right : GTerm);
+				pright = popAstStack(acc);
+				pleft = popAstStack(pright.second);
+				choice = GPrecedence(pleft.first, pright.first);
+				pushAstStack(pleft.second, choice);
 			} else if (v == "GChoice") {
 				// GChoice(left : GTerm, right : GTerm);
 				pright = popAstStack(acc);
