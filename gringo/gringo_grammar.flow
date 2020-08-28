@@ -8,7 +8,7 @@ export {
 gringoGrammar() -> GTerm {
 	ws = GVar("ws");
 	GRule("term", 
-		gchoices([
+		gprecedences([
 			// term "|>" term	// Choice
 			gseq([GVar("term"), GString("|>"), ws, GVar("term"), 
 				GUnquote(GString("GPrecedence"))

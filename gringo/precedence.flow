@@ -1,0 +1,46 @@
+import gringo/gringo_ast;
+import gringo/utils;
+import math/math;
+
+export {
+	/*
+		e = e tail e |> rest;
+		->
+		e = e1 tail e1 | e1;
+		e1 = rest;
+	*/
+	expandPrecedence(g : GTerm) -> GTerm;
+}
+
+expandPrecedence(g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(id, term, body): {
+			expandPrecedenceInRule(id, term, expandPrecedence(body), 0);
+		}
+		default: g;
+	}
+}
+
+// e = <term> -> e0 = <term>
+expandPrecedenceInRule(id : string, term : GTerm, body : GTerm, level : int) -> GTerm {
+	switch (term) {
+		GPrecedence(left, right): {
+			newid = id + (if (level == 0) "" else i2s(level));
+			nextid = id + i2s(level + 1);
+			nleft = replaceTerm(GVar(id), GVar(nextid), "", left);
+			GRule(newid, 
+				GChoice(
+					nleft, 
+					GVar(nextid)
+				),
+				expandPrecedenceInRule(id, right, body, level + 1)
+			)
+		}
+		default: {
+			newid = id + (if (level == 0) "" else i2s(level));
+			GRule(newid, term, 
+				body
+			)
+		}
+	}
+}

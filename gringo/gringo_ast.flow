@@ -21,8 +21,19 @@ export {
 	GVar(id : string);
 	GEpsilon();
 
+	gprecedences(rt : [GTerm]) -> GTerm;
 	gchoices(rt : [GTerm]) -> GTerm;
 	gseq(rt : [GTerm]) -> GTerm;
+}
+
+gprecedences(rt : [GTerm]) -> GTerm {
+	if (rt == []) GEpsilon()
+	else {
+		t = reverseA(rt);
+		fold(tail(t), t[0], \acc, tt -> {
+			GPrecedence(tt, acc)
+		})
+	}
 }
 
 gchoices(rt : [GTerm]) -> GTerm {

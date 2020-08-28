@@ -12,10 +12,12 @@ rightAssociateGTerm(g : GTerm) -> GTerm {
 			rb = rightAssociateGTerm(b);
 			switch (ra) {
 				GPrecedence(ra0, ra1): {
-					GPrecedence(ra0, rightAssociateGTerm(GChoice(ra1, rb)));
+					// If these survived, we did something wrong earlier
+					GChoice(ra0, rightAssociateGTerm(GChoice(ra1, rb)));
 				}
 				default: {
-					GPrecedence(ra, rb);
+					// If these survived, we did something wrong earlier
+					GChoice(ra, rb);
 				}
 			}
 		}

@@ -99,6 +99,9 @@ operations are produced verbatim.
 - OK, we have strange loops with the number system, so we have to do
   different operators instead:
 		|>   for precedence increase
+
+  Implement this kind of expansion.
+
 		*()  for left-associative star
 		+()  for left-associative plus
 

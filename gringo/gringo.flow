@@ -1,7 +1,7 @@
 import gringo/gringo_pretty;
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
-// import gringo/expand;
+import gringo/precedence;
 import gringo/cse;
 import gringo/left_recursion;
 import gringo/right_assoc;
@@ -9,41 +9,47 @@ import gringo/prefix;
 import gringo/gringo_ast_actions;
 
 main() {
-	grammar1 = 
-		GRule("exp", 
-			gchoices([
-				gseq([GVar("exp"), GString("+"), GVar("exp"), GUnquote(GString("+"))]),
-				gseq([GVar("exp"), GString("-"), GVar("exp"), GUnquote(GString("-"))]),
-				gseq([GVar("exp"), GString("*"), GVar("exp"), GUnquote(GString("*"))]),
-				gseq([GVar("exp"), GString("/"), GVar("exp"), GUnquote(GString("/"))]),
-				gseq([GString("-"), GVar("exp"), GUnquote(GString("neg"))]),
-				gseq([GString("("), GVar("exp"), GString(")"), GUnquote(GString("par"))]),
-				gseq([GString("if"), GVar("exp"), GVar("exp"), GString("else"), GVar("exp"), GUnquote(GString("ifelse"))]),
-				GUnquote(GPlus(GRange(48, 57))),
-			]),
-			GVar("exp")
-		);
-	text1 = "if(1)3else4";
-
-	grammar2 = gringoGrammar();
-	text2 = if (false) "#include gringo/gringo2.gringo" else "#include gringo/exp.gringo";
-
-	// What example to run?
-	gringoGrammar = true;
-	grammar = if (gringoGrammar) grammar2 else grammar2;
-	text = if (gringoGrammar) text2 else text1;
 	verbose = false;
 
-	if (false) {
-		env1 = doGringoParse(grammar, forthAction, "", text, verbose, false);
+	if (true) {
+		grammar1 = 
+			GRule("exp", 
+				gprecedences([
+					// TODO: Combine
+					gseq([GVar("exp"), GPlus(
+						gseq([GString("+"), GVar("exp"), GUnquote(GString("+"))])
+					)]),
+					gseq([GVar("exp"), GPlus(
+						gseq([GString("-"), GVar("exp"), GUnquote(GString("-"))])
+					)]),
+					// TODO: Combine
+					gseq([GVar("exp"), GPlus(
+						gseq([GString("*"), GVar("exp"), GUnquote(GString("*"))])
+					)]),
+					gseq([GVar("exp"), GPlus(
+						gseq([GString("/"), GVar("exp"), GUnquote(GString("/"))])
+					)]),
+					gseq([GString("-"), GVar("exp"), GUnquote(GString("neg"))]),
+					gseq([GString("("), GVar("exp"), GString(")"), GUnquote(GString("par"))]),
+					gseq([GString("if"), GVar("exp"), GVar("exp"), GString("else"), GVar("exp"), GUnquote(GString("ifelse"))]),
+					GUnquote(GPlus(GRange(48, 57))),
+				]),
+				GVar("exp")
+			);
+		text1 = "1+2+3";
+
+		env1 = doGringoParse(grammar1, forthAction, "", text1, verbose, false);
 		println(env1.output);
 	}
 
-	if (true) {
+	if (false) {
+		grammar2 = gringoGrammar();
+		text2 = if (false) "#include gringo/gringo2.gringo" else "#include gringo/exp.gringo";
+
 		debugAct = debugActions(gringoAstAction, \acc -> {
 			gterm2string(getAstResult(acc))
 		});
-		env2 = doGringoParse(grammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose, false);
+		env2 = doGringoParse(grammar2, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text2, verbose, false);
 
 		// OK, we have the result of our grammar. Try to parse using this one
 		resGrammar = getAstResult(env2.output);
@@ -58,7 +64,7 @@ main() {
 
 		if (false) {
 			// OK, try to parse with the result
-			env3 = doGringoParse(resGrammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text, verbose, false);
+			env3 = doGringoParse(resGrammar, if (true) gringoAstAction else debugAct, GringoAstAcc(makeList()), text2, verbose, false);
 			println(gterm2string(getAstResult(env3.output)));
 		}
 
@@ -77,7 +83,13 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 		println(gterm2string(grammar));
 	}
 
-	egrammar = reduceCommon(grammar); //expandPowers(grammar);
+	prgrammar = expandPrecedence(grammar);
+	if (true) {
+		println("Precedence:");
+		println(gterm2string(prgrammar));
+	}
+
+	egrammar = reduceCommon(prgrammar); //expandPowers(grammar);
 	if (false) {
 		println("Expanded:");
 		println(gterm2string(egrammar));
@@ -87,7 +99,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 	lgrammar = rewriteLeftRecursion(rgrammar);
 	// Do CSE again
 	ogrammar = reduceCommon(lgrammar);
-	if (debugGrammar) {
+	if (true) {
 		println("Fully optimized:");
 		println(gterm2string(ogrammar));
 	}
