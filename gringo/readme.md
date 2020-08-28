@@ -11,6 +11,7 @@ written.
 The (simplified) grammar for Gringo is given here:
 
 	term = id "=" term(0) ";"	// Binding
+		| term(1) "|>" term(2)	// Precedence-based choice
 		| term(1) "|" term(2)	// Choice
 		| term(10) term(11)		// Sequence
 		| term(12) "*"			// 0 or more
@@ -19,14 +20,10 @@ The (simplified) grammar for Gringo is given here:
 		| "!" term(0)			// Negation
 		| "(" term(0) ")" 		// Grouping
 		| "$" term              // Unquoting
-		| "{" form+ "}"        // Semantic action
 		| string				// Constant string
 		| char "-" char			// Range
-		| id "(" int ")"		// Rule ref with power
 		| id					// Rule ref
 		;
-
-	form = "$" term | !("$" | "}" ) char;
 
 See `gringo.gringo` for the real grammar, with white-space handling.
 
@@ -37,33 +34,34 @@ We might consider to add:
 
 ## Semantics
 
-A gringo program takes a string, and produces a new string.
+A gringo program takes a string, and produces a sequence of events based
+on a stack-based action semantics. It will call the events as a stack of 
+matched strings and operations from unquotes. This can be used to construct
+an AST or a post-fix forth style program that builds an AST.
 
 ## Handling precedence and associativity
 
-The numbers after ids are used to handle the precedence and associativity.
-We use a scheme inspired by the approach in 
+The precedence is handled using the |> operator.
 
-	https://matklad.github.io//2020/04/13/simple-but-powerful-pratt-parsing.html
+	e = e ("+" e)+
+		|> e ("*" e)+
+		|> int;
+	e
+	
+is a short-hand syntax for this grammar:
 
-where we use binding power to define precendence and associativity. This is
-generalized to work for all constructs. 
+	e = e1 ("+" e1)+ | e1;
+	e1 = e2 ("*" e2)+ | e2;
+	e2 = int;
+	e
 
-An example:
+and thus provides a short syntax for the common definition of precedence.
 
-	exp = exp(1) "+" exp(2)
-		| exp(3) "*" exp(4)
-		| int;
-	int = '0'-'9';
-	// "Invoke" the parser at the end
-	exp;
+TODO: We want to introduce a prefix + and prefix * to be used for
+left-associate semantic matching.
 
-This grammar makes sure that * binds closer than +, and that these binary
-operators are left associate.
-
-This is implemented by expanding the exp rule into exp1, exp2, exp3 and exp4
-rules appropriately nested. The result is then optimized in a number of ways,
-with the result being a correct and efficient grammar.
+So "1+2+3" should result in a trace like "1 2 3 + +", rather than "1 2 + 3 +"
+which is produced with the right-associative +.
 
 ## Actions
 
@@ -96,11 +94,8 @@ operations are produced verbatim.
 
 - Add error message when we have left recursion deep inside a choice
 
-- OK, we have strange loops with the number system, so we have to do
-  different operators instead:
-		|>   for precedence increase
-
-  Implement this kind of expansion.
+- We have to do the other associative sequences to be able to get the
+  correct Gringo grammar to work
 
 		*()  for left-associative star
 		+()  for left-associative plus
@@ -117,42 +112,31 @@ https://mpickering.github.io/papers/parsley-icfp.pdf
 Adding error recovery:
 https://www.eyalkalderon.com/nom-error-recovery/
 
+We did try a scheme for precedence and associativy inspired by the approach in
+
+	https://matklad.github.io//2020/04/13/simple-but-powerful-pratt-parsing.html
+
+but it turned out to not work well, so we changed to the |> operator instead.
+
 ## Expression grammar
 
 Here is an example expression grammar that matches C
 associativity and precedence.
 
-	exp = 
-		// Bin ops
-		exp(1) "||" exp(2)
-		| exp(3) "&&" exp(4)
-
-		| exp(5) "==" exp(6)
-		| exp(5) "!=" exp(6)
-
-		| exp(7) "<=" exp(8)
-		| exp(7) "<" exp(8)
-		| exp(7) ">=" exp(8)
-		| exp(7) ">" exp(8)
-
-		| exp(9) "+" exp(10)
-		| exp(9) "-" exp(10)
-
-		| exp(11) "*" exp(12)
-		| exp(11) "/" exp(12)
-		| exp(11) "%" exp(12)
-
-		| exp(13) ":" type(0)
-
-		// Prefix
-		| "-" exp(14)
-		| "if" exp(0) exp(2) "else" exp(1)
-		| "if" exp(0) exp(1)
-
-		// Postfix
-		| exp(14) "[" exp(0) "]"
-		| exp(15) "." exp(14)		// Right associative
-
-		| exp(15) "?" exp(0) ":" exp(14)	
+	exp = exp "||" exp $"||"
+		|> exp "&&" exp $"&&"
+		|> exp "==" exp $"==" | exp "!=" exp $"!="
+		|> exp ("<=" | "<" | ">=" | ">") exp
+		|> exp *("+" exp $"+" | "-" exp $"-")
+		|> exp *("*" exp $"*" | "/" exp $"/" | "%" exp $"%")
+		|> exp ("[" exp "]" $"index")+	// Right associative
+		|> exp ("." exp $"dot")+		// Right associative
+		|> exp "?" exp ":" exp $"ifelse"
+		|> 
+			"(" exp ")"
+			| "-" exp $"negate"
+			| "if" exp exp "else" exp $"ifelse" 
+			| "if" exp exp $"if"
+			| $('0x30'-'0x39'+)
 		;
-
+		exp
