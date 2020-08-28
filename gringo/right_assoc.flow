@@ -39,7 +39,7 @@ rightAssociateGTerm(g : GTerm) -> GTerm {
 		GUnquote(term): GUnquote(rightAssociateGTerm(term));
 		GString(text): g;
 		GRange(lower, upper): g;
-		GVar(id, power): g;
+		GVar(id): g;
 		GEpsilon(): g;
 	}
 }

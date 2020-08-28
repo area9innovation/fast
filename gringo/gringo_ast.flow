@@ -13,7 +13,7 @@ export {
 	GUnquote(term : GTerm);	// Produces the matched output, except for GString, which is literally written out
 	GString(text : string);
 	GRange(lower : int, upper : int);
-	GVar(id : string, power : int);
+	GVar(id : string);
 	GEpsilon();
 
 	gchoices(rt : [GTerm]) -> GTerm;

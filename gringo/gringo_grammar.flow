@@ -6,38 +6,42 @@ export {
 }
 
 gringoGrammar() -> GTerm {
-	ws = GVar("ws", 0);
+	ws = GVar("ws");
 	GRule("term", 
 		gchoices([
-			// term(1) "|" term(2)	// Choice
-			gseq([GVar("term", 1), GString("|"), ws, GVar("term", 2), 
+			// term "|>" term	// Choice
+			gseq([GVar("term"), GString("|>"), ws, GVar("term"), 
+				GUnquote(GString("GPrecedence"))
+			]),
+			// term "|" term	// Choice
+			gseq([GVar("term"), GString("|"), ws, GVar("term"), 
 				GUnquote(GString("GChoice"))
 			]),
-			// term(10) term(11)		// Sequence
-			gseq([GVar("term", 10), GVar("term", 11), 
+			// term term		// Sequence
+			gseq([GVar("term"), GVar("term"), 
 				GUnquote(GString("GSeq"))
 			]),
-			// term(12) "*"			// 0 or more
-			gseq([GVar("term", 12), GString("*"), ws, 
+			// term "*"			// 0 or more
+			gseq([GVar("term"), GString("*"), ws, 
 				GUnquote(GString("GStar"))
 			]),
-			// term(12) "+"			// One or more
-			gseq([GVar("term", 12), GString("+"), ws, 
+			// term "+"			// One or more
+			gseq([GVar("term"), GString("+"), ws, 
 				GUnquote(GString("GPlus"))
 			]),
-			// term(12) "?"			// Optional
-			gseq([GVar("term", 12), GString("?"), ws, 
+			// term "?"			// Optional
+			gseq([GVar("term"), GString("?"), ws, 
 				GUnquote(GString("GOpt"))
 			]),
-			//	| term(13) ":" type		// Type annotation
-			// "!" term(0)			// Negation
-			gseq([GString("!"), ws, GVar("term", 0), 
+			//	| term ":" type		// Type annotation
+			// "!" term			// Negation
+			gseq([GString("!"), ws, GVar("term"), 
 				GUnquote(GString("GNegate"))
 			]),
-			// "(" term(0) ")" 		// Grouping
-			gseq([GString("("), ws, GVar("term", 0), GString(")"), ws]),
-			// "$" term(15)
-			gseq([GString("$"), ws, GVar("term", 15), 
+			// "(" term ")" 		// Grouping
+			gseq([GString("("), ws, GVar("term"), GString(")"), ws]),
+			// "$" term
+			gseq([GString("$"), ws, GVar("term"), 
 				GUnquote(GString("GUnquote"))
 			]),
 
@@ -52,21 +56,16 @@ gringoGrammar() -> GTerm {
 				GUnquote(GString("GString"))
 			]),
 			// char "-" char			// Range
-			gseq([GString("'"), GUnquote(GVar("char", 0)), GString("'"), GString("-"), 
-				GString("'"), GUnquote(GVar("char", 0)), GString("'"), ws, 
+			gseq([GString("'"), GUnquote(GVar("char")), GString("'"), GString("-"), 
+				GString("'"), GUnquote(GVar("char")), GString("'"), ws, 
 				GUnquote(GString("GRange"))
 			]),
-			// id "=" term(0) ";"	// Binding
-			gseq([GVar("id", 0), ws, GString("="), ws, GVar("term", 1), GString(";"), ws, GVar("term", 2), 
+			// id "=" term ";"	// Binding
+			gseq([GVar("id"), ws, GString("="), ws, GVar("term"), GString(";"), ws, GVar("term"), 
 				GUnquote(GString("GRule"))
 			]),
-			// id "(" int ")"		// Rule ref with power
-			gseq([GVar("id", 0), ws, GString("("), ws, GVar("int", 0), ws, GString(")"), ws, 
-				GUnquote(GString("GVar"))
-			]),
 			// id					// Rule ref
-			gseq([GVar("id", 0), ws, 
-				GUnquote(GUnquote(GString("0"))),
+			gseq([GVar("id"), ws, 
 				GUnquote(GString("GVar"))
 			])
 		]),
@@ -80,7 +79,7 @@ gringoGrammar() -> GTerm {
 		GRule("int", GUnquote(GPlus(
 			GRange(48, 57)
 		)),
-		GRule("char", GChoice(GSeq(GString("0x"), GPlus(GVar("hexdigit", 0))), GRange(0, 0xffff)),
+		GRule("char", GChoice(GSeq(GString("0x"), GPlus(GVar("hexdigit"))), GRange(0, 0xffff)),
 
 		GRule("hexdigit", gchoices([
 			GRange(65, 70),
@@ -88,18 +87,18 @@ gringoGrammar() -> GTerm {
 			GRange(48, 57)
 		]),
 
-		GRule("ws", GStar(GVar("s", 0)),
+		GRule("ws", GStar(GVar("s")),
 
 		GRule("s", gchoices([GString(" "), GString("\t"), GString("\n")]),
 
 		GRule("grammar", 
 			gseq([
-				GVar("ws", 0),
-				GVar("term", 0)
+				GVar("ws"),
+				GVar("term")
 			]),
 
 		// Parse a term!
-		GVar("grammar", 0)
+		GVar("grammar")
 		
 		))))))
 	));

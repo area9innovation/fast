@@ -96,6 +96,12 @@ operations are produced verbatim.
 
 - Add error message when we have left recursion deep inside a choice
 
+- OK, we have strange loops with the number system, so we have to do
+  different operators instead:
+		|>   for precedence increase
+		*()  for left-associative star
+		+()  for left-associative plus
+
 - Add error recovery
 
 - Add JSON action output, parse flow types, and construct actions for that

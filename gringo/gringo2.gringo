@@ -1,14 +1,14 @@
-term = term(1) "|" ws term(2) 						$"GChoice"
-	| term(12) term(11)								$"GSeq"
-	| term(12) "*" ws								$"GStar"
-	| term(12) "+" ws								$"GPlus"
-	| term(12) "?" ws								$"GOpt"
+term = term "|" ws term 						$"GChoice"
+	| term term								$"GSeq"
+	| term "*" ws								$"GStar"
+	| term "+" ws								$"GPlus"
+	| term "?" ws								$"GOpt"
 	| "!" ws term									$"GNegate"
 	| "(" ws term ")" ws							
-	| "$" ws term(15)								$"GUnquote"
+	| "$" ws term								$"GUnquote"
 	| ('0x22'-'0x22') string ('0x22'-'0x22') ws 	$"GString"
 	| "'" char "'" ws "-" ws "'" char "'" ws	$"GRange"
-	| id ws "=" ws term(1) ";" ws term(2)			$"GRule"
+	| id ws "=" ws term ";" ws term			$"GRule"
 	| id ws "(" ws int ")" ws						$"GVar"
 	| id ws										$$"0" $"GVar";
 

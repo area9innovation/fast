@@ -29,7 +29,7 @@ gterm2string(g : GTerm) -> string {
 			}
 			"'" + c(lower) + "'-'" + c(upper) + "'"
 		}
-		GVar(id, power): id + if (power != 0) "(" + i2s(power) + ")" else "";
+		GVar(id): id;
 		GEpsilon(): "<epsilon>";
 	}
 }

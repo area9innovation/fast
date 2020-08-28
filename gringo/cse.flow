@@ -35,12 +35,22 @@ reduceCommon(g : GTerm) -> GTerm {
 
 	// Do CSE of the rules in this order
 	reduced = fold(order, g, \acc, rule -> {
-		mterm = findRule(rule, acc);
+		mterm : Maybe<GTerm> = findRule(rule, acc);
 		mterm ?? {
+			term : GTerm = mterm;
 			// Replace the occurrences of the term of a rule with the name to compress it
-			// println(rule + " is ");
-			// println(gterm2string(mterm));
-			replaceTerm(mterm, GVar(rule, 0), rule, acc)
+			// println(rule + " is " + gterm2string(mterm));
+			switch (term) {
+				GVar(r): {
+					// It is just a basic assignment.
+					// Let us rewrite to avoid referencing the identity rules
+					replaceTerm(GVar(rule), term, rule, acc)
+				}
+				default: {
+					// Replace the occurrences of the term of a rule with the name to compress it
+					replaceTerm(term, GVar(rule), rule, acc)
+				}
+			}
 		} : acc
 	});
 
@@ -49,30 +59,8 @@ reduceCommon(g : GTerm) -> GTerm {
 		println(gterm2string(reduced));
 	}
 
-	// Next, find identity rules and "inline" such references
-
-	inlined = fold(order, reduced, \acc, rule -> {
-		mterm = findRule(rule, acc);
-		mterm ?? {
-			switch (mterm) {
-				GVar(r, p): {
-					// It is just a basic assignment.
-					// println("Rewrite inlining " + rule);
-					// Let us rewrite to avoid referencing the identity rules
-					replaceTerm(GVar(rule, 0), mterm, rule, acc)
-				}
-				default: acc;
-			}
-		} : acc;
-	});
-
-	if (false) {
-		println("After renaming for inlining:");
-		println(gterm2string(inlined));
-	}
-
 	// Finally, do dead code elimination, where identity rules (and other dead rules) will be removed
-	deadCodeElimination(inlined);
+	deadCodeElimination(reduced);
 }
 
 // Remove all dead rules
@@ -121,7 +109,7 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 		GUnquote(term): ruleDependencies(acc, term);
 		GString(text): acc;
 		GRange(lower, upper): acc;
-		GVar(id, power): insertSet(acc, id);
+		GVar(id): insertSet(acc, id);
 		GEpsilon(): acc;
 	}
 }
@@ -161,7 +149,7 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 		GUnquote(term): g;
 		GString(text): g;
 		GRange(lower, upper): g;
-		GVar(id, power): g;
+		GVar(id): g;
 		GEpsilon(): g;
 	}
 }

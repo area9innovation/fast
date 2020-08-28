@@ -46,10 +46,9 @@ export {
 				unquote = GNegate(pterm.first);
 				pushAstStack(pterm.second, unquote);
 			} else if (v == "GVar") {
-				// GVar(id : string, power : int);
-				ppower = popAstStack(acc);
-				pid = popAstStack(ppower.second);
-				var = GVar(gtermAsString(pid.first), s2i(gtermAsString(ppower.first)));
+				// GVar(id : string);
+				pid = popAstStack(acc);
+				var = GVar(gtermAsString(pid.first));
 				pushAstStack(pid.second, var);
 			} else if (v == "GString") {
 				// GString(text : string);

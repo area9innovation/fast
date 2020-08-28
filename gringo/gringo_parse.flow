@@ -117,8 +117,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 				GringoEnv(env with fail = true)
 			}
 		}
-		GVar(id, power): {
-			// If the power of this id is <= the power in our tree, abort
+		GVar(id): {
 			mterm = lookupTree(env.names, id);
 			mterm ?? {
 				oindent = ^indent;
