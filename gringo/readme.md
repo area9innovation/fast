@@ -100,6 +100,16 @@ operations are produced verbatim.
 		*()  for left-associative star
 		+()  for left-associative plus
 
+  We could do this rewrite:
+	(a $)+ ->
+	( let t = ((a $) t | (a $)) in t)
+
+  It seems we can do this rewrite:
+	+(a $) ->
+	( let t = (a t $ | a $) in t)
+	==
+	( let t = (a (t $)? ) in t )
+
 - Add error recovery
 
 - Add JSON action output, parse flow types, and construct actions for that
