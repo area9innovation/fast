@@ -15,28 +15,32 @@ main() {
 		grammar1 = 
 			GRule("exp", 
 				gprecedences([
-					// TODO: Combine
-					gseq([GVar("exp"), GPlus(
-						gseq([GString("+"), GVar("exp"), GUnquote(GString("+"))])
-					)]),
-					gseq([GVar("exp"), GPlus(
-						gseq([GString("-"), GVar("exp"), GUnquote(GString("-"))])
-					)]),
-					// TODO: Combine
-					gseq([GVar("exp"), GPlus(
-						gseq([GString("*"), GVar("exp"), GUnquote(GString("*"))])
-					)]),
-					gseq([GVar("exp"), GPlus(
-						gseq([GString("/"), GVar("exp"), GUnquote(GString("/"))])
-					)]),
-					gseq([GString("-"), GVar("exp"), GUnquote(GString("neg"))]),
-					gseq([GString("("), GVar("exp"), GString(")"), GUnquote(GString("par"))]),
-					gseq([GString("if"), GVar("exp"), GVar("exp"), GString("else"), GVar("exp"), GUnquote(GString("ifelse"))]),
-					GUnquote(GPlus(GRange(48, 57))),
+					gseq([GVar("exp"), 
+						GPlus(
+							GChoice(
+								gseq([GString("+"), GVar("exp"), GUnquote(GString("+"))]),
+								gseq([GString("-"), GVar("exp"), GUnquote(GString("-"))])
+							)
+						)
+					]),
+					gseq([GVar("exp"), 
+						GPlus(
+							GChoice(
+								gseq([GString("*"), GVar("exp"), GUnquote(GString("*"))]),
+								gseq([GString("/"), GVar("exp"), GUnquote(GString("/"))])
+							)
+						)
+					]),
+					gchoices([
+						gseq([GString("-"), GVar("exp"), GUnquote(GString("neg"))]),
+						gseq([GString("("), GVar("exp"), GString(")"), GUnquote(GString("par"))]),
+						gseq([GString("if"), GVar("exp"), GVar("exp"), GString("else"), GVar("exp"), GUnquote(GString("ifelse"))]),
+						GUnquote(GPlus(GRange(48, 57))),
+					])
 				]),
 				GVar("exp")
 			);
-		text1 = "1+2+3";
+		text1 = "1+2+3-4+5-6";
 
 		env1 = doGringoParse(grammar1, forthAction, "", text1, verbose, false);
 		println(env1.output);
@@ -84,7 +88,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 	}
 
 	prgrammar = expandPrecedence(grammar);
-	if (true) {
+	if (false) {
 		println("Precedence:");
 		println(gterm2string(prgrammar));
 	}

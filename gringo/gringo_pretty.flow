@@ -14,7 +14,7 @@ gterm2string(g : GTerm) -> string {
 		GChoice(left, right): "(" + gterm2string(left) + " | " + gterm2string(right) + ")";
 		GSeq(left, right): gterm2string(left) + " " + gterm2string(right);
 		GStar(term): "(" + gterm2string(term) + ")*";
-		GPlus(term): gterm2string(term) + "+";
+		GPlus(term): "(" + gterm2string(term) + ")+";
 		GOpt(term): gterm2string(term) + "?";
 		GNegate(term): "!" + gterm2string(term);
 		GUnquote(term): "$" + gterm2string(term);
