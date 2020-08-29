@@ -10,20 +10,33 @@ gringoGrammar() -> GTerm {
 	GRule("term", 
 		gprecedences([
 			// term "|>" term	// Choice
-			gseq([GVar("term"), GString("|>"), ws, GVar("term"), 
-				GUnquote(GString("GPrecedence"))
+			gseq([GVar("term"), 
+				GPlus(
+					gseq([
+						GString("|>"), ws, GVar("term"), GUnquote(GString("GPrecedence"))
+					])
+				)
 			]),
 			// term "|" term	// Choice
-			gseq([GVar("term"), GString("|"), ws, GVar("term"), 
-				GUnquote(GString("GChoice"))
+			gseq([GVar("term"), 
+				GPlus(
+					gseq([
+						GString("|"), ws, GVar("term"), GUnquote(GString("GChoice"))
+					])
+				)
 			]),
 			// term term		// Sequence
-			gseq([GVar("term"), GVar("term"), 
-				GUnquote(GString("GSeq"))
+			gseq([GVar("term"), 
+				GPlus(
+					GSeq(
+						GVar("term"), 
+						GUnquote(GString("GSeq"))
+					)
+				)
 			]),
 			// term "*"			// 0 or more
-			gseq([GVar("term"), GString("*"), ws, 
-				GUnquote(GString("GStar"))
+			gseq([GVar("term"), 
+				GString("*"), ws, GUnquote(GString("GStar"))
 			]),
 			// term "+"			// One or more
 			gseq([GVar("term"), GString("+"), ws, 
@@ -34,39 +47,42 @@ gringoGrammar() -> GTerm {
 				GUnquote(GString("GOpt"))
 			]),
 			//	| term ":" type		// Type annotation
-			// "!" term			// Negation
-			gseq([GString("!"), ws, GVar("term"), 
-				GUnquote(GString("GNegate"))
-			]),
-			// "(" term ")" 		// Grouping
-			gseq([GString("("), ws, GVar("term"), GString(")"), ws]),
-			// "$" term
-			gseq([GString("$"), ws, GVar("term"), 
-				GUnquote(GString("GUnquote"))
-			]),
 
-			// string				// Constant string
-			gseq([GString("\""), GUnquote(GStar(
-					GSeq(
-						GNegate(GString("\"")),
-						GRange(0, 0xffff)
-					)
-				)),
-				GString("\""), ws,
-				GUnquote(GString("GString"))
-			]),
-			// char "-" char			// Range
-			gseq([GString("'"), GUnquote(GVar("char")), GString("'"), GString("-"), 
-				GString("'"), GUnquote(GVar("char")), GString("'"), ws, 
-				GUnquote(GString("GRange"))
-			]),
-			// id "=" term ";"	// Binding
-			gseq([GVar("id"), ws, GString("="), ws, GVar("term"), GString(";"), ws, GVar("term"), 
-				GUnquote(GString("GRule"))
-			]),
-			// id					// Rule ref
-			gseq([GVar("id"), ws, 
-				GUnquote(GString("GVar"))
+			gchoices([
+				// "!" term			// Negation
+				gseq([GString("!"), ws, GVar("term"), 
+					GUnquote(GString("GNegate"))
+				]),
+				// "(" term ")" 		// Grouping
+				gseq([GString("("), ws, GVar("term"), GString(")"), ws]),
+				// "$" term
+				gseq([GString("$"), ws, GVar("term"), 
+					GUnquote(GString("GUnquote"))
+				]),
+
+				// string				// Constant string
+				gseq([GString("\""), GUnquote(GStar(
+						GSeq(
+							GNegate(GString("\"")),
+							GRange(0, 0xffff)
+						)
+					)),
+					GString("\""), ws,
+					GUnquote(GString("GString"))
+				]),
+				// char "-" char			// Range
+				gseq([GString("'"), GUnquote(GVar("char")), GString("'"), GString("-"), 
+					GString("'"), GUnquote(GVar("char")), GString("'"), ws, 
+					GUnquote(GString("GRange"))
+				]),
+				// id "=" term ";"	// Binding
+				gseq([GVar("id"), ws, GString("="), ws, GVar("term"), GString(";"), ws, GVar("term"), 
+					GUnquote(GString("GRule"))
+				]),
+				// id					// Rule ref
+				gseq([GVar("id"), ws, 
+					GUnquote(GString("GVar"))
+				])
 			])
 		]),
 

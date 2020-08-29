@@ -11,7 +11,7 @@ import gringo/gringo_ast_actions;
 main() {
 	verbose = false;
 
-	if (true) {
+	if (false) {
 		grammar1 = 
 			GRule("exp", 
 				gprecedences([
@@ -46,9 +46,9 @@ main() {
 		println(env1.output);
 	}
 
-	if (false) {
+	if (true) {
 		grammar2 = gringoGrammar();
-		text2 = if (false) "#include gringo/gringo2.gringo" else "#include gringo/exp.gringo";
+		text2 = if (false) "#include gringo/gringo2.gringo" else "exp = exp;"; // "#include gringo/exp.gringo";
 
 		debugAct = debugActions(gringoAstAction, \acc -> {
 			gterm2string(getAstResult(acc))
@@ -59,7 +59,7 @@ main() {
 		resGrammar = getAstResult(env2.output);
 		println(gterm2string(getAstResult(env2.output)));
 
-		if (true) {
+		if (false) {
 			// OK, try to parse with the result
 			text3 = "1+2";
 			env3 = doGringoParse(resGrammar, forthAction, "", text3, false, true);
@@ -103,7 +103,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 	lgrammar = rewriteLeftRecursion(rgrammar);
 	// Do CSE again
 	ogrammar = reduceCommon(lgrammar);
-	if (true) {
+	if (debugGrammar) {
 		println("Fully optimized:");
 		println(gterm2string(ogrammar));
 	}

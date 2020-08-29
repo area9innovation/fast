@@ -57,6 +57,15 @@ is a short-hand syntax for this grammar:
 
 and thus provides a short syntax for the common definition of precedence.
 
+TODO: Only replace left-recursion, so we can get
+
+	e = e1 ("+" e) | e1;
+	e1 = e2 ("*" e) | e2;
+	e2 = int;
+	e
+
+instead.
+
 TODO: We want to introduce a prefix + and prefix * to be used for
 left-associate semantic matching.
 
