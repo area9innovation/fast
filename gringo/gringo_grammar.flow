@@ -11,28 +11,16 @@ gringoGrammar() -> GTerm {
 		gprecedences([
 			// term "|>" term	// Choice
 			gseq([GVar("term"), 
-				GPlus(
-					gseq([
-						GString("|>"), ws, GVar("term"), GUnquote(GString("GPrecedence"))
-					])
-				)
+					GString("|>"), ws, GVar("term"), GUnquote(GString("GPrecedence"))
 			]),
 			// term "|" term	// Choice
 			gseq([GVar("term"), 
-				GPlus(
-					gseq([
-						GString("|"), ws, GVar("term"), GUnquote(GString("GChoice"))
-					])
-				)
+				GString("|"), ws, GVar("term"), GUnquote(GString("GChoice"))
 			]),
 			// term term		// Sequence
 			gseq([GVar("term"), 
-				GPlus(
-					GSeq(
-						GVar("term"), 
-						GUnquote(GString("GSeq"))
-					)
-				)
+				GVar("term"), 
+				GUnquote(GString("GSeq"))
 			]),
 			// term "*"			// 0 or more
 			gseq([GVar("term"), 

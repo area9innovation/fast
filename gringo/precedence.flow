@@ -27,7 +27,7 @@ expandPrecedenceInRule(id : string, term : GTerm, body : GTerm, level : int) -> 
 		GPrecedence(left, right): {
 			newid = id + (if (level == 0) "" else i2s(level));
 			nextid = id + i2s(level + 1);
-			nleft = replaceTerm(GVar(id), GVar(nextid), "", left);
+			nleft = replaceLeftRecursion(GVar(id), GVar(nextid), left);
 			GRule(newid, 
 				GChoice(
 					nleft, 
@@ -42,5 +42,37 @@ expandPrecedenceInRule(id : string, term : GTerm, body : GTerm, level : int) -> 
 				body
 			)
 		}
+	}
+}
+
+
+// Does basic replacement in the term
+replaceLeftRecursion(find : GTerm, replace : GTerm, g : GTerm) -> GTerm {
+	if (g == find) replace
+	else switch (g) {
+		GRule(id, term, body): {
+			nbody = replaceLeftRecursion(find, replace, body);
+			nterm = replaceLeftRecursion(find, replace, term);
+			GRule(id, nterm, nbody);
+		}
+		GPrecedence(left, right): GPrecedence(replaceLeftRecursion(find, replace, left), replaceLeftRecursion(find, replace, right)); 
+		GChoice(left, right): GChoice(replaceLeftRecursion(find, replace, left), replaceLeftRecursion(find, replace, right)); 
+		GSeq(left, right): GSeq(replaceLeftRecursion(find, replace, left), right);
+		GStar(term): GStar(replaceLeftRecursion(find, replace, term));
+		GPlus(term): GPlus(replaceLeftRecursion(find, replace, term));
+		GOpt(term): GOpt(replaceLeftRecursion(find, replace, term));
+		GNegate(term): GNegate(replaceLeftRecursion(find, replace, term));
+		GUnquote(term): GUnquote(replaceLeftRecursion(find, replace, term));
+		GString(text): g;
+		GRange(lower, upper): g;
+		GVar(id): g;
+		GEpsilon(): g;
+	}
+}
+
+getGSequence(g : GTerm) -> [GTerm] {
+	switch (g) {
+		GSeq(l, r): concat(getGSequence(l), getGSequence(r));
+		default: [g];
 	}
 }

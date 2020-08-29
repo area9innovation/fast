@@ -67,7 +67,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		GPlus(term): {
 			senv = gringoParse(env, term);
 			if (senv.fail) {
-				if (env.verbose) {
+				if (false && env.verbose) {
 					println(^indent + "Could not parse plus");
 				}
 				senv;
@@ -106,7 +106,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 					env with i = env.i + strlen(text)
 				)
 			} else {
-				if (env.verbose) {
+				if (false && env.verbose) {
 					println(^indent + "Could not parse '" + text + "'");
 				}
 				GringoEnv(env with fail = true)

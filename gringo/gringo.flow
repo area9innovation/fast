@@ -48,7 +48,7 @@ main() {
 
 	if (true) {
 		grammar2 = gringoGrammar();
-		text2 = if (false) "#include gringo/gringo2.gringo" else "exp = exp;"; // "#include gringo/exp.gringo";
+		text2 = if (false) "#include gringo/gringo2.gringo" else "#include gringo/exp.gringo";
 
 		debugAct = debugActions(gringoAstAction, \acc -> {
 			gterm2string(getAstResult(acc))

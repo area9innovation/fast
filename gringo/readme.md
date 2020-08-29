@@ -43,28 +43,19 @@ an AST or a post-fix forth style program that builds an AST.
 
 The precedence is handled using the |> operator.
 
-	e = e ("+" e)+
-		|> e ("*" e)+
+	e = e ("+" e)
+		|> e ("*" e)
 		|> int;
 	e
 	
 is a short-hand syntax for this grammar:
-
-	e = e1 ("+" e1)+ | e1;
-	e1 = e2 ("*" e2)+ | e2;
-	e2 = int;
-	e
-
-and thus provides a short syntax for the common definition of precedence.
-
-TODO: Only replace left-recursion, so we can get
 
 	e = e1 ("+" e) | e1;
 	e1 = e2 ("*" e) | e2;
 	e2 = int;
 	e
 
-instead.
+and thus provides a short syntax for the common definition of precedence.
 
 TODO: We want to introduce a prefix + and prefix * to be used for
 left-associate semantic matching.
