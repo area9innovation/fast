@@ -2,14 +2,18 @@ exp = exp "||" exp $"||"
 	|> exp "&&" exp $"&&"
 	|> exp "==" exp $"==" | exp "!=" exp $"!="
 	|> exp ("<=" | "<" | ">=" | ">") exp
-	|> exp *("+" exp $"+" | "-" exp $"-")
-	|> exp *("*" exp $"*" | "/" exp $"/" | "%" exp $"%")
+	|> exp ("+" exp $"+" | "-" exp $"-")*
+	|> exp ("*" exp $"*" | "/" exp $"/" | "%" exp $"%")*
+
 	|> exp "[" exp "]" $"index"
 	|> exp "." exp $"dot"
 	|> exp "?" exp ":" exp $"ifelse"
-	|> "(" exp ")"
-	|> "-" exp $"negate"
-	|> "if" exp exp "else" exp $"ifelse" 
+
+	|> (
+		"if" exp exp "else" exp $"ifelse" 
 		| "if" exp exp $"if"
-	|> $('0x30'-'0x39'+);
+		| "(" exp ")"
+		| "-" exp $"negate"
+		| $('0x30'-'0x39'+)
+	);
 exp

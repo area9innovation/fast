@@ -12,7 +12,7 @@ gterm2string(g : GTerm) -> string {
 		GRule(id, term, body): "\n" + id + " = " + gterm2string(term) + ";\n" + gterm2string(body);
 		GPrecedence(left, right): gterm2string(left) + " \n\t|> " + gterm2string(right);
 		GChoice(left, right): "(" + gterm2string(left) + " | " + gterm2string(right) + ")";
-		GSeq(left, right): gterm2string(left) + " " + gterm2string(right);
+		GSeq(left, right): "(" + gterm2string(left) + " " + gterm2string(right) + ")";
 		GStar(term): "(" + gterm2string(term) + ")*";
 		GPlus(term): "(" + gterm2string(term) + ")+";
 		GOpt(term): "(" + gterm2string(term) + ")?";

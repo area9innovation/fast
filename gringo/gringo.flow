@@ -59,7 +59,7 @@ main() {
 		resGrammar = getAstResult(env2.output);
 		println(gterm2string(getAstResult(env2.output)));
 
-		if (false) {
+		if (true) {
 			// OK, try to parse with the result
 			text3 = "1+2";
 			env3 = doGringoParse(resGrammar, forthAction, "", text3, false, true);
