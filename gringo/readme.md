@@ -51,11 +51,13 @@ The precedence is handled using the |> operator.
 is a short-hand syntax for this grammar:
 
 	e = e1 ("+" e) | e1;
-	e1 = e2 ("*" e) | e2;
+	e1 = e2 ("*" e1) | e2;
 	e2 = int;
 	e
 
 and thus provides a short syntax for the common definition of precedence.
+
+TODO: Fix we make e1 for the second mention in e1.
 
 TODO: We want to introduce a prefix + and prefix * to be used for
 left-associate semantic matching.
