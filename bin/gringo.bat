@@ -1,0 +1,1 @@
+@flowcpp gringo/gringo.flow -- %*
