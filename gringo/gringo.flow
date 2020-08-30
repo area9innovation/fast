@@ -18,6 +18,7 @@ main() {
 		grammar = gringoGrammar();
 		text = getFileContent(file);
 
+		// Construct a Gringo AST from the parse
 		env = doGringoParse(grammar, gringoAstAction, GringoAstAcc(makeList()), text, false, false);
 
 		if (!env.fail && strlen(text) == env.i) {
@@ -99,20 +100,14 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 		println(gterm2string(ogrammar));
 	}
 
-	if (true) {
-		genv = gringoParse(env, ogrammar);
+	genv = gringoParse(env, ogrammar);
 
-		println("");
-
-		if (genv.fail) {
-			println("Parsing failed");
-		}
-		remaining = strRight(env.input, genv.i);
-		if (remaining != "") {
-			println("Did not parse: " + remaining);
-		}
-		genv;
-	} else {
-		env;
+	if (genv.fail) {
+		println("Parsing failed");
 	}
+	remaining = strRight(env.input, genv.i);
+	if (remaining != "") {
+		println("Did not parse: " + remaining);
+	}
+	genv;
 }

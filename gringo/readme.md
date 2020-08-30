@@ -86,19 +86,10 @@ operations are produced verbatim.
 
 ## TODO
 
-- Add output to copmpile the Gringo grammar to be used by itself
-
-  - It seems right association does not work for GSeq and GChoice,
-    in particular, left-recursion optimization of 
-		e = ((e | b) | c) 
-	does not work.
-	It has to be 
-		e = (e | (b | c))
-
 - Add error message when we have left recursion deep inside a choice
 
 - We have to do the other associative sequences to be able to get the
-  correct Gringo grammar to work
+  left/right association correct
 
 		*()  for left-associative star
 		+()  for left-associative plus
