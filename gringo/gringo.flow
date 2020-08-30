@@ -1,4 +1,5 @@
 import gringo/gringo_pretty;
+import gringo/optimize;
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
 import gringo/precedence;
@@ -44,11 +45,15 @@ main() {
 					%name%() -> GTerm {
 						%grammar%
 					}
+					/*
+					%pp%
+					*/
 				", [
 					"file", file,
 					"out", out,
 					"name", changeFileExt(fileNameOnly(file), "") + "Grammar",
-					"grammar", toString(resGrammar)
+					"grammar", toString(resGrammar),
+					"pp", gterm2string(resGrammar)
 				])
 			);
 			{}
@@ -90,7 +95,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 	rgrammar = rightAssociateGTerm(pgrammar);
 	lgrammar = rewriteLeftRecursion(rgrammar);
 	// Do CSE again
-	ogrammar = reduceCommon(lgrammar);
+	ogrammar = optimizeGTerm(reduceCommon(lgrammar));
 	if (debugGrammar) {
 		println("Fully optimized:");
 		println(gterm2string(ogrammar));

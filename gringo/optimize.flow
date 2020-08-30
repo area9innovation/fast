@@ -1,0 +1,42 @@
+import gringo/gringo_ast;
+import string;
+
+export {
+	optimizeGTerm(g : GTerm) -> GTerm;
+}
+
+optimizeGTerm(g : GTerm) -> GTerm {
+	switch (g) {
+		GRule(id, term, body): GRule(id, optimizeGTerm(term), optimizeGTerm(body));
+		GPrecedence(left, right): GPrecedence(optimizeGTerm(left), optimizeGTerm(right));
+		GChoice(left, right): {
+			ol = optimizeGTerm(left);
+			or = optimizeGTerm(right);
+			if (or == GEpsilon()) {
+				GOpt(ol);
+			} else {
+				GChoice(ol, or);
+			}
+		}
+		GSeq(left, right): {
+			ol = optimizeGTerm(left);
+			or = optimizeGTerm(right);
+			if (ol == GEpsilon()) {
+				or
+			} else if (ol == GEpsilon()) {
+				or
+			} else GSeq(ol, or);
+		}
+		GStar(term): {
+			GStar(optimizeGTerm(term));
+		}
+		GPlus(term): GPlus(optimizeGTerm(term));
+		GOpt(term): GOpt(optimizeGTerm(term));
+		GNegate(term): GNegate(optimizeGTerm(term));
+		GUnquote(term): GUnquote(optimizeGTerm(term));
+		GString(text): g;
+		GRange(lower, upper): if (lower == upper) GString(fromCharCode(lower)) else g;
+		GVar(id): g;
+		GEpsilon(): g;
+	}
+}

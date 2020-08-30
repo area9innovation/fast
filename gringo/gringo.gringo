@@ -2,10 +2,10 @@ term =
 	term "|>" ws term 							$"GPrecedence"
 	|> term "|" ws term 						$"GChoice"
 	|> term term								$"GSeq"
+	|> "$" ws term								$"GUnquote"
 	|> term "*" ws								$"GStar"
 	|> term "+" ws								$"GPlus"
 	|> term "?" ws								$"GOpt"
-	|> "$" ws term								$"GUnquote"
 	|> "!" ws term								$"GNegate"
 	|> 
 		"(" ws term ")" ws							
