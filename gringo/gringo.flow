@@ -87,7 +87,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 
 	egrammar = reduceCommon(prgrammar);
 	if (false) {
-		println("Expanded:");
+		println("CSE, dead-code:");
 		println(gterm2string(egrammar));
 	}
 	pgrammar = commonPrefix(egrammar);

@@ -61,7 +61,18 @@ TODO:
 - Warn if the "last" level of a GPrecedence sequence has left- or right-
   recursion, which will break precedence
 
-TODO: We want to introduce a prefix + and prefix * to be used for
+- "test", "testfile", "result" arg support
+
+- JSON output format, with some convention for #args for actions from the name?
+
+- "flowfile" to make a parser driver
+
+- Support multiple grammars to allow composition
+
+- Introduce pegcode or direct flow generation for faster parsing
+	http://www.inf.puc-rio.br/~roberto/docs/peg.pdf
+
+- TODO: We want to introduce a prefix + and prefix * to be used for
 left-associate semantic matching.
 
 So "1+2+3" should result in a trace like "1 2 3 + +", rather than "1 2 + 3 +"
