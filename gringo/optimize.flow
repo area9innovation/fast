@@ -2,6 +2,7 @@ import gringo/gringo_ast;
 import string;
 
 export {
+	// TODO: If a rule is only referenced once, inline it
 	optimizeGTerm(g : GTerm) -> GTerm;
 }
 
