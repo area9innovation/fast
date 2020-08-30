@@ -65,7 +65,11 @@ export {
 				// GRange(lower : int, upper : int);
 				pupper = popAstStack(acc);
 				plower = popAstStack(pupper.second);
-				str = GRange(parseHex(gtermAsString(plower.first)), parseHex(gtermAsString(pupper.first)));
+				chfn = \s -> if (startsWith(s, "0x")) parseHex(s) else getCharCodeAt(s, 0);
+				str = GRange(
+					chfn(gtermAsString(plower.first)), 
+					chfn(gtermAsString(pupper.first))
+				);
 				pushAstStack(plower.second, str);
 			} else {
 				println("TODO: Handle "+ v);
