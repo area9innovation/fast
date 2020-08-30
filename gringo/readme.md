@@ -57,7 +57,9 @@ is a short-hand syntax for this grammar:
 
 and thus provides a short syntax for the common definition of precedence.
 
-TODO: Fix we make e1 for the second mention in e1.
+TODO:
+- Warn if the "last" level of a GPrecedence sequence has left- or right-
+  recursion, which will break precedence
 
 TODO: We want to introduce a prefix + and prefix * to be used for
 left-associate semantic matching.
@@ -84,9 +86,8 @@ operations are produced verbatim.
 
 ## TODO
 
-- Get the grammar for Gringo parsed and compiled instead
-  of hardcoded. I.e. replace gringo_grammar.flow to be 
-  produced from gringo.gringo
+- Add output to copmpile the Gringo grammar to be used by itself
+
   - It seems right association does not work for GSeq and GChoice,
     in particular, left-recursion optimization of 
 		e = ((e | b) | c) 

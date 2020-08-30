@@ -36,17 +36,17 @@ gringoGrammar() -> GTerm {
 			]),
 			//	| term ":" type		// Type annotation
 
+			// "!" term			// Negation
+			gseq([GString("!"), ws, GVar("term"), 
+				GUnquote(GString("GNegate"))
+			]),
+			// "$" term
+			gseq([GString("$"), ws, GVar("term"), 
+				GUnquote(GString("GUnquote"))
+			]),
 			gchoices([
-				// "!" term			// Negation
-				gseq([GString("!"), ws, GVar("term"), 
-					GUnquote(GString("GNegate"))
-				]),
 				// "(" term ")" 		// Grouping
 				gseq([GString("("), ws, GVar("term"), GString(")"), ws]),
-				// "$" term
-				gseq([GString("$"), ws, GVar("term"), 
-					GUnquote(GString("GUnquote"))
-				]),
 
 				// string				// Constant string
 				gseq([GString("\""), GUnquote(GStar(
