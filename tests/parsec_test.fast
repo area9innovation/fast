@@ -32,6 +32,7 @@ parsec.flow::main() -> i0 {
     println(p2("aab", 1));
     println(p2(" aab", 2));
     println(p2("", 0));
+    println(p2("abcdef", 0));
 
 	/*println(first(p1()("a", 0)));
     println(first(p1()("b", 0)));
