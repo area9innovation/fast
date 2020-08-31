@@ -1,4 +1,3 @@
-
 term = 
 	term "|>" ws term 							$"GPrecedence"
 	|> term "|" ws term 						$"GChoice"
@@ -22,13 +21,9 @@ int = $'0'-'9'+;
 
 string = $(!'"' '0x0'-'0xFFFF')*;
 stringq = $(!"'" '0x0'-'0xFFFF')*;
-
 char = $("0x" hexdigit+) | $anychar;
-
 anychar = '0x0'-'0xFFFF';
-
 hexdigit = 'a'-'f' | 'A'-'F' | '0'-'9';
-
 ws = s*;
 // We do not have \n and \t and such, so these are here verbatim
 s = " " | "	" | "

@@ -1,21 +1,16 @@
-import gringo/gringo_pretty;
-import gringo/optimize;
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
-import gringo/precedence;
-import gringo/cse;
-import gringo/left_recursion;
-import gringo/right_assoc;
-import gringo/prefix;
+import gringo/gringo_prepare;
 import gringo/gringo_ast_actions;
 import net/url_parameter;
 import fs/filesystem;
 
 main() {
-	file = getUrlParameter("file");
+	file0 = getUrlParameter("file");
 
-	if (file != "") {
+	if (file0 != "") {
 		grammar = gringoGrammar();
+		file = changeFileExt(file0, ".gringo");
 		text = getFileContent(file);
 
 		// Construct a Gringo AST from the parse
@@ -27,6 +22,7 @@ main() {
 			// OK, we have the result of the parse
 			resGrammar = optimizeGTerm(getAstResult(env.output));
 
+			// Produce flow output with the grammar AST
 			out = getUrlParameter("out");
 			if (out != "") {
 				outfile = if (out == "1") changeFileExt(file, "") + "_grammar.flow" else out;
@@ -49,11 +45,34 @@ main() {
 						"file", file,
 						"out", out,
 						"name", changeFileExt(fileNameOnly(file), "") + "Grammar",
-						"grammar", toString(resGrammar),
+						"grammar", toString(prepareGringoGrammar(resGrammar)),
 					])
 				);
 				{}
 			}
+
+			// Test parse
+			test = getUrlParameter("test");
+			testfile = getUrlParameter("testfile");
+			testtext = if (test != "") test else if (testfile != "") getFileContent(testfile) else "";
+			if (testtext != "") {
+				tenv = doGringoParse(resGrammar, forthAction, "", testtext, isUrlParameterTrue("trace"), isUrlParameterTrue("grammar"));
+				if (!tenv.fail && strlen(testtext) == tenv.i) {
+					println("Parsed test: " + i2s(tenv.i) + " chars successfully.");
+				}
+				result = getUrlParameter("result");
+				if (result == "1") {
+					println(tenv.output);
+				} else if (result != "") {
+					setFileContent(result, tenv.output);
+					println("Saved output to " + result);
+				}
+			} else if (isUrlParameterTrue("grammar")) {
+				ogrammar = prepareGringoGrammar(resGrammar);
+				println("Fully optimized:");
+				println(gterm2string(ogrammar));
+			}
+
 			quit(0);
 		} else {
 			quit(1);
@@ -62,44 +81,36 @@ main() {
 		println("
 Usage:
 
-	gringo file=path/grammar.gringo <options>
+gringo file=path/grammar.gringo <options>
 
-file=<file> gives the path to the Gringo file to work with.
+    file=<file> gives the path to the Gringo file to work with.
 
-out=1 or <file> compiles the grammar and saves it as a flow file.");
+    out=1 or <file> compiles the grammar and saves it as a flow file.
+
+    grammar=1 prints the optimized grammar for inspection.
+
+    test=<string> immediately tests the grammar on that string.
+	testfile=<filename> tests the grammar on the contents of that file.
+    result=1 prints the output of the test parse.
+    result=<file> saves the output of the test parse.
+");
+
 		quit(0);
 	}
 }
 
 doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool, debugGrammar : bool) -> GringoEnv<?> {
-	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose);
-
 	if (false) {
 		println("Original:");
 		println(gterm2string(grammar));
 	}
-
-	prgrammar = expandPrecedence(grammar);
-	if (false) {
-		println("Precedence:");
-		println(gterm2string(prgrammar));
-	}
-
-	egrammar = reduceCommon(prgrammar);
-	if (false) {
-		println("CSE, dead-code:");
-		println(gterm2string(egrammar));
-	}
-	pgrammar = commonPrefix(egrammar);
-	rgrammar = rightAssociateGTerm(pgrammar);
-	lgrammar = rewriteLeftRecursion(rgrammar);
-	// Do CSE again
-	ogrammar = optimizeGTerm(reduceCommon(lgrammar));
+	ogrammar = prepareGringoGrammar(grammar);
 	if (debugGrammar) {
 		println("Fully optimized:");
 		println(gterm2string(ogrammar));
 	}
 
+	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose);
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {

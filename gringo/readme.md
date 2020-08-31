@@ -10,22 +10,25 @@ written.
 
 The (simplified) grammar for Gringo is given here:
 
-	term = id "=" term(0) ";"	// Binding
-		| term(1) "|>" term(2)	// Precedence-based choice
-		| term(1) "|" term(2)	// Choice
-		| term(10) term(11)		// Sequence
-		| term(12) "*"			// 0 or more
-		| term(12) "+"			// One or more
-		| term(12) "?"			// Optional
-		| "!" term(0)			// Negation
-		| "(" term(0) ")" 		// Grouping
-		| "$" term              // Unquoting
-		| string				// Constant string
-		| char "-" char			// Range
-		| id					// Rule ref
+	term = 
+		term "|>" ws term 							$"GPrecedence"
+		|> term "|" ws term 						$"GChoice"
+		|> term term								$"GSeq"
+		|> "$" ws term								$"GUnquote"
+		|> term "*" ws								$"GStar"
+		|> term "+" ws								$"GPlus"
+		|> term "?" ws								$"GOpt"
+		|> "!" ws term								$"GNegate"
+		|> 
+			"(" ws term ")" ws							
+			| '"' string '"' ws							$"GString"
+			| "'" char "'" ws "-" ws "'" char "'" ws	$"GRange"
+			| "'" stringq "'" ws						$"GString"
+			| id ws "=" ws term ";" ws term				$"GRule"
+			| id ws										$"GVar"
 		;
 
-See `gringo.gringo` for the real grammar, with white-space handling.
+See `gringo.gringo` for the real grammar.
 
 We might consider to add:
 
@@ -57,27 +60,6 @@ is a short-hand syntax for this grammar:
 
 and thus provides a short syntax for the common definition of precedence.
 
-TODO:
-- Warn if the "last" level of a GPrecedence sequence has left- or right-
-  recursion, which will break precedence
-
-- "test", "testfile", "result" arg support
-
-- JSON output format, with some convention for #args for actions from the name?
-
-- "flowfile" to make a parser driver
-
-- Support multiple grammars to allow composition
-
-- Introduce pegcode or direct flow generation for faster parsing
-	http://www.inf.puc-rio.br/~roberto/docs/peg.pdf
-
-- TODO: We want to introduce a prefix + and prefix * to be used for
-left-associate semantic matching.
-
-So "1+2+3" should result in a trace like "1 2 3 + +", rather than "1 2 + 3 +"
-which is produced with the right-associative +.
-
 ## Actions
 
 The $<term> construct is used to produce semantic output. This will produce
@@ -97,7 +79,26 @@ operations are produced verbatim.
 
 ## TODO
 
+- Warn if the "last" level of a GPrecedence sequence has left- or right-
+  recursion, which will break precedence
+
 - Add error message when we have left recursion deep inside a choice
+
+- JSON output format, with some convention for #args for actions from the name?
+
+- "flowfile" to make a parser driver
+
+- Support multiple grammars to allow composition
+
+- Introduce pegcode or direct flow generation for faster parsing
+	http://www.inf.puc-rio.br/~roberto/docs/peg.pdf
+
+- Figure out how to fix if else, which does not work in the exp grammar
+
+- We want to introduce a prefix + and prefix * to be used for
+right-associate semantic matching.
+
+So "1.2.3" should result in a trace like "1 2 dot 3 dot", rather than "1 2 3 dot dot".
 
 - We have to do the other associative sequences to be able to get the
   left/right association correct
@@ -123,6 +124,37 @@ operations are produced verbatim.
 
 Optimizing PEG grammars:
 https://mpickering.github.io/papers/parsley-icfp.pdf
+
+Normal forms (page 22 in parsely.pdf):
+
+	Choice: right associate
+	(p | q) | r   =>   p | (q | r)
+
+	Seq: left associative
+	p (q r)  => (p q) r
+
+For choice sequences, if the first char of each choice is defined, it can be tabled by the
+first char.
+
+Overly complicated opcodes (page 39):
+
+	CharTok
+		Tab			- specialization to keep column number efficient
+		Newline		- specialization to keep line number efficient
+	String			- They are preprocessed to update line/col efficient
+	Sat
+
+Initial pegcode paper:
+http://www.inf.puc-rio.br/~roberto/docs/peg.pdf
+Opcodes from PEGCODE:
+	- Match string
+	- Jump <address>
+	- Backtrack to Choice <address>
+	- Call <address>
+	- Return
+	- Commit <address>
+	- Capture
+	- Fail
 
 Adding error recovery:
 https://www.eyalkalderon.com/nom-error-recovery/

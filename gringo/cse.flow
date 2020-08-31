@@ -128,12 +128,12 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 		GPrecedence(left, right): g;
 		GChoice(left, right): g;
 		GSeq(left, right): {
-			lrule = getGRule(left);
+			lrule = getGRuleName(left);
 			if (lrule != "" && !containsSet(alive, lrule)) {
 				// It is dead!
 				removeDeadRules(alive, right);
 			} else {
-				rrule = getGRule(right);
+				rrule = getGRuleName(right);
 				if (rrule != "" && !containsSet(alive, rrule)) {
 					removeDeadRules(alive, left);	
 				} else {
@@ -156,7 +156,7 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 	}
 }
 
-getGRule(g : GTerm) -> string {
+getGRuleName(g : GTerm) -> string {
 	switch (g) {
 		GRule(id, __, body): id;
 		default: "";

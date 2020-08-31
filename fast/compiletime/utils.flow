@@ -1,0 +1,12 @@
+import fast/fast_ast;
+
+export {
+	getFString(c : FExp) -> string;
+}
+
+getFString(c : FExp) -> string {
+	switch (c) {
+		FStringConstant(s, __): s;
+		default: "";
+	}
+}

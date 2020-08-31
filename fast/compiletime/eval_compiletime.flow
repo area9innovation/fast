@@ -1,4 +1,5 @@
 import fast/compiletime/fast_natives;
+import fast/compiletime/fast_partials;
 import fast/compiletime/env;
 import fast/semantics/overload;
 import fast/backends/utils;
@@ -15,7 +16,7 @@ export {
 }
 
 makeFastEnv(f : FastAst, onError : (string) -> void) -> FastEnv {
-	tenv0 = FastEnv(makeTree(), makeTree(), getFastFlowNatives(onError));
+	tenv0 = FastEnv(makeTree(), makeTree(), getFastFlowNatives(onError), getFastFlowPartials(onError));
 
 	// Register all global functions in the compiletime or global scope
 	fold(f.functions, tenv0, \acc, fn : FastFunction -> {
@@ -349,11 +350,20 @@ partialEvalFastFunction(env : FastEnv, id : string, eargs : [FExp]) -> Maybe<FEx
 	});
 
 	def = \ -> {
-		fnsm = lookupTree(env.functions, id);
-		fnsm ?? {
-			partialEvalFastFunctions(env, fnsm, eargs);
-		} : {
-			None();
+		// Do we have a partial function to use at compile time?
+		pfnm = lookupTree(env.nativePartials, id);
+		switch (pfnm) {
+			Some(pfn): {
+				Some(pfn(eargs))
+			}
+			None(): {
+				fnsm = lookupTree(env.functions, id);
+				fnsm ?? {
+					partialEvalFastFunctions(env, fnsm, eargs);
+				} : {
+					None();
+				}
+			}
 		}
 	}
 
