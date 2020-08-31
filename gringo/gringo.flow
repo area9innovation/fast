@@ -12,10 +12,11 @@ import net/url_parameter;
 import fs/filesystem;
 
 main() {
-	file = getUrlParameter("file");
+	file0 = getUrlParameter("file");
 
-	if (file != "") {
+	if (file0 != "") {
 		grammar = gringoGrammar();
+		file = changeFileExt(file0, ".gringo");
 		text = getFileContent(file);
 
 		// Construct a Gringo AST from the parse

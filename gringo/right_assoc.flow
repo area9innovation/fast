@@ -37,9 +37,9 @@ rightAssociateGTerm(g : GTerm) -> GTerm {
 		GSeq(a, b): {
 			ra = rightAssociateGTerm(a);
 			rb = rightAssociateGTerm(b);
-			switch (ra) {
-				GSeq(ra0, ra1): {
-					GSeq(ra0, rightAssociateGTerm(GSeq(ra1, rb)));
+			switch (rb) {
+				GSeq(rb0, rb1): {
+					GSeq(rightAssociateGTerm(GSeq(ra, rb0)), rb1);
 				}
 				default: {
 					GSeq(ra, rb);
