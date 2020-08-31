@@ -19,6 +19,12 @@ export {
 				pleft = popAstStack(pright.second);
 				seq = GSeq(pleft.first, pright.first);
 				pushAstStack(pleft.second, seq);
+			} else if (v == "GPrecedence") {
+				// GPrecedence(left : GTerm, right : GTerm);
+				pright = popAstStack(acc);
+				pleft = popAstStack(pright.second);
+				choice = GPrecedence(pleft.first, pright.first);
+				pushAstStack(pleft.second, choice);
 			} else if (v == "GChoice") {
 				// GChoice(left : GTerm, right : GTerm);
 				pright = popAstStack(acc);
@@ -46,10 +52,9 @@ export {
 				unquote = GNegate(pterm.first);
 				pushAstStack(pterm.second, unquote);
 			} else if (v == "GVar") {
-				// GVar(id : string, power : int);
-				ppower = popAstStack(acc);
-				pid = popAstStack(ppower.second);
-				var = GVar(gtermAsString(pid.first), s2i(gtermAsString(ppower.first)));
+				// GVar(id : string);
+				pid = popAstStack(acc);
+				var = GVar(gtermAsString(pid.first));
 				pushAstStack(pid.second, var);
 			} else if (v == "GString") {
 				// GString(text : string);
@@ -60,7 +65,11 @@ export {
 				// GRange(lower : int, upper : int);
 				pupper = popAstStack(acc);
 				plower = popAstStack(pupper.second);
-				str = GRange(parseHex(gtermAsString(plower.first)), parseHex(gtermAsString(pupper.first)));
+				chfn = \s -> if (startsWith(s, "0x")) parseHex(s) else getCharCodeAt(s, 0);
+				str = GRange(
+					chfn(gtermAsString(plower.first)), 
+					chfn(gtermAsString(pupper.first))
+				);
 				pushAstStack(plower.second, str);
 			} else {
 				println("TODO: Handle "+ v);

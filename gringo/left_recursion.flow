@@ -34,13 +34,13 @@ rewriteLeftRecursion(g : GTerm) -> GTerm {
 					switch (left) {
 						GSeq(first, rtail): {
 							switch (first) {
-								GVar(lid, lpower): {
+								GVar(lid): {
 									if (lid == rule) {
 										/*
 										We do this transformation:
 
 											e1 = e1 tail | rest
-											== GRule(e1, GChoice(GSeq(GVar(rule, 0), tail), rest))
+											== GRule(e1, GChoice(GSeq(GVar(rule), tail), rest))
 
 											-> 
 

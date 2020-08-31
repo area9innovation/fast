@@ -39,6 +39,12 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 			);
 			gringoParse(nenv, body);
 		}
+		GPrecedence(left, right): {
+			lenv = gringoParse(env,left);
+			if (lenv.fail) {
+				gringoParse(env, right);
+			} else lenv
+		}
 		GChoice(left, right): {
 			lenv = gringoParse(env,left);
 			if (lenv.fail) {
@@ -61,7 +67,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		GPlus(term): {
 			senv = gringoParse(env, term);
 			if (senv.fail) {
-				if (env.verbose) {
+				if (false && env.verbose) {
 					println(^indent + "Could not parse plus");
 				}
 				senv;
@@ -100,7 +106,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 					env with i = env.i + strlen(text)
 				)
 			} else {
-				if (env.verbose) {
+				if (false && env.verbose) {
 					println(^indent + "Could not parse '" + text + "'");
 				}
 				GringoEnv(env with fail = true)
@@ -117,8 +123,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 				GringoEnv(env with fail = true)
 			}
 		}
-		GVar(id, power): {
-			// If the power of this id is <= the power in our tree, abort
+		GVar(id): {
 			mterm = lookupTree(env.names, id);
 			mterm ?? {
 				oindent = ^indent;

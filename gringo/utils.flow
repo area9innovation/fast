@@ -30,6 +30,7 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 
 		// TODO: Check that these do not have recursive rules
 		GChoice(left, right): acc;
+		GPrecedence(left, right): acc;
 		GStar(term): acc;
 		GPlus(term): acc;
 		GOpt(term): acc;
@@ -38,7 +39,7 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 		GUnquote(term): acc;
 		GString(text): acc;
 		GRange(lower, upper): acc;
-		GVar(id, power): acc;
+		GVar(id): acc;
 		GEpsilon(): acc;
 	}	
 }
@@ -46,6 +47,12 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 	switch (g) {
 		GRule(id, term, body): if (id == rule) Some(term) else findRule(rule, body);
+		GPrecedence(left, right): {
+			mleft = findRule(rule, left);
+			mleft ?? Some(mleft) : {
+				findRule(rule, right);
+			}
+		}
 		GChoice(left, right): {
 			mleft = findRule(rule, left);
 			mleft ?? Some(mleft) : {
@@ -65,7 +72,7 @@ findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 		GUnquote(term): findRule(rule, term);
 		GString(text): None();
 		GRange(lower, upper): None();
-		GVar(id, power): None();
+		GVar(id): None();
 		GEpsilon(): None();
 	}
 }
@@ -73,6 +80,7 @@ findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 mainRule(g : GTerm) -> string {
 	switch (g) {
 		GRule(id, term, body): mainRule(body);
+		GPrecedence(left, right): mainRule(right);
 		GChoice(left, right): mainRule(right);
 		GSeq(left, right): mainRule(right);
 		GStar(term): mainRule(term);
@@ -82,7 +90,7 @@ mainRule(g : GTerm) -> string {
 		GUnquote(term): mainRule(term);
 		GString(text): "";
 		GRange(lower, upper): "";
-		GVar(id, power): id;
+		GVar(id): id;
 		GEpsilon(): "";
 	}
 }
@@ -96,6 +104,7 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 			nterm = if (exceptInRule == id) term else replaceTerm(find, replace, exceptInRule, term);
 			GRule(id, nterm, nbody);
 		}
+		GPrecedence(left, right): GPrecedence(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right)); 
 		GChoice(left, right): GChoice(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right)); 
 		GSeq(left, right): GSeq(replaceTerm(find, replace, exceptInRule, left), replaceTerm(find, replace, exceptInRule, right));
 		GStar(term): GStar(replaceTerm(find, replace, exceptInRule, term));
@@ -105,7 +114,7 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 		GUnquote(term): GUnquote(replaceTerm(find, replace, exceptInRule, term));
 		GString(text): g;
 		GRange(lower, upper): g;
-		GVar(id, power): g;
+		GVar(id): g;
 		GEpsilon(): g;
 	}
 }

@@ -1,24 +1,19 @@
-exp = 
-	exp(1) "||" exp(2) $"||"
-	| exp(3) "&&" exp(4) $"&&"
+exp = exp "||" exp $"||"
+	|> exp "&&" exp $"&&"
+	|> exp "==" exp $"==" | exp "!=" exp $"!="
+	|> exp ("<=" | "<" | ">=" | ">") exp
+	|> exp ("+" exp $"+" | "-" exp $"-")*
+	|> exp ("*" exp $"*" | "/" exp $"/" | "%" exp $"%")*
 
-	| exp(5) "==" exp(6) $"=="
-	| exp(5) "!=" exp(6) $"!="
+	|> exp "[" exp "]" $"index"
+	|> exp "." exp $"dot"
+	|> exp "?" exp ":" exp $"ifelse"
 
-	| exp(7) ("<=" | "<" | ">=" | ">") exp(8)
-
-	| exp(9) "+" exp(10) $"+" | exp(9) "-" exp(10) $"-"
-
-	| exp(11) "*" exp(12) $"*" | exp(11) "/" exp(12) $"/" | exp(11) "%" exp(12) $"%"
-
-	| "-" exp(14) $"negate"
-	| "if" exp(0) exp(2) "else" exp(1) $"ifelse"
-	| "if" exp(0) exp(1)	$"if"
-
-	| exp(14) "[" exp(0) "]" $"index"
-	| exp(15) "." exp(14) $"dot"
-
-	| exp(15) "?" exp(0) ":" exp(14) $"ifelse"
-	| $('0x30'-'0x39'+)
-	;
+	|> (
+		"if" exp exp "else" exp $"ifelse" 
+		| "if" exp exp $"if"
+		| "(" exp ")"
+		| "-" exp $"negate"
+		| $('0x30'-'0x39'+)
+	);
 exp

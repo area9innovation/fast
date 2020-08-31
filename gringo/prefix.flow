@@ -38,10 +38,17 @@ pullOutCommonPrefix(g : GTerm) -> GTerm {
 		g
 	} else {
 		prefix = seq[0][0];
-		firstDifferent = findiDef(seq, \s -> s[0] != prefix, 0);
+		// What choice # has a different prefix than this?
+		firstDifferent = findiDef(seq, \s -> {
+			s[0] != prefix
+		}, 100000);
 
-		if (firstDifferent > 1) {
+		if (firstDifferent >= 2) {
+			// OK, at least two rows have the same prefix at the start
+
+			// These have the same prefix
 			first = subrange(seq, 0, firstDifferent);
+			// These are the remaining ones
 			rest = tailFrom(seq, firstDifferent);
 
 			firstChoice = GSeq(
