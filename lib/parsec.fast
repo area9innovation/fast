@@ -32,14 +32,14 @@ export {
         sem_act : (string) -> ?,
         fail : ?,
     ) -> (string, i32) -> Tuple<i32, ?>;
-/*
-    unaryParseC(
+
+    modifyParseC(
         parser : (string, i32) -> Tuple<i32, ?>,
         sem_act : (?) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
 
-    binaryParseC(
+    sequenceParseC(
         parser1 : (string, i32) -> Tuple<i32, ?>,
         parser2 : (string, i32) -> Tuple<i32, ??>,
         sem_act : (?, ??) -> ???,
@@ -50,7 +50,7 @@ export {
         parser1 : (string, i32) -> Tuple<i32, ?>,
         parser2 : (string, i32) -> Tuple<i32, ?>,
         fail : ?
-    ) -> (string, i32) -> Tuple<i32, ?>;*/
+    ) -> (string, i32) -> Tuple<i32, ?>;
 }
 
 // Empty sequence parser combinator
@@ -116,65 +116,57 @@ doTokenParseCimpl(pattern : string, sem_act : (string) -> ?, fail : ?, input : s
     }
 }
 
-/*
-
-unaryParseC(
+compiletime::modifyParseC(
     parser : (string, i32) -> Tuple<i32, ?>,
     sem_act : (?) -> ??,
     fail : ??
-) -> (string, i32, (?) -> ??) -> Tuple<i32, ??> {
-    compiletime::partialCall(parser,
-        compiletime::partialCall(sem_act, 
-            compiletime::partialCall(fail, sequenceParseCimpl)
-        )
-    )
+) -> (string, i32) -> Tuple<i32, ??> {
+    compiletime::partialCall(modifyParseCimpl, parser, sem_act, fail);
 }
 
-sequenceParseCimpl(
-    parser : (string, i32) -> Tuple<i32, ?>,
-    sem_act : (?) -> ??,
-    fail : ??,
-    input : string, i : i32
-) -> (string, i32, (?) -> ??) -> Tuple<i32, ??> {
-    t = paser(input, i);
-    if (first(t) < 0) {
-        tuple(-1, fail);
+modifyParseCimpl(
+    parser : (string, i32) -> Tuple<i32, ?>, 
+    sem_act : (?) -> ??, 
+    fail : ??, 
+    input : string, 
+    i : i32
+) -> Tuple<i32, ??> {
+    p = parser(input, i);
+    j = first(p);
+    x = second(p);
+    y = sem_act(x);
+    if (j == -(1)) {
+        tuple(-(1), fail);
     } else {
-        tuple(first(t), sem_act(second(t)));
+        tuple(j, y);
     }
 }
 
 
-
-binaryParseC(
+compiletime::sequenceParseC(
     parser1 : (string, i32) -> Tuple<i32, ?>,
     parser2 : (string, i32) -> Tuple<i32, ??>,
     sem_act : (?, ??) -> ???,
     fail : ???
 ) -> (string, i32) -> Tuple<i32, ???> {
-    compiletime::partialCall(parser1,
-        compiletime::partialCall(parser2,
-            compiletime::partialCall(sem_act, 
-                compiletime::partialCall(fail, sequenceParseCimpl)
-            )
-        )
-    )
+    compiletime::partialCall(sequenceParseCimpl, parser1, parser2, sem_act, fail);
 }
 
 sequenceParseCimpl(
     parser1 : (string, i32) -> Tuple<i32, ?>,
-    parser2 : (string, i32) -> Tuple<i32, ?>,
+    parser2 : (string, i32) -> Tuple<i32, ??>,
     sem_act : (?, ??) -> ???,
     fail : ???,
-    input : string, i : i32
-) -> (string, i32) -> Tuple<i32, ???> {
+    input : string, 
+    i : i32
+) -> Tuple<i32, ???> {
     t1 = paser1(input, i);
     if (first(t1) < 0) {
-        tuple(-1, fail);
+        tuple(-(1), fail);
     } else {
         t2 = paser1(input, first(t1));
         if (first(t2) < 0) {
-            tuple(-1, fail);
+            tuple(-(1), fail);
         } else {
             tuple(first(t2), sem_act(second(t1), second(t2)));
         }
@@ -182,28 +174,21 @@ sequenceParseCimpl(
 }
 
 
-
-
-
-
-choiceParseC(
+compiletime::choiceParseC(
     parser1 : (string, i32) -> Tuple<i32, ?>,
     parser2 : (string, i32) -> Tuple<i32, ?>,
     fail : ?
 ) -> (string, i32) -> Tuple<i32, ?> {
-    compiletime::partialCall(parser1,
-        compiletime::partialCall(parser2,
-            compiletime::partialCall(fail, choiceParseCimpl)
-        )
-    );
+    compiletime::partialCall(choiceParseCimpl, parser1, parser2, fail);
 }
 
 choiceParseCimpl(
     parser1 : (string, i32) -> Tuple<i32, ?>,
     parser2 : (string, i32) -> Tuple<i32, ?>,
     fail : ?,
-    input : string, i : i32
-) -> (string, i32) -> Tuple<i32, ???> {
+    input : string, 
+    i : i32
+) -> Tuple<i32, ???> {
     t1 = paser1(input, i);
     if (first(t1) >= 0) {
         t1;
@@ -211,5 +196,3 @@ choiceParseCimpl(
         paser2(input, i);
     }
 }
-
-*/

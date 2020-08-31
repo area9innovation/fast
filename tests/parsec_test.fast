@@ -2,20 +2,20 @@ import parsec;
 
 
 one() -> i32 { 1; }
+two() -> i32 { 2; }
 one_(x : string) -> i32 { 1; }
+two_(x : string) -> i32 { 2; }
+add_five(x : i32) -> i32 { x + 5; }
+add_ints(x : i32, y : i32) -> i32  { x + y; }
 
 parsec.flow::main() -> i0 {
     p0 = compiletime::emptyParseC(one);
-    //println(first(p0("a", 0)));
-    //println(first(p0("b", 0)));
-    //println(first(p0("ab", 0)));
-    //println(first(p0("aa", 0)));
-    //println(first(p0("", 0)));
     println(p0("a", 0));
     println(p0("b", 0));
     println(p0("ab", 0));
     println(p0("aa", 0));
     println(p0("", 0));
+    println("----------");
 
     p1 = compiletime::inputEndParseC(one, 2);
     println(p1("a", 0));
@@ -23,28 +23,73 @@ parsec.flow::main() -> i0 {
     println(p1("ab", 0));
     println(p1("aa", 0));
     println(p1("", 0));
+    println("----------");
 
     p2 = compiletime::tokenParseC("ab", one_, 2);
+    println("a: ");
     println(p2("a", 0));
+    println("b: ");
     println(p2("b", 0));
+    println("ab: ");
     println(p2("ab", 0));
+    println("aa: ");
     println(p2("aa", 0));
+    println("aab: ");
     println(p2("aab", 1));
+    println(" aab: ");
     println(p2(" aab", 2));
+    println(": ");
     println(p2("", 0));
+    println("abcdef: ");
     println(p2("abcdef", 0));
+    println("----------");
 
-	/*println(first(p1()("a", 0)));
-    println(first(p1()("b", 0)));
-    println(first(p1()("ab", 0)));
-    println(first(p1()("aa", 0)));
-    println(first(p1()("", 0)));
 
-    println(first(p2()("a", 0)));
-    println(first(p2()("b", 0)));
-    println(first(p2()("ab", 0)));
-    println(first(p2()("aa", 0)));
-    println(first(p2()("", 0)));*/
-    
+    //p3 = compiletime::modifyParseC(p2, add_five, 3);
+    p3 = compiletime::modifyParseC(tokenParseC("ab", one_, 2), add_five, 3);
+    println(p3("a", 0));
+    println(p3("b", 0));
+    println(p3("ab", 0));
+    println(p3("aa", 0));
+    println(p3("aab", 1));
+    println(p3(" aab", 2));
+    println(p3("", 0));
+    println(p3("abcdef", 0));
+    println("----------");
+
+/*
+    p4 = compiletime::sequenceParseC(
+        tokenParseC("ab", one_, 2), 
+        tokenParseC("cd", two_, 2),
+        add_ints,
+        4
+    );
+    println("a: ");
+    println(p4("a", 0));
+    println("abcdef: ");
+    println(p4("abcdef", 0));
+    println("----------");
+*/
+
+
+    p4 = compiletime::choiceParseC(
+        tokenParseC("a", one_, 2), 
+        tokenParseC("b", two_, 2),
+        45
+    );
+    println("a: ");
+    println(p4("a", 0));
+    println("b: ");
+    println(p4("b", 0));
+    println("c: ");
+    println(p4("c", 0));
+    println("abcdef: ");
+    println(p4("abcdef", 0));
+    println("abcdef: ");
+    println(p4("abcdef", 1));
+    println("abcdef: ");
+    println(p4("abcdef", 2));
+    println("----------");
+
 	quit(0);
 }
