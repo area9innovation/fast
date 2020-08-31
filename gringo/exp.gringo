@@ -10,8 +10,8 @@ exp = exp "||" ws exp $"||"
 	|> exp "?" ws exp ":" ws exp $"ifelse"
 
 	|> (
-		"if" ws exp s+ exp "else" ws exp $"ifelse" 
-		| "if" ws exp s+ exp $"if"
+		"if" ws exp exp "else" ws exp $"ifelse" 
+		| "if" ws exp exp $"if"
 		| "(" ws exp ")" ws 
 		| "-" ws exp $"negate"
 		| $('0x30'-'0x39'+) ws 
