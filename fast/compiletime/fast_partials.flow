@@ -1,0 +1,21 @@
+import fast/fast_ast;
+import fast/compiletime/utils;
+
+export {
+	getFastFlowPartials(onError : (string) -> void) -> Tree<string, ([FExp]) -> FExp>;
+}
+
+getFastFlowPartials(onError : (string) -> void) -> Tree<string, ([FExp]) -> FExp> {
+	pairs2tree([
+		// Constructs an id
+		Pair("makeFVar", \args -> {
+			println("makeFVar called with " + getFString(args[0]));
+			if (length(args) != 1) {
+				onError("Expected 1 argument");
+				FVoid();
+			} else {
+				FVar(getFString(args[0]), FInfo(args[0].info with type = FTypeInfer()))
+			}
+		})
+	])
+}

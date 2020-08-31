@@ -1,5 +1,6 @@
 import fast/fast_ast;
 import fast/fast_prettyprint;
+import fast/compiletime/utils;
 import fast/typing/type_inference;
 import ds/tree;
 import math/math;
@@ -149,13 +150,6 @@ getFInts(args : [FConstant]) -> [int] {
 			default: None();
 		}
 	});
-}
-
-getFString(c : FConstant) -> string {
-	switch (c) {
-		FStringConstant(s, __): s;
-		default: "";
-	}
 }
 
 getFStrings(args : [FConstant]) -> [string] {
