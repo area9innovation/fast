@@ -27,6 +27,7 @@ main() {
 			// OK, we have the result of the parse
 			resGrammar = optimizeGTerm(getAstResult(env.output));
 
+			// Produce flow output with the grammar AST
 			out = getUrlParameter("out");
 			if (out != "") {
 				outfile = if (out == "1") changeFileExt(file, "") + "_grammar.flow" else out;
@@ -54,6 +55,21 @@ main() {
 				);
 				{}
 			}
+
+			// Test parse
+			test = getUrlParameter("test");
+			testfile = getUrlParameter("testfile");
+			testtext = if (test != "") test else if (testfile != "") getFileContent(testfile) else "";
+			if (testtext != "") {
+				tenv = doGringoParse(resGrammar, forthAction, "", testtext, false, isUrlParameterTrue("grammar"));
+				if (!tenv.fail && strlen(testtext) == tenv.i) {
+					println("Parsed test: " + i2s(tenv.i) + " chars successfully.");
+				}
+				if (isUrlParameterTrue("result")) {
+					println(tenv.output);
+				}
+			}
+
 			quit(0);
 		} else {
 			quit(1);
@@ -62,11 +78,19 @@ main() {
 		println("
 Usage:
 
-	gringo file=path/grammar.gringo <options>
+gringo file=path/grammar.gringo <options>
 
-file=<file> gives the path to the Gringo file to work with.
+    file=<file> gives the path to the Gringo file to work with.
 
-out=1 or <file> compiles the grammar and saves it as a flow file.");
+    out=1 or <file> compiles the grammar and saves it as a flow file.
+
+    grammar=1 prints the optimized grammar for inspection.
+
+    test=<string> immediately tests the grammar on that string.
+	testfile=<filename> tests the grammar on the contents of that file.
+    result=1 prints the output of the test parse.
+");
+
 		quit(0);
 	}
 }

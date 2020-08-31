@@ -1,19 +1,23 @@
-exp = exp "||" exp $"||"
-	|> exp "&&" exp $"&&"
-	|> exp "==" exp $"==" | exp "!=" exp $"!="
-	|> exp ("<=" | "<" | ">=" | ">") exp
-	|> exp ("+" exp $"+" | "-" exp $"-")*
-	|> exp ("*" exp $"*" | "/" exp $"/" | "%" exp $"%")*
+exp = exp "||" ws exp $"||"
+	|> exp "&&" ws exp $"&&"
+	|> exp "==" ws exp $"==" | exp "!=" ws exp $"!="
+	|> exp ("<=" ws | "<" ws | ">=" ws | ">" ws) exp
+	|> exp ("+" ws exp $"+" | "-" exp ws $"-")*
+	|> exp ("*" ws exp $"*" | "/" ws exp $"/" | "%" ws exp $"%")*
 
-	|> exp "[" exp "]" $"index"
-	|> exp "." exp $"dot"
-	|> exp "?" exp ":" exp $"ifelse"
+	|> exp ("[" ws exp "]" ws $"index")+ 
+	|> exp ("." ws exp $"dot")+
+	|> exp "?" ws exp ":" ws exp $"ifelse"
 
 	|> (
-		"if" exp exp "else" exp $"ifelse" 
-		| "if" exp exp $"if"
-		| "(" exp ")"
-		| "-" exp $"negate"
-		| $('0x30'-'0x39'+)
+		"if" ws exp s+ exp "else" ws exp $"ifelse" 
+		| "if" ws exp s+ exp $"if"
+		| "(" ws exp ")" ws 
+		| "-" ws exp $"negate"
+		| $('0x30'-'0x39'+) ws 
 	);
+
+ws = s*;
+s = " " | "	" | "
+";
 exp
