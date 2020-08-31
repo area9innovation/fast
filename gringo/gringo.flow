@@ -1,12 +1,6 @@
-import gringo/gringo_pretty;
-import gringo/optimize;
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
-import gringo/precedence;
-import gringo/cse;
-import gringo/left_recursion;
-import gringo/right_assoc;
-import gringo/prefix;
+import gringo/gringo_prepare;
 import gringo/gringo_ast_actions;
 import net/url_parameter;
 import fs/filesystem;
@@ -51,7 +45,7 @@ main() {
 						"file", file,
 						"out", out,
 						"name", changeFileExt(fileNameOnly(file), "") + "Grammar",
-						"grammar", toString(resGrammar),
+						"grammar", toString(prepareGringoGrammar(resGrammar)),
 					])
 				);
 				{}
@@ -73,6 +67,10 @@ main() {
 					setFileContent(result, tenv.output);
 					println("Saved output to " + result);
 				}
+			} else if (isUrlParameterTrue("grammar")) {
+				ogrammar = prepareGringoGrammar(resGrammar);
+				println("Fully optimized:");
+				println(gterm2string(ogrammar));
 			}
 
 			quit(0);
@@ -102,34 +100,17 @@ gringo file=path/grammar.gringo <options>
 }
 
 doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool, debugGrammar : bool) -> GringoEnv<?> {
-	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose);
-
 	if (false) {
 		println("Original:");
 		println(gterm2string(grammar));
 	}
-
-	prgrammar = expandPrecedence(grammar);
-	if (false) {
-		println("Precedence:");
-		println(gterm2string(prgrammar));
-	}
-
-	egrammar = reduceCommon(prgrammar);
-	if (false) {
-		println("CSE, dead-code:");
-		println(gterm2string(egrammar));
-	}
-	pgrammar = commonPrefix(egrammar);
-	rgrammar = rightAssociateGTerm(pgrammar);
-	lgrammar = rewriteLeftRecursion(rgrammar);
-	// Do CSE again
-	ogrammar = optimizeGTerm(reduceCommon(lgrammar));
+	ogrammar = prepareGringoGrammar(grammar);
 	if (debugGrammar) {
 		println("Fully optimized:");
 		println(gterm2string(ogrammar));
 	}
 
+	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose);
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {
