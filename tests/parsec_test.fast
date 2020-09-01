@@ -9,6 +9,7 @@ add_five(x : i32) -> i32 { x + 5; }
 add_ints(x : i32, y : i32) -> i32  { x + y; }
 
 parsec.flow::main() -> i0 {
+
     p0 = compiletime::emptyParseC(one);
     println(p0("a", 0));
     println(p0("b", 0));
@@ -57,7 +58,7 @@ parsec.flow::main() -> i0 {
     println(p3("abcdef", 0));
     println("----------");
 
-/*
+
     p4 = compiletime::sequenceParseC(
         tokenParseC("ab", one_, 2), 
         tokenParseC("cd", two_, 2),
@@ -69,12 +70,13 @@ parsec.flow::main() -> i0 {
     println("abcdef: ");
     println(p4("abcdef", 0));
     println("----------");
-*/
+
 
 
     p4 = compiletime::choiceParseC(
         tokenParseC("a", one_, 2), 
         tokenParseC("b", two_, 2),
+        add_five,
         45
     );
     println("a: ");
