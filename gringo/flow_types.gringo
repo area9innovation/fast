@@ -1,19 +1,19 @@
 import = "import" ws (!';' anychar)* ";" ws;
-export = "export" ws "{" ws toplevel* "}" ws;
+export = "export" ws "{" ws $"nil" (toplevel $"cons")* "}" ws;
 
 toplevel = union | struct | fundecl;
 
-union = id ws "::=" ws idlist ";" ws $"union";
+union = id ws "::=" ws idlist ";" ws $"object";
 
-struct = id ws "(" $"nil" args? ")" ws ";" ws $"struct";
+	idlist = id ("," ws id $"cons")+;
 
-fundecl = id ws "(" $"nil" args? ")" ws "->" ws type ";" ws $"fundecl";
 
-args = arg $"cons" ("," ws arg $"cons")*;
+struct = id ws "(" $"nil" args? ")" ws ";" ws $"object";
 
-arg = id ws ":" ws type;
+fundecl = id ws "(" $"nil" args? ")" ws "->" ws type ";" ws $"object";
 
-idlist = id ("," ws id $"cons")+;
+	args = arg $"cons" ("," ws arg $"cons")*;
+	arg = id ws ":" ws type;
 
 type = "[" ws type "]" ws
 	| "(" ws $"nil" types? ")" ws "->" type

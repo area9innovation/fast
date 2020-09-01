@@ -94,7 +94,6 @@ export {
 
 	pushAstStack(a : GringoAstAcc, e : GTerm) -> GringoAstAcc;
 	popAstStack(a : GringoAstAcc) -> Pair<GTerm, GringoAstAcc>;
-
 }
 
 pushAstStack(a : GringoAstAcc, e : GTerm) -> GringoAstAcc {

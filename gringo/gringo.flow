@@ -2,6 +2,7 @@ import gringo/gringo_grammar;
 import gringo/gringo_parse;
 import gringo/gringo_prepare;
 import gringo/gringo_ast_actions;
+import gringo/json_actions;
 import net/url_parameter;
 import fs/filesystem;
 
@@ -56,15 +57,16 @@ main() {
 			testfile = getUrlParameter("testfile");
 			testtext = if (test != "") test else if (testfile != "") getFileContent(testfile) else "";
 			if (testtext != "") {
-				tenv = doGringoParse(resGrammar, forthAction, "", testtext, isUrlParameterTrue("trace"), isUrlParameterTrue("grammar"));
+				tenv = doGringoParse(resGrammar, jsonAction, makeList(), testtext, isUrlParameterTrue("trace"), isUrlParameterTrue("grammar"));
 				if (!tenv.fail && strlen(testtext) == tenv.i) {
 					println("Parsed test: " + i2s(tenv.i) + " chars successfully.");
 				}
+				json : Json = getJsonGringo(tenv.output);
 				result = getUrlParameter("result");
 				if (result == "1") {
-					println(tenv.output);
+					println(json2stringFormatted(json));
 				} else if (result != "") {
-					setFileContent(result, tenv.output);
+					setFileContent(result, json2stringFormatted(json));
 					println("Saved output to " + result);
 				}
 			} else if (isUrlParameterTrue("grammar")) {
