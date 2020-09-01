@@ -108,7 +108,14 @@ extractFastDeps(f : FastAst, sourceFile : int, e : FExp, onlyCompiletime : bool,
 							dexpr = finlineForm2string(dep.stream, fexp2fast, fastType2string);
 							if (dep.name == "import" || dep.name == "function" || dep.name == "global" || dep.name == "typedef") {
 								parse = prepareFastParse(file, dexpr, lineCol.first, lineCol.second);
-								fastfile = fastParser(FastFile(file, [], [], []), parse, 0);
+								fastfile = fastParser(FastFile(file, [], [], []), 
+									FastParse(parse with 
+										onError = \msg, i -> {
+											println("dependency parsing failure:");
+											println(dexpr);
+											parse.onError(msg, i);
+										}
+									), 0);
 
 								addFastFile(acc2, sourceFile, fastfile);
 							} else {
