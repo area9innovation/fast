@@ -1,0 +1,59 @@
+import gringo/jingo/jingo_ast;
+import ds/list;
+import ds/tuples;
+import runtime;
+
+export {
+	getJInt(j : Jingo<?>) -> int;
+	getJString(j : Jingo<?>) -> string;
+	getJArray(j : Jingo<?>) -> [Jingo<?>];
+
+	pushJStack(a : List<Jingo<?>>, e : Jingo<?>) -> List<Jingo<?>>;
+	popJStack(a : List<Jingo<?>>) -> Pair<Jingo<?>, List<Jingo<?>>>;
+}
+
+getJInt(j : Jingo<?>) -> int {
+	switch (j) {
+		JOperand(op): 0;
+		JInt(val): val;
+		JString(s): 0;
+		JArray(vals): 0;
+		JNative(value): 0;
+	}
+}
+
+getJString(j : Jingo<?>) -> string {
+	switch (j) {
+		JOperand(op): "";
+		JInt(val): "";
+		JString(s): s;
+		JArray(vals): "";
+		JNative(value): "";
+	}
+}
+
+getJArray(j : Jingo<?>) -> [Jingo<?>] {
+	switch (j) {
+		JOperand(op): [];
+		JInt(val): [];
+		JString(s): [];
+		JArray(vals): vals;
+		JNative(value): [];
+	}
+}
+
+pushJStack(a : List<Jingo<?>>, e : Jingo<?>) -> List<Jingo<?>> {
+	Cons(e, a);
+}
+
+popJStack(a : List<Jingo<?>>) -> Pair<Jingo<?>, List<Jingo<?>>> {
+	switch (a) {
+		EmptyList(): {
+			println("Stack underflow");
+			Pair(JOperand(""), a);
+		}
+		Cons(head, tailL): {
+			Pair(head, tailL)
+		}
+	}
+}

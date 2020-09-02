@@ -26,6 +26,8 @@ export {
 				pushJingoStack(op.second, JString(getJString(op.first)));
 			} else if (v == "def") {
 				pushJingoStack(acc, JOperand("define"));
+			} else if (v == "defs") {
+				pushJingoStack(acc, JOperand("defines"));
 			} else {
 				println("TODO: Handle "+ v);
 				acc;

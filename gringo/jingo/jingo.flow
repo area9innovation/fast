@@ -1,10 +1,12 @@
 import gringo/gringo_parse;
 import gringo/jingo/jingo_grammar;
 import gringo/jingo/jingo_ast_actions;
+import gringo/jingo/jingo_interpreter;
+import gringo/jingo/jingo_builtins;
 import net/url_parameter;
 
 main() {
-	program = getUrlParameterDef("code", "let sq = dup * ; 1 sq");
+	program = getUrlParameterDef("code", "let sq = dup * ; 3 sq");
 
 	// Parse the Jingo program
 	env = GringoEnv(program, makeTree(), 0, jingoAstAction, JingoStack(makeList()), false, false);
@@ -18,8 +20,16 @@ main() {
 		println("Did not parse: " + remaining);
 	}
 
-	res = list2array(genv.output.stack);
-	println(res);
+	res : [Jingo<bool>] = list2array(genv.output.stack);
+
+	defscode = split(res, \op -> op == JOperand("defines"));
+	defs = defscode[0];
+	code = defscode[1];
+
+	jenv = captureJDefines(makeTree(), makeList(), defs);
+	result = runJingo(getJingoBuiltins(), jenv, makeList(), JArray(code));
+
+	println(list2array(result));
 
 	quit(0);
 }

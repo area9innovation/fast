@@ -49,10 +49,6 @@ We could attempt to do this using polymorphism.
 
 ## Operators or Words
 
-x drop ->
-x dup -> x x
-x print ->
-x y swap -> y x
 x y over -> x y x
 x y z rot -> y z x
 x y dup2 -> x y x y 

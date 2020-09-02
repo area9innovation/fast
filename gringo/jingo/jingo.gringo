@@ -1,4 +1,4 @@
-program = ws (definition)* jingos;
+program = ws (definition)* $"defs" jingos;
 
 definition = "let" ws id ws "=" ws jingos ";" ws $"def";
 

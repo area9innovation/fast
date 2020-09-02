@@ -1,0 +1,52 @@
+import gringo/jingo/utils;
+import ds/tree;
+
+export {
+	getJingoBuiltins() -> Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>>;
+}
+
+getJingoBuiltins() -> Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>> {
+	pairs2tree([
+		// x drop ->
+		Pair("drop", \stack -> {
+			elm = popJStack(stack);
+			elm.second;
+		}),
+
+		// x dup -> x x
+		Pair("dup", \stack -> {
+			elm = popJStack(stack);
+			pushJStack(stack, elm.first);
+		}),
+
+		// x print ->
+		Pair("print", \stack -> {
+			elm = popJStack(stack);
+			println(elm);
+			elm.second;
+		}),
+
+		// x y swap -> y x
+		Pair("swap", \stack -> {
+			y = popJStack(stack);
+			x = popJStack(y.second);
+			ns = pushJStack(x.second, y.first);
+			pushJStack(ns, x.first);
+		}),
+
+		// x y + -> x+y
+		Pair("+", \stack -> {
+			y = popJStack(stack);
+			x = popJStack(y.second);
+			pushJStack(x.second, JInt(getJInt(x.first) + getJInt(y.first)));
+		}),
+
+		// x y * -> x*y
+		Pair("*", \stack -> {
+			y = popJStack(stack);
+			x = popJStack(y.second);
+			pushJStack(x.second, JInt(getJInt(x.first) * getJInt(y.first)));
+		}),
+
+	])
+}
