@@ -41,11 +41,32 @@ getJingoBuiltins() -> Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>> {
 			pushJStack(x.second, JInt(getJInt(x.first) + getJInt(y.first)));
 		}),
 
+		// x y - -> x-y
+		Pair("-", \stack -> {
+			y = popJStack(stack);
+			x = popJStack(y.second);
+			pushJStack(x.second, JInt(getJInt(x.first) - getJInt(y.first)));
+		}),
+
 		// x y * -> x*y
 		Pair("*", \stack -> {
 			y = popJStack(stack);
 			x = popJStack(y.second);
 			pushJStack(x.second, JInt(getJInt(x.first) * getJInt(y.first)));
+		}),
+
+		// x y / -> x/y
+		Pair("/", \stack -> {
+			y = popJStack(stack);
+			x = popJStack(y.second);
+			pushJStack(x.second, JInt(getJInt(x.first) / getJInt(y.first)));
+		}),
+
+		// x y % -> x%y
+		Pair("%", \stack -> {
+			y = popJStack(stack);
+			x = popJStack(y.second);
+			pushJStack(x.second, JInt(getJInt(x.first) % getJInt(y.first)));
 		}),
 
 	])
