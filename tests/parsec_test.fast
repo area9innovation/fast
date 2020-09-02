@@ -1,6 +1,5 @@
 import parsec;
 
-
 one() -> i32 { 1; }
 two() -> i32 { 2; }
 idfn(x : ?) -> ? { x; }
@@ -21,8 +20,7 @@ add_ints(x : i32, y : i32) -> i32  { x + y; }
 first_of(x : ?, y : ??) -> ?  { x; }
 second_of(x : ?, y : ??) -> ??  { y; }
 pair_of(x : ?, y : ??) -> Tuple<?, ??>  { tuple(x, y); }
-
-pair_str_int(x : string, y : i32) -> Tuple<string, i32>  { tuple(x, y); }
+str_int(x : string, y : i32) -> Tuple<string, i32>  { tuple(x, y); }
 
 showResult(res : Tuple<i32, ?>, input : string) -> void {
     i = first(res);
@@ -143,6 +141,7 @@ testChoice() -> void {
 */
 
 
+
 oper_ints(x : i32, oper_y : Tuple<string, i32>) -> i32 {
     oper = first(oper_y);
     y = second(oper_y);
@@ -248,7 +247,7 @@ arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
                         compiletime::tokenParseC(")", _0, 0), 
                         first_of, 0
                     ),
-                    pair_str_int, tuple("", 0)
+                    str_int, tuple("", 0)
                 ),
                 oper_ints, 0
             ),
@@ -281,6 +280,48 @@ testArithm() -> void {
     println("");
 }
 
+
+testStarAction(arr : Array<string>) -> string {
+    doTestStarAction(arr, "", 0);
+}
+
+doTestStarAction(arr : Array<string>, acc : string, i : i32) -> string {
+    if (i == length(arr)) {
+        acc;
+    } else {
+        x = index(arr, i, "");
+        new_acc = x + ("-" + acc);
+        doTestStarAction(arr, new_acc, i + 1);
+    }
+}
+
+testStar() -> void {
+    p = compiletime::starParseC(
+        digitParser(),
+        testStarAction,
+        ""
+    );
+    println("Testing Kleene star");
+    runTest("2", p);
+    runTest("234", p);
+    runTest("23454643", p);
+    runTest("234sdfd", p);
+    runTest("dsfds", p);
+    runTest("", p);
+    q = compiletime::plusParseC(
+        digitParser(),
+        testStarAction,
+        ""
+    );
+    println("Testing Kleene plus");
+    runTest("2", q);
+    runTest("234", q);
+    runTest("23454643", q);
+    runTest("234sdfd", q);
+    runTest("dsfds", q);
+    runTest("", q);
+}
+
 parsec.flow::main() -> i0 {
 /*
     testEmpty();
@@ -291,5 +332,6 @@ parsec.flow::main() -> i0 {
     testChoice();
 */
     testArithm();
+    testStar();
 	quit(0);
 }

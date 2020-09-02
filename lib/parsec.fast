@@ -1,6 +1,7 @@
 import string_utils;
 import partial_call;
 import tuples;
+import array;
 
 export {
     // Parser combinator library.
@@ -63,6 +64,20 @@ export {
         parser1 : (string, i32) -> Tuple<i32, ?>,
         parser2 : (string, i32) -> Tuple<i32, ?>,
         sem_act : (?) -> ??,
+        fail : ??
+    ) -> (string, i32) -> Tuple<i32, ??>;
+
+    // Kleene star
+    starParseC(
+        parser : (string, i32) -> Tuple<i32, ?>,
+        sem_act : (Array<?>) -> ??,
+        fail : ??
+    ) -> (string, i32) -> Tuple<i32, ??>;
+
+    // Kleene plus
+    plusParseC(
+        parser : (string, i32) -> Tuple<i32, ?>,
+        sem_act : (Array<?>) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
 }
@@ -203,5 +218,66 @@ choiceParseCimpl(
         t1;
     } else {
         modifyParseCimpl(parser2, sem_act, fail, input, i);
+    }
+}
+
+compiletime::starParseC(
+    parser : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (Array<?>) -> ??,
+    fail : ??
+) -> (string, i32) -> Tuple<i32, ??> {
+    compiletime::partialCall(starParseCimpl, parser, sem_act, fail);
+}
+
+starParseCimpl(
+    parser : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (Array<?>) -> ??,
+    fail : ??,
+    input : string,
+    i : i32
+) -> (string, i32) -> Tuple<i32, ??> {
+    doStarParseCimpl(parser, sem_act, fail, input, i, array());
+}
+
+compiletime::plusParseC(
+    parser : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (Array<?>) -> ??,
+    fail : ??
+) -> (string, i32) -> Tuple<i32, ??> {
+    compiletime::partialCall(plusParseCimpl, parser, sem_act, fail);
+}
+
+plusParseCimpl(
+    parser : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (Array<?>) -> ??,
+    fail : ??,
+    input : string,
+    i : i32
+) -> (string, i32) -> Tuple<i32, ??> {
+    p = parser(input, i);
+    j = first(p);
+    if (j == -(1)) {
+        tuple(-(1), fail);
+    } else {
+        doStarParseCimpl(parser, sem_act, fail, input, j, array(second(p)));
+    }
+}
+
+doStarParseCimpl(
+    parser : (string, i32) -> Tuple<i32, ?>,
+    sem_act : (Array<?>) -> ??,
+    fail : ??,
+    input : string,
+    i : i32,
+    acc : Array<?>
+) -> Tuple<i32, ??> {
+    p = parser(input, i);
+    j = first(p);
+    if (j == -(1)) {
+        tuple(i, sem_act(acc));
+    } else {
+        x = second(p);
+        new_acc = acc + array(x);
+        doStarParseCimpl(parser, sem_act, fail, input, j, new_acc);
     }
 }

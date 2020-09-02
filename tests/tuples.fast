@@ -29,3 +29,14 @@ www/tuples.js::main() -> i0 {
 }
 
 // TODO: Add example of sending data between languages
+
+// Tests on nested tuples
+
+make_nested() -> Tuple<i32, Tuple<string, i32> > {
+	tuple(1, tuple("ab", 2));
+}
+
+nested_tuples.flow::main() -> i0 {
+	nested = make_nested();
+	println(first(second(nested)));
+}
