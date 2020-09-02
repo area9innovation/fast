@@ -4,10 +4,18 @@ import parsec;
 one() -> i32 { 1; }
 two() -> i32 { 2; }
 idfn(x : ?) -> ? { x; }
-zero_(x : string) -> i32 { 0; }
-one_(x : string) -> i32 { 1; }
-two_(x : string) -> i32 { 2; }
-three_(x : string) -> i32 { 3; }
+
+_0(x : string) -> i32 { 0; }
+_1(x : string) -> i32 { 1; }
+_2(x : string) -> i32 { 2; }
+_3(x : string) -> i32 { 3; }
+_4(x : string) -> i32 { 4; }
+_5(x : string) -> i32 { 5; }
+_6(x : string) -> i32 { 6; }
+_7(x : string) -> i32 { 7; }
+_8(x : string) -> i32 { 8; }
+_9(x : string) -> i32 { 9; }
+
 add_five(x : i32) -> i32 { x + 5; }
 add_ints(x : i32, y : i32) -> i32  { x + y; }
 first_of(x : ?, y : ??) -> ?  { x; }
@@ -60,7 +68,7 @@ testInputEnd() -> void {
 
 testToken() -> void {
     println("Testing token string parser");
-    p2 = compiletime::tokenParseC("ab", one_, 2);
+    p2 = compiletime::tokenParseC("ab", _1, 2);
     println("a: ");
     println(p2("a", 0));
     println("b: ");
@@ -83,7 +91,7 @@ testToken() -> void {
 testModify() -> void {
     println("Testing modify semantic action parser");
     //p3 = compiletime::modifyParseC(p2, add_five, 3);
-    p3 = compiletime::modifyParseC(tokenParseC("ab", one_, 2), add_five, 3);
+    p3 = compiletime::modifyParseC(tokenParseC("ab", _1, 2), add_five, 3);
     println(p3("a", 0));
     println(p3("b", 0));
     println(p3("ab", 0));
@@ -98,8 +106,8 @@ testModify() -> void {
 testSequence() -> void {
     println("Testing sequence of parsers");
      p4 = compiletime::sequenceParseC(
-        tokenParseC("ab", one_, 2), 
-        tokenParseC("cd", two_, 2),
+        tokenParseC("ab", _1, 2), 
+        tokenParseC("cd", _2, 2),
         add_ints,
         4
     );
@@ -113,8 +121,8 @@ testSequence() -> void {
 testChoice() -> void {
     println("Testing choice of parser");
     p4 = compiletime::choiceParseC(
-        tokenParseC("a", one_, 2), 
-        tokenParseC("b", two_, 2),
+        tokenParseC("a", _1, 2), 
+        tokenParseC("b", _2, 2),
         add_five,
         45
     );
@@ -151,23 +159,71 @@ oper_ints(x : i32, oper_y : Tuple<string, i32>) -> i32 {
     }
 }
 
-arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
-    p = compiletime::choiceParseC(
+compiletime::digitParser() -> (string, i32) -> Tuple<i32, string> {
+    compiletime::choiceParseC(
         compiletime::choiceParseC(
             compiletime::choiceParseC(
-                compiletime::tokenParseC("0", zero_, 0), 
-                compiletime::tokenParseC("1", one_, 0), 
-                idfn, 0
+                compiletime::tokenParseC("0", idfn, ""), 
+                compiletime::tokenParseC("1", idfn, ""), 
+                idfn, ""
             ), 
             compiletime::choiceParseC(
-                compiletime::tokenParseC("2", two_, 0), 
-                compiletime::tokenParseC("3", three_, 0), 
-                idfn, 0
+                compiletime::tokenParseC("2", idfn, ""), 
+                compiletime::tokenParseC("3", idfn, ""), 
+                idfn, ""
+            ),
+            idfn, ""
+        ), 
+        compiletime::choiceParseC(
+            compiletime::choiceParseC(
+                compiletime::tokenParseC("4", idfn, ""), 
+                compiletime::tokenParseC("5", idfn, ""), 
+                idfn, ""
             ), 
-            idfn, 0
+            compiletime::choiceParseC(
+                compiletime::choiceParseC(
+                    compiletime::tokenParseC("6", idfn, ""), 
+                    compiletime::tokenParseC("7", idfn, ""), 
+                    idfn, ""
+                ), 
+                compiletime::choiceParseC(
+                    compiletime::tokenParseC("8", idfn, ""), 
+                    compiletime::tokenParseC("9", idfn, ""), 
+                    idfn, ""
+                ),
+                idfn, ""
+            ),
+            idfn, ""
+        ), 
+        idfn, ""
+    );
+}
+
+decNumAddDigit(hi_digit : string, lo_num : string) -> string {
+    hi_digit + lo_num;
+}
+
+decNumber(input : string, i : i32) -> Tuple<i32, string> {
+    p = compiletime::choiceParseC(
+        compiletime::sequenceParseC(
+            compiletime::digitParser(),
+            decNumber,
+            decNumAddDigit, ""
+        ),
+        compiletime::digitParser(),
+        idfn, ""
+    );
+    p(input, i);
+}
+
+arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
+    p = compiletime::choiceParseC(
+        compiletime::modifyParseC(
+            decNumber,
+            s2i, 0
         ),
         compiletime::sequenceParseC(
-            compiletime::tokenParseC("(", zero_, 0), 
+            compiletime::tokenParseC("(", _0, 0), 
             compiletime::sequenceParseC(
                 arithmParser,
                 compiletime::sequenceParseC(
@@ -189,7 +245,7 @@ arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
                     ),
                     compiletime::sequenceParseC(
                         arithmParser,
-                        compiletime::tokenParseC(")", zero_, 0), 
+                        compiletime::tokenParseC(")", _0, 0), 
                         first_of, 0
                     ),
                     pair_str_int, tuple("", 0)
@@ -217,6 +273,11 @@ testArithm() -> void {
     runTest("(1+(1-+1))", arithmParser);
     runTest("(1*(3-2))", arithmParser);
     runTest("((1+2)*(3-1))", arithmParser);
+    runTest("((132+234)*(31-14))", arithmParser);
+    runTest("(132+234)", arithmParser);
+    runTest("(12*24)", arithmParser);
+    runTest("132", arithmParser);
+    runTest("234", arithmParser);
     println("");
 }
 
