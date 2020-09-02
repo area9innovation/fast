@@ -50,9 +50,6 @@ Common stack operations:
 	x dup -> x x
 	x print ->
 	x y swap -> y x
-	x y over -> x y x
-	x y z rot -> y z x
-	x y dup2 -> x y x y 
 
 We support arrays, but this syntax is also used to quote code:
 
@@ -68,6 +65,39 @@ In addition, we support common int operations:
 	x y * -> x*y
 	x y / -> x/y
 	x y % -> x%y
+
+TODO:
+
+	x y over -> x y x
+	x y z rot -> y z x
+	x y dup2 -> x y x y
+
+Array:
+	[y] x cons -> [x, y]
+	[h tail] uncons -> x [y] (or maybe the other way around?)
+
+	[x] [y] concat
+
+	[x] size
+
+Comparisons & logic:
+
+	x y = -> 0/1
+	x y and -> 0/1
+	x y or -> 0/1
+	x not -> 0/1
+
+From Joy:
+	i  ~  Eval?
+	dip
+	nullary
+	map
+	step
+	sieve
+	filter
+	infra
+	ifte
+	linrec
 
 ## String processing todo
 
@@ -87,7 +117,10 @@ Right now, evaluation an array will evaluate each element of the array.
 
 ## Standard library TODO
 
-x sq -> x*x
+	x sq -> x*x
+	fold
+	map
+	while
 
 ## Peg codes
 

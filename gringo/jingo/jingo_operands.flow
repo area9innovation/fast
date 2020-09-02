@@ -7,7 +7,6 @@ export {
 
 getJingoLib() -> Tree<string, Jingo<?>> {
 	pairs2tree([
-		"+", 
 
 	]);
 }

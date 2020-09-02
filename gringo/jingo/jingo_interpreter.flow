@@ -47,9 +47,13 @@ runJingo(
 		JInt(val): Cons(code, stack);
 		JString(val): Cons(code, stack);
 		JArray(val): {
-			fold(val, stack, \acc, a -> {
-				runJingo(builtins, env, acc, a)
-			})
+			if (true) {
+				Cons(code, stack);
+			} else {
+				fold(val, stack, \acc, a -> {
+					runJingo(builtins, env, acc, a)
+				})
+			}
 		}
 		JNative(val): Cons(code, stack);
 		JOperand(op): {
