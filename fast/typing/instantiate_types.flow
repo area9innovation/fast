@@ -87,11 +87,12 @@ evaluateFastType(env : TypedefEnv, type : FastType) -> FastType {
 			if (nfuncs >= 1) {
 				evalFunctor = \functor -> {
 					ienv = foldi(functor.typars, env, \i, acc, typar : string -> {
-						if (typars[i] == FTypeCall(typar, [])) {
+						evaled_typar = evaluateFastType(env, typars[i]);
+						if (evaled_typar == FTypeCall(typar, [])) {
 							// No point is binding to what it already is
 							acc
 						} else {
-							TypedefEnv(acc with typars = setTree(acc.typars, typar, typars[i]))
+							TypedefEnv(acc with typars = setTree(acc.typars, typar, evaled_typar))
 						}
 					});
 					evaluateFastType(ienv, functor.type);

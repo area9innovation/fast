@@ -53,7 +53,7 @@ collectTypeCalls(acc : Tree<string, Set<FTypeCall>>, t : FastType) -> Tree<strin
 			fold(args, collectTypeCalls(acc, to), collectTypeCalls);
 		}
 		FTypeCall(id, typars): {
-			insertMultimap(acc, id, t);
+			fold(typars, insertMultimap(acc, id, t), collectTypeCalls);
 		}
 		FInlineType(language, stream, dependencies): {
 			str = \acc2, st -> {
