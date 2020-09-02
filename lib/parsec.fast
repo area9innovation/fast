@@ -165,7 +165,7 @@ sequenceParseCimpl(
     if (0 > first(t1)) {
         tuple(-(1), fail);
     } else {
-        t2 = parser1(input, first(t1));
+        t2 = parser2(input, first(t1));
         if (0 > first(t2)) {
             tuple(-(1), fail);
         } else {

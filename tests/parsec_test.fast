@@ -3,29 +3,63 @@ import parsec;
 
 one() -> i32 { 1; }
 two() -> i32 { 2; }
+idfn(x : ?) -> ? { x; }
+zero_(x : string) -> i32 { 0; }
 one_(x : string) -> i32 { 1; }
 two_(x : string) -> i32 { 2; }
+three_(x : string) -> i32 { 3; }
 add_five(x : i32) -> i32 { x + 5; }
 add_ints(x : i32, y : i32) -> i32  { x + y; }
+first_of(x : ?, y : ??) -> ?  { x; }
+second_of(x : ?, y : ??) -> ??  { y; }
+pair_of(x : ?, y : ??) -> Tuple<?, ??>  { tuple(x, y); }
 
-parsec.flow::main() -> i0 {
+pair_str_int(x : string, y : i32) -> Tuple<string, i32>  { tuple(x, y); }
 
+showResult(res : Tuple<i32, ?>, input : string) -> void {
+    i = first(res);
+    if (0 > i) {
+        println("fail, i=" + i2s(i) + "\n");
+    } else if (i < length(input)) {
+        println("fail: i=" + i2s(i) + ", length(input)=" + i2s(length(input)) + "\n");
+    } else {
+        println("success, result:");
+        println(second(res));
+        println("");
+    }
+}
+
+runTest(input : string, parser : (string, i32) -> Tuple<i32, ?>) -> void {
+    println("running test '" + input + "'");
+    res = parser(input, 0);
+    showResult(res, input);
+}
+
+/*
+testEmpty() -> void {
+    println("Testing empty string parser");
     p0 = compiletime::emptyParseC(one);
     println(p0("a", 0));
     println(p0("b", 0));
     println(p0("ab", 0));
     println(p0("aa", 0));
     println(p0("", 0));
-    println("----------");
+    println("");
+}
 
+testInputEnd() -> void {
+    println("Testing input end parser");
     p1 = compiletime::inputEndParseC(one, 2);
     println(p1("a", 0));
     println(p1("b", 0));
     println(p1("ab", 0));
     println(p1("aa", 0));
     println(p1("", 0));
-    println("----------");
+    println("");
+}
 
+testToken() -> void {
+    println("Testing token string parser");
     p2 = compiletime::tokenParseC("ab", one_, 2);
     println("a: ");
     println(p2("a", 0));
@@ -43,9 +77,11 @@ parsec.flow::main() -> i0 {
     println(p2("", 0));
     println("abcdef: ");
     println(p2("abcdef", 0));
-    println("----------");
+    println("");
+}
 
-
+testModify() -> void {
+    println("Testing modify semantic action parser");
     //p3 = compiletime::modifyParseC(p2, add_five, 3);
     p3 = compiletime::modifyParseC(tokenParseC("ab", one_, 2), add_five, 3);
     println(p3("a", 0));
@@ -56,10 +92,12 @@ parsec.flow::main() -> i0 {
     println(p3(" aab", 2));
     println(p3("", 0));
     println(p3("abcdef", 0));
-    println("----------");
+    println("");
+}
 
-
-    p4 = compiletime::sequenceParseC(
+testSequence() -> void {
+    println("Testing sequence of parsers");
+     p4 = compiletime::sequenceParseC(
         tokenParseC("ab", one_, 2), 
         tokenParseC("cd", two_, 2),
         add_ints,
@@ -69,10 +107,11 @@ parsec.flow::main() -> i0 {
     println(p4("a", 0));
     println("abcdef: ");
     println(p4("abcdef", 0));
-    println("----------");
+    println("");
+}
 
-
-
+testChoice() -> void {
+    println("Testing choice of parser");
     p4 = compiletime::choiceParseC(
         tokenParseC("a", one_, 2), 
         tokenParseC("b", two_, 2),
@@ -91,7 +130,105 @@ parsec.flow::main() -> i0 {
     println(p4("abcdef", 1));
     println("abcdef: ");
     println(p4("abcdef", 2));
-    println("----------");
+    println("");
+}
+*/
 
+
+oper_ints(x : i32, oper_y : Tuple<string, i32>) -> i32 {
+    oper = first(oper_y);
+    y = second(oper_y);
+    if (oper == "+") {
+        x + y;
+    } else if (oper == "-") {
+        x - y;
+    } else if (oper == "*") {
+        x * y;
+    } else if (oper == "/") {
+        x / y;
+    } else {
+        0;
+    }
+}
+
+arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
+    p = compiletime::choiceParseC(
+        compiletime::choiceParseC(
+            compiletime::choiceParseC(
+                compiletime::tokenParseC("0", zero_, 0), 
+                compiletime::tokenParseC("1", one_, 0), 
+                idfn, 0
+            ), 
+            compiletime::choiceParseC(
+                compiletime::tokenParseC("2", two_, 0), 
+                compiletime::tokenParseC("3", three_, 0), 
+                idfn, 0
+            ), 
+            idfn, 0
+        ),
+        compiletime::sequenceParseC(
+            compiletime::tokenParseC("(", zero_, 0), 
+            compiletime::sequenceParseC(
+                arithmParser,
+                compiletime::sequenceParseC(
+                    compiletime::choiceParseC(
+                        compiletime::choiceParseC(
+                            compiletime::tokenParseC("+", idfn, ""), 
+                            compiletime::tokenParseC("-", idfn, ""),
+                            idfn,
+                            ""
+                        ), 
+                        compiletime::choiceParseC(
+                            compiletime::tokenParseC("*", idfn, ""), 
+                            compiletime::tokenParseC("/", idfn, ""),
+                            idfn,
+                            ""
+                        ),
+                        idfn,
+                        ""
+                    ),
+                    compiletime::sequenceParseC(
+                        arithmParser,
+                        compiletime::tokenParseC(")", zero_, 0), 
+                        first_of, 0
+                    ),
+                    pair_str_int, tuple("", 0)
+                ),
+                oper_ints, 0
+            ),
+            second_of, 0
+        ),
+        idfn, 0
+    );
+    p(input, i);
+}
+
+testArithm() -> void {
+    println("Testing simple arithmetics parser");
+    runTest("0", arithmParser);
+    runTest("1", arithmParser);
+    runTest("10", arithmParser);
+    runTest("(0+0)", arithmParser);
+    runTest("(1+1)", arithmParser);
+    runTest("(1+1))", arithmParser);
+    runTest("(1+(1+1))", arithmParser);
+    runTest("((1+1)+1)", arithmParser);
+    runTest("(1+(1-1))", arithmParser);
+    runTest("(1+(1-+1))", arithmParser);
+    runTest("(1*(3-2))", arithmParser);
+    runTest("((1+2)*(3-1))", arithmParser);
+    println("");
+}
+
+parsec.flow::main() -> i0 {
+/*
+    testEmpty();
+    testInputEnd();
+    testToken();
+    testModify();
+    testSequence();
+    testChoice();
+*/
+    testArithm();
 	quit(0);
 }
