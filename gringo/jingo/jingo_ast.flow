@@ -1,0 +1,16 @@
+export {
+/*	
+	JingoProgram(defs : [JDefine<?>], code : Jingo<?>);
+		JDefine(name : string, code : Jingo<?>);
+*/
+
+	Jingo<?> ::= JOperand, JValue<?>;
+
+	JOperand(op : string);
+
+	JValue<?> ::= JInt, JString, JArray<?>, JNative<?>;
+		JInt(val : int);
+		JString(s : string);
+		JArray(vals : [Jingo<?>]);
+		JNative(value : ?);
+}

@@ -1,0 +1,24 @@
+import gringo/jingo/jingo_ast;
+import ds/tree;
+
+export {
+	runJingo(env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, code : Jingo<?>) -> List<Jingo<?>>;
+}
+
+runJingo(env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, code : Jingo<?>) -> List<Jingo<?>> {
+	switch (code) {
+		JInt(val): Cons(code, stack);
+		JString(val): Cons(code, stack);
+		JArray(val): Cons(code, stack);
+		JNative(val): Cons(code, stack);
+		JOperand(op): {
+			mcode = lookupTree(env, op);
+			mcode ?? {
+				runJingo(env, stack, mcode)
+			} : {
+				println("Unknown operand " + op);
+				Cons(code, stack);
+			}
+		}
+	}
+}
