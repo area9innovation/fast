@@ -1,0 +1,104 @@
+import ds/simplegraph;
+import material/material;
+import material/material2tropic;
+
+/*
+TODO:
+- Draw lines and fix collapsers
+- Indicate links to other nodes in some subtle way
+- Indicate other "islands" of disconnected nodes
+- Change to breadth-first traversal
+- Make the entire thing reactive
+
+- Have a set of selected nodes
+- Have a current node
+- Have a state deciding whether the node is collapsed or open
+- Have a preview state where the node is "cut"
+*/
+
+GraphView(
+	graph : SimpleGraph<?, ??>,
+	displayNode : (?) -> Material,
+	displayEdge : (??) -> Material,
+);
+
+GraphViewAcc(
+	graph : GraphView<?, ??>,
+	visited : Set<int>,
+	view : Material
+);
+
+makeGraphView(g : GraphView<?, ??>, focus : int) -> Material {
+	buildGraphView(GraphViewAcc(g, makeSet(), MEmpty()), max(focus, 0)).view;
+}
+
+buildGraphView(acc : GraphViewAcc<?, ??>, nodeid : int) -> GraphViewAcc<?, ??> {
+	if (containsSet(acc.visited, nodeid)) {
+		acc
+	} else {
+		eg : EasyGraph<?, ??> = acc.graph.graph.graph;
+		mnode : Maybe<GNode<?>> = lookupTree(eg.nodes, nodeid);
+		switch (mnode) {
+			None(): acc;
+			Some(node): {
+				children = getTreeArrayValue(eg.edges, nodeid);
+				root = GraphViewAcc(acc with visited = insertSet(acc.visited, nodeid));
+
+				childMat : Pair<GraphViewAcc, [Material]> = fold2(children, root, [], \acc2 : GraphViewAcc, childviews : [Material], edge : GEdge<?> -> {
+					if (!containsSet(acc2.visited, edge.to)) {
+						rec = buildGraphView(acc2, edge.to);
+						Pair(rec, arrayPush(childviews, rec.view))
+					} else Pair(acc2, childviews)
+				});
+
+				mat : Material = acc.graph.displayNode(node.data);
+
+				fview = if (childMat.second != []) {
+					// TODO: Draw lines
+					MCols2(
+						MLines([
+							TFillY(),
+							MBaselineCols([
+								mat,
+								MIconButton("add_circle", \ -> {}, [MIconSize(16.0)], [])	// remove_circle
+							]),
+							TFillY(),
+						]),
+						MLines(
+							childMat.second
+						)
+					);
+				} else mat
+				GraphViewAcc(childMat.first with view = fview)
+
+			}
+		}
+	}
+}
+
+
+main() {
+	graph : SimpleGraph<string, string> = fold([
+		Pair("a", "b"),
+		Pair("b", "c"),
+		Pair("b", "d"),
+		Pair("a", "d"),
+	], makeSimpleGraph(), \acc, p -> {
+		addSimpleEdge(acc, p.first, p.second, "", 0)
+	});
+
+	view = GraphView(
+		graph,
+		\node : string -> MText(node, []),
+		\edge : string -> MText(edge, []),
+	);
+
+	mrender(
+		makeMaterialManager([]), true,
+		MAvailableHeight(
+			makeGraphView(view, 
+				getSimpleNodeId(graph, "a")
+			), const(0.0)
+		)
+	);
+}

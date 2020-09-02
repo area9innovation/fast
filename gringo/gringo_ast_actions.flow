@@ -51,6 +51,11 @@ export {
 				pterm = popAstStack(acc);
 				unquote = GNegate(pterm.first);
 				pushAstStack(pterm.second, unquote);
+			} else if (v == "GOpt") {
+				// GOpt(term : GTerm);
+				pterm = popAstStack(acc);
+				unquote = GOpt(pterm.first);
+				pushAstStack(pterm.second, unquote);
 			} else if (v == "GVar") {
 				// GVar(id : string);
 				pid = popAstStack(acc);
@@ -89,7 +94,6 @@ export {
 
 	pushAstStack(a : GringoAstAcc, e : GTerm) -> GringoAstAcc;
 	popAstStack(a : GringoAstAcc) -> Pair<GTerm, GringoAstAcc>;
-
 }
 
 pushAstStack(a : GringoAstAcc, e : GTerm) -> GringoAstAcc {
