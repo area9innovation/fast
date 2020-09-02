@@ -1,9 +1,4 @@
 export {
-/*	
-	JingoProgram(defs : [JDefine<?>], code : Jingo<?>);
-		JDefine(name : string, code : Jingo<?>);
-*/
-
 	Jingo<?> ::= JOperand, JValue<?>;
 
 	JOperand(op : string);

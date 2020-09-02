@@ -22,3 +22,19 @@ runJingo(env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, code : Jingo<?>) 
 		}
 	}
 }
+
+pushJStack(a : List<Jingo<?>>, e : Jingo<?>) -> List<Jingo<?>> {
+	Cons(e, a);
+}
+
+popJStack(a : List<Jingo<?>>) -> Pair<Jingo<?>, List<Jingo<?>>> {
+	switch (a) {
+		EmptyList(): {
+			println("Stack underflow");
+			Pair(JOperand(""), a);
+		}
+		Cons(head, tailL): {
+			Pair(head, tailL)
+		}
+	}
+}

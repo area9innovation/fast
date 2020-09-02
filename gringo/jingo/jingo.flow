@@ -4,7 +4,7 @@ import gringo/jingo/jingo_ast_actions;
 import net/url_parameter;
 
 main() {
-	program = getUrlParameterDef("code", "test");
+	program = getUrlParameterDef("code", "let sq = dup * ; 1 sq");
 
 	// Parse the Jingo program
 	env = GringoEnv(program, makeTree(), 0, jingoAstAction, JingoStack(makeList()), false, false);
@@ -17,6 +17,9 @@ main() {
 	if (remaining != "") {
 		println("Did not parse: " + remaining);
 	}
+
+	res = list2array(genv.output.stack);
+	println(res);
 
 	quit(0);
 }

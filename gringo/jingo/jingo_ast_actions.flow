@@ -1,6 +1,7 @@
 import gringo/gringo_action;
 import gringo/gringo_ast;
 import gringo/jingo/jingo_ast;
+import gringo/jingo/utils;
 import ds/list;
 import math/math;
 
@@ -9,6 +10,22 @@ export {
 		\acc : JingoStack<bool>, v -> {
 			if (v == "nil") {
 				pushJingoStack(acc, JArray([]));
+			} else if (v == "operand") {
+				op = popJingoStack(acc);
+				pushJingoStack(op.second, JOperand(getJString(op.first)));
+			} else if (v == "cons") {
+				elm = popJingoStack(acc);
+				array = popJingoStack(elm.second);
+				pushJingoStack(array.second, JArray(arrayPush(getJArray(array.first), elm.first)));
+			} else if (v == "int") {
+				op = popJingoStack(acc);
+				pushJingoStack(op.second, JInt(s2i(getJString(op.first))));
+			} else if (v == "string") {
+				// This is probably just acc, but to be safe, we do this
+				op = popJingoStack(acc);
+				pushJingoStack(op.second, JString(getJString(op.first)));
+			} else if (v == "def") {
+				pushJingoStack(acc, JOperand("define"));
 			} else {
 				println("TODO: Handle "+ v);
 				acc;
