@@ -53,6 +53,7 @@ collectTypeCalls(acc : Tree<string, Set<FTypeCall>>, t : FastType) -> Tree<strin
 			fold(args, collectTypeCalls(acc, to), collectTypeCalls);
 		}
 		FTypeCall(id, typars): {
+			// Collect all nested type calls from type parameters
 			fold(typars, insertMultimap(acc, id, t), collectTypeCalls);
 		}
 		FInlineType(language, stream, dependencies): {
