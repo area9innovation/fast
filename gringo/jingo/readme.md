@@ -1,4 +1,4 @@
-# Gorth - Gringo Forth
+# Yingo - Gringo Joy&Forth
 
 Our goal is to have a language, which is used for the semantic actions in a Gringo
 grammar. This is naturally a stack-based, postfix language, given the nature of a
@@ -61,7 +61,7 @@ Joy has the same syntax for these two, since if an array only
 contains literals, it is a list/array.
 
 [ lit lit ... lit ]	   -> <array>
-[] word word ... word ] -> <quoted-program>
+[ word word ... word ] -> <quoted-program>
 
 <quote> eval -> (result of code)
 

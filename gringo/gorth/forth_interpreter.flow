@@ -1,9 +1,0 @@
-import gringo/forth/forth_ast;
-
-export {
-	runForth(f : [Forth<?>], stack : List<Forth<?>>) -> List<Forth<?>>;
-}
-
-runForth(f : [Forth<?>], stack : List<Forth<?>>) -> List<Forth<?>> {
-	
-}
