@@ -1,0 +1,46 @@
+import gringo/gringo_action;
+import gringo/gringo_ast;
+import gringo/jingo/jingo_ast;
+import ds/list;
+import math/math;
+
+export {
+	jingoAstAction = GringoAction(
+		\acc : JingoStack<bool>, v -> {
+			if (v == "nil") {
+				pushJingoStack(acc, JArray([]));
+			} else {
+				println("TODO: Handle "+ v);
+				acc;
+			}
+		},
+		\acc : JingoStack<bool>, m -> {
+			pushJingoStack(acc, JString(m));
+		}
+	);
+
+	JingoStack(
+		stack : List<Jingo<?>>,
+	);
+
+	pushJingoStack(a : JingoStack<?>, e : Jingo<?>) -> JingoStack<?>;
+	popJingoStack(a : JingoStack<?>) -> Pair<Jingo<?>, JingoStack<?>>;
+}
+
+pushJingoStack(a : JingoStack<?>, e : Jingo<?>) -> JingoStack<?> {
+	JingoStack(
+		a with stack = Cons(e, a.stack),
+	);
+}
+
+popJingoStack(a : JingoStack<?>) -> Pair<Jingo<?>, JingoStack<?>> {
+	switch (a.stack) {
+		EmptyList(): {
+			println("Stack underflow");
+			Pair(JOperand(""), a);
+		}
+		Cons(head, tailL): {
+			Pair(head, JingoStack(a with stack = tailL))
+		}
+	}
+}

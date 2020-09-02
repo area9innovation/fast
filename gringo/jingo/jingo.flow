@@ -1,0 +1,22 @@
+import gringo/gringo_parse;
+import gringo/jingo/jingo_grammar;
+import gringo/jingo/jingo_ast_actions;
+import net/url_parameter;
+
+main() {
+	program = getUrlParameterDef("code", "test");
+
+	// Parse the Jingo program
+	env = GringoEnv(program, makeTree(), 0, jingoAstAction, JingoStack(makeList()), false, false);
+	genv = gringoParse(env, jingoGrammar());
+
+	if (genv.fail) {
+		println("Parsing failed");
+	}
+	remaining = strRight(env.input, genv.i);
+	if (remaining != "") {
+		println("Did not parse: " + remaining);
+	}
+
+	quit(0);
+}
