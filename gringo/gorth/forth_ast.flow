@@ -1,0 +1,8 @@
+export {
+	Forth<?> ::= ForthWord, ForthValue<?>, ForthVariable;
+
+		ForthWord(name : string);
+		ForthValue(value : ?);
+		// Always with capital
+		ForthVariable(name : string);
+}
