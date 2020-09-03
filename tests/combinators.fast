@@ -1,0 +1,20 @@
+import combinators;
+import string_utils;
+
+combinators.flow::main() -> i0 {
+    const_str_0 = compiletime::const0("ABC-0");
+    const_int_0 = compiletime::const0(0123);
+    println(const_str_0());
+    println(i2s(const_int_0()));
+
+    const_str_1 = compiletime::const1("ABC-1");
+    const_int_1 = compiletime::const1(1123);
+    println(const_str_1(0));
+    println(i2s(const_int_1("A")));
+
+    const_str_2 = compiletime::const2("ABC-2");
+    const_int_2 = compiletime::const2(2123);
+    println(const_str_2(0, "A"));
+    println(i2s(const_int_2("A", 0)));
+    quit(0);
+}

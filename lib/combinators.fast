@@ -1,0 +1,60 @@
+import runtime;
+
+export {
+	nop() -> i0;
+	nop(x : ?) -> i0;
+	nop(x : ?, y : ??) -> i0;
+
+	const0(v : ?) -> () -> ?;
+	const1(v : ?) -> (??) -> ?;
+	const2(v : ?) -> (??, ???) -> ?;
+
+	firstOf(x : ?, y : ??) -> ?;
+	secondOf(x : ?, y : ??) -> ??;
+	firstOf(x : ?, y : ??, z : ???) -> ?;
+	secondOf(x : ?, y : ??, z : ???) -> ??;
+	thirdOf(x : ?, y : ??, z : ???) -> ???;
+}
+
+nop() -> i0 { }
+nop(x : ?) -> i0 { }
+nop(x : ?, y : ??) -> i0 { }
+
+compiletime::const0(v : ?) -> () -> ? { 
+	id = gensym();
+	inline fast {
+		${makeFVar(id)}
+	} require function {
+		${makeFVar(id)}() -> $type{?} {
+			${v};
+		}
+	} : () -> ?
+}
+
+compiletime::const1(v : ?) -> (??) -> ? { 
+	id = gensym();
+	inline fast {
+		${makeFVar(id)}
+	} require function {
+		${makeFVar(id)}(x : $type{??}) -> $type{?} {
+			${v};
+		}
+	} : (??) -> ?
+}
+
+compiletime::const2(v : ?) -> (??, ???) -> ? { 
+	id = gensym();
+	inline fast {
+		${makeFVar(id)}
+	} require function {
+		${makeFVar(id)}(x : $type{??}, y : $type{???}) -> $type{?} {
+			${v};
+		}
+	} : (??, ???) -> ?
+}
+
+firstOf(x : ?, y : ??) -> ?  { x; }
+secondOf(x : ?, y : ??) -> ??  { y; }
+firstOf(x : ?, y : ??, z : ???) -> ? { x; }
+secondOf(x : ?, y : ??, z : ???) -> ?? { y; }
+thirdOf(x : ?, y : ??, z : ???) -> ??? { z; }

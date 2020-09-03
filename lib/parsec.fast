@@ -1,5 +1,6 @@
 import string_utils;
 import partial_call;
+import combinators;
 import tuples;
 import array;
 
@@ -59,10 +60,17 @@ export {
         fail : ???
     ) -> (string, i32) -> Tuple<i32, ???>;
 
-    // Ordered choice of parsers. If some triggers, further are not operated.
-    choiceParseC(
+    // Ordered choice of two parsers. If some triggers, further are not operated.
+    choicePairParseC(
         parser1 : (string, i32) -> Tuple<i32, ?>,
         parser2 : (string, i32) -> Tuple<i32, ?>,
+        sem_act : (?) -> ??,
+        fail : ??
+    ) -> (string, i32) -> Tuple<i32, ??>;
+
+    // Ordered choice of an array of parsers. If some triggers, further are not operated.
+    choiceManyParseC(
+        parsers : Array<(string, i32) -> Tuple<i32, ?> >,
         sem_act : (?) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
@@ -196,16 +204,16 @@ sequenceParseCimpl(
     }
 }
 
-compiletime::choiceParseC(
+compiletime::choicePairParseC(
     parser1 : (string, i32) -> Tuple<i32, ?>,
     parser2 : (string, i32) -> Tuple<i32, ?>,
     sem_act : (?) -> ??,
     fail : ??
 ) -> (string, i32) -> Tuple<i32, ??> {
-    compiletime::partialCall(choiceParseCimpl, parser1, parser2, sem_act, fail);
+    compiletime::partialCall(choicePairParseCimpl, parser1, parser2, sem_act, fail);
 }
 
-choiceParseCimpl(
+choicePairParseCimpl(
     parser1 : (string, i32) -> Tuple<i32, ?>,
     parser2 : (string, i32) -> Tuple<i32, ?>,
     sem_act : (?) -> ??,
@@ -218,6 +226,45 @@ choiceParseCimpl(
         t1;
     } else {
         modifyParseCimpl(parser2, sem_act, fail, input, i);
+    }
+}
+
+compiletime::choiceManyParseC(
+    parsers : Array<(string, i32) -> Tuple<i32, ?> >,
+    sem_act : (?) -> ??,
+    fail : ??
+) -> (string, i32) -> Tuple<i32, ??> {
+    compiletime::partialCall(choiceManyParseCimpl, parsers, sem_act, fail);
+}
+
+choiceManyParseCimpl(
+    parsers : Array<(string, i32) -> Tuple<i32, ?> >,
+    sem_act : (?) -> ??,
+    fail : ??,
+    input : string, 
+    i : i32
+) -> Tuple<i32, ??> {
+    doChoiceManyParseCimpl(parsers, sem_act, fail, input, i, 0);
+}
+
+doChoiceManyParseCimpl(
+    parsers : Array<(string, i32) -> Tuple<i32, ?> >,
+    sem_act : (?) -> ??,
+    fail : ??,
+    input : string, 
+    i : i32,
+    k : i32
+) -> Tuple<i32, ??> {
+    if (k == length(parsers)) {
+        tuple(-(1), fail);
+    } else {
+        parser = index(parsers, k);
+        t1 = modifyParseCimpl(parser, sem_act, fail, input, i);
+        if (0 <= first(t1)) {
+            t1;
+        } else {
+            doChoiceManyParseCimpl(parsers, sem_act, fail, input, i, k + 1);
+        }
     }
 }
 
