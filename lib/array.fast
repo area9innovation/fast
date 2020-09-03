@@ -7,8 +7,15 @@ export {
 	array(a : ?, b : ?) -> Array<?>;
 	array(a : ?, b : ?, c : ?) -> Array<?>;
 	array(a : ?, b : ?, c : ?, d : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?, d : ?, e : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?) -> Array<?>;
+	array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?, j : ?) -> Array<?>;
 
 	index(a : Array<?>, i : i32, def : ?) -> ?;
+	index(a : Array<?>, i : i32) -> ?;
 
 	// Concatenation
 	+(a : Array<?>, b : Array<?>) -> Array<?>;
@@ -108,6 +115,97 @@ rust::array(a : ?, b : ?, c : ?) -> Array<?> {
 	require use { use std::vec; }
 }
 
+rust::array(a : ?, b : ?, c : ?, d : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { arr.push(d) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?, c : ?, d : ?, e : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { arr.push(d) };
+	inline rust { arr.push(e) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { arr.push(d) };
+	inline rust { arr.push(e) };
+	inline rust { arr.push(f) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { arr.push(d) };
+	inline rust { arr.push(e) };
+	inline rust { arr.push(f) };
+	inline rust { arr.push(g) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { arr.push(d) };
+	inline rust { arr.push(e) };
+	inline rust { arr.push(f) };
+	inline rust { arr.push(g) };
+	inline rust { arr.push(h) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { arr.push(d) };
+	inline rust { arr.push(e) };
+	inline rust { arr.push(f) };
+	inline rust { arr.push(g) };
+	inline rust { arr.push(h) };
+	inline rust { arr.push(i) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
+rust::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?, j : ?) -> Array<?> {
+	inline rust { let mut arr = Vec::new() }; 
+	inline rust { arr.push(a) };
+	inline rust { arr.push(b) };
+	inline rust { arr.push(c) };
+	inline rust { arr.push(d) };
+	inline rust { arr.push(e) };
+	inline rust { arr.push(f) };
+	inline rust { arr.push(g) };
+	inline rust { arr.push(h) };
+	inline rust { arr.push(i) };
+	inline rust { arr.push(j) };
+	inline rust { return arr }
+	require use { use std::vec; }
+}
+
 rust::concat(a : Array<?>, b : Array<?>) -> Array<?> {
 	inline rust { let mut x = a.to_vec() };
 	inline rust { x.extend(b.iter()) };
@@ -136,6 +234,13 @@ rust::index(a : Array<?>, i : i32, def : ?) -> ? {
 	require use { use std::vec; }
 }
 
+rust::index(a : Array<?>, i : i32) -> ? {
+	inline rust { 
+		return a[i as usize];
+	}
+	require use { use std::vec; }
+}
+
 // Flow implementation
 
 typedef flow::Array<?> = inline flow { [ ${?} ] };
@@ -145,6 +250,12 @@ flow::array(a : ?) -> Array<?> { inline flow  { [ ${a} ] } }
 flow::array(a : ?, b : ?) -> Array<?> { inline flow  { [ ${a}, ${b} ] } }
 flow::array(a : ?, b : ?, c : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c} ] } }
 flow::array(a : ?, b : ?, c : ?, d : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d} ] } }
+flow::array(a : ?, b : ?, c : ?, d : ?, e : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d}, ${e} ] } }
+flow::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d}, ${e}, ${f} ] } }
+flow::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g} ] } }
+flow::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g}, ${h} ] } }
+flow::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g}, ${h}, ${i} ] } }
+flow::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?, j : ?) -> Array<?> { inline flow  { [ ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g}, ${h}, ${i}, ${j} ] } }
 
 flow::inline +(a : Array<?>, b : Array<?>) -> Array<?> {
 	inline flow { concat($a, $b) }
@@ -166,6 +277,10 @@ flow::inline index(a : Array<?>, i : i32, def : ?) -> ? {
 	require import { import ds/array; }
 }
 
+flow::inline index(a : Array<?>, i : i32) -> ? {
+	inline flow { ${a} [ ${i} ] }
+}
+
 flow::inline tail(a : Array<?>) -> Array<?> {
 	inline flow { tail($a) }
 	require import { import ds/array; }
@@ -177,6 +292,14 @@ typedef java::Array<?> = inline java { ${?} [] };
 java::array() -> Array<?> { inline java { new·$type{ Array<?> } {} } }
 java::array(a : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a} } ) } }
 java::array(a : ?, b : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b} } ) } }
+java::array(a : ?, b : ?, c : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c} } ) } }
+java::array(a : ?, b : ?, c : ?, d : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c}, ${d} } ) } }
+java::array(a : ?, b : ?, c : ?, d : ?, e : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c}, ${d}, ${e} } ) } }
+java::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c}, ${d}, ${e}, ${f} } ) } }
+java::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g} } ) } }
+java::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g}, ${h} } ) } }
+java::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g}, ${h}, ${i} } ) } }
+java::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?, j : ?) -> Array<?> { inline java { ( new·$type{ Array<?> } { ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g}, ${h}, ${i}, ${j} } ) } }
 
 java::inline +(a : Array<?>, b : Array<?>) -> Array<?> {
 	concat(a, b)
@@ -190,6 +313,10 @@ java::index(a : Array<?>, i : i32, def : ?) -> ? {
 	if (i < length(a)) {
 		inline java { ${a}[ ${i} ] }
 	} else def;
+}
+
+java::index(a : Array<?>, i : i32) -> ? {
+	inline java { ${a}[ ${i} ] }
 }
 
 java::concat(a : Array<?>, b : Array<?>) -> Array<?> {
@@ -208,6 +335,12 @@ js::array(a : ?) -> Array<?> { inline js  { [ ${a} ] } }
 js::array(a : ?, b : ?) -> Array<?> { inline js  { [ ${a}, ${b} ] } }
 js::array(a : ?, b : ?, c : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c} ] } }
 js::array(a : ?, b : ?, c : ?, d : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d} ] } }
+js::array(a : ?, b : ?, c : ?, d : ?, e : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d}, ${e} ] } }
+js::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d}, ${e} , ${f} ] } }
+js::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d}, ${e} , ${f}, ${g} ] } }
+js::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d}, ${e} , ${f}, ${g}, ${h} ] } }
+js::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d}, ${e} , ${f}, ${g}, ${h}, ${i} ] } }
+js::array(a : ?, b : ?, c : ?, d : ?, e : ?, f : ?, g : ?, h : ?, i : ?, j : ?) -> Array<?> { inline js  { [ ${a}, ${b}, ${c}, ${d}, ${e} , ${f}, ${g}, ${h}, ${i}, ${j} ] } }
 
 js::inline +(a : Array<?>, b : Array<?>) -> Array<?> {
 	inline js { ${a}.concat($b) }
@@ -219,4 +352,8 @@ js::inline length(a : Array<?>) -> i32 {
 
 js::inline index(a : Array<?>, i : i32, def : ?) -> ? {
 	inline js { ( ${i} < ${a}.length) ? ${a} [ ${i} ]·:·$def }
+}
+
+js::inline index(a : Array<?>, i : i32) -> ? {
+	inline js { ${a} [ ${i} ] }
 }

@@ -5,6 +5,16 @@ import lang/c;
 import lang/flow;
 import lang/rust;
 
+export {
+	// Compiletime: generates a unique identificator.
+	gensym() -> string;
+}
+
+compiletime::gensym() -> string {
+	"__gen__name_" + i2s(getFreshIdCounter());
+}
+
+
 //inline -(l : f32) -> f32 { -(0, l) }
 
 /*

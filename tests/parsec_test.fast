@@ -17,9 +17,7 @@ _9(x : string) -> i32 { 9; }
 
 add_five(x : i32) -> i32 { x + 5; }
 add_ints(x : i32, y : i32) -> i32  { x + y; }
-first_of(x : ?, y : ??) -> ?  { x; }
-second_of(x : ?, y : ??) -> ??  { y; }
-pair_of(x : ?, y : ??) -> Tuple<?, ??>  { tuple(x, y); }
+//pair_of(x : ?, y : ??) -> Tuple<?, ??>  { tuple(x, y); }
 str_int(x : string, y : i32) -> Tuple<string, i32>  { tuple(x, y); }
 
 showResult(res : Tuple<i32, ?>, input : string) -> void {
@@ -118,7 +116,7 @@ testSequence() -> void {
 
 testChoice() -> void {
     println("Testing choice of parser");
-    p4 = compiletime::choiceParseC(
+    p4 = compiletime::choicePairParseC(
         tokenParseC("a", _1, 2), 
         tokenParseC("b", _2, 2),
         add_five,
@@ -159,40 +157,18 @@ oper_ints(x : i32, oper_y : Tuple<string, i32>) -> i32 {
 }
 
 compiletime::digitParser() -> (string, i32) -> Tuple<i32, string> {
-    compiletime::choiceParseC(
-        compiletime::choiceParseC(
-            compiletime::choiceParseC(
-                compiletime::tokenParseC("0", idfn, ""), 
-                compiletime::tokenParseC("1", idfn, ""), 
-                idfn, ""
-            ), 
-            compiletime::choiceParseC(
-                compiletime::tokenParseC("2", idfn, ""), 
-                compiletime::tokenParseC("3", idfn, ""), 
-                idfn, ""
-            ),
-            idfn, ""
-        ), 
-        compiletime::choiceParseC(
-            compiletime::choiceParseC(
-                compiletime::tokenParseC("4", idfn, ""), 
-                compiletime::tokenParseC("5", idfn, ""), 
-                idfn, ""
-            ), 
-            compiletime::choiceParseC(
-                compiletime::choiceParseC(
-                    compiletime::tokenParseC("6", idfn, ""), 
-                    compiletime::tokenParseC("7", idfn, ""), 
-                    idfn, ""
-                ), 
-                compiletime::choiceParseC(
-                    compiletime::tokenParseC("8", idfn, ""), 
-                    compiletime::tokenParseC("9", idfn, ""), 
-                    idfn, ""
-                ),
-                idfn, ""
-            ),
-            idfn, ""
+    compiletime::choiceManyParseC(
+        array(
+            compiletime::tokenParseC("0", idfn, ""), 
+            compiletime::tokenParseC("1", idfn, ""), 
+            compiletime::tokenParseC("2", idfn, ""), 
+            compiletime::tokenParseC("3", idfn, ""), 
+            compiletime::tokenParseC("4", idfn, ""), 
+            compiletime::tokenParseC("5", idfn, ""), 
+            compiletime::tokenParseC("6", idfn, ""), 
+            compiletime::tokenParseC("7", idfn, ""), 
+            compiletime::tokenParseC("8", idfn, ""), 
+            compiletime::tokenParseC("9", idfn, "")
         ), 
         idfn, ""
     );
@@ -203,7 +179,7 @@ decNumAddDigit(hi_digit : string, lo_num : string) -> string {
 }
 
 decNumber(input : string, i : i32) -> Tuple<i32, string> {
-    p = compiletime::choiceParseC(
+    p = compiletime::choicePairParseC(
         compiletime::sequenceParseC(
             compiletime::digitParser(),
             decNumber,
@@ -216,7 +192,7 @@ decNumber(input : string, i : i32) -> Tuple<i32, string> {
 }
 
 arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
-    p = compiletime::choiceParseC(
+    p = compiletime::choicePairParseC(
         compiletime::modifyParseC(
             decNumber,
             s2i, 0
@@ -226,32 +202,25 @@ arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
             compiletime::sequenceParseC(
                 arithmParser,
                 compiletime::sequenceParseC(
-                    compiletime::choiceParseC(
-                        compiletime::choiceParseC(
+                    compiletime::choiceManyParseC(
+                        array(
                             compiletime::tokenParseC("+", idfn, ""), 
                             compiletime::tokenParseC("-", idfn, ""),
-                            idfn,
-                            ""
-                        ), 
-                        compiletime::choiceParseC(
                             compiletime::tokenParseC("*", idfn, ""), 
-                            compiletime::tokenParseC("/", idfn, ""),
-                            idfn,
-                            ""
+                            compiletime::tokenParseC("/", idfn, "")
                         ),
-                        idfn,
-                        ""
+                        idfn, ""
                     ),
                     compiletime::sequenceParseC(
                         arithmParser,
                         compiletime::tokenParseC(")", _0, 0), 
-                        first_of, 0
+                        firstOf, 0
                     ),
                     str_int, tuple("", 0)
                 ),
                 oper_ints, 0
             ),
-            second_of, 0
+            secondOf, 0
         ),
         idfn, 0
     );
