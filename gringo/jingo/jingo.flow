@@ -6,7 +6,9 @@ import gringo/jingo/jingo_builtins;
 import net/url_parameter;
 
 main() {
-	program = getUrlParameterDef("code", "let sq = dup * ; [3] i sq");
+	code = getUrlParameter("code");
+	file = getUrlParameterDef("file", "gringo/jingo/tests/parser.jingo");
+	program = if (code == "") getFileContent(file) else code;
 
 	// Parse the Jingo program
 	env = GringoEnv(program, makeTree(), 0, jingoAstAction, JingoStack(makeList()), false, false);

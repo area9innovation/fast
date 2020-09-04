@@ -1,0 +1,1 @@
+"abc" length "abc" 1 get "1" "0" + s2i i2s 0 getcode

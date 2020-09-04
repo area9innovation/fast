@@ -66,11 +66,22 @@ In addition, we support common int operations:
 	x y / -> x/y
 	x y % -> x%y
 
+String:
+
+	<string> length -> <int>
+	<string> <int> get -> <string>
+	<string> <int> getcode -> <int>
+	<string> s2i -> <int>
+	<int> i2s -> <string>
+	<string> <string> + -> <string>
+
 TODO:
 
 	x y over -> x y x
 	x y z rot -> y z x
 	x y dup2 -> x y x y
+	x y drop2 ->
+	x ... n dropn ->
 
 Array:
 	[y] x cons -> [x, y]
@@ -80,9 +91,13 @@ Array:
 
 	[x] size
 
+	[x] i get
+
+
 Comparisons & logic:
 
 	x y = -> 0/1
+	...
 	x y and -> 0/1
 	x y or -> 0/1
 	x not -> 0/1
@@ -100,11 +115,6 @@ From Joy:
 	infra
 	ifte
 	linrec
-
-## String processing todo
-
-We should allow concatenation, indexing, conversion to/from ints, strlen.
-That should be sufficient to implement the parser opcodes.
 
 ## Builtins TODO
 
