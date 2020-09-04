@@ -1,4 +1,8 @@
-// fail    string to parse    index   const
+let false = 0;
+let true = 1;
+let setfail = rot drop true rot rot;
+
+// fail-flag    string-to-parse    index   const-string  ->   fail-flag    string-to-parse    index
 let matchConst = 
 	dup3
 	strContainsAt
@@ -10,17 +14,12 @@ let matchConst =
 		// Put fail on the stack
 		drop // Drop the string we are matching
 
-		// Replace the third element with 1
-		rot
-		drop
-		1
-		rot
-		rot
+		setfail
 	]
 	ifte;
 
-6 "foobar" 0  
+// Initial state: no-fail   string   index
+false "foobar" 0  
 
 "foo" matchConst
-
 "baz" matchConst
