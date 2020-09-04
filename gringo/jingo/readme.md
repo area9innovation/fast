@@ -50,6 +50,8 @@ Common stack operations:
 	x dup -> x x
 	x print ->
 	x y swap -> y x
+	x y z rot -> y z x
+	x y dup2 -> x y x y
 
 We support arrays, but this syntax is also used to quote code:
 
@@ -78,8 +80,7 @@ String:
 TODO:
 
 	x y over -> x y x
-	x y z rot -> y z x
-	x y dup2 -> x y x y
+	x y z rot- -> z x y
 	x y drop2 ->
 	x ... n dropn ->
 
@@ -113,21 +114,26 @@ From Joy:
 	sieve
 	filter
 	infra
-	ifte
 	linrec
 
-## Builtins TODO
+## Builtins
 
-We should add conditionals:
+We support conditionals:
 
-	b {code0} {code1} ifelse  -> <eval code0 or code1>
+	b [then] [else] ifte  -> <eval then or elsse>
+
+TODO:
 	b {code} if  -> <eval code0 or nothing>
 
-Right now, evaluation an array will evaluate each element of the array.
+Also, we support eval to unquote an array:
 
-	<quote> eval -> (result of code)
+	[quote] eval -> (result of code)
 
-## Standard library TODO
+The word "i" is a synonym for "eval" to be compatible with Joy.
+
+## Standard library
+
+We could set up a standard library in Jingo itself:
 
 	x sq -> x*x
 	fold

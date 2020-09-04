@@ -1,1 +1,26 @@
-"abc" length "abc" 1 get "1" "0" + s2i i2s 0 getcode
+// fail    string to parse    index   const
+let matchConst = 
+	dup3
+	strContainsAt
+	[
+		// Increase index with the length of the const string
+		strlen +
+	]
+	[
+		// Put fail on the stack
+		drop // Drop the string we are matching
+
+		// Replace the third element with 1
+		rot
+		drop
+		1
+		rot
+		rot
+	]
+	ifte;
+
+6 "foobar" 0  
+
+"foo" matchConst
+
+"baz" matchConst

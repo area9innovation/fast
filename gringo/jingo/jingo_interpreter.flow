@@ -70,6 +70,22 @@ runJingo(
 						stack;
 					}
 				}
+			} else if (op == "ifte") {
+				elsecode = popJStack(stack);
+				thencode = popJStack(elsecode.second);
+				cond = popJStack(thencode.second);
+
+				ns = if (getJInt(cond.first) != 0) {
+					pushJStack(cond.second, thencode.first); 
+				} else {
+					pushJStack(cond.second, elsecode.first); 
+				}
+				runJingo(
+					builtins, env, ns, JOperand("eval")
+				)
+			} else if (op == "debug") {
+				iterList(stack, println);
+				stack;
 			} else {
 				mcodes = lookupTree(env, op);
 				mcodes ?? {
