@@ -1,9 +1,22 @@
 export {
+	// Tuple constructors
 	tuple(a : ?) -> Tuple<?>;
 	tuple(a : ?, b : ??) -> Tuple<?, ??>;
+	tuple(a : ?, b : ??, c : ???) -> Tuple<?, ??, ???>;
+
+	// Tuple component accessors
 	first(a : Tuple<?>) -> ?;
+
 	first(a : Tuple<?, ??>) -> ?;
 	second(a : Tuple<?, ??>) -> ??;
+
+	first (a : Tuple<?, ??, ???>) -> ?;
+	second(a : Tuple<?, ??, ???>) -> ??;
+	third (a : Tuple<?, ??, ???>) -> ???;
+
+	// not inlined version of tuple
+	tupleOf(x : ?, y : ??) -> Tuple<?, ??>;
+	tupleOf(x : ?, y : ??, z : ???) -> Tuple<?, ??, ???>;
 
 	// TODO: Add comparison
 }
@@ -18,6 +31,14 @@ inline first(a : Tuple<?>) -> ? {
 	a
 }
 
+tupleOf(x : ?, y : ??) -> Tuple<?, ??>  { 
+	tuple(x, y); 
+}
+
+tupleOf(x : ?, y : ??, z : ???) -> Tuple<?, ??>  { 
+	tuple(x, y, z); 
+}
+
 
 // Flow
 
@@ -26,9 +47,17 @@ typedef flow::Tuple<?, ??> =
 	require flow::import { import·ds/tuples; }
 	;
 
+typedef flow::Tuple<?, ??, ???> = 
+	inline flow { Triple< ${?} , ${??}, ${???}> }
+	require flow::import { import·ds/tuples; }
+	;
 
 flow::tuple(a : ?, b : ??) -> Tuple<?, ??> {
 	inline flow { Pair($a, $b) }
+}
+
+flow::tuple(a : ?, b : ??, c : ???) -> Tuple<?, ??, ???> {
+	inline flow { Triple($a, $b, $c) }
 }
 
 flow::first(a : Tuple<?, ??>) -> ? {
@@ -39,6 +68,17 @@ flow::second(a : Tuple<?, ??>) -> ?? {
 	inline flow { ($a).second }
 }
 
+flow::first(a : Tuple<?, ??, ???>) -> ? {
+	inline flow { ($a).first }
+}
+
+flow::second(a : Tuple<?, ??, ???>) -> ?? {
+	inline flow { ($a).second }
+}
+
+flow::third(a : Tuple<?, ??, ???>) -> ??? {
+	inline flow { ($a).third }
+}
 
 
 // C - they are structs, and stack based
@@ -52,11 +92,28 @@ typedef c::Tuple<?, ??> = inline c {
 	};
 };
 
+typedef c::Tuple<?, ??, ???> = inline c { 
+	struct Tuple_${?}_${??}_${???}
+	} require c::structs { 
+	struct·Tuple_${?}_${??}_${???} { 
+		${?}·first; 
+		${??}·second; 
+		${???}·third; 
+	};
+};
+
 c::tuple(a : ?, b : ??) -> Tuple<?, ??> {
 	inline c { 
 		$type{ Tuple<?, ??> }·t = { $a, $b } 
 	} : i0;
 	inline c { t } : Tuple<?, ??>;
+}
+
+c::tuple(a : ?, b : ??, c : ???) -> Tuple<?, ??, ???> {
+	inline c { 
+		$type{ Tuple<?, ??, ???> }·t = { $a, $b, $c } 
+	} : i0;
+	inline c { t } : Tuple<?, ??, ???>;
 }
 
 c::first(a : Tuple<?, ??>) -> ? {
@@ -67,6 +124,17 @@ c::second(a : Tuple<?, ??>) -> ?? {
 	inline c { ($a).second }
 }
 
+c::first(a : Tuple<?, ??, ???>) -> ? {
+	inline c { ($a).first }
+}
+
+c::second(a : Tuple<?, ??, ???>) -> ?? {
+	inline c { ($a).second }
+}
+
+c::third(a : Tuple<?, ??, ???>) -> ??? {
+	inline c { ($a).third }
+}
 
 /*
 c::convert2flow(p : Tuple<?, ??>) -> inline c { struct·FlowValue } {
@@ -111,9 +179,30 @@ typedef java::Tuple<?, ??> =
 		}
 	};
 
+typedef java::Tuple<?, ??, ???> = 
+	inline java { Tuple_${?}_${??}_${???} }
+	require java::classes { 
+		static class Tuple_${?}_${??}_${???} { 
+			public Tuple_${?}_${??}_${???}(${?}·f,·${??}·s, ${???} t)·{
+				first = f;
+				second = s;
+				third = t;
+			}
+			final·public·${?}·first;
+			final·public·${??}·second;
+			final·public·${???}·third;
+		}
+	};
+
 java::tuple(a : ?, b : ??) -> Tuple<?, ??> {
 	inline java { 
 		new·$type{ Tuple<?, ??> }( $a, $b )
+	}
+}
+
+java::tuple(a : ?, b : ??, c : ???) -> Tuple<?, ??, ???> {
+	inline java { 
+		new·$type{ Tuple<?, ??, ???> }( $a, $b, $c )
 	}
 }
 
@@ -125,12 +214,30 @@ java::second(a : Tuple<?, ??>) -> ?? {
 	inline java { ($a).second }
 }
 
+java::first(a : Tuple<?, ??, ???>) -> ? {
+	inline java { ($a).first }
+}
+
+java::second(a : Tuple<?, ??, ???>) -> ?? {
+	inline java { ($a).second }
+}
+
+java::third(a : Tuple<?, ??, ???>) -> ??? {
+	inline java { ($a).third }
+}
+
 // JS
 
 typedef js::Tuple<?, ??> = inline js { { first: ${?}, second: ${??} } };
 
+typedef js::Tuple<?, ??, ???> = inline js { { first: ${?}, second: ${??}, third: ${???} } };
+
 js::tuple(a : ?, b : ??) -> Tuple<?, ??> {
 	inline js { { first: $a, second: $b } }
+}
+
+js::tuple(a : ?, b : ??, c : ???) -> Tuple<?, ??, ???> {
+	inline js { { first: $a, second: $b, third: $c } }
 }
 
 js::first(a : Tuple<?, ??>) -> ? {
@@ -141,18 +248,48 @@ js::second(a : Tuple<?, ??>) -> ?? {
 	inline js { ($a).second }
 }
 
+js::first(a : Tuple<?, ??, ???>) -> ? {
+	inline js { ($a).first }
+}
+
+js::second(a : Tuple<?, ??, ???>) -> ?? {
+	inline js { ($a).second }
+}
+
+js::third(a : Tuple<?, ??, ???>) -> ??? {
+	inline js { ($a).third }
+}
+
 // Rust
 
 typedef rust::Tuple<?, ??> = inline rust { (${?}, ${??}) };
 
+typedef rust::Tuple<?, ??, ???> = inline rust { (${?}, ${??}, ${???}) };
+
 rust::tuple(a : ?, b : ??) -> Tuple<?, ??> {
-	inline rust { (a, b) }
+	inline rust { ($a, $b) }
+}
+
+rust::tuple(a : ?, b : ??, c : ???) -> Tuple<?, ??, ???> {
+	inline rust { ($a, $b, $c) }
 }
 
 rust::first(a : Tuple<?, ??>) -> ? {
-	inline rust { a.0 }
+	inline rust { ${a}.0 }
 }
 
 rust::second(a : Tuple<?, ??>) -> ?? {
-	inline rust { a.1 }
+	inline rust { ${a}.1 }
+}
+
+rust::first(a : Tuple<?, ??, ???>) -> ? {
+	inline rust { ${a}.0 }
+}
+
+rust::second(a : Tuple<?, ??, ???>) -> ?? {
+	inline rust { ${a}.1 }
+}
+
+rust::third(a : Tuple<?, ??, ???>) -> ??? {
+	inline rust { ${a}.2 }
 }
