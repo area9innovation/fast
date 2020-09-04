@@ -758,7 +758,7 @@ fastParseExpTail(acc : FastFile, p : FastParse, i : int, minBindingPower : int, 
 	} else if (id == "=") {
 		switch (left) {
 			FVar(v, __): {
-				fastParseLet(acc, p, v, i + 1, onParse);
+				fastParseLet(acc, p, v, i + 1, minBindingPower, onParse);
 			}
 			default: {
 				p.onError("Expected id on the left hand side of =", i + 1);
@@ -832,19 +832,25 @@ fastParseExps(acc : FastFile, p : FastParse, exps : [FExp], i : int, onParse : (
 }
 
 // <exp>; <body> ; <body> } although we un-do the last }
-fastParseLet(acc : FastFile, p : FastParse, id : string, i : int, onParse : (int, FExp) -> FastFile) -> FastFile {
+fastParseLet(acc : FastFile, p : FastParse, id : string, i : int, minBindingPower : int, onParse : (int, FExp) -> FastFile) -> FastFile {
 	fastParseExp(acc, p, i, 0, \vi, val -> {
 		lex = fastGetLexeme(p, vi);
 		punc = fastGetPunctuation(lex);
-		if (punc == ";") {
-			fastParseBrace(acc, p, [], vi + 1, \bi, bodyexs -> {
+
+		do_job = \wi, ex -> {
+			fastParseBrace(acc, p, [], wi + 1, \bi, bodyexs -> {
 				// We un-read the last }
 				body = if (length(bodyexs) == 1) bodyexs[0] else FSequence(bodyexs, makeFastInfo(lex.line, lex.col));
-				onParse(bi - 1, FLet(id, val, body, makeFastInfo(lex.line, lex.col)))
+				onParse(bi - 1, FLet(id, ex, body, makeFastInfo(lex.line, lex.col)))
 			});
+		}
+
+		if (punc == ";") {
+			// The expression is complete
+			do_job(vi, val);
 		} else {
-			p.onError("Expected ; after let binding of " + id, vi);
-			acc;
+			// Something follows the 'val' expression
+			fastParseExpTail(acc, p, vi, minBindingPower, val, do_job);
 		}
 	});
 }
