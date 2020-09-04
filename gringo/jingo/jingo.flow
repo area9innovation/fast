@@ -31,7 +31,7 @@ main() {
 	jenv = captureJDefines(makeTree(), makeList(), defs);
 	result = runJingos(getJingoBuiltins(), jenv, makeList(), codes);
 
-	println(list2array(result));
+	println(jstack2string(result));
 
 	quit(0);
 }

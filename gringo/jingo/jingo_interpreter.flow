@@ -1,5 +1,6 @@
 import gringo/jingo/jingo_ast;
 import gringo/jingo/utils;
+import gringo/jingo/jingo_pretty;
 import ds/tree;
 
 export {
@@ -29,7 +30,7 @@ captureJDefines(env : Tree<string, [Jingo<?>]>, stack : List<Jingo<?>>, lines : 
 					code = popJStack(stack);
 					codes = getJArray(code.first);
 					name = popJStack(code.second);
-					println("Set " + getJString(name.first) + " to " + toString(codes));
+					// println("Set " + getJString(name.first) + " to " + toString(codes));
 					nenv = setTree(env, getJString(name.first), codes);
 					captureJDefines(nenv, name.second, tail(lines));
 				} else if (op == "defines") {
@@ -84,7 +85,7 @@ runJingo(
 					builtins, env, ns, JOperand("eval")
 				)
 			} else if (op == "debug") {
-				iterList(stack, println);
+				jstack2string(stack);
 				stack;
 			} else {
 				mcodes = lookupTree(env, op);
