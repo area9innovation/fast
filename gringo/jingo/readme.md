@@ -88,8 +88,10 @@ Comparisons & logic:
 	x not -> 0/1
 
 From Joy:
-	i  ~  Eval?
-	dip
+	[q] i  		-> eval(q)    will evaluate a quoted argument	(aka eval)
+
+	x [q] dip   -> eval(q) x
+		let dip = i swap;
 	nullary
 	map
 	step

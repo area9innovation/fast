@@ -68,6 +68,5 @@ getJingoBuiltins() -> Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>> {
 			x = popJStack(y.second);
 			pushJStack(x.second, JInt(getJInt(x.first) % getJInt(y.first)));
 		}),
-
 	])
 }

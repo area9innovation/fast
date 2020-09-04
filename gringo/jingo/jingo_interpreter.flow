@@ -4,16 +4,22 @@ import ds/tree;
 
 export {
 	// Extract all definitions of words
-	captureJDefines(env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, lines : [Jingo<?>]) -> Tree<string, Jingo<?>>;
+	captureJDefines(env : Tree<string, [Jingo<?>]>, stack : List<Jingo<?>>, lines : [Jingo<?>]) -> Tree<string, [Jingo<?>]>;
 
-	// Run these codes with the given definitions
+	// Push this code onto the stack (and evaluate as relevant)
 	runJingo(
 		builtins : Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>>, 
-		env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, code : Jingo<?>
+		env : Tree<string, [Jingo<?>]>, stack : List<Jingo<?>>, code : Jingo<?>
+	) -> List<Jingo<?>>;
+
+	// Push these codes onto the stack
+	runJingos(
+		builtins : Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>>, 
+		env : Tree<string, [Jingo<?>]>, stack : List<Jingo<?>>, codes : [Jingo<?>]
 	) -> List<Jingo<?>>;
 }
 
-captureJDefines(env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, lines : [Jingo<?>]) -> Tree<string, Jingo<?>> {
+captureJDefines(env : Tree<string, [Jingo<?>]>, stack : List<Jingo<?>>, lines : [Jingo<?>]) -> Tree<string, [Jingo<?>]> {
 	if (lines == []) env
 	else {
 		line = lines[0];
@@ -21,9 +27,10 @@ captureJDefines(env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, lines : [J
 			JOperand(op): {
 				if (op == "define") {
 					code = popJStack(stack);
+					codes = getJArray(code.first);
 					name = popJStack(code.second);
-					println("Set " + getJString(name.first) + " to " + toString(code.first));
-					nenv = setTree(env, getJString(name.first), code.first);
+					println("Set " + getJString(name.first) + " to " + toString(codes));
+					nenv = setTree(env, getJString(name.first), codes);
 					captureJDefines(nenv, name.second, tail(lines));
 				} else if (op == "defines") {
 					env
@@ -41,34 +48,42 @@ captureJDefines(env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, lines : [J
 
 runJingo(
 	builtins : Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>>, 
-	env : Tree<string, Jingo<?>>, stack : List<Jingo<?>>, code : Jingo<?>
+	env : Tree<string, [Jingo<?>]>, stack : List<Jingo<?>>, code : Jingo<?>
 ) -> List<Jingo<?>> {
+	// println("Pushing " + toString(code));
 	switch (code) {
 		JInt(val): Cons(code, stack);
 		JString(val): Cons(code, stack);
-		JArray(val): {
-			if (true) {
-				Cons(code, stack);
-			} else {
-				fold(val, stack, \acc, a -> {
-					runJingo(builtins, env, acc, a)
-				})
-			}
-		}
+		JArray(val): Cons(code, stack);
 		JNative(val): Cons(code, stack);
 		JOperand(op): {
-			mcode = lookupTree(env, op);
-			mcode ?? {
-				runJingo(builtins, env, stack, mcode)
-			} : {
-				ncode = lookupTree(builtins, op);
-				switch (ncode) {
-					None(): {
-						println("Unknown operand " + op);
-						Cons(code, stack);
+			if (op == "eval" || op == "i") { 
+				// Unroll any array for evaluation
+				quote = popJStack(stack);
+				quotecode = quote.first;
+				switch (quotecode) {
+					JArray(vals): {
+						runJingos(builtins, env, quote.second, vals)
 					}
-					Some(codefn): {
-						codefn(stack);
+					default: {
+						println("eval/i only works on quoted code");
+						stack;
+					}
+				}
+			} else {
+				mcodes = lookupTree(env, op);
+				mcodes ?? {
+					runJingos(builtins, env, stack, mcodes)
+				} : {
+					ncode = lookupTree(builtins, op);
+					switch (ncode) {
+						None(): {
+							println("Unknown operand " + op);
+							Cons(code, stack);
+						}
+						Some(codefn): {
+							codefn(stack);
+						}
 					}
 				}
 			}
@@ -76,3 +91,10 @@ runJingo(
 	}
 }
 
+runJingos(builtins : Tree<string, (stack : List<Jingo<?>>) -> List<Jingo<?>>>, 
+	env : Tree<string, [Jingo<?>]>, stack : List<Jingo<?>>, codes : [Jingo<?>]
+) -> List<Jingo<?>> {
+	fold(codes, stack, \acc, a -> {
+		runJingo(builtins, env, acc, a)
+	})
+}

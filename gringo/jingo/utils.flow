@@ -34,11 +34,11 @@ getJString(j : Jingo<?>) -> string {
 
 getJArray(j : Jingo<?>) -> [Jingo<?>] {
 	switch (j) {
-		JOperand(op): [];
-		JInt(val): [];
-		JString(s): [];
+		JOperand(op): [j];
+		JInt(val): [j];
+		JString(s): [j];
 		JArray(vals): vals;
-		JNative(value): [];
+		JNative(value): [j];
 	}
 }
 

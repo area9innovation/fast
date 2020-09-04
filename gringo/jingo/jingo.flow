@@ -6,7 +6,7 @@ import gringo/jingo/jingo_builtins;
 import net/url_parameter;
 
 main() {
-	program = getUrlParameterDef("code", "let sq = dup * ; [dup] 3 sq");
+	program = getUrlParameterDef("code", "let sq = dup * ; [3] i sq");
 
 	// Parse the Jingo program
 	env = GringoEnv(program, makeTree(), 0, jingoAstAction, JingoStack(makeList()), false, false);
@@ -24,10 +24,10 @@ main() {
 
 	defscode = split(res, \op -> op == JOperand("defines"));
 	defs = defscode[0];
-	code = defscode[1];
+	codes = concatA(map(defscode[1], getJArray));
 
 	jenv = captureJDefines(makeTree(), makeList(), defs);
-	result = runJingo(getJingoBuiltins(), jenv, makeList(), JArray(code));
+	result = runJingos(getJingoBuiltins(), jenv, makeList(), codes);
 
 	println(list2array(result));
 
