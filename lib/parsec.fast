@@ -163,8 +163,8 @@ modifyParseCimpl(
     input : string, 
     i : i32
 ) -> Tuple<i32, ??> {
-    p = parser(input, i);
-    j = first(p);
+    p = parser(input, i) : Tuple<i32, ??>;
+    j = first(p) : i32;
     x = second(p);
     y = sem_act(x);
     if (j == -(1)) {
@@ -191,11 +191,11 @@ sequenceParseCimpl(
     input : string, 
     i : i32
 ) -> Tuple<i32, ???> {
-    t1 = parser1(input, i);
+    t1 = parser1(input, i) : Tuple<i32, ?>;
     if (0 > first(t1)) {
         tuple(-(1), fail);
     } else {
-        t2 = parser2(input, first(t1));
+        t2 = parser2(input, first(t1)) : Tuple<i32, ??>;
         if (0 > first(t2)) {
             tuple(-(1), fail);
         } else {
@@ -301,7 +301,7 @@ plusParseCimpl(
     input : string,
     i : i32
 ) -> (string, i32) -> Tuple<i32, ??> {
-    p = parser(input, i);
+    p = parser(input, i) : Tuple<i32, ?>;
     j = first(p);
     if (j == -(1)) {
         tuple(-(1), fail);
@@ -318,7 +318,7 @@ doStarParseCimpl(
     i : i32,
     acc : Array<?>
 ) -> Tuple<i32, ??> {
-    p = parser(input, i);
+    p = parser(input, i) : Tuple<i32, ?>;
     j = first(p);
     if (j == -(1)) {
         tuple(i, sem_act(acc));
