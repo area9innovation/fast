@@ -6,8 +6,9 @@ export {
 	string2array(s : string) -> Array<string>; 
 	s2i(s : string) -> i32;
 	i2s(n : i32) -> string; 
+	s2b(s : string) -> i1;
+	b2s(b : i1) -> string;
 }
-
 
 string2array(s : string) -> Array<string> {
     doString2array(s, 0, array());
@@ -77,4 +78,16 @@ digit2s(d : i32) -> string {
 	if (d == 7) { "7" } else
 	if (d == 8) { "8" } else
 	if (d == 9) { "9" } else { "" } ;
+}
+
+s2b(s : string) -> i1 {
+    s == "true";
+}
+
+b2s(b : i1) -> string {
+    if (b) {
+        "true";
+    } else {
+        "false";
+    }
 }

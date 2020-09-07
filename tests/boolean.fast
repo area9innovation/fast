@@ -1,0 +1,35 @@
+import runtime;
+import string_utils;
+
+boolean_test.flow::main() -> i0 {
+    t = true();
+    f = false();
+    println("true: " + b2s(t));
+    println("false: " + b2s(f));
+
+    println("true && true: " + b2s(t && t));
+    println("true && false: " + b2s(t && f));
+    println("false && true: " + b2s(f && t));
+    println("false && false: " + b2s(f && f));
+
+    println("&&(true, true): " + b2s(&&(t, t)));
+    println("&&(true, false): " + b2s(&&(t, f)));
+    println("&&(false, true): " + b2s(&&(f, t)));
+    println("&&(false, false): " + b2s(&&(f, f)));
+
+    println("true || true: " + b2s(t || t));
+    println("true || false: " + b2s(t || f));
+    println("false || true: " + b2s(f || t));
+    println("false || false: " + b2s(f || f));
+
+
+    println("!(true): " + b2s(!(t)));
+    println("!(false): " + b2s(!(f)));
+
+    println("&&(!(true), !(true))): " + b2s(&&(!(t), !(t))));
+    println("&&(!(true), !(false))): " + b2s(&&(!(t), !(f))));
+    println("&&(!(false), !(true))): " + b2s(&&(!(f), !(t))));
+    println("&&(!(false), !(false))): " + b2s(&&(!(f), !(f))));
+
+    quit(0);
+}
