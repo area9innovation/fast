@@ -1,0 +1,110 @@
+import string_utils;
+import gringo/utils;
+
+export {
+    // Translates a grammar to a combination of parser combinators
+    generateFastParserFromGringo(term : GTerm) -> string;
+}
+
+generateFastParserFromGringo(term : GTerm) -> string {
+    rules = tree2pairs(findRules(makeTree(), term));
+    strGlue(map(rules, generateFastParserFromRule), "\n");
+}
+
+generateFastParserFromRule(rule : Pair<string, GTerm>) -> string {
+    id = rule.first;
+    term = rule.second;
+    "generated_" + id + "_rule" + "(input : string, i : i32) -> Tuple<i32, i32> {\n" +
+        strIndent(
+            "p = " + generateFastParserFromTerm(term) + ";\n" +
+            "p(input, i);"
+        ) +
+    "\n}\n";
+}
+
+generateFastParserFromTerm(t : GTerm) -> string {
+    switch (t) {
+		GRule(id, term, body): {
+            println("rule met - must not happen");
+            "";
+		}
+		GSeq(left, right): {
+            "compiletime::sequenceParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(left) + ",\n" +
+                    generateFastParserFromTerm(right) + ",\n" +
+                    "compiletime::const2(0), 0"
+                )
+            + "\n)"
+        }
+		GChoice(left, right): {
+            "compiletime::choiceParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(left) + ",\n" +
+                    generateFastParserFromTerm(right) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GPrecedence(left, right): {
+            println("precedence is met - must not happen");
+            "";
+        }
+		GStar(term): {
+            "compiletime::starParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(term) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GPlus(term): {
+            "compiletime::plusParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(term) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GOpt(term): {
+            "compiletime::optionalParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(term) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GNegate(term): {
+            "compiletime::notPredicateParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(term) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GUnquote(term): {
+            println("TODO: GUnquote");
+            ""
+        }
+		GString(text): {
+            "compiletime::tokenParseC(\n" +
+                strIndent(
+                    "\"" + text + "\",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GRange(lower, upper): {
+            println("TODO: GRange");
+            ""
+        }
+		GVar(id): {
+            "generated_" + id + "_rule";
+        }
+		GEpsilon(): {
+            "compiletime::emptyParseC(\n" +
+                "\tcompiletime::const0(0), 0"
+            + "\n)"
+        }
+	}
+}
