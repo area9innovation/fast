@@ -38,6 +38,14 @@ export {
         fail : ?
     ) -> (string, i32) -> Tuple<i32, ?>;
 
+    // Range of chars: 'from'-'to' parser combinator
+    rangeParseC(
+        from : string, 
+        to : string, 
+        sem_act : (string) -> ?,
+        fail : ?,
+    ) -> (string, i32) -> Tuple<i32, ?>;
+
     // Fixed string parser combinator
     tokenParseC(
         pattern : string, 
@@ -136,6 +144,28 @@ inputEndParseCimpl(sem_act : () -> ?, fail : ?, input : string, i : i32) -> Tupl
         tuple(-(1), fail);
     }
 } 
+
+compiletime::rangeParseC(
+    from : string, 
+    to : string, 
+    sem_act : (string) -> ?,
+    fail : ?,
+) -> (string, i32) -> Tuple<i32, ?> {
+    compiletime::partialCall(rangeParseCimpl, from, to, sem_act, fail);
+}
+
+rangeParseCimpl(from : string, to : string, sem_act : (string) -> ?, fail : ?, input : string, i : i32) -> Tuple<i32, ?> {
+    if (i == length(input)) {
+        tuple(-(1), fail);
+    } else {
+        char = index(input, i);
+        if ((from <= char) && (char <= to)) {
+            tuple(i + 1, sem_act(char));
+        } else {
+            tuple(-(1), fail);
+        }
+    }
+}
 
 compiletime::tokenParseC(
     pattern : string, 

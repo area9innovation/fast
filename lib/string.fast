@@ -6,6 +6,7 @@ export {
 	+(a : string, b : string) -> string;
 	==(l : string, r : string) -> i1;
 	!=(l : string, r : string) -> i1;
+	<=(l : string, r : string) -> i1;
 
 	length(a : string) -> i32;
 }
@@ -38,6 +39,7 @@ flow::inline index(s : string, i : i32) -> string {
 
 flow::inline ==(l : string, r : string) -> i1 { inline flow { ($l) == ($r) } }
 flow::inline !=(l : string, r : string) -> i1 { inline flow { ($l) != ($r) } }
+flow::inline <=(l : string, r : string) -> i1 { inline flow { ($l) <= ($r) } }
 
 // JavaScript
 
@@ -55,6 +57,7 @@ js::inline index(s : string, i : i32) -> string {
 
 js::inline ==(l : string, r : string) -> i1 { inline js { ($l) === ($r) } }
 js::inline !=(l : string, r : string) -> i1 { inline js { ($l) !== ($r) } }
+js::inline <=(l : string, r : string) -> i1 { inline js { ($l) <= ($r) } }
 
 
 // Java
