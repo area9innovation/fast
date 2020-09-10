@@ -178,12 +178,20 @@ doRunTestSuite(
 gringo.flow::main() -> i0 {
     runTestSuite("parser combinators",
         array(
-            testGringo
+            testGringoExp,
+            testGringoGringo
         )
     );
 	quit(0);
 }
 
+// Following functions are generated from: 
+// e = e ("+" e)
+//	|> e ("*" e)
+//	|> "a" | "b";
+// e
+// 
+// by generateFastParserFromGringo function
 
 generated_e_rule(input : string, i : i32) -> Tuple<i32, i32> {
 	p = compiletime::sequenceParseC(
@@ -238,7 +246,9 @@ generated_e2_rule(input : string, i : i32) -> Tuple<i32, i32> {
 	p(input, i);
 }
 
-testGringo() -> i32 {
+
+
+testGringoExp() -> i32 {
     test_set = array(
         tuple("a", true(), 0),
         tuple("b", true(), 0),
@@ -248,4 +258,598 @@ testGringo() -> i32 {
         tuple("a+a*a*a+b*b+a+b+a*b", true(), 0)
     );
     runIntTests("Testing a parser generated from gringo ... ", generated_e_rule, test_set);
+}
+
+
+// Following functions are generated from the gringo.gringo with all unquote operators removed
+// by generateFastParserFromGringo function
+
+generated_anychar_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::rangeParseC(
+		0, 65535,
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_char_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::choiceParseC(
+		compiletime::sequenceParseC(
+			compiletime::tokenParseC(
+				"0x",
+				compiletime::const1(0), 0
+			),
+			compiletime::plusParseC(
+				generated_hexdigit_rule,
+				compiletime::const1(0), 0
+			),
+			compiletime::const2(0), 0
+		),
+		generated_anychar_rule,
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_grammar_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::sequenceParseC(
+		generated_ws_rule,
+		generated_term_rule,
+		compiletime::const2(0), 0
+	);
+	p(input, i);
+}
+
+generated_hexdigit_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::choiceParseC(
+		compiletime::rangeParseC(
+			97, 102,
+			compiletime::const1(0), 0
+		),
+		compiletime::choiceParseC(
+			compiletime::rangeParseC(
+				65, 70,
+				compiletime::const1(0), 0
+			),
+			compiletime::rangeParseC(
+				48, 57,
+				compiletime::const1(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_id_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::plusParseC(
+		compiletime::choiceParseC(
+			compiletime::rangeParseC(
+				97, 122,
+				compiletime::const1(0), 0
+			),
+			compiletime::choiceParseC(
+				compiletime::rangeParseC(
+					65, 90,
+					compiletime::const1(0), 0
+				),
+				compiletime::choiceParseC(
+					compiletime::rangeParseC(
+						48, 57,
+						compiletime::const1(0), 0
+					),
+					compiletime::tokenParseC(
+						"_",
+						compiletime::const1(0), 0
+					),
+					compiletime::const1(0), 0
+				),
+				compiletime::const1(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_s_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::choiceParseC(
+		compiletime::tokenParseC(
+			" ",
+			compiletime::const1(0), 0
+		),
+		compiletime::choiceParseC(
+			compiletime::tokenParseC(
+				"\t",
+				compiletime::const1(0), 0
+			),
+			compiletime::choiceParseC(
+				compiletime::tokenParseC(
+					"\n",
+					compiletime::const1(0), 0
+				),
+				compiletime::choiceParseC(
+					compiletime::sequenceParseC(
+						compiletime::sequenceParseC(
+							compiletime::tokenParseC(
+								"//",
+								compiletime::const1(0), 0
+							),
+							compiletime::starParseC(
+								compiletime::sequenceParseC(
+									compiletime::notPredicateParseC(
+										compiletime::tokenParseC(
+											"\n",
+											compiletime::const1(0), 0
+										),
+										0, 0
+									),
+									generated_anychar_rule,
+									compiletime::const2(0), 0
+								),
+								compiletime::const1(0), 0
+							),
+							compiletime::const2(0), 0
+						),
+						compiletime::tokenParseC(
+							"\n",
+							compiletime::const1(0), 0
+						),
+						compiletime::const2(0), 0
+					),
+					compiletime::sequenceParseC(
+						compiletime::sequenceParseC(
+							compiletime::tokenParseC(
+								"/*",
+								compiletime::const1(0), 0
+							),
+							compiletime::starParseC(
+								compiletime::sequenceParseC(
+									compiletime::notPredicateParseC(
+										compiletime::tokenParseC(
+											"*/",
+											compiletime::const1(0), 0
+										),
+										0, 0
+									),
+									generated_anychar_rule,
+									compiletime::const2(0), 0
+								),
+								compiletime::const1(0), 0
+							),
+							compiletime::const2(0), 0
+						),
+						compiletime::tokenParseC(
+							"*/",
+							compiletime::const1(0), 0
+						),
+						compiletime::const2(0), 0
+					),
+					compiletime::const1(0), 0
+				),
+				compiletime::const1(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_string_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::starParseC(
+		compiletime::sequenceParseC(
+			compiletime::notPredicateParseC(
+				compiletime::tokenParseC(
+					"\"",
+					compiletime::const1(0), 0
+				),
+				0, 0
+			),
+			generated_anychar_rule,
+			compiletime::const2(0), 0
+		),
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_stringq_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::starParseC(
+		compiletime::sequenceParseC(
+			compiletime::notPredicateParseC(
+				compiletime::tokenParseC(
+					"'",
+					compiletime::const1(0), 0
+				),
+				0, 0
+			),
+			generated_anychar_rule,
+			compiletime::const2(0), 0
+		),
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_term_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::sequenceParseC(
+		generated_term1_rule,
+		compiletime::optionalParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"|>",
+					compiletime::const1(0), 0
+				),
+				generated_grammar_rule,
+				compiletime::const2(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const2(0), 0
+	);
+	p(input, i);
+}
+
+generated_term1_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::sequenceParseC(
+		generated_term2_rule,
+		compiletime::optionalParseC(
+			compiletime::sequenceParseC(
+				compiletime::sequenceParseC(
+					compiletime::tokenParseC(
+						"|",
+						compiletime::const1(0), 0
+					),
+					generated_ws_rule,
+					compiletime::const2(0), 0
+				),
+				generated_term1_rule,
+				compiletime::const2(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const2(0), 0
+	);
+	p(input, i);
+}
+
+generated_term2_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::sequenceParseC(
+		generated_term3_rule,
+		compiletime::optionalParseC(
+			generated_term2_rule,
+			compiletime::const1(0), 0
+		),
+		compiletime::const2(0), 0
+	);
+	p(input, i);
+}
+
+generated_term3_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::choiceParseC(
+		compiletime::sequenceParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"$",
+					compiletime::const1(0), 0
+				),
+				generated_ws_rule,
+				compiletime::const2(0), 0
+			),
+			generated_term3_rule,
+			compiletime::const2(0), 0
+		),
+		generated_term4_rule,
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_term4_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::sequenceParseC(
+		generated_term5_rule,
+		compiletime::optionalParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"*",
+					compiletime::const1(0), 0
+				),
+				generated_ws_rule,
+				compiletime::const2(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const2(0), 0
+	);
+	p(input, i);
+}
+
+generated_term5_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::sequenceParseC(
+		generated_term6_rule,
+		compiletime::optionalParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"+",
+					compiletime::const1(0), 0
+				),
+				generated_ws_rule,
+				compiletime::const2(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const2(0), 0
+	);
+	p(input, i);
+}
+
+generated_term6_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::sequenceParseC(
+		generated_term7_rule,
+		compiletime::optionalParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"?",
+					compiletime::const1(0), 0
+				),
+				generated_ws_rule,
+				compiletime::const2(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const2(0), 0
+	);
+	p(input, i);
+}
+
+generated_term7_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::choiceParseC(
+		compiletime::sequenceParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"!",
+					compiletime::const1(0), 0
+				),
+				generated_ws_rule,
+				compiletime::const2(0), 0
+			),
+			generated_term7_rule,
+			compiletime::const2(0), 0
+		),
+		generated_term8_rule,
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_term8_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::choiceParseC(
+		compiletime::sequenceParseC(
+			compiletime::sequenceParseC(
+				compiletime::sequenceParseC(
+					compiletime::sequenceParseC(
+						compiletime::tokenParseC(
+							"(",
+							compiletime::const1(0), 0
+						),
+						generated_ws_rule,
+						compiletime::const2(0), 0
+					),
+					generated_term_rule,
+					compiletime::const2(0), 0
+				),
+				compiletime::tokenParseC(
+					")",
+					compiletime::const1(0), 0
+				),
+				compiletime::const2(0), 0
+			),
+			generated_ws_rule,
+			compiletime::const2(0), 0
+		),
+		compiletime::choiceParseC(
+			compiletime::sequenceParseC(
+				compiletime::sequenceParseC(
+					compiletime::sequenceParseC(
+						compiletime::tokenParseC(
+							"\"",
+							compiletime::const1(0), 0
+						),
+						generated_string_rule,
+						compiletime::const2(0), 0
+					),
+					compiletime::tokenParseC(
+						"\"",
+						compiletime::const1(0), 0
+					),
+					compiletime::const2(0), 0
+				),
+				generated_ws_rule,
+				compiletime::const2(0), 0
+			),
+			compiletime::choiceParseC(
+				compiletime::sequenceParseC(
+					compiletime::sequenceParseC(
+						compiletime::sequenceParseC(
+							compiletime::sequenceParseC(
+								compiletime::sequenceParseC(
+									compiletime::sequenceParseC(
+										compiletime::sequenceParseC(
+											compiletime::sequenceParseC(
+												compiletime::sequenceParseC(
+													compiletime::tokenParseC(
+														"'",
+														compiletime::const1(0), 0
+													),
+													generated_char_rule,
+													compiletime::const2(0), 0
+												),
+												compiletime::tokenParseC(
+													"'",
+													compiletime::const1(0), 0
+												),
+												compiletime::const2(0), 0
+											),
+											generated_ws_rule,
+											compiletime::const2(0), 0
+										),
+										compiletime::tokenParseC(
+											"-",
+											compiletime::const1(0), 0
+										),
+										compiletime::const2(0), 0
+									),
+									generated_ws_rule,
+									compiletime::const2(0), 0
+								),
+								compiletime::tokenParseC(
+									"'",
+									compiletime::const1(0), 0
+								),
+								compiletime::const2(0), 0
+							),
+							generated_char_rule,
+							compiletime::const2(0), 0
+						),
+						compiletime::tokenParseC(
+							"'",
+							compiletime::const1(0), 0
+						),
+						compiletime::const2(0), 0
+					),
+					generated_ws_rule,
+					compiletime::const2(0), 0
+				),
+				compiletime::choiceParseC(
+					compiletime::sequenceParseC(
+						compiletime::sequenceParseC(
+							compiletime::sequenceParseC(
+								compiletime::tokenParseC(
+									"'",
+									compiletime::const1(0), 0
+								),
+								generated_stringq_rule,
+								compiletime::const2(0), 0
+							),
+							compiletime::tokenParseC(
+								"'",
+								compiletime::const1(0), 0
+							),
+							compiletime::const2(0), 0
+						),
+						generated_ws_rule,
+						compiletime::const2(0), 0
+					),
+					compiletime::choiceParseC(
+						compiletime::sequenceParseC(
+							compiletime::sequenceParseC(
+								compiletime::sequenceParseC(
+									compiletime::sequenceParseC(
+										compiletime::sequenceParseC(
+											compiletime::sequenceParseC(
+												generated_id_rule,
+												generated_ws_rule,
+												compiletime::const2(0), 0
+											),
+											compiletime::tokenParseC(
+												"=",
+												compiletime::const1(0), 0
+											),
+											compiletime::const2(0), 0
+										),
+										generated_ws_rule,
+										compiletime::const2(0), 0
+									),
+									generated_term_rule,
+									compiletime::const2(0), 0
+								),
+								compiletime::tokenParseC(
+									";",
+									compiletime::const1(0), 0
+								),
+								compiletime::const2(0), 0
+							),
+							generated_grammar_rule,
+							compiletime::const2(0), 0
+						),
+						compiletime::sequenceParseC(
+							generated_id_rule,
+							generated_ws_rule,
+							compiletime::const2(0), 0
+						),
+						compiletime::const1(0), 0
+					),
+					compiletime::const1(0), 0
+				),
+				compiletime::const1(0), 0
+			),
+			compiletime::const1(0), 0
+		),
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+generated_ws_rule(input : string, i : i32) -> Tuple<i32, i32> {
+	p = compiletime::starParseC(
+		generated_s_rule,
+		compiletime::const1(0), 0
+	);
+	p(input, i);
+}
+
+
+
+
+
+testGringoGringo() -> i32 {
+    grammar0 = "e = \"a\"; e";
+    grammar1 = 
+"e = e (\"+\" e)
+	|> e (\"*\" e)
+	|> \"a\" | \"b\";
+e";
+    grammar2 = 
+"term = 
+	term \"|>\" ws term 						
+	|> term \"|\" ws term 						
+	|> term term								
+	|> \"$\" ws term								
+	|> term \"*\" ws								
+	|> term \"+\" ws								
+	|> term \"?\" ws								
+	|> \"!\" ws term								
+	|> 
+		\"(\" ws term \")\" ws							
+		| '\"' string '\"' ws							
+		| \"'\" char \"'\" ws \"-\" ws \"'\" char \"'\" ws	
+		| \"'\" stringq \"'\" ws						
+		| id ws \"=\" ws term \";\" ws term				
+		| id ws										
+	;
+
+id = ('a'-'z' | 'A'-'Z' | '0'-'9' | '_')+;
+int = '0'-'9'+;
+
+string = (!'\"' '0x0'-'0xFFFF')*;
+stringq = (!\"'\" '0x0'-'0xFFFF')*;
+char = (\"0x\" hexdigit+) | anychar;
+anychar = '0x0'-'0xFFFF';
+hexdigit = 'a'-'f' | 'A'-'F' | '0'-'9';
+ws = s*;
+s = \" \" | \"	\" | \"
+\" | \"//\" (!\"
+\" anychar)* \"
+\" | \"/*\" (!\"*/\" anychar)* \"*/\";
+grammar = ws term;
+grammar";
+    test_set = array(
+        tuple(grammar0, true(), 0),
+        tuple(grammar1, true(), 0),
+        tuple(grammar2, true(), 0),
+    );
+    runIntTests("Testing a parser generated from gringo ... ", generated_grammar_rule, test_set);
 }

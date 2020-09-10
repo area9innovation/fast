@@ -78,18 +78,18 @@ generateFastParserFromTerm(t : GTerm) -> string {
             "compiletime::notPredicateParseC(\n" +
                 strIndent(
                     generateFastParserFromTerm(term) + ",\n" +
-                    "compiletime::const1(0), 0"
+                    "0, 0"
                 )
             + "\n)"
         }
 		GUnquote(term): {
-            println("TODO: GUnquote");
-            ""
+            // TODO: make correct handling of an unquote operator
+            generateFastParserFromTerm(term);
         }
 		GString(text): {
             "compiletime::tokenParseC(\n" +
                 strIndent(
-                    "\"" + text + "\",\n" +
+                    "\"" + escapeStr(text) + "\",\n" +
                     "compiletime::const1(0), 0"
                 )
             + "\n)"
@@ -97,7 +97,7 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GRange(lower, upper): {
             "compiletime::rangeParseC(\n" +
                 strIndent(
-                    i2s(lower) + ", " + i2s(upper) + "\n" +
+                    i2s(lower) + ", " + i2s(upper) + ",\n" +
                     "compiletime::const1(0), 0"
                 )
             + "\n)"
