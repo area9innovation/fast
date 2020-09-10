@@ -95,8 +95,12 @@ generateFastParserFromTerm(t : GTerm) -> string {
             + "\n)"
         }
 		GRange(lower, upper): {
-            println("TODO: GRange");
-            ""
+            "compiletime::rangeParseC(\n" +
+                strIndent(
+                    i2s(lower) + ", " + i2s(upper) + "\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
         }
 		GVar(id): {
             "generated_" + id + "_rule";

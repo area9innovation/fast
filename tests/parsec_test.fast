@@ -91,6 +91,14 @@ oper_ints(x : i32, oper_y : Tuple<string, i32>) -> i32 {
     }
 }
 
+compiletime::decDigitParser() -> (string, i32) -> Tuple<i32, string> {
+    compiletime::rangeParseC(
+        compiletime::fnCharCodeAt("0", 0), 
+        compiletime::fnCharCodeAt("9", 0), 
+        fnFromCharCode, ""
+    );
+}
+
 decNumAddDigit(hi_digit : string, lo_num : string) -> string {
     hi_digit + lo_num;
 }
@@ -98,11 +106,11 @@ decNumAddDigit(hi_digit : string, lo_num : string) -> string {
 decNumber(input : string, i : i32) -> Tuple<i32, string> {
     p = compiletime::choiceParseC(
         compiletime::sequenceParseC(
-            compiletime::rangeParseC("0", "9", idfn, ""),
+            compiletime::decDigitParser(),
             decNumber,
             decNumAddDigit, ""
         ),
-        compiletime::rangeParseC("0", "9", idfn, ""),
+        compiletime::decDigitParser(),
         idfn, ""
     );
     p(input, i);
@@ -256,7 +264,7 @@ doTestStarAction(arr : Array<string>, acc : string, i : i32) -> string {
 
 testStar() -> i32 {
     star = compiletime::starParseC(
-        compiletime::rangeParseC("0", "9", idfn, ""),
+        compiletime::decDigitParser(),
         testStarAction,
         ""
     );
@@ -273,7 +281,7 @@ testStar() -> i32 {
 
 testPlus() -> i32 {
     plus = compiletime::plusParseC(
-        compiletime::rangeParseC("0", "9", idfn, ""),
+        compiletime::decDigitParser(),
         testStarAction,
         ""
     );

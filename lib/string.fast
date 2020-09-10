@@ -9,6 +9,16 @@ export {
 	<=(l : string, r : string) -> i1;
 
 	length(a : string) -> i32;
+
+	// Considering the string as UCS-2, get the unicode character code at index i (starting from 0)
+	charCodeAt(s : string, i : i32) -> i32;
+	// non-inlined version of charCodeAt
+	fnCharCodeAt(s : string, i : i32) -> i32;
+
+	// Convert a UCS-2 unicode character code to a string
+	fromCharCode(c : i32) -> string;
+	// non-inlined version of fromCharCode
+	fnFromCharCode(c : i32) -> string;
 }
 
 typedef flow::string = inline flow { string };
@@ -20,6 +30,13 @@ typedef rust::string = inline rust { String };
 // TODO: Find out with wasm. It is probably just a pointer
 // TODO: Add for Rust, C...
 
+fnCharCodeAt(s : string, i : i32) -> i32 {
+	charCodeAt(s, i);
+}
+
+fnFromCharCode(c : i32) -> string {
+	fromCharCode(c);
+}
 
 // Flow
 
@@ -33,7 +50,17 @@ flow::inline length(a : string) -> i32 {
 }
 
 flow::inline index(s : string, i : i32) -> string {
-	inline js { getCharAt(${s}, ${i}) }
+	inline flow { getCharAt(${s}, ${i}) }
+	require import { import string; }
+}
+
+flow::inline charCodeAt(s : string, i : i32) -> string {
+	inline flow { getCharCodeAt(${s}, ${i}) }
+	require import { import string; }
+}
+
+flow::inline fromCharCode(c : i32) -> string {
+	inline flow { fromCharCode(${c}) }
 	require import { import string; }
 }
 
