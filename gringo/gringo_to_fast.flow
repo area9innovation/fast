@@ -3,18 +3,18 @@ import gringo/utils;
 
 export {
     // Translates a grammar to a combination of parser combinators
-    generateFastParserFromGringo(term : GTerm) -> string;
+    generateFastParserFromGringo(file : string, term : GTerm) -> string;
 }
 
-generateFastParserFromGringo(term : GTerm) -> string {
+generateFastParserFromGringo(file : string, term : GTerm) -> string {
     rules = tree2pairs(findRules(makeTree(), term));
-    strGlue(map(rules, generateFastParserFromRule), "\n");
+    strGlue(map(rules, \rule -> generateFastParserFromRule(file, rule)), "\n");
 }
 
-generateFastParserFromRule(rule : Pair<string, GTerm>) -> string {
+generateFastParserFromRule(file : string, rule : Pair<string, GTerm>) -> string {
     id = rule.first;
     term = rule.second;
-    "generated_" + id + "_rule" + "(input : string, i : i32) -> Tuple<i32, i32> {\n" +
+    file + "_" + id + "_rule" + "(input : string, i : i32) -> Tuple<i32, i32> {\n" +
         strIndent(
             "p = " + generateFastParserFromTerm(term) + ";\n" +
             "p(input, i);"
@@ -84,7 +84,11 @@ generateFastParserFromTerm(t : GTerm) -> string {
         }
 		GUnquote(term): {
             // TODO: make correct handling of an unquote operator
-            generateFastParserFromTerm(term);
+            switch (term) {
+                GUnquote(__): "emptyParseC(compiletime::const0(0))";
+                GString(__):  "emptyParseC(compiletime::const0(0))";
+                default: generateFastParserFromTerm(term);
+            }
         }
 		GString(text): {
             "compiletime::tokenParseC(\n" +

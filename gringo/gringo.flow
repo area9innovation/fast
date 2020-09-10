@@ -56,6 +56,7 @@ main() {
 			// Produce fast parser code with the grammar AST
 			fast = getUrlParameter("fast");
 			if (fast != "") {
+				name = strReplaces(changeFileExt(file, ""), ["/", "_", "\\", "_"]);
 				outfile = if (fast == "1") changeFileExt(file, "") + "_grammar.fast" else fast;
 				println("Saving " + outfile);
 				grammar_term = prepareGringoGrammar(resGrammar);
@@ -71,7 +72,7 @@ main() {
 						"file", file,
 						"fast", fast,
 						//"name", changeFileExt(fileNameOnly(file), "") + "Grammar",
-						"funcs", generateFastParserFromGringo(grammar_term),
+						"funcs", generateFastParserFromGringo(name, grammar_term),
 					])
 				);
 				{}
