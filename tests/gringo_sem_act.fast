@@ -218,7 +218,22 @@ decNumber(input : string, i : i32) -> Tuple<i32, string> {
 // by generateFastParserFromGringo function
 
 
+tupleStrStr(x : string, y : string) -> Tuple<string, string> {
+	tuple(x, y);
+}
 
+wrapWithQuotes(s : string) -> string {
+	//"\"" + s + "\"\n";
+	s + " "
+}
+
+operArgAction(oper : string, arg : string) -> string {
+	arg + oper + " ";
+}
+
+argArgAction(arg1 : string, arg2 : string) -> string {
+	arg1 + arg2;
+}
 
 generated_e_rule(input : string, i : i32) -> Tuple<i32, string> {
 	p = compiletime::sequenceParseC(
@@ -227,14 +242,14 @@ generated_e_rule(input : string, i : i32) -> Tuple<i32, string> {
 			compiletime::sequenceParseC(
 				compiletime::tokenParseC(
 					"+",
-					compiletime::const1(0), 0
+					idfn, ""
 				),
 				generated_e_rule,
-				compiletime::const2(0), 0
+				operArgAction, ""
 			),
-			compiletime::const1(0), 0
+			idfn, ""
 		),
-		compiletime::const2(0), 0
+		argArgAction, ""
 	);
 	p(input, i);
 }
@@ -242,21 +257,21 @@ generated_e_rule(input : string, i : i32) -> Tuple<i32, string> {
 generated_e1_rule(input : string, i : i32) -> Tuple<i32, string> {
 	p = compiletime::sequenceParseC(
 		compiletime::modifyParseC(
-            decNumber,
-            s2i, 0
-        ),
+        	decNumber,
+			wrapWithQuotes, ""
+		),
 		compiletime::optionalParseC(
 			compiletime::sequenceParseC(
 				compiletime::tokenParseC(
 					"*",
-					compiletime::const1(0), 0
+					idfn, ""
 				),
 				generated_e1_rule,
-				compiletime::const2(0), 0
+				operArgAction, ""
 			),
-			compiletime::const1(0), 0
+			idfn, ""
 		),
-		compiletime::const2(0), 0
+		argArgAction, ""
 	);
 	p(input, i);
 }
@@ -265,13 +280,14 @@ generated_e1_rule(input : string, i : i32) -> Tuple<i32, string> {
 
 testGringoExp() -> i32 {
     test_set = array(
-        tuple("1", true(), 0),
-        tuple("2", true(), 0),
-        tuple("1+2", true(), 0),
-        tuple("1+2*3", true(), 0),
-        tuple("1*2+3*4", true(), 0),
-        tuple("1+0*1*2+23*34+45+545+0*1", true(), 0)
+        tuple("1", true(), "1 "),
+        tuple("2", true(), "2 "),
+        tuple("1+2", true(), "1 2 + "),
+        tuple("1+2*3", true(), "1 2 3 * + "),
+        tuple("1*2+3*4", true(), "1 2 * 3 4 * + "),
+		tuple("1*2+3*4*5+7", true(), "1 2 * 3 4 5 * * 7 + + "),
+        //tuple("1+0*1*2+23*34+45+545+0*1", true(), 0)
     );
-    runIntTests("Testing a parser generated from gringo ... ", generated_e_rule, test_set);
+    runStringTests("Testing a parser generated from gringo ... ", generated_e_rule, test_set);
 }
 
