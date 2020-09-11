@@ -8,6 +8,7 @@ export {
 
 generateFastParserFromGringo(file : string, term : GTerm) -> string {
     rules = tree2pairs(findRules(makeTree(), term));
+    "zero_() -> i32 { 0; }\n\n" + 
     strGlue(map(rules, \rule -> generateFastParserFromRule(file, rule)), "\n");
 }
 
@@ -16,13 +17,13 @@ generateFastParserFromRule(file : string, rule : Pair<string, GTerm>) -> string 
     term = rule.second;
     file + "_" + id + "_rule" + "(input : string, i : i32) -> Tuple<i32, i32> {\n" +
         strIndent(
-            "p = " + generateFastParserFromTerm(term) + ";\n" +
+            "p = " + generateFastParserFromTerm(file, term) + ";\n" +
             "p(input, i);"
         ) +
     "\n}\n";
 }
 
-generateFastParserFromTerm(t : GTerm) -> string {
+generateFastParserFromTerm(file : string, t : GTerm) -> string {
     switch (t) {
 		GRule(id, term, body): {
             println("rule met - must not happen");
@@ -31,8 +32,8 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GSeq(left, right): {
             "compiletime::sequenceParseC(\n" +
                 strIndent(
-                    generateFastParserFromTerm(left) + ",\n" +
-                    generateFastParserFromTerm(right) + ",\n" +
+                    generateFastParserFromTerm(file, left) + ",\n" +
+                    generateFastParserFromTerm(file, right) + ",\n" +
                     "compiletime::const2(0), 0"
                 )
             + "\n)"
@@ -40,8 +41,8 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GChoice(left, right): {
             "compiletime::choiceParseC(\n" +
                 strIndent(
-                    generateFastParserFromTerm(left) + ",\n" +
-                    generateFastParserFromTerm(right) + ",\n" +
+                    generateFastParserFromTerm(file, left) + ",\n" +
+                    generateFastParserFromTerm(file, right) + ",\n" +
                     "compiletime::const1(0), 0"
                 )
             + "\n)"
@@ -53,7 +54,7 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GStar(term): {
             "compiletime::starParseC(\n" +
                 strIndent(
-                    generateFastParserFromTerm(term) + ",\n" +
+                    generateFastParserFromTerm(file, term) + ",\n" +
                     "compiletime::const1(0), 0"
                 )
             + "\n)"
@@ -61,7 +62,7 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GPlus(term): {
             "compiletime::plusParseC(\n" +
                 strIndent(
-                    generateFastParserFromTerm(term) + ",\n" +
+                    generateFastParserFromTerm(file, term) + ",\n" +
                     "compiletime::const1(0), 0"
                 )
             + "\n)"
@@ -69,7 +70,7 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GOpt(term): {
             "compiletime::optionalParseC(\n" +
                 strIndent(
-                    generateFastParserFromTerm(term) + ",\n" +
+                    generateFastParserFromTerm(file, term) + ",\n" +
                     "compiletime::const1(0), 0"
                 )
             + "\n)"
@@ -77,7 +78,7 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GNegate(term): {
             "compiletime::notPredicateParseC(\n" +
                 strIndent(
-                    generateFastParserFromTerm(term) + ",\n" +
+                    generateFastParserFromTerm(file, term) + ",\n" +
                     "0, 0"
                 )
             + "\n)"
@@ -85,9 +86,11 @@ generateFastParserFromTerm(t : GTerm) -> string {
 		GUnquote(term): {
             // TODO: make correct handling of an unquote operator
             switch (term) {
-                GUnquote(__): "emptyParseC(compiletime::const0(0))";
-                GString(__):  "emptyParseC(compiletime::const0(0))";
-                default: generateFastParserFromTerm(term);
+                //GUnquote(__): "emptyParseC(compiletime::const0(0))";
+                //GString(__):  "emptyParseC(compiletime::const0(0))";
+                GUnquote(__): "emptyParseC(zero_)";
+                GString(__):  "emptyParseC(zero_)";
+                default: generateFastParserFromTerm(file, term);
             }
         }
 		GString(text): {
@@ -107,7 +110,7 @@ generateFastParserFromTerm(t : GTerm) -> string {
             + "\n)"
         }
 		GVar(id): {
-            "generated_" + id + "_rule";
+            file + "_" + id + "_rule";
         }
 		GEpsilon(): {
             "compiletime::emptyParseC(\n" +
