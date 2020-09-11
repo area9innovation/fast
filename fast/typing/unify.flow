@@ -62,6 +62,8 @@ unifyFastType(env : FastInference, location : FLocation, ltype : FastType, rtype
 		FTypeInfer(): {
 			env.onError("NOT SUPPOSED TO HAPPEN", location);
 		}
+		FTypeBottom(): rest();
+		FTypeTop(): rest();
 		FIntConstant(value, info): rest();
 		FTypeInt(lbits): {
 			switch (rtype) {
@@ -199,6 +201,8 @@ resolveFastType(env : FastInference, location : FLocation, type : FastType) -> F
 		FTypeCall(id, typars): {
 			FTypeCall(id, map(typars, \t -> resolveFastType(env, location, t)));
 		}
+		FTypeBottom(): type;
+		FTypeTop(): type;
 	}
 }
 

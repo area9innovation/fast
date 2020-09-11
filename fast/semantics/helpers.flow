@@ -50,6 +50,8 @@ extractFInlineTypeForms(acc : List<FInlineType>, t : FastType) -> List<FInlineTy
 		FTypeFunction(args, to): extractFInlineTypeForms(fold(args, acc, extractFInlineTypeForms), to);
 		FTypeCall(id, typars): fold(typars, acc, extractFInlineTypeForms)
 		FInlineType(language, stream, dependencies): Cons(t, acc);
+		FTypeTop(): acc;
+		FTypeBottom(): acc;
 	}
 }
 
@@ -229,5 +231,7 @@ mapFastType(t : FastType, fn : (FastType) -> FastType) -> FastType {
 				FInlineTypeDependency(d with stream = st(d.stream))
 			}))
 		}
+		FTypeTop(): fn(t);
+		FTypeBottom(): fn(t);
 	})
 }

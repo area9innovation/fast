@@ -31,7 +31,9 @@ export {
 				returnType : FastType, effect : FastEffect, body : FExp, info : FInfo);
 			FFunctionArg(name : string, type : FastType, effect : FastEffect);
 
-	FastType ::= FTypeInfer, FIntConstant, FTypeVar, FTypeInt, FTypeFunction, FTypeCall, FInlineType;
+	FastType ::= FTypeInfer, FIntConstant, FTypeVar, FTypeInt, FTypeFunction, FTypeCall, FInlineType,
+
+			FTypeBottom, FTypeTop;
 		// We do not know what the type is. It should be inferred
 		FTypeInfer();
 
@@ -46,6 +48,11 @@ export {
 
 		// This is calling a type functor
 		FTypeCall(id : string, typars : [FastType]);
+
+		// The type of no values - subtype of all types
+		FTypeBottom();
+		// The type of all values - supertype of all types
+		FTypeTop();
 
 		// Native code for how to define a type
 		FInlineType(language : string, stream : [FInlineTypeForm], dependencies : [FInlineTypeDependency]);

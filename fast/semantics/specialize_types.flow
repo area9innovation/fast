@@ -69,6 +69,8 @@ collectTypeCalls(acc : Tree<string, Set<FTypeCall>>, t : FastType) -> Tree<strin
 				str(acc2, d.stream)
 			})
 		}
+		FTypeBottom(): acc;
+		FTypeTop(): acc;
 	}
 }
 

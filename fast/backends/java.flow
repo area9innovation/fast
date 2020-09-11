@@ -323,6 +323,8 @@ ftype2java(env : FJavaEnv, t : FastType) -> string {
 	}
 	switch (t) {
 		FTypeInfer(): todo();
+		FTypeBottom(): todo();
+		FTypeTop(): todo();
 		FIntConstant(value, info): todo();
 		FTypeInt(len): {
 			if (len == 0) {

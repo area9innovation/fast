@@ -35,6 +35,8 @@ isPolymorphicFastType(t : FastType) -> bool {
 		FTypeFunction(args, to): exists(args, isPolymorphicFastType) || isPolymorphicFastType(to);
 		FTypeCall(id, typars): (typars == [] && trim2(id, "?") == "") || exists(typars, isPolymorphicFastType);
 		FInlineType(language, stream, dependencies): false;
+		FTypeBottom(): false;
+		FTypeTop(): false;
 	}
 }
 
@@ -80,6 +82,8 @@ bindPolymorphism(typars : Tree<string, FastType>,
 			}
 		}
 		FInlineType(language, stream, dependencies): typars;
+		FTypeBottom(): typars;
+		FTypeTop(): typars;
 	}
 }
 
@@ -118,5 +122,7 @@ instantiateTypeParameters(env : FastInference, location : FLocation, typars : re
 			}
 		}
 		FInlineType(language, stream, dependencies): type;
+		FTypeBottom(): type;
+		FTypeTop(): type;
 	}
 }

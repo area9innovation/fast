@@ -150,6 +150,8 @@ evaluateFastType(env : TypedefEnv, type : FastType) -> FastType {
 			});
 			FInlineType(language, str(stream), map(dependencies, \d -> FInlineTypeDependency(d with stream = str(d.stream))));
 		}
+		FTypeBottom(): type;
+		FTypeTop(): type;
 	}
 }
 
@@ -192,5 +194,7 @@ instantiateFastTypeTyvars(tyvars : Tree<int, FastType>, onError : (int) -> void,
 		FTypeCall(id, typars): {
 			FTypeCall(id, map(typars, \t -> instantiateFastTypeTyvars(tyvars, onError, t)));
 		}
+		FTypeBottom(): type;
+		FTypeTop(): type;
 	}
 }

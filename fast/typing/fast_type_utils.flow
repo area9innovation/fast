@@ -1,56 +1,9 @@
 import fast/fast_ast;
 
 export {
-
 	declaredFastFunctionType(f : FastFunction) -> FTypeFunction;
-	
-	// Check if a given value is of the type specified
-	isFConstantOfType(value : FConstant, type : FastType) -> bool;
-}
-
-isFConstantOfType(c : FConstant, type : FastType) -> bool {
-	switch (type) {
-		FTypeInfer(): true;
-		FIntConstant(value, __): {
-			switch (c) {
-				FIntConstant(ivalue, __): value == ivalue;
-				FDoubleConstant(dvalue, __): false;
-				FStringConstant(svalue, __): false; // I guess it could be
-				FFunctionPointer(id, __): false;
-			}
-		}
-		FTypeInt(bits): {
-			switch (c) {
-				FIntConstant(value, __): true;
-				FDoubleConstant(value, __): false;
-				FStringConstant(value, __): true;
-				FFunctionPointer(id, __): false;
-			}
-		}
-		FTypeVar(id): {
-			false;
-		}
-		FTypeFunction(args, to): {
-			switch (c) {
-				FIntConstant(value, __): false;
-				FDoubleConstant(value, __): false;
-				FStringConstant(value, __): false;
-				FFunctionPointer(id, __): true;
-			}
-		}
-		FTypeCall(id, typars): {
-			switch (c) {
-				FIntConstant(value, __): false;
-				FDoubleConstant(value, __): id == "f64" || id == "f32";
-				FStringConstant(value, __): id == "string";
-				FFunctionPointer(__, __): false;
-			}
-		}
-		FInlineType(language, stream, deps): false;
-	}
 }
 
 declaredFastFunctionType(f : FastFunction) -> FTypeFunction {
 	FTypeFunction(map(f.args, \a -> a.type), f.returnType)
 }
-

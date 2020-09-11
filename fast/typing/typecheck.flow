@@ -281,6 +281,8 @@ ftypesMatch(t1 : FastType, t2 : FastType) -> bool {
 			}
 		}
 		FInlineType(language, stream, dependencies): t1 == t2 || isFastTypePar(t2);
+		FTypeBottom(): t1 == t2 || isFastTypePar(t2);
+		FTypeTop(): t1 == t2 || isFastTypePar(t2);
 	}
 }
 
@@ -291,10 +293,13 @@ fallTypesMatch(ts1 : [FastType], ts2 : [FastType]) -> bool {
 	})
 }
 
+// Is this a type we can accept after type inference?
 validFastType(env : CheckEnv, t : FastType) -> bool {
 	switch (t) {
 		FTypeInfer(): false;
 		FTypeVar(__): false;
+		FTypeBottom(): false;
+		FTypeTop(): false;
 
 		FIntConstant(value, __): true;
 		FTypeInt(bits): bits >= 0;

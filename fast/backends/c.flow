@@ -225,6 +225,8 @@ ftype2c(env : FCEnv, t : FastType) -> string {
 		"int32_t";
 	}
 	switch (t) {
+		FTypeBottom(): todo();
+		FTypeTop(): todo();
 		FTypeInfer(): todo();
 		FIntConstant(value, info): todo();
 		FTypeInt(bits): {
@@ -252,6 +254,8 @@ fnameType2c(env : FCEnv, name : string, t : FastType) -> string {
 		ftype2c(env, t) + " " + name;
 	}
 	switch (t) {
+		FTypeBottom(): def();
+		FTypeTop(): def();
 		FTypeInfer(): def();
 		FIntConstant(value, info): def();
 		FTypeInt(bits): def();

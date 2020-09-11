@@ -187,6 +187,8 @@ overloadDistFastType(call : FastType, overload : FastType) -> int {
 		}
 		FTypeVar(sid): 2;
 		FTypeInfer(): 3;
+		FTypeBottom(): 3;
+		FTypeTop(): 3;
 	}
 
 }

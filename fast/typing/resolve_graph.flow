@@ -121,12 +121,26 @@ compareFastType(small : FastType, big : FastType) -> int {
 				FInlineType(blanguage, bstream, bdependencies): 1;
 				FTypeVar(bid): genericCompare(sid, bid);
 				FTypeInfer(): -1;
+				FTypeBottom(): -1;
+				FTypeTop(): 1;
 			}
 		}
 
 		FTypeInfer(): {
 			switch (big) {
 				FTypeInfer(): 0;
+				default: -1;
+			}
+		}
+		FTypeBottom(): {
+			switch (big) {
+				FTypeBottom(): 0;
+				default: 1;
+			}
+		}
+		FTypeTop(): {
+			switch (big) {
+				FTypeTop(): 0;
 				default: -1;
 			}
 		}

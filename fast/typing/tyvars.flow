@@ -99,6 +99,8 @@ recordTyvarDependency(env : FastInference, id : int, types : [FastType]) -> void
 
 recordTyvarDependencyType(env : FastInference, tid : int, type : FastType) -> void {
 	switch (type) {
+		FTypeBottom(): {};
+		FTypeTop(): {};
 		FTypeInfer(): {};
 		FIntConstant(value, info): {};
 		FTypeVar(id): {

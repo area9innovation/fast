@@ -156,6 +156,8 @@ ftype2rust(t : FastType) -> string {
 		"i32";
 	}
 	switch (t) {
+		FTypeBottom(): todo();
+		FTypeTop(): todo();
 		FTypeInfer(): todo();
 		FIntConstant(value, info): ftype2rust(info.type);
 		FTypeInt(bits): {

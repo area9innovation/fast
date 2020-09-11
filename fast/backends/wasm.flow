@@ -264,6 +264,8 @@ ftype2wasm(t : FastType, realFn : bool) -> string {
 	}
 	switch (t) {
 		FTypeInfer(): todo();
+		FTypeBottom(): todo();
+		FTypeTop(): todo();
 		FIntConstant(value, info): todo();
 		FTypeInt(bits): {
 			if (bits == 0) {
