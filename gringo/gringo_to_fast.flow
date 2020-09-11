@@ -1,0 +1,121 @@
+import string_utils;
+import gringo/utils;
+
+export {
+    // Translates a grammar to a combination of parser combinators
+    generateFastParserFromGringo(file : string, term : GTerm) -> string;
+}
+
+generateFastParserFromGringo(file : string, term : GTerm) -> string {
+    rules = tree2pairs(findRules(makeTree(), term));
+    "zero_() -> i32 { 0; }\n\n" + 
+    strGlue(map(rules, \rule -> generateFastParserFromRule(file, rule)), "\n");
+}
+
+generateFastParserFromRule(file : string, rule : Pair<string, GTerm>) -> string {
+    id = rule.first;
+    term = rule.second;
+    file + "_" + id + "_rule" + "(input : string, i : i32) -> Tuple<i32, i32> {\n" +
+        strIndent(
+            "p = " + generateFastParserFromTerm(file, term) + ";\n" +
+            "p(input, i);"
+        ) +
+    "\n}\n";
+}
+
+generateFastParserFromTerm(file : string, t : GTerm) -> string {
+    switch (t) {
+		GRule(id, term, body): {
+            println("rule met - must not happen");
+            "";
+		}
+		GSeq(left, right): {
+            "compiletime::sequenceParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(file, left) + ",\n" +
+                    generateFastParserFromTerm(file, right) + ",\n" +
+                    "compiletime::const2(0), 0"
+                )
+            + "\n)"
+        }
+		GChoice(left, right): {
+            "compiletime::choiceParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(file, left) + ",\n" +
+                    generateFastParserFromTerm(file, right) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GPrecedence(left, right): {
+            println("precedence is met - must not happen");
+            "";
+        }
+		GStar(term): {
+            "compiletime::starParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(file, term) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GPlus(term): {
+            "compiletime::plusParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(file, term) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GOpt(term): {
+            "compiletime::optionalParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(file, term) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GNegate(term): {
+            "compiletime::notPredicateParseC(\n" +
+                strIndent(
+                    generateFastParserFromTerm(file, term) + ",\n" +
+                    "0, 0"
+                )
+            + "\n)"
+        }
+		GUnquote(term): {
+            // TODO: make correct handling of an unquote operator
+            switch (term) {
+                //GUnquote(__): "emptyParseC(compiletime::const0(0))";
+                //GString(__):  "emptyParseC(compiletime::const0(0))";
+                GUnquote(__): "emptyParseC(zero_)";
+                GString(__):  "emptyParseC(zero_)";
+                default: generateFastParserFromTerm(file, term);
+            }
+        }
+		GString(text): {
+            "compiletime::tokenParseC(\n" +
+                strIndent(
+                    "\"" + escapeStr(text) + "\",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GRange(lower, upper): {
+            "compiletime::rangeParseC(\n" +
+                strIndent(
+                    i2s(lower) + ", " + i2s(upper) + ",\n" +
+                    "compiletime::const1(0), 0"
+                )
+            + "\n)"
+        }
+		GVar(id): {
+            file + "_" + id + "_rule";
+        }
+		GEpsilon(): {
+            "compiletime::emptyParseC(\n" +
+                "\tcompiletime::const0(0), 0"
+            + "\n)"
+        }
+	}
+}
