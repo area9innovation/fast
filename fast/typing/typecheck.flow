@@ -13,6 +13,7 @@ export {
 }
 
 CheckEnv(
+	// What are the possible types of a given id?
 	mutable env : Tree<string, [FastType]>,
 	// Lookup from type to number of args that type constructor has
 	types : Tree<string, [int]>,
@@ -243,6 +244,7 @@ getFCallType(env : CheckEnv, sourceFile : int, ex : FCall) -> FastType {
 	}
 }
 
+// Is this the same type, or a type parameter?
 ftypesMatch(t1 : FastType, t2 : FastType) -> bool {
 	switch (t1) {
 		FTypeInfer(): false;
@@ -283,6 +285,27 @@ ftypesMatch(t1 : FastType, t2 : FastType) -> bool {
 		FInlineType(language, stream, dependencies): t1 == t2 || isFastTypePar(t2);
 		FTypeBottom(): t1 == t2 || isFastTypePar(t2);
 		FTypeTop(): t1 == t2 || isFastTypePar(t2);
+		FTypeUnion(left1, right1): {
+			switch (t2) {
+				FTypeUnion(left2, right2): {
+					ftypesMatch(left1, left2) && ftypesMatch(right1, right2)
+				}
+				FTypeInfer(): false;
+				FTypeVar(__): false;
+				default: isFastTypePar(t2);
+			}
+		}
+		FTypeIntersection(left1, right1): {
+			switch (t2) {
+				FTypeIntersection(left2, right2): {
+					ftypesMatch(left1, left2) && ftypesMatch(right1, right2)
+				}
+				FTypeInfer(): false;
+				FTypeVar(__): false;
+				default: isFastTypePar(t2);
+			}
+		
+		}
 	}
 }
 
@@ -300,6 +323,8 @@ validFastType(env : CheckEnv, t : FastType) -> bool {
 		FTypeVar(__): false;
 		FTypeBottom(): false;
 		FTypeTop(): false;
+		FTypeUnion(left, right): false;
+		FTypeIntersection(left, right): false;
 
 		FIntConstant(value, __): true;
 		FTypeInt(bits): bits >= 0;

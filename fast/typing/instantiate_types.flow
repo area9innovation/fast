@@ -152,6 +152,8 @@ evaluateFastType(env : TypedefEnv, type : FastType) -> FastType {
 		}
 		FTypeBottom(): type;
 		FTypeTop(): type;
+		FTypeUnion(left, right): FTypeUnion(evaluateFastType(env, left), evaluateFastType(env, right));
+		FTypeIntersection(left, right): FTypeIntersection(evaluateFastType(env, left), evaluateFastType(env, right));
 	}
 }
 
@@ -196,5 +198,13 @@ instantiateFastTypeTyvars(tyvars : Tree<int, FastType>, onError : (int) -> void,
 		}
 		FTypeBottom(): type;
 		FTypeTop(): type;
+		FTypeUnion(left, right): FTypeUnion(
+			instantiateFastTypeTyvars(tyvars, onError, left),
+			instantiateFastTypeTyvars(tyvars, onError, right),
+		);
+		FTypeIntersection(left, right): FTypeIntersection(
+			instantiateFastTypeTyvars(tyvars, onError, left),
+			instantiateFastTypeTyvars(tyvars, onError, right),
+		);
 	}
 }

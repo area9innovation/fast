@@ -71,6 +71,8 @@ collectTypeCalls(acc : Tree<string, Set<FTypeCall>>, t : FastType) -> Tree<strin
 		}
 		FTypeBottom(): acc;
 		FTypeTop(): acc;
+		FTypeUnion(left, right): collectTypeCalls(collectTypeCalls(acc, left), right);
+		FTypeIntersection(left, right): collectTypeCalls(collectTypeCalls(acc, left), right);
 	}
 }
 

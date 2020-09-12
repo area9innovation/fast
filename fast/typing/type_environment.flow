@@ -8,9 +8,17 @@ export {
 		mutable env : Tree<string, [FastType]>,
 		// Environment for evaluation of type functors
 		mutable typedefEnv : TypedefEnv,
+		// This is dead code, but can be helpful for debugging to have this graph
 		mutable unifyGraph : SimpleGraph<FastType, bool>,
 
+		// What are the tyvars bound to?
 		mutable tyvars : Tree<int, FastType>,
+
+		// TODO: For the MLSub algorithm add these:
+		// mutable tyvarLowerBounds : Tree<int, [FastType]>
+		// mutable tyvarUpperBounds : Tree<int, [FastType]>
+
+		// What is the next tyvar id?
 		mutable tyvarId : int,
 		// Unresolved overloads for this type-var. Always points to the parent of the tyvar-set
 		mutable overloads : Tree<int, FastOverloadInference>,

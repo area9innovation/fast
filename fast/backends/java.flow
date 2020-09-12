@@ -325,6 +325,8 @@ ftype2java(env : FJavaEnv, t : FastType) -> string {
 		FTypeInfer(): todo();
 		FTypeBottom(): todo();
 		FTypeTop(): todo();
+		FTypeUnion(left, right): todo();
+		FTypeIntersection(left, right): todo();
 		FIntConstant(value, info): todo();
 		FTypeInt(len): {
 			if (len == 0) {

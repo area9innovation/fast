@@ -123,6 +123,8 @@ compareFastType(small : FastType, big : FastType) -> int {
 				FTypeInfer(): -1;
 				FTypeBottom(): -1;
 				FTypeTop(): 1;
+				FTypeUnion(left, right): 1;
+				FTypeIntersection(left, right): 1;
 			}
 		}
 
@@ -141,6 +143,18 @@ compareFastType(small : FastType, big : FastType) -> int {
 		FTypeTop(): {
 			switch (big) {
 				FTypeTop(): 0;
+				default: -1;
+			}
+		}
+		FTypeUnion(left, right): {
+			switch (big) {
+				FTypeUnion(bleft, bright): compareFastTypes([left, right], [bleft, bright]);
+				default: -1;
+			}
+		}
+		FTypeIntersection(left, right): {
+			switch (big) {
+				FTypeIntersection(bleft, bright): compareFastTypes([left, right], [bleft, bright]);
 				default: -1;
 			}
 		}

@@ -177,13 +177,7 @@ partialEvalFExp(env : FastEnv, ex : FExp) -> FExp {
 			switch (type) {
 				FIntConstant(value, __): type;
 				FTypeInt(bits): FIntConstant(bits, info);
-				FTypeVar(id): ex;
-				FTypeFunction(args, to): ex;
-				FTypeCall(id, typars): ex;
-				FTypeInfer(): ex;
-				FInlineType(__, __, __): ex;
-				FTypeBottom(): ex;
-				FTypeTop(): ex;
+				default: ex;
 			}
 		}
 		FVar(id, info): {

@@ -141,6 +141,8 @@ fastType2string(t : FastType) -> string {
 		}
 		FTypeTop(): "⊤";
 		FTypeBottom(): "⊥";
+		FTypeUnion(left, right): fastType2string(left) + " ⊔ " + fastType2string(right);
+		FTypeIntersection(left, right): fastType2string(left) + " ⊓ " + fastType2string(right);
 	}
 }
 

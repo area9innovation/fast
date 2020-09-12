@@ -228,6 +228,8 @@ ftype2c(env : FCEnv, t : FastType) -> string {
 		FTypeBottom(): todo();
 		FTypeTop(): todo();
 		FTypeInfer(): todo();
+		FTypeUnion(left, right): todo();
+		FTypeIntersection(left, right): todo();
 		FIntConstant(value, info): todo();
 		FTypeInt(bits): {
 			if (bits == 0) {
@@ -256,6 +258,8 @@ fnameType2c(env : FCEnv, name : string, t : FastType) -> string {
 	switch (t) {
 		FTypeBottom(): def();
 		FTypeTop(): def();
+		FTypeUnion(left, right): def();
+		FTypeIntersection(left, right): def();
 		FTypeInfer(): def();
 		FIntConstant(value, info): def();
 		FTypeInt(bits): def();

@@ -37,6 +37,8 @@ isPolymorphicFastType(t : FastType) -> bool {
 		FInlineType(language, stream, dependencies): false;
 		FTypeBottom(): false;
 		FTypeTop(): false;
+		FTypeUnion(left, right): isPolymorphicFastType(left) || isPolymorphicFastType(right);
+		FTypeIntersection(left, right): isPolymorphicFastType(left) || isPolymorphicFastType(right);
 	}
 }
 
@@ -84,6 +86,23 @@ bindPolymorphism(typars : Tree<string, FastType>,
 		FInlineType(language, stream, dependencies): typars;
 		FTypeBottom(): typars;
 		FTypeTop(): typars;
+
+		FTypeUnion(aleft, aright): switch (concrete) {
+			FTypeUnion(cleft, cright): {
+				// Check args and to
+				typars1 = bindPolymorphism(typars, cleft, aleft);
+				bindPolymorphism(typars1, cright, aright);
+			}
+			default: typars;
+		}
+		FTypeIntersection(aleft, aright): switch (concrete) {
+			FTypeIntersection(cleft, cright): {
+				// Check args and to
+				typars1 = bindPolymorphism(typars, cleft, aleft);
+				bindPolymorphism(typars1, cright, aright);
+			}
+			default: typars;
+		}
 	}
 }
 
@@ -124,5 +143,13 @@ instantiateTypeParameters(env : FastInference, location : FLocation, typars : re
 		FInlineType(language, stream, dependencies): type;
 		FTypeBottom(): type;
 		FTypeTop(): type;
+		FTypeUnion(left, right): FTypeUnion(
+				instantiateTypeParameters(env, location, typars, left),
+				instantiateTypeParameters(env, location, typars, right)
+			);
+		FTypeIntersection(left, right): FTypeIntersection(
+				instantiateTypeParameters(env, location, typars, left),
+				instantiateTypeParameters(env, location, typars, right)
+			);
 	}
 }

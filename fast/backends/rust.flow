@@ -159,6 +159,8 @@ ftype2rust(t : FastType) -> string {
 		FTypeBottom(): todo();
 		FTypeTop(): todo();
 		FTypeInfer(): todo();
+		FTypeUnion(left, right): todo();
+		FTypeIntersection(left, right): todo();
 		FIntConstant(value, info): ftype2rust(info.type);
 		FTypeInt(bits): {
 			if (bits == 0) {

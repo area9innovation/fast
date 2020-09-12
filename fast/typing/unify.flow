@@ -156,6 +156,12 @@ unifyFastType(env : FastInference, location : FLocation, ltype : FastType, rtype
 			}
 		}
 		FInlineType(language, stream, dependencies): rest();
+		FTypeUnion(left, right): {
+			todo();
+		}
+		FTypeIntersection(left, right): {
+			todo();
+		}
 	}
 }
 
@@ -203,6 +209,8 @@ resolveFastType(env : FastInference, location : FLocation, type : FastType) -> F
 		}
 		FTypeBottom(): type;
 		FTypeTop(): type;
+		FTypeUnion(left, right): FTypeUnion(resolveFastType(env, location, left), resolveFastType(env, location, right));
+		FTypeIntersection(left, right): FTypeIntersection(resolveFastType(env, location, left), resolveFastType(env, location, right));
 	}
 }
 

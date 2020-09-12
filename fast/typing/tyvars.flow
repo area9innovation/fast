@@ -118,6 +118,14 @@ recordTyvarDependencyType(env : FastInference, tid : int, type : FastType) -> vo
 		FInlineType(language, stream, dependencies): {
 			println("TODO: Should we traverse this dependency");
 		}
+		FTypeUnion(left, right): {
+			recordTyvarDependencyType(env, tid, left);
+			recordTyvarDependencyType(env, tid, right);
+		}
+		FTypeIntersection(left, right): {
+			recordTyvarDependencyType(env, tid, left);
+			recordTyvarDependencyType(env, tid, right);
+		}
 	}
 }
 
