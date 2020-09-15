@@ -19,6 +19,8 @@ export {
 	fromCharCode(c : i32) -> string;
 	// non-inlined version of fromCharCode
 	fnFromCharCode(c : i32) -> string;
+
+	substring(s : string, i : i32, len : i32) -> string;
 }
 
 typedef flow::string = inline flow { string };
@@ -61,6 +63,11 @@ flow::inline charCodeAt(s : string, i : i32) -> string {
 
 flow::inline fromCharCode(c : i32) -> string {
 	inline flow { fromCharCode(${c}) }
+	require import { import string; }
+}
+
+flow::inline substring(s : string, i : i32, len : i32) -> string {
+	inline flow { substring(${s}, ${i}, ${len}) }
 	require import { import string; }
 }
 

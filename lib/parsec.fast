@@ -6,9 +6,10 @@ import array;
 
 export {
     // Parser combinator library.
-    // Each parser combinator generates a parser function of following signature:
+    // Each parser combinator generates a parser function of following two signatures:
     // 
     //    (input : string,  position : i32) -> Tuple<i32, ?>;
+    //    (input : string,  position : i32, acc : ?) -> Tuple<i32, ?>;
     //
     // The return tuple components:
     // - the first one (i32) - is a new position after action of parser. In case of match failure it is -1.
@@ -31,12 +32,14 @@ export {
     emptyParseC(
         sem_act : () -> ?
     ) -> (string, i32) -> Tuple<i32, ?>;
+    emptyParseC1() -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Triggers at the end of the input
     inputEndParseC(
         sem_act : () -> ?,
         fail : ?
     ) -> (string, i32) -> Tuple<i32, ?>;
+    inputEndParseC1() -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Range of chars: 'lower'-'upper' parser combinator
     rangeParseC(
@@ -45,6 +48,7 @@ export {
         sem_act : (i32) -> ?,
         fail : ?
     ) -> (string, i32) -> Tuple<i32, ?>;
+    rangeParseC1(lower : i32, upper : i32) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Fixed string parser combinator
     tokenParseC(
@@ -52,6 +56,7 @@ export {
         sem_act : (string) -> ?,
         fail : ?,
     ) -> (string, i32) -> Tuple<i32, ?>;
+    tokenParseC1(pattern : string) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Apply a semantic action to a parser output
     modifyParseC(
@@ -60,6 +65,16 @@ export {
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
 
+    // Signature of semantic action:
+    //    acc : ?
+    //    input : string,
+    //    start : i32,
+    //    len : i32
+    modifyParseC1(
+        parser : (string, i32, ?) -> Tuple<i32, ?>,
+        sem_act : (?, string, i32, i32) -> ?,
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
+
     // Sequential parsers
     sequenceParseC(
         parser1 : (string, i32) -> Tuple<i32, ?>,
@@ -67,6 +82,10 @@ export {
         sem_act : (?, ??) -> ???,
         fail : ???
     ) -> (string, i32) -> Tuple<i32, ???>;
+    sequenceParseC1(
+        parser1 : (string, i32, ?) -> Tuple<i32, ?>,
+        parser2 : (string, i32, ?) -> Tuple<i32, ?>
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Ordered choice of two parsers. If some triggers, further are not operated.
     choiceParseC(
@@ -75,6 +94,10 @@ export {
         sem_act : (?) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
+    choiceParseC1(
+        parser1 : (string, i32, ?) -> Tuple<i32, ?>,
+        parser2 : (string, i32, ?) -> Tuple<i32, ?>
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Ordered choice of an array of parsers. If some triggers, further are not operated.
     choiceManyParseC(
@@ -82,6 +105,10 @@ export {
         sem_act : (?) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
+    choiceManyParseC1(
+        parsers : Array<(string, i32, ?) -> Tuple<i32, ?> >
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
+
 
     // Kleene star
     starParseC(
@@ -89,6 +116,9 @@ export {
         sem_act : (Array<?>) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
+    starParseC1(
+        parser : (string, i32, ?) -> Tuple<i32, ?>
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Kleene plus
     plusParseC(
@@ -96,6 +126,9 @@ export {
         sem_act : (Array<?>) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
+    plusParseC1(
+        parser : (string, i32, ?) -> Tuple<i32, ?>
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Optional: may parse or not
     optionalParseC(
@@ -103,6 +136,9 @@ export {
         sem_act : (?) -> ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
+    optionalParseC1(
+        parser : (string, i32, ?) -> Tuple<i32, ?>
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // And predicate: must match the input, but do not consume input stream
     andPredicateParseC(
@@ -110,6 +146,9 @@ export {
         success : ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
+    andPredicateParseC1(
+        parser : (string, i32, ?) -> Tuple<i32, ?>
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
 
     // Not predicate: must mismatch the input, do not consume input stream
     notPredicateParseC(
@@ -117,6 +156,9 @@ export {
         success : ??,
         fail : ??
     ) -> (string, i32) -> Tuple<i32, ??>;
+    notPredicateParseC1(
+        parser : (string, i32, ?) -> Tuple<i32, ?>
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
 }
 
 compiletime::emptyParseC(
@@ -127,6 +169,14 @@ compiletime::emptyParseC(
 
 emptyParseCimpl(sem_act : () -> ?, input : string, i : i32) -> Tuple<i32, ?> {
     tuple(i, sem_act());
+}
+
+compiletime::emptyParseC1() -> (string, i32, ?) -> Tuple<i32, ?> {
+    emptyParseCimpl1;
+}
+
+emptyParseCimpl1(input : string, i : i32, acc : ?) -> Tuple<i32, ?> {
+    tuple(i, acc);
 }
 
 
@@ -144,6 +194,23 @@ inputEndParseCimpl(sem_act : () -> ?, fail : ?, input : string, i : i32) -> Tupl
         tuple(-(1), fail);
     }
 } 
+
+compiletime::inputEndParseC1() -> (string, i32, ?) -> Tuple<i32, ?> {
+    inputEndParseCimpl1;
+}
+
+inputEndParseCimpl1(
+    input : string, 
+    i : i32, 
+    acc : ?
+) -> Tuple<i32, ?> {
+    if (i == length(input)) {
+        tuple(i, acc);
+    } else {
+        tuple(-(1), acc);
+    }
+} 
+
 
 compiletime::rangeParseC(
     lower : i32, 
@@ -178,6 +245,34 @@ rangeParseCimpl(
     }
 }
 
+compiletime::rangeParseC1(lower : i32, upper : i32) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(rangeParseCimpl1, lower, upper);
+}
+
+rangeParseCimpl1(
+    lower : i32, 
+    upper : i32,
+    input : string, 
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    if (i == length(input)) {
+        tuple(-(1), acc);
+    } else {
+        code = charCodeAt(input, i) : i32;
+        if (lower <= code) {
+            if (code <= upper) {
+                tuple(i + 1, acc);
+            } else {
+                tuple(-(1), acc);    
+            }
+        } else {
+            tuple(-(1), acc);
+        }
+    }
+}
+
+
 compiletime::tokenParseC(
     pattern : string, 
     sem_act : (string) -> ?, 
@@ -210,6 +305,33 @@ doTokenParseCimpl(pattern : string, sem_act : (string) -> ?, fail : ?, input : s
     }
 }
 
+compiletime::tokenParseC1(pattern : string) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(tokenParseCimpl1, pattern);
+}
+
+tokenParseCimpl1(
+    pattern : string,
+    input : string, 
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    doTokenParseCimpl1(pattern, input, i, acc, 0);
+} 
+
+doTokenParseCimpl1(pattern : string, input : string, i : i32, acc : ?, j : i32) -> Tuple<i32, ?> {
+    if (j == length(pattern)) {
+        tuple(i + j, acc);
+    } else {
+        a = index(input, i + j);
+        b = index(pattern, j);
+        if (a != b) {
+            tuple(-(1), acc);
+        } else {
+            doTokenParseCimpl1(pattern, input, i, acc, j + 1);
+        }
+    }
+}
+
 compiletime::modifyParseC(
     parser : (string, i32) -> Tuple<i32, ?>,
     sem_act : (?) -> ??,
@@ -233,6 +355,30 @@ modifyParseCimpl(
         tuple(-(1), fail);
     } else {
         tuple(j, y);
+    }
+}
+
+compiletime::modifyParseC1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    sem_act : (?, string, i32, i32) -> ?
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(modifyParseCimpl1, parser, sem_act);
+}
+
+modifyParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>, 
+    sem_act : (?, string, i32, i32) -> ?,
+    input : string, 
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    p = parser(input, i, acc) : Tuple<i32, ?>;
+    j = first(p) : i32;
+    if (j == -(1)) {
+        tuple(-(1), acc);
+    } else {
+        y = second(p);
+        tuple(j, sem_act(y, input, i, j - i));
     }
 }
 
@@ -266,6 +412,34 @@ sequenceParseCimpl(
     }
 }
 
+compiletime::sequenceParseC1(
+    parser1 : (string, i32, ?) -> Tuple<i32, ?>,
+    parser2 : (string, i32, ?) -> Tuple<i32, ?>
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(sequenceParseCimpl1, parser1, parser2);
+}
+
+sequenceParseCimpl1(
+    parser1 : (string, i32, ?) -> Tuple<i32, ?>,
+    parser2 : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string, 
+    i : i32, 
+    acc : ?
+) -> Tuple<i32, ?> {
+    t1 = parser1(input, i, acc) : Tuple<i32, ?>;
+    if (0 > first(t1)) {
+        tuple(-(1), acc);
+    } else {
+        x1 = second(t1) : ?;
+        t2 = parser2(input, first(t1), x1) : Tuple<i32, ?>;
+        if (0 > first(t2)) {
+            tuple(-(1), x1);
+        } else {
+            t2
+        }
+    }
+}
+
 compiletime::choiceParseC(
     parser1 : (string, i32) -> Tuple<i32, ?>,
     parser2 : (string, i32) -> Tuple<i32, ?>,
@@ -288,6 +462,28 @@ choiceParseCimpl(
         t1;
     } else {
         modifyParseCimpl(parser2, sem_act, fail, input, i);
+    }
+}
+
+compiletime::choiceParseC1(
+    parser1 : (string, i32, ?) -> Tuple<i32, ?>,
+    parser2 : (string, i32, ?) -> Tuple<i32, ?>
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(choiceParseCimpl1, parser1, parser2);
+}
+
+choiceParseCimpl1(
+    parser1 : (string, i32, ?) -> Tuple<i32, ?>,
+    parser2 : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string, 
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    t1 = parser1(input, i, acc) : Tuple<i32, ?>;
+    if (0 <= first(t1)) {
+        t1;
+    } else {
+        parser2(input, i, acc);
     }
 }
 
@@ -330,6 +526,41 @@ doChoiceManyParseCimpl(
     }
 }
 
+compiletime::choiceManyParseC1(
+    parsers : Array<(string, i32, ?) -> Tuple<i32, ?> >
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(choiceManyParseCimpl1, parsers);
+}
+
+choiceManyParseCimpl1(
+    parsers : Array<(string, i32, ?) -> Tuple<i32, ?> >,
+    input : string, 
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    doChoiceManyParseCimpl1(parsers, input, i, acc, 0);
+}
+
+doChoiceManyParseCimpl1(
+    parsers : Array<(string, i32, ?) -> Tuple<i32, ?> >,
+    input : string, 
+    i : i32,
+    acc : ?,
+    k : i32
+) -> Tuple<i32, ?> {
+    if (k == length(parsers)) {
+        tuple(-(1), acc);
+    } else {
+        parser = index(parsers, k);
+        t1 = parser(input, i, acc) : Tuple<i32, ?>;
+        if (0 <= first(t1)) {
+            t1;
+        } else {
+            doChoiceManyParseCimpl1(parsers, input, i, acc, k + 1);
+        }
+    }
+}
+
 compiletime::starParseC(
     parser : (string, i32) -> Tuple<i32, ?>,
     sem_act : (Array<?>) -> ??,
@@ -344,8 +575,23 @@ starParseCimpl(
     fail : ??,
     input : string,
     i : i32
-) -> (string, i32) -> Tuple<i32, ??> {
+) -> Tuple<i32, ??> {
     doStarParseCimpl(parser, sem_act, fail, input, i, array());
+}
+
+compiletime::starParseC1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(starParseCimpl1, parser);
+}
+
+starParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string,
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    doStarParseCimpl1(parser, input, i, acc);
 }
 
 compiletime::plusParseC(
@@ -362,13 +608,35 @@ plusParseCimpl(
     fail : ??,
     input : string,
     i : i32
-) -> (string, i32) -> Tuple<i32, ??> {
+) -> Tuple<i32, ??> {
     p = parser(input, i) : Tuple<i32, ?>;
     j = first(p);
     if (j == -(1)) {
         tuple(-(1), fail);
     } else {
         doStarParseCimpl(parser, sem_act, fail, input, j, array(second(p)));
+    }
+}
+
+compiletime::plusParseC1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(plusParseCimpl1, parser);
+}
+
+plusParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string,
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    p = parser(input, i, acc) : Tuple<i32, ?>;
+    j = first(p);
+    if (j == -(1)) {
+        tuple(-(1), acc);
+    } else {
+        x = second(p) : ?;
+        doStarParseCimpl1(parser, input, j, x);
     }
 }
 
@@ -385,12 +653,27 @@ doStarParseCimpl(
     if (j == -(1)) {
         tuple(i, sem_act(acc));
     } else {
-        x = second(p);
+        x = second(p) : ?;
         new_acc = acc + array(x);
         doStarParseCimpl(parser, sem_act, fail, input, j, new_acc);
     }
 }
 
+doStarParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string,
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    p = parser(input, i, acc) : Tuple<i32, ?>;
+    j = first(p);
+    if (j == -(1)) {
+        tuple(i, acc);
+    } else {
+        new_acc = second(p) : ?;
+        doStarParseCimpl1(parser, input, j, new_acc);
+    }
+}
 
 compiletime::optionalParseC(
     parser : (string, i32) -> Tuple<i32, ?>,
@@ -406,16 +689,39 @@ optionalParseCimpl(
     fail : ??,
     input : string,
     i : i32
-) -> (string, i32) -> Tuple<i32, ??> {
+) -> Tuple<i32, ??> {
     p = parser(input, i) : Tuple<i32, ?>;
     j = first(p);
     if (j == -(1)) {
         tuple(i, fail);
     } else {
-        x = second(p);
+        x = second(p) : ?;
         tuple(j, sem_act(x));
     }
 }
+
+compiletime::optionalParseC1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(optionalParseCimpl1, parser);
+}
+
+optionalParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string,
+    i : i32, 
+    acc : ?
+) -> Tuple<i32, ?> {
+    p = parser(input, i, acc) : Tuple<i32, ?>;
+    j = first(p);
+    if (j == -(1)) {
+        tuple(i, acc);
+    } else {
+        p;
+    }
+}
+
+
 
 compiletime::andPredicateParseC(
     parser : (string, i32) -> Tuple<i32, ?>,
@@ -441,6 +747,28 @@ andPredicateParseCimpl(
     }
 }
 
+compiletime::andPredicateParseC1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(andPredicateParseCimpl1, parser);
+}
+
+andPredicateParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string,
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    p = parser(input, i, acc) : Tuple<i32, ?>;
+    j = first(p);
+    if (j == -(1)) {
+        tuple(-(1), acc);
+    } else {
+        x = second(p) : ?;
+        tuple(i, x);
+    }
+}
+
 notPredicateParseC(
     parser : (string, i32) -> Tuple<i32, ?>,
     success : ??,
@@ -455,12 +783,34 @@ notPredicateParseCimpl(
     fail : ??,
     input : string,
     i : i32
-) -> (string, i32) -> Tuple<i32, ??> {
+) -> Tuple<i32, ??> {
     p = parser(input, i) : Tuple<i32, ?>;
     j = first(p);
     if (j == -(1)) {
         tuple(i, success);
     } else {
         tuple(-(1), fail);
+    }
+}
+
+notPredicateParseC1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>
+) -> (string, i32, ?) -> Tuple<i32, ??> {
+    compiletime::partialCall(notPredicateParseCimpl1, parser);
+}
+
+notPredicateParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    input : string,
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    p = parser(input, i, acc) : Tuple<i32, ?>;
+    j = first(p);
+    if (j == -(1)) {
+        x = second(p) : ?; 
+        tuple(i, x);
+    } else {
+        tuple(-(1), acc);
     }
 }

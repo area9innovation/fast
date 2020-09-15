@@ -1,0 +1,254 @@
+import parsec;
+import string_utils;
+
+//_0(x : string) -> i32 { 0; }
+//str_int(x : string, y : i32) -> Tuple<string, i32>  { tuple(x, y); }
+
+showResult(res : Tuple<i32, string>, input : string) -> i0 {
+    i = first(res);
+    if (0 > i) {
+        i_str = i2s(i);
+        a = "fail, i=" + i_str;
+        println(a + "\n");
+    } else if (i < length(input)) {
+        i_str = i2s(i);
+        len_str = i2s(length(input));
+        println("fail: i=" + i_str + ", length(input)=" + len_str + "\n");
+    } else {
+        println("success, result:");
+        println(second(res));
+        println("");
+    }
+}
+
+runAndCheckStringTest(input : string, parser : (string, i32, string) -> Tuple<i32, string>, mustBeOk : i1, answer : string) -> i32 {
+    res = parser(input, 0, "");
+    i = first(res);
+    wasOk = (i == length(input));
+    value = second(res);
+    x = (answer == value);
+    if (mustBeOk && wasOk && x) {
+        println("successfully passed test: '" + input + "'");
+        0
+    } else if (&&(!(mustBeOk), !(wasOk))) {
+        println("successfully passed test: '" + input + "'");
+        0
+    } else {
+        wasOk_str = b2s(wasOk);
+        mustBeOk_str = b2s(mustBeOk);
+        println("test '" + input + "' failed, must be ok: " + mustBeOk_str + ", was ok: " + wasOk_str);
+        println("must return:");
+        println(answer);
+        println("actually returned:");
+        showResult(res, input);
+        1
+    }
+}
+
+runStringTests(
+    caption : string,
+    parser : (string, i32, string) -> Tuple<i32, string>,
+    tests : Array<Tuple<string, i1, string> >
+) -> i32 {
+    println(caption);
+    failed = doRunStringTests(parser, tests, 0, 0);
+    if (0 == failed) {
+        println("Tests passed.");
+    } else {
+        f = i2s(failed);
+        println("Error: " + f + " tests failed.");
+    };
+    println("");
+    failed
+}
+
+doRunStringTests(
+    parser : (string, i32, string) -> Tuple<i32, string>,
+    tests : Array<Tuple<string, i1, string> >, 
+    i : i32, 
+    failed : i32
+) -> i32 {
+    if (i == length(tests)) {
+        failed;
+    } else {
+        test = index(tests, i);
+        input = first(test);
+        mustBeOk = second(test);
+        answer = third(test);
+        x = runAndCheckStringTest(input, parser, mustBeOk, answer);
+        doRunStringTests(parser, tests, i + 1, failed + x);
+    }
+}
+
+runTestSuite(
+    caption : string, 
+    tests : Array<() -> i32>
+) -> i32 {
+    failed = doRunTestSuite(tests, 0, 0);
+    if (0 == failed) {
+        println("Test suite '" + caption + "' passed.");
+    } else {
+        f = i2s(failed);
+        println("Test suite '" + caption + "' FAILED.");
+        println("Error: " + f + " tests failed.");
+    };
+    println("");
+    failed
+}
+
+doRunTestSuite(
+    tests : Array<() -> i32>,
+    i : i32, 
+    failed : i32
+) -> i32 {
+    if (i == length(tests)) {
+        failed;
+    } else {
+        test = index(tests, i);
+        x = test();
+        doRunTestSuite(tests, i + 1, failed + x);
+    }
+}
+
+gringo_sem_act_1.flow::main() -> i0 {
+    runTestSuite("Gringo translated to parser combinators",
+        array(
+            testGringoExp,
+		)
+    );
+	quit(0);
+}
+
+compiletime::decDigitParser() -> (string, i32, string) -> Tuple<i32, string> {
+    compiletime::rangeParseC1(
+        compiletime::fnCharCodeAt("0", 0), 
+        compiletime::fnCharCodeAt("9", 0)
+    );
+}
+
+
+decNumber(input : string, i : i32, acc : string) -> Tuple<i32, string> {
+    p = compiletime::choiceParseC1(
+        compiletime::sequenceParseC1(
+            compiletime::decDigitParser(),
+            decNumber
+        ),
+        compiletime::decDigitParser()
+    );
+    p(input, i, acc);
+}
+
+// Following functions are generated from: 
+// e = e ("+" e)
+//	|> e ("*" e)
+//	|> int | int;
+// e
+// 
+// by generateFastParserFromGringo function
+
+
+// addVerbatim : (acc : ?, s : string) -> ?,
+// addMatched : (acc : ?, s : string) -> ?,
+
+
+generated_e_rule(input : string, i : i32, acc : string) -> Tuple<i32, string> {
+    x1 = compiletime::sequenceParseC1(
+            compiletime::tokenParseC1("+"),
+            generated_e_rule
+        ) : (string, i32, string) -> Tuple<i32, string>;
+    x2 = compiletime::modifyParseC1(
+            compiletime::x1(),
+            pushSum
+        ) : (string, i32, string) -> Tuple<i32, string>;
+    x3 = compiletime::optionalParseC1(
+            compiletime::x2()
+		) : (string, i32, string) -> Tuple<i32, string>;
+	p = compiletime::sequenceParseC1(
+		generated_e1_rule,
+		compiletime::x3()
+	) : (string, i32, string) -> Tuple<i32, string>;
+    /*
+    p = compiletime::sequenceParseC1(
+		generated_e1_rule,
+		compiletime::optionalParseC1(
+            compiletime::modifyParseC1(
+                compiletime::sequenceParseC1(
+                    compiletime::tokenParseC1("+"),
+                    generated_e_rule
+                ),
+                pushSum
+            )
+		)
+	);
+    */
+	p(input, i, acc);
+}
+
+pushDecNum(acc : string, input : string, start : i32, len : i32) -> string {
+    num = substring(input, start, len);
+    acc + num + " ";
+}
+
+pushMult(acc : string, input : string, start : i32, len : i32) -> string {
+    acc + "* ";
+}
+
+pushSum(acc : string, input : string, start : i32, len : i32) -> string {
+    acc + "+ ";
+}
+
+generated_e1_rule(input : string, i : i32, acc :  string) -> Tuple<i32, string> {
+    x1 = compiletime::modifyParseC1(
+        	decNumber,
+			pushDecNum
+		) : (string, i32, string) -> Tuple<i32, string>;
+    x2 = compiletime::sequenceParseC1(
+            compiletime::tokenParseC1("*"),
+            generated_e1_rule
+        ) : (string, i32, string) -> Tuple<i32, string>;
+    x3 = compiletime::modifyParseC1(
+            compiletime::x2(),
+           pushMult
+        ) : (string, i32, string) -> Tuple<i32, string>;
+    x4 = compiletime::optionalParseC1(
+            compiletime::x3()
+        ) : (string, i32, string) -> Tuple<i32, string>;
+	p = compiletime::sequenceParseC1(
+		compiletime::x1(),
+		compiletime::x4(),
+    ) : (string, i32, string) -> Tuple<i32, string>;
+    /*
+    p = compiletime::sequenceParseC1(
+		compiletime::modifyParseC1(
+        	decNumber,
+			pushDecNum
+		),
+		compiletime::optionalParseC1(
+            compiletime::modifyParseC1(
+                compiletime::sequenceParseC1(
+                    compiletime::tokenParseC1("*"),
+                    generated_e1_rule
+                ),
+                pushMult
+            )
+        )
+    );
+    */
+	p(input, i, acc);
+}
+
+
+
+testGringoExp() -> i32 {
+    test_set = array(
+        tuple("1", true(), "1 "),
+        tuple("2", true(), "2 "),
+        tuple("1+2", true(), "1 2 + "),
+        tuple("1+2*3", true(), "1 2 3 * + "),
+        tuple("1*2+3*4", true(), "1 2 * 3 4 * + "),
+		tuple("1*2+3*4*5+7", true(), "1 2 * 3 4 5 * * 7 + + "),
+        //tuple("1+0*1*2+23*34+45+545+0*1", true(), 0)
+    );
+    runStringTests("Testing a parser generated from gringo ... ", generated_e_rule, test_set);
+}
+
