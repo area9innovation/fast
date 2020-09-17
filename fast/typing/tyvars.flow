@@ -99,6 +99,8 @@ recordTyvarDependency(env : FastInference, id : int, types : [FastType]) -> void
 
 recordTyvarDependencyType(env : FastInference, tid : int, type : FastType) -> void {
 	switch (type) {
+		FTypeBottom(): {};
+		FTypeTop(): {};
 		FTypeInfer(): {};
 		FIntConstant(value, info): {};
 		FTypeVar(id): {
@@ -115,6 +117,14 @@ recordTyvarDependencyType(env : FastInference, tid : int, type : FastType) -> vo
 		FTypeCall(id, typars): recordTyvarDependency(env, tid, typars);
 		FInlineType(language, stream, dependencies): {
 			println("TODO: Should we traverse this dependency");
+		}
+		FTypeUnion(left, right): {
+			recordTyvarDependencyType(env, tid, left);
+			recordTyvarDependencyType(env, tid, right);
+		}
+		FTypeIntersection(left, right): {
+			recordTyvarDependencyType(env, tid, left);
+			recordTyvarDependencyType(env, tid, right);
 		}
 	}
 }

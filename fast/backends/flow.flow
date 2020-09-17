@@ -143,6 +143,22 @@ fexp2flow(output : string, f : FExp, onError : (string) -> void) -> string {
 
 fastType2flow(t : FastType, onError : (string) -> void) -> string {
 	switch (t) {
+		FTypeBottom(): {
+			onError("bottom type not supported");
+			"Bottom";
+		}
+		FTypeTop(): {
+			onError("top type not supported");
+			"flow";
+		}
+		FTypeUnion(left, right): {
+			onError("union type not supported");
+			"flow";
+		}
+		FTypeIntersection(left, right): {
+			onError("intersection type not supported");
+			"flow";
+		}
 		FTypeInfer(): "flow"; // Cop out
 		FIntConstant(value, __): i2s(value);
 		FTypeInt(bits): if (bits == 0) "void" 

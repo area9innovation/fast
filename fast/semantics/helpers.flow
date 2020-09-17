@@ -50,6 +50,10 @@ extractFInlineTypeForms(acc : List<FInlineType>, t : FastType) -> List<FInlineTy
 		FTypeFunction(args, to): extractFInlineTypeForms(fold(args, acc, extractFInlineTypeForms), to);
 		FTypeCall(id, typars): fold(typars, acc, extractFInlineTypeForms)
 		FInlineType(language, stream, dependencies): Cons(t, acc);
+		FTypeTop(): acc;
+		FTypeBottom(): acc;
+		FTypeUnion(left, right): extractFInlineTypeForms(extractFInlineTypeForms(acc, left), right);
+		FTypeIntersection(left, right): extractFInlineTypeForms(extractFInlineTypeForms(acc, left), right);
 	}
 }
 
@@ -210,10 +214,10 @@ mapFastTypeInFExp(exx : FExp, fn : (FastType) -> FastType) -> FExp {
 
 mapFastType(t : FastType, fn : (FastType) -> FastType) -> FastType {
 	fn(switch (t) {
-		FTypeInfer(): fn(t);
-		FIntConstant(value, info): fn(t);
-		FTypeVar(id): fn(t);
-		FTypeInt(bits): fn(t);
+		FTypeInfer(): t;
+		FIntConstant(value, info): t;
+		FTypeVar(id): t;
+		FTypeInt(bits): t;
 		FTypeFunction(args, to): FTypeFunction(map(args, \a -> mapFastType(a, fn)), mapFastType(to, fn));
 		FTypeCall(id, typars): FTypeCall(id, map(typars, \tt -> mapFastType(tt, fn)));
 		FInlineType(language, stream, dependencies): {
@@ -229,5 +233,9 @@ mapFastType(t : FastType, fn : (FastType) -> FastType) -> FastType {
 				FInlineTypeDependency(d with stream = st(d.stream))
 			}))
 		}
+		FTypeTop(): t;
+		FTypeBottom(): t;
+		FTypeUnion(left, right): FTypeUnion(mapFastType(left, fn), mapFastType(right, fn));
+		FTypeIntersection(left, right): FTypeIntersection(mapFastType(left, fn), mapFastType(right, fn));
 	})
 }

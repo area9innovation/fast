@@ -62,6 +62,8 @@ unifyFastType(env : FastInference, location : FLocation, ltype : FastType, rtype
 		FTypeInfer(): {
 			env.onError("NOT SUPPOSED TO HAPPEN", location);
 		}
+		FTypeBottom(): rest();
+		FTypeTop(): rest();
 		FIntConstant(value, info): rest();
 		FTypeInt(lbits): {
 			switch (rtype) {
@@ -154,6 +156,12 @@ unifyFastType(env : FastInference, location : FLocation, ltype : FastType, rtype
 			}
 		}
 		FInlineType(language, stream, dependencies): rest();
+		FTypeUnion(left, right): {
+			todo();
+		}
+		FTypeIntersection(left, right): {
+			todo();
+		}
 	}
 }
 
@@ -199,6 +207,10 @@ resolveFastType(env : FastInference, location : FLocation, type : FastType) -> F
 		FTypeCall(id, typars): {
 			FTypeCall(id, map(typars, \t -> resolveFastType(env, location, t)));
 		}
+		FTypeBottom(): type;
+		FTypeTop(): type;
+		FTypeUnion(left, right): FTypeUnion(resolveFastType(env, location, left), resolveFastType(env, location, right));
+		FTypeIntersection(left, right): FTypeIntersection(resolveFastType(env, location, left), resolveFastType(env, location, right));
 	}
 }
 

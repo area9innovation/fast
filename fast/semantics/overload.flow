@@ -187,8 +187,17 @@ overloadDistFastType(call : FastType, overload : FastType) -> int {
 		}
 		FTypeVar(sid): 2;
 		FTypeInfer(): 3;
+		FTypeBottom(): 3;
+		FTypeTop(): 3;
+		FTypeUnion(left, right): {
+			println("TODO: Overload match on union");
+			3;
+		}
+		FTypeIntersection(left, right): {
+			println("TODO: Overload match on intersection");
+			3;
+		}
 	}
-
 }
 
 overloadDistFastTypes(calls : [FastType], overloads : [FastType]) -> int {
