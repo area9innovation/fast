@@ -31,7 +31,9 @@ export {
 				returnType : FastType, effect : FastEffect, body : FExp, info : FInfo);
 			FFunctionArg(name : string, type : FastType, effect : FastEffect);
 
-	FastType ::= FTypeInfer, FIntConstant, FTypeVar, FTypeInt, FTypeFunction, FTypeCall, FInlineType;
+	FastType ::= FTypeInfer, FIntConstant, FTypeVar, FTypeInt, FTypeFunction, FTypeCall, FInlineType,
+
+			FTypeBottom, FTypeTop, FTypeUnion, FTypeIntersection;
 		// We do not know what the type is. It should be inferred
 		FTypeInfer();
 
@@ -46,6 +48,17 @@ export {
 
 		// This is calling a type functor
 		FTypeCall(id : string, typars : [FastType]);
+
+		// The type of no values - subtype of all types
+		FTypeBottom();
+		// The type of all values - supertype of all types
+		FTypeTop();
+
+		// Union types are positive types, which is what terms outputs. Can NOT be used as the type of inputs
+		FTypeUnion(left : FastType, right : FastType);
+
+		// Intersection type are negative types, which is what terms takes as input. Can NOT be used as the type of outputs
+		FTypeIntersection(left : FastType, right : FastType);
 
 		// Native code for how to define a type
 		FInlineType(language : string, stream : [FInlineTypeForm], dependencies : [FInlineTypeDependency]);

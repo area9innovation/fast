@@ -52,6 +52,7 @@ Currently, it is still alpha, but it shows some interesting promise.
 		- [Interoperability of native types](#interoperability-of-native-types)
 		- [Fallback implementation of data structures](#fallback-implementation-of-data-structures)
 		- [Arbitrary bitwidth integers](#arbitrary-bitwidth-integers)
+		- [Object Relation Mapping (ORM)](#object-relation-mapping-orm)
 		- [Syntax ideas](#syntax-ideas)
 		- [Random todos](#random-todos)
 
@@ -246,6 +247,10 @@ TODO:
   Maybe the right hand side is automatic.
 
 - Mangle names with unicode towards targets that do not allow unicode
+
+- Improve error recovery
+	https://www.eyalkalderon.com/nom-error-recovery/
+
 
 ### Type system
 
@@ -1023,6 +1028,10 @@ It seems we have a few different ways of loading code:
 Use the common serialization format to allow arbitrary exchange of data between
 execution units.
 
+Here someone does a socket library using async:
+
+https://shenli.dev/2020/06/20/asgi-from-scratch.html
+
 TODO:
 - Figure this out
 
@@ -1095,7 +1104,30 @@ https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-908.pdf
 - See this dude that uses Datalog to model regions:
 http://smallcultfollowing.com/babysteps/blog/2018/04/27/an-alias-based-formulation-of-the-borrow-checker/
 
+- These have identified the normal patterns of pointers that seem to cover most normal use cases:
+https://vale.dev/blog/next-steps-raii
 
+They have "owning_pointer" that owns an object, and then "constraint_pointer", which has to die before 
+the owning_pointer. I guess this is similar to the Rust ownership.
+Next, they have a kind of "mutual pointer", which is used when you have a request with a callback, and
+then the response. They call it the "clasp". It is not 100% clear how it works, but it seems to be a situation
+where you have two "standalone" objects, which have pointers to each other. If one of them dies, the other
+references is cleared. So whatever order they die, there will never be a dangling pointer.
+
+The end result is that they discover that the way to handle ownership is to define multiple different kinds
+of named destructors. The compiler then has to ensure that one of those is called. It does not matter which one,
+but at least one of them has to be called. Also, they allow these destructors to return a result.
+
+Ultimately, they turn pointers into ref. counted onces and an inference algorithm is used to make sure 
+that owning pointers call some destructor.
+
+- Null safety in Dart:
+https://dart.dev/null-safety/understanding-null-safety
+
+They have nullable types. Interestingly, Object? corresponds
+to Top. They have another Bottom type called Never.
+They use control flow and reachability analysis to track
+nullability.
 
 ### Rough examples for the future
 
@@ -1202,6 +1234,16 @@ TODO:
   - https://github.com/wbhart/bsdnt
   - https://github.com/suiginsoft/hebimath
 - Clang has arbitrary bit-width ints
+
+### Object Relation Mapping (ORM)
+
+The initial idea is to use the Gringo parser to parse the 
+SQL schema, and then use meta-programming to allow ORM
+mapping to take place.
+
+Here is a take on how to do ORM:
+
+https://www.prisma.io/blog/prisma-raises-series-a-saks1zr7kip6
 
 ### Syntax ideas
 

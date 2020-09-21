@@ -17,7 +17,7 @@ Algorithm:
 - For functions, populate the type environment with type variables for the arguments, and then infer the type of the body
   Unify the arg and return type with with the declared function type
 
-- Resolve the unification graph and bind all tyvars
+- We merge tyvars using a union/find datastructure when unifying.
 
 - Instantiate all type vars in both declared and inferred types to real types
 */
@@ -205,6 +205,7 @@ fastTypeInferFExpType(env : FastInference, location0 : FLocation, f : FExp) -> F
 				itype = instantiateTypeParameters(env, location, ref makeTree(), types[0]);
 				FVar(id, FInfo(info with type = itype))
 			} else if (length(types) >= 2) {
+				// TODO: We could attempt to construct a union type here instead of picking the first
 				env.onError("Overloading of first-order " + id + " not supported. Could be: " + superglue(types, fastType2string, ", "), location);
 				itype = instantiateTypeParameters(env, location, ref makeTree(), types[0]);
 				FVar(id, FInfo(info with type = itype))

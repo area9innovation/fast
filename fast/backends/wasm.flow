@@ -264,6 +264,8 @@ ftype2wasm(t : FastType, realFn : bool) -> string {
 	}
 	switch (t) {
 		FTypeInfer(): todo();
+		FTypeBottom(): todo();
+		FTypeTop(): todo();
 		FIntConstant(value, info): todo();
 		FTypeInt(bits): {
 			if (bits == 0) {
@@ -287,6 +289,8 @@ ftype2wasm(t : FastType, realFn : bool) -> string {
 		FInlineType(language, stream, deps): {
 			ftypeInlineForm2string(stream, \e -> ftype2wasm(e, realFn));
 		}
+		FTypeUnion(left, right): todo();
+		FTypeIntersection(left, right): todo();
 	}
 }
 

@@ -17,6 +17,10 @@ fullFastTypeMangle(t : FastType) -> string {
 	switch (t) {
 		FTypeInfer(): error();
 		FTypeVar(id): error();
+		FTypeBottom(): error();
+		FTypeTop(): error();
+		FTypeUnion(left, right): error();
+		FTypeIntersection(left, right): error();
 
 		FIntConstant(value, info): "c";
 		FTypeInt(bits): "i" + i2s(bits);

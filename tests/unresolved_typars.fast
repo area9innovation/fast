@@ -1,0 +1,24 @@
+//import runtime;
+
+idfn(a : ?) -> ? {
+	a;
+}
+
+compiletime::partialCall(fn : (?) -> ?, arg : ?) -> () -> ? {
+	inline fast {
+		_name_
+	} require function {
+		_name_() -> $type{?} {
+			${fn}(${arg})
+		}
+	} : () -> ?
+}
+
+compiletime::test(arg : i32) -> () -> i32 {
+    compiletime::partialCall(idfn, arg);
+}
+
+unresolved_typars.flow::main() -> i0 {
+	(compiletime::test(5))();
+	{}
+}
