@@ -150,24 +150,7 @@ decNumber(input : string, i : i32, acc : string) -> Tuple<i32, string> {
 // addVerbatim : (acc : ?, s : string) -> ?,
 // addMatched : (acc : ?, s : string) -> ?,
 
-
 generated_e_rule(input : string, i : i32, acc : string) -> Tuple<i32, string> {
-    x1 = compiletime::sequenceParseC1(
-            compiletime::tokenParseC1("+"),
-            generated_e_rule
-        ) : (string, i32, string) -> Tuple<i32, string>;
-    x2 = compiletime::modifyParseC1(
-            compiletime::x1(),
-            pushSum
-        ) : (string, i32, string) -> Tuple<i32, string>;
-    x3 = compiletime::optionalParseC1(
-            compiletime::x2()
-		) : (string, i32, string) -> Tuple<i32, string>;
-	p = compiletime::sequenceParseC1(
-		generated_e1_rule,
-		compiletime::x3()
-	) : (string, i32, string) -> Tuple<i32, string>;
-    /*
     p = compiletime::sequenceParseC1(
 		generated_e1_rule,
 		compiletime::optionalParseC1(
@@ -180,7 +163,6 @@ generated_e_rule(input : string, i : i32, acc : string) -> Tuple<i32, string> {
             )
 		)
 	);
-    */
 	p(input, i, acc);
 }
 
@@ -198,26 +180,6 @@ pushSum(acc : string, input : string, start : i32, len : i32) -> string {
 }
 
 generated_e1_rule(input : string, i : i32, acc :  string) -> Tuple<i32, string> {
-    x1 = compiletime::modifyParseC1(
-        	decNumber,
-			pushDecNum
-		) : (string, i32, string) -> Tuple<i32, string>;
-    x2 = compiletime::sequenceParseC1(
-            compiletime::tokenParseC1("*"),
-            generated_e1_rule
-        ) : (string, i32, string) -> Tuple<i32, string>;
-    x3 = compiletime::modifyParseC1(
-            compiletime::x2(),
-           pushMult
-        ) : (string, i32, string) -> Tuple<i32, string>;
-    x4 = compiletime::optionalParseC1(
-            compiletime::x3()
-        ) : (string, i32, string) -> Tuple<i32, string>;
-	p = compiletime::sequenceParseC1(
-		compiletime::x1(),
-		compiletime::x4(),
-    ) : (string, i32, string) -> Tuple<i32, string>;
-    /*
     p = compiletime::sequenceParseC1(
 		compiletime::modifyParseC1(
         	decNumber,
@@ -233,7 +195,6 @@ generated_e1_rule(input : string, i : i32, acc :  string) -> Tuple<i32, string> 
             )
         )
     );
-    */
 	p(input, i, acc);
 }
 

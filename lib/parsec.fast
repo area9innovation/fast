@@ -291,7 +291,14 @@ tokenParseCimpl(
     doTokenParseCimpl(pattern, sem_act, fail, input, i, 0);
 } 
 
-doTokenParseCimpl(pattern : string, sem_act : (string) -> ?, fail : ?, input : string, i : i32, j : i32) -> Tuple<i32, ?> {
+doTokenParseCimpl(
+    pattern : string, 
+    sem_act : (string) -> ?, 
+    fail : ?, 
+    input : string, 
+    i : i32, 
+    j : i32
+) -> Tuple<i32, ?> {
     if (j == length(pattern)) {
         tuple(i + j, sem_act(pattern));
     } else {

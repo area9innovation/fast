@@ -4,6 +4,7 @@ import lang/wasm;
 import lang/c;
 import lang/flow;
 import lang/rust;
+import string_utils;
 
 export {
 	// Compiletime: generates a unique identificator.

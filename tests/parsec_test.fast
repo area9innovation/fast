@@ -116,6 +116,15 @@ decNumber(input : string, i : i32) -> Tuple<i32, string> {
     p(input, i);
 }
 
+openBrParser(input : string, i : i32) -> Tuple<i32, i32> {
+    p = compiletime::tokenParseC("(", _0, 0);
+    p(input, i);
+}
+closeBrParser(input : string, i : i32) -> Tuple<i32, i32> {
+    p = compiletime::tokenParseC(")", _0, 0);
+    p(input, i);
+}
+
 arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
     p = compiletime::choiceParseC(
         compiletime::modifyParseC(
@@ -123,7 +132,7 @@ arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
             s2i, 0
         ),
         compiletime::sequenceParseC(
-            compiletime::tokenParseC("(", _0, 0), 
+            openBrParser,
             compiletime::sequenceParseC(
                 arithmParser,
                 compiletime::sequenceParseC(
@@ -138,7 +147,7 @@ arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
                     ),
                     compiletime::sequenceParseC(
                         arithmParser,
-                        compiletime::tokenParseC(")", _0, 0), 
+                        closeBrParser,
                         firstOf, 0
                     ),
                     str_int, tuple("", 0)
