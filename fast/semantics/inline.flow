@@ -209,8 +209,14 @@ inlineFastCall(env : FastAst, fn : FastFunction, args : [FExp], rinfo : FInfo) -
 	} else fn.body;
 
 	inlined = foldi(args, body, \i, acc : FExp, arg -> {
-		farg = fn.args[i];
-		FLet(farg.name, arg, acc, arg.info)
+		if (length(fn.args) == i) {
+			println("ERROR: arg index " + i2s(i) + " out of bounds for: " + fn.id);
+			quit(0);
+			acc;
+		} else {
+			farg = fn.args[i];
+			FLet(farg.name, arg, acc, arg.info)
+		}
 	});
 
 	propagateFast(env, makeTree(), inlined);

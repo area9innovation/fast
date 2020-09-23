@@ -75,6 +75,22 @@ export {
         sem_act : (?, string, i32, i32) -> ?,
     ) -> (string, i32, ?) -> Tuple<i32, ?>;
 
+    // Semantic action: addVerbatim
+    //    acc : ?
+    //    s : string
+    addVerbatimParseC1(
+        sem_act : (?, string) -> ?,
+        act_id : string
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
+
+    // Semantic action: addMatched
+    //    acc : ?
+    //    s : string
+    addMatchedParseC1(
+        parser : (string, i32, ?) -> Tuple<i32, ?>,
+        sem_act : (?, string) -> ?,
+    ) -> (string, i32, ?) -> Tuple<i32, ?>;
+
     // Sequential parsers
     sequenceParseC(
         parser1 : (string, i32) -> Tuple<i32, ?>,
@@ -386,6 +402,50 @@ modifyParseCimpl1(
     } else {
         y = second(p);
         tuple(j, sem_act(y, input, i, j - i));
+    }
+}
+
+
+
+compiletime::addVerbatimParseC1(
+    sem_act : (?, string) -> ?,
+    act_id : string
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(addVerbatimParseCimpl1, sem_act, act_id);
+}
+
+addVerbatimParseCimpl1(
+    sem_act : (?, string) -> ?,
+    act_id : string, 
+    input : string, 
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    tuple(i, sem_act(acc, act_id));
+}
+
+compiletime::addMatchedParseC1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>,
+    sem_act : (?, string) -> ?
+) -> (string, i32, ?) -> Tuple<i32, ?> {
+    compiletime::partialCall(addMatchedParseCimpl1, parser, sem_act);
+}
+
+addMatchedParseCimpl1(
+    parser : (string, i32, ?) -> Tuple<i32, ?>, 
+    sem_act : (?, string) -> ?, 
+    input : string, 
+    i : i32,
+    acc : ?
+) -> Tuple<i32, ?> {
+    p = parser(input, i, acc) : Tuple<i32, ?>;
+    j = first(p) : i32;
+    if (j == -(1)) {
+        tuple(-(1), acc);
+    } else {
+        y = second(p);
+        matched = substring(input, i, j - i);
+        tuple(j, sem_act(y, matched));
     }
 }
 

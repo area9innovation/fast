@@ -1,0 +1,45 @@
+import tuples;
+import ref;
+
+export {
+	list() -> List<?>;
+	list(a : ?) -> List<?>;
+	list(a : ?, b : ?) -> List<?>;
+
+	cons(h : ?, t : List<?>) -> List<?>;
+	head(list : List<?>, def : ?) -> ?;
+	tail(list : List<?>) -> List<?>;
+}
+
+// Flow implementation
+
+typedef flow::List<?> = inline flow { List< ${?} > };
+
+flow::list() -> List<?> { inline flow { makeList() } }
+flow::list(a : ?) -> List<?> { inline flow  { makeList1( ${a} ) } }
+flow::list(a : ?, b : ?) -> List<?> { inline flow  { Cons( ${a}, makeList1( ${b} )) } }
+
+flow::inline cons(h : ?, t : List<?>) -> List<?> {
+	inline flow { Cons( ${h} , ${t} ) }
+	require import { import ds/list; }
+}
+
+flow::inline head(a : List<?>, def : ?) -> ? {
+	inline flow { 
+		switch( ${a} ) {
+			Cons(h_, t_): h_;
+			EmptyList(): ${def};
+		}
+	}
+	require import { import ds/list; }
+}
+
+flow::inline tail(a : List<?>) -> List<?> {
+	inline flow { 
+		switch( ${a} ) {
+			Cons(h_, t_): t_;
+			EmptyList(): ${a};
+		}
+	}
+	require import { import ds/list; }
+}
