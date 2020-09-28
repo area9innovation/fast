@@ -8,7 +8,7 @@ compiletime::partialCall(fn : (?) -> ?, arg : ?) -> () -> ? {
 	inline fast {
 		_name_
 	} require function {
-		_name_() -> $type{?} {
+		_name_() -> infer {
 			${fn}(${arg})
 		}
 	} : () -> ?

@@ -75,92 +75,6 @@ runAndCheckStringTest(input : string, parser : (string, i32) -> Tuple<i32, strin
     }
 }
 
-oper_ints(x : i32, oper_y : Tuple<string, i32>) -> i32 {
-    oper = first(oper_y) : string;
-    y = second(oper_y);
-    if (oper == "+") {
-        x + y;
-    } else if (oper == "-") {
-        x - y;
-    } else if (oper == "*") {
-        x * y;
-    } else if (oper == "/") {
-        x / y;
-    } else {
-        0;
-    }
-}
-
-compiletime::decDigitParser() -> (string, i32) -> Tuple<i32, string> {
-    compiletime::rangeParseC(
-        compiletime::fnCharCodeAt("0", 0), 
-        compiletime::fnCharCodeAt("9", 0), 
-        fnFromCharCode, ""
-    );
-}
-
-decNumAddDigit(hi_digit : string, lo_num : string) -> string {
-    hi_digit + lo_num;
-}
-
-decNumber(input : string, i : i32) -> Tuple<i32, string> {
-    p = compiletime::choiceParseC(
-        compiletime::sequenceParseC(
-            compiletime::decDigitParser(),
-            decNumber,
-            decNumAddDigit, ""
-        ),
-        compiletime::decDigitParser(),
-        idfn, ""
-    );
-    p(input, i);
-}
-
-openBrParser(input : string, i : i32) -> Tuple<i32, i32> {
-    p = compiletime::tokenParseC("(", _0, 0);
-    p(input, i);
-}
-closeBrParser(input : string, i : i32) -> Tuple<i32, i32> {
-    p = compiletime::tokenParseC(")", _0, 0);
-    p(input, i);
-}
-
-arithmParser(input : string, i : i32) -> Tuple<i32, i32> {
-    p = compiletime::choiceParseC(
-        compiletime::modifyParseC(
-            decNumber,
-            s2i, 0
-        ),
-        compiletime::sequenceParseC(
-            openBrParser,
-            compiletime::sequenceParseC(
-                arithmParser,
-                compiletime::sequenceParseC(
-                    compiletime::choiceManyParseC(
-                        array(
-                            compiletime::tokenParseC("+", idfn, ""), 
-                            compiletime::tokenParseC("-", idfn, ""),
-                            compiletime::tokenParseC("*", idfn, ""), 
-                            compiletime::tokenParseC("/", idfn, "")
-                        ),
-                        idfn, ""
-                    ),
-                    compiletime::sequenceParseC(
-                        arithmParser,
-                        closeBrParser,
-                        firstOf, 0
-                    ),
-                    str_int, tuple("", 0)
-                ),
-                oper_ints, 0
-            ),
-            secondOf, 0
-        ),
-        idfn, 0
-    );
-    p(input, i);
-}
-
 runIntTests(
     caption : string,
     parser : (string, i32) -> Tuple<i32, i32>,
@@ -231,80 +145,6 @@ doRunStringTests(
     }
 }
 
-testArithm() -> i32 {
-    test_set_1 = array(
-        tuple("0", true(), 0),
-        tuple("1", true(), 1),
-        tuple("10", true(), 10),
-        tuple("(0+0)", true(), 0),
-        tuple("(1+1)", true(), 2),
-        tuple("(1+1))", false(), 0),
-        tuple("(1+(1+1))", true(), 3),
-        tuple("((1+1)+1)", true(), 3),
-        tuple("(1+(1-1))", true(), 1),
-        tuple("(1+(1-+1))", false(), 0)
-    );
-    test_set_2 = array(
-        tuple("(1*(3-2))", true(), 1),
-        tuple("((1+2)*(3-1))", true(), 6),
-        tuple("((132+234)*(31-14))", true(), 6222),
-        tuple("(132+234)", true(), 366),
-        tuple("(12*24)", true(), 288),
-        tuple("132", true(), 132),
-        tuple("234", true(), 234),
-        tuple("234ab", false(), 0)
-    );
-    runIntTests("Testing simple arithmetics parser ... ", arithmParser, test_set_1 + test_set_2);
-}
-
-testStarAction(arr : Array<string>) -> string {
-    doTestStarAction(arr, "", 0);
-}
-
-doTestStarAction(arr : Array<string>, acc : string, i : i32) -> string {
-    if (i == length(arr)) {
-        acc;
-    } else {
-        x = index(arr, i, "");
-        new_acc = x + ("-" + acc);
-        doTestStarAction(arr, new_acc, i + 1);
-    }
-}
-
-testStar() -> i32 {
-    star = compiletime::starParseC(
-        compiletime::decDigitParser(),
-        testStarAction,
-        ""
-    );
-    test_set = array(
-        tuple("2", true(), "2-"),
-        tuple("234", true(), "4-3-2-"),
-        tuple("23454643", true(), "3-4-6-4-5-4-3-2-"),
-        tuple("234sdfd", false(), ""),
-        tuple("dsfds", false(), ""),
-        tuple("", true(), "")
-    );
-    runStringTests("Testing Kleene star ... ", star, test_set);
-}
-
-testPlus() -> i32 {
-    plus = compiletime::plusParseC(
-        compiletime::decDigitParser(),
-        testStarAction,
-        ""
-    );
-    test_set = array(
-        tuple("2", true(), "2-"),
-        tuple("234", true(), "4-3-2-"),
-        tuple("23454643", true(), "3-4-6-4-5-4-3-2-"),
-        tuple("234sdfd", false(), ""),
-        tuple("dsfds", false(), ""),
-        tuple("", false(), "")
-    );
-    runStringTests("Testing Kleene plus ... ", plus, test_set);
-}
-
 runTestSuite(
     caption : string, 
     tests : Array<() -> i32>
@@ -335,13 +175,119 @@ doRunTestSuite(
     }
 }
 
-parsec.flow::main() -> i0 {
-    runTestSuite("parser combinators",
+gringo_sem_act.flow::main() -> i0 {
+    runTestSuite("Gringo translated to parser combinators",
         array(
-            testArithm,
-            testStar,
-            testPlus
-        )
+            testGringoExp,
+		)
     );
 	quit(0);
 }
+
+compiletime::decDigitParser() -> (string, i32) -> Tuple<i32, string> {
+    compiletime::rangeParseC(
+        compiletime::fnCharCodeAt("0", 0), 
+        compiletime::fnCharCodeAt("9", 0), 
+        fnFromCharCode, ""
+    );
+}
+
+decNumAddDigit(hi_digit : string, lo_num : string) -> string {
+    hi_digit + lo_num;
+}
+
+decNumber(input : string, i : i32) -> Tuple<i32, string> {
+    p = compiletime::choiceParseC(
+        compiletime::sequenceParseC(
+            compiletime::decDigitParser(),
+            decNumber,
+            decNumAddDigit, ""
+        ),
+        compiletime::decDigitParser(),
+        idfn, ""
+    );
+    p(input, i);
+}
+
+// Following functions are generated from: 
+// e = e ("+" e)
+//	|> e ("*" e)
+//	|> int | int;
+// e
+// 
+// by generateFastParserFromGringo function
+
+
+tupleStrStr(x : string, y : string) -> Tuple<string, string> {
+	tuple(x, y);
+}
+
+wrapWithQuotes(s : string) -> string {
+	//"\"" + s + "\"\n";
+	s + " "
+}
+
+operArgAction(oper : string, arg : string) -> string {
+	arg + oper + " ";
+}
+
+argArgAction(arg1 : string, arg2 : string) -> string {
+	arg1 + arg2;
+}
+
+generated_e_rule(input : string, i : i32) -> Tuple<i32, string> {
+	p = compiletime::sequenceParseC(
+		generated_e1_rule,
+		compiletime::optionalParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"+",
+					idfn, ""
+				),
+				generated_e_rule,
+				operArgAction, ""
+			),
+			idfn, ""
+		),
+		argArgAction, ""
+	);
+	p(input, i);
+}
+
+generated_e1_rule(input : string, i : i32) -> Tuple<i32, string> {
+	p = compiletime::sequenceParseC(
+		compiletime::modifyParseC(
+        	decNumber,
+			wrapWithQuotes, ""
+		),
+		compiletime::optionalParseC(
+			compiletime::sequenceParseC(
+				compiletime::tokenParseC(
+					"*",
+					idfn, ""
+				),
+				generated_e1_rule,
+				operArgAction, ""
+			),
+			idfn, ""
+		),
+		argArgAction, ""
+	);
+	p(input, i);
+}
+
+
+
+testGringoExp() -> i32 {
+    test_set = array(
+        tuple("1", true(), "1 "),
+        tuple("2", true(), "2 "),
+        tuple("1+2", true(), "1 2 + "),
+        tuple("1+2*3", true(), "1 2 3 * + "),
+        tuple("1*2+3*4", true(), "1 2 * 3 4 * + "),
+		tuple("1*2+3*4*5+7", true(), "1 2 * 3 4 5 * * 7 + + "),
+        //tuple("1+0*1*2+23*34+45+545+0*1", true(), 0)
+    );
+    runStringTests("Testing a parser generated from gringo ... ", generated_e_rule, test_set);
+}
+
