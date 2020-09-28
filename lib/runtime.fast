@@ -4,22 +4,14 @@ import lang/wasm;
 import lang/c;
 import lang/flow;
 import lang/rust;
-import string_utils;
 
 export {
-	// Compiletime: generates a unique identificator.
-	gensym() -> string;
-
 	// Boolean constants
 	true() -> i1;
 	false() -> i1;
 
 	// id function: returns its single argument
 	idfn(x : ?) -> ?;
-}
-
-compiletime::gensym() -> string {
-	"__gen__name_" + i2s(getFreshIdCounter());
 }
 
 inline true() -> i1 { 1 : i1 }

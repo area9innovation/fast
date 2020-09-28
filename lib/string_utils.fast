@@ -8,7 +8,15 @@ export {
 	i2s(n : i32) -> string; 
 	s2b(s : string) -> i1;
 	b2s(b : i1) -> string;
+
+	// Compiletime: generates a unique identificator.
+	gensym() -> string;
 }
+
+compiletime::gensym() -> string {
+	"__gen__name_" + i2s(getFreshIdCounter());
+}
+
 
 string2array(s : string) -> Array<string> {
     doString2array(s, 0, array());

@@ -1,4 +1,4 @@
-import runtime;
+import string_utils;
 
 export {
 	partialCall(fn : (?) -> ??, arg : ?) -> () -> ??;
