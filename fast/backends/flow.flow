@@ -104,10 +104,6 @@ fexp2flow(output : string, f : FExp, onError : (string) -> void) -> string {
 				"value", fexp2flow(output, value, onError),
 				"body", fexp2flow(output, body, onError)
 			]);
-		FSizeOf(type, __): {
-			onError("sizeof not supported");
-			"/* sizeof " + fastType2flow(type, onError) + "*/";
-		}
 		FCall(fn, args, __): fexp2flow(output, fn, onError) + "(" + superglue(args, \a -> fexp2flow(output, a, onError), ", ") + ")";
 		FCallOp(lang, op, args, __): {
 			fexternCall2flowId(output, lang, op) + "(" + superglue(args, \a -> fexp2flow(output, a, onError), ", ") + ")";

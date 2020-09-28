@@ -140,7 +140,6 @@ evalFExp(env : FastEnv, ex : FExp) -> FExp {
 	switch (ex) {
 		FConstant(): ex;
 		FVar(id, info): ex;
-		FSizeOf(type, info): ex;
 		FLet(id, value, body, info): FLet(id, evalFExp(env, value), evalFExp(env, body), info);
 
 		FCallOp(language, op, args, info): {
@@ -173,13 +172,6 @@ evalFExps(env : FastEnv, exs : [FExp]) -> [FExp] {
 partialEvalFExp(env : FastEnv, ex : FExp) -> FExp {
 	switch (ex) {
 		FConstant(): ex;
-		FSizeOf(type, info): {
-			switch (type) {
-				FIntConstant(value, __): type;
-				FTypeInt(bits): FIntConstant(bits, info);
-				default: ex;
-			}
-		}
 		FVar(id, info): {
 			lookupTreeDef(env.env, id, ex);
 			/*

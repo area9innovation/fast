@@ -74,10 +74,9 @@ export {
 		// A set of specific effects
 		FEffectSet(effects : Set<string>);
 
-	FExp ::= FConstant, FVar, FLet, FSizeOf, FCallOp, FCall, FSequence, FTypeAnnotation, FIf, FInlineCode;
+	FExp ::= FConstant, FVar, FLet, FCallOp, FCall, FSequence, FTypeAnnotation, FIf, FInlineCode;
 		FVar(id : string, info : FInfo);
 		FLet(id : string, value : FExp, body : FExp, info : FInfo);
-		FSizeOf(type : FastType, info : FInfo);
 		// The language is optional annotation about what language to call the function in
 		// The op is always a global name, so never first-order call. 
 		// TODO: We have not place to store the overloaded, resolved type

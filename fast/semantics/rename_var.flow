@@ -112,7 +112,6 @@ replaceFVar(forbidden : Set<string>, replaceNames : Tree<string, string>, ex : F
 				);
 			}
 		}
-		FSizeOf(type, info): ex;
 		FCallOp(language, op, args, info): {
 			FCallOp(language, op, replaceFVars(forbidden, replaceNames, args), info);
 		}

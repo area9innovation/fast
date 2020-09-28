@@ -124,7 +124,6 @@ fexp2rust(env : FRustEnv, f : FExp) -> string {
 				} else ""
 			)
 		}
-		FSizeOf(type, __): todo();
  		FCall(fn, args, __): {
 		 	fexp2rust(env, fn) + "(" + superglue(args, funarg, ", ") + ")";
 		}

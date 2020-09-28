@@ -64,8 +64,6 @@ fexp2fast(f : FExp) -> string {
 				"value", fexp2fast(value),
 				"body", fexp2fast(body)
 			]);
-		FSizeOf(type, __): "sizeof(" + fastType2string(type) + ")";
-
 		FCall(fn, args, info): fexp2fast(fn) + "(" + superglue(args, fexp2fast, ", ") + ")";
 
 		FCallOp(language, op, args, info): (if (language != "") language + ":" else "") + op + "(" + superglue(args, fexp2fast, ", ") + ")";

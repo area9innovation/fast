@@ -633,11 +633,7 @@ fastParseExp(acc : FastFile, p : FastParse, i : int, minBindingPower : int, onPa
 			fastParseExpTail(acc, p, i + 1, minBindingPower, FStringConstant(s, makeFastInfo(line, col)), onParse);
 		}
 		FLId(id, line, col): {
-			if (id == "sizeof") {
-				fastParseType(acc, p, i + 1, \ni, type -> {
-					fastParseExpTail(acc, p, ni, minBindingPower, FSizeOf(type, makeFastInfo(line, col)), onParse);
-				});
-			} else if (id == "if") {
+			if (id == "if") {
 				fastParseExp(acc, p, i + 1, 0, \ni, cond -> {
 					fastParseExp(acc, p, ni, 0, \ti, then_ -> {
 						elseword = fastGetId(fastGetLexeme(p, ti));

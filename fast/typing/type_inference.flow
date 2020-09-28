@@ -222,12 +222,6 @@ fastTypeInferFExpType(env : FastInference, location0 : FLocation, f : FExp) -> F
 			env.env ::= oenv;
 			FLet(id, nvalue, nbody, nbody.info);
 		}
-		FSizeOf(type, info): {
-			// TODO: We should find out how big the type is, and do ceil(log2(bits) bits
-			// FSizeOf(type, FInfo(FTypeInt(FIntConstant(32, inferFastInfo)), info.effect));
-			println("Inference of type of " + toString(f));
-			f;
-		}
 		FCallOp(language, op, args, info): {
 			call = FCall(FVar(op, inferFastInfo), args, info);
 			mcall = fastTypeInferFCall(env, location, call);

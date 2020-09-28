@@ -18,7 +18,6 @@ unfoldFExp(f : FExp) -> FExp {
 		// All expressions-like stay
 		FConstant(): f;
 		FVar(id, __): f;
-		FSizeOf(__, __): f;
 		FTypeAnnotation(e, __, __): FTypeAnnotation(f with e = unfoldFExp(e));
 		FInlineCode(language, stream, dependencies, type, info): {
 			fl = \str -> map(str, \s -> switch (s) {

@@ -123,7 +123,6 @@ fastCrossExpCalls(acc : FastCrossCall, language : string, xe : FExp) -> FastCros
 				FastCrossCall(acc with queue = insertSet(acc.queue, flanguage));
 			} else acc;
 		}
-		FSizeOf(type, info): acc;
 		FLet(id, value, body, info): fastCrossExpsCalls(acc, language, [value, body]);
 		FCallOp(targ, op, args, info): {
 			if (targ == "" || targ == language) {

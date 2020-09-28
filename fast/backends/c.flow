@@ -128,9 +128,6 @@ fexp2creturn(env : FCEnv, f : FExp) -> string {
 				"else", fexp2creturn(env, else_)
 			]);
 
-		FSizeOf(type, __): todo();
-		FFunctionPointer(id, __): todo();
-
 		FConstant(): {
 			if (isFVoid(f)) {
 				"return;";
@@ -143,6 +140,8 @@ fexp2creturn(env : FCEnv, f : FExp) -> string {
 		FCallOp(language, op, args, info): makeFReturn(fexp2c(env, f), info.type);
 		FTypeAnnotation(e, type, __): fexp2creturn(env, e);
 		FInlineCode(language, stream, deps, type, __): makeFReturn(fexp2c(env, f), type);
+
+		FFunctionPointer(id, __): todo();
 	}
 }
 
@@ -193,7 +192,6 @@ fexp2c(env : FCEnv, f : FExp) -> string {
 				} else ""
 			)
 		}
-		FSizeOf(type, __): todo();
 
  		FCall(fn, args, __): fexp2c(env, fn) + "(" + superglue(args, \a -> fexp2c(env, a), ", ") + ")";
 		FCallOp(language, op, args, __): {

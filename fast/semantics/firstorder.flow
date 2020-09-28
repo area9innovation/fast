@@ -55,8 +55,6 @@ extractFExpFirstOrder(globals : Set<string>, acc : Set<string>, ex : FExp) -> Se
 		FLet(id, value, body, info): {
 			extractFExpsFirstOrder(globals, acc, [value, body]);
 		}
-		FSizeOf(type, info): acc;
-
 		FCallOp(language, op, args, info): extractFExpsFirstOrder(globals, acc, args);
 		FCall(fn, args, info): {
 			// If the fn is a id, it is not first-order, otherwise it is

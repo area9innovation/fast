@@ -145,7 +145,6 @@ getFExpType(env : CheckEnv, sourceFile : int, ex : FExp) -> FastType {
 
 			btype;
 		}
-		FSizeOf(type, info): FTypeInt(32);
 		FCallOp(language, op, args, info): {
 			calltype = FTypeFunction(map(args, \a -> a.info.type), info.type);
 			getFCallType(env, sourceFile, FCall(FVar(op, FInfo(info with type = calltype)), args, info));

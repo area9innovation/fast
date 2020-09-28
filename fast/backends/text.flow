@@ -77,7 +77,6 @@ fexp2text(f : FExp) -> string {
 		FVar(id, __): id;
 
 		FLet(id, value, body, __): todo();
-		FSizeOf(type, __): todo();
 		FCall(fn, args, __): todo();
 		FCallOp(language, op, args, __): todo();
 		FSequence(exprs, __): {

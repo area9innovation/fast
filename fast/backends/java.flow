@@ -204,7 +204,6 @@ fexp2javareturn(env : FJavaEnv, f : FExp) -> string {
 				"else", fexp2javareturn(env, else_)
 			]);
 
-		FSizeOf(type, __): todo();
 		FFunctionPointer(id, __): todo();
 
 		FConstant(): {
@@ -275,7 +274,6 @@ fexp2java(env : FJavaEnv, f : FExp) -> string {
 				} else ""
 			)
 		}
-		FSizeOf(type, __): todo();
 
  		FCall(fn, args, __): {
 			// If this is a direct name, we do not want the first-order treatment

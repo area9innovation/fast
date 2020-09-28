@@ -78,7 +78,6 @@ inlineFExp(env : FastAst, names : Tree<string, FastFunction>, onError : (string,
 			}
 			ex;
 		}
-		FSizeOf(type, __): ex;
 		FLet(id, value, body, info): {
 			FLet(id, 
 				inlineFExp(env, names, onError, value),

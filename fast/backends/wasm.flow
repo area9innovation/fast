@@ -200,7 +200,6 @@ fexp2wasm(env : FWasmEnv, f : FExp) -> string {
 			+ "set_local " + wasmFId(id)+ "\n"
 			+ fexp2wasm(FWasmEnv(env with locals = insertSet(env.locals, id)), body)
 		}
-		FSizeOf(type, __): todo();
 		FCall(fn, args, __): {
 			superglue(args, \e -> fexp2wasm(env, e) + "\n", "")
 			+ switch (fn) {

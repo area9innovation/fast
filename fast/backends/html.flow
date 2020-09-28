@@ -64,7 +64,6 @@ fexp2html(f : FExp) -> string {
 		FVar(id, __): id;
 
 		FLet(id, value, body, __): todo();
-		FSizeOf(type, __): todo();
 		FCall(fn, args, __): todo();
 		FCallOp(language, op, args, __): {
 			if (op == "main" && (language == "js" || language == "flow")) {

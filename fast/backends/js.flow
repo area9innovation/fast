@@ -144,7 +144,6 @@ fexp2jsreturn(env : FJsEnv, f : FExp) -> string {
 				"else", fexp2jsreturn(env, else_)
 			]);
 
-		FSizeOf(type, __): todo();
 		FFunctionPointer(id, __): todo();
 
 		FConstant(): "return " + fexp2js(env, f) + ";";
@@ -207,7 +206,6 @@ fexp2js(env : FJsEnv, f : FExp) -> string {
 			}
 
 		}
-		FSizeOf(type, __): todo();
 		FCall(fn, args, __): fexp2js(env, fn) + "(" + superglue(args, \a -> fexp2js(env, a), ", ") + ")";
 		FCallOp(language, op, args, __): {
 			jss = map(args, \a -> fexp2js(env, a));

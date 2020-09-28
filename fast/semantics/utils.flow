@@ -52,7 +52,6 @@ fastExpFreevars(acc : FastFree, ex : FExp) -> FastFree {
 			// If this id was used, we ignore it
 			FastFree(bacc with globals = removeSet(acc.globals, id));
 		}
-		FSizeOf(type, __): acc;
 		FCallOp(language, op, args, __): {
 			oacc = FastFree(acc with globals = insertSet(acc.globals, op));
 			fold(args, oacc, fastExpFreevars);
@@ -81,7 +80,6 @@ fexpLocals(locals : Tree<string, FastType>, ex : FExp) -> Tree<string, FastType>
 		FLet(id, value, body, info): {
 			fexpsLocals(setTree(locals, id, value.info.type), [value, body]);
 		}
-		FSizeOf(type, info): locals;
 		FCallOp(language, op, args, info): fexpsLocals(locals, args);
 		FCall(fn, args, info): {
 			fexpsLocals(

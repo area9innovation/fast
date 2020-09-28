@@ -72,8 +72,6 @@ foldFExp(ex : FExp, acc : ?, fn : (?, FExp) -> ??) -> ?? {
 	fn(switch (ex) {
 		FConstant(): acc;
 		FVar(id, info): acc;
-		FSizeOf(type, info): acc;
-
 		FLet(id, value, body, info): foldFExps([value, body], acc, fn);
 
 		FCallOp(language, op, args, info): foldFExps(args, acc, fn);
@@ -115,7 +113,6 @@ mapFExp(ex : FExp, fn : (FExp) -> FExp) -> FExp {
 	fn(switch (ex) {
 		FConstant(): ex;
 		FVar(id, info): ex;
-		FSizeOf(type, info): ex;
 		FLet(id, value, body, info): FLet(id, mapFExp(value, fn), mapFExp(body, fn), info);
 
 		FCallOp(language, op, args, info): FCallOp(ex with args = mapFExps(args, fn));
@@ -188,7 +185,6 @@ mapFastTypeInFExp(exx : FExp, fn : (FastType) -> FastType) -> FExp {
 			FFunctionPointer(id, info): FFunctionPointer(id, ifn(info));
 			FVar(id, info): FVar(id, ifn(info));
 			FLet(id, value, body, info): FLet(id, value, body, ifn(info));
-			FSizeOf(type, info): FSizeOf(fn(type), ifn(info));
 			FCallOp(language, op, args, info): FCallOp(language, op, args, ifn(info));
 			FCall(cfn, args, info): FCall(cfn, args, ifn(info));
 			FSequence(exprs, info): FSequence(exprs, ifn(info));

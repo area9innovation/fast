@@ -27,7 +27,6 @@ propagateFast(env : FastAst, constants : Tree<string, FExp>, f : FExp) -> FExp {
 				}
 			}
 		}
-		FSizeOf(type, info): f;
 		FCallOp(language, op, args, info): FCallOp(language, op, map(args, \a -> propagateFast(env, constants, a)), info);
 		FCall(fn, args, info): FCall(propagateFast(env, constants, fn), map(args, \a -> propagateFast(env, constants, a)), info);
 		FSequence(exprs, info): FSequence(map(exprs, \e -> propagateFast(env, constants, e)), info);
@@ -69,7 +68,6 @@ hasFastSideEffects(env : FastAst, f : FExp) -> bool {
 		FVar(__, __): false;
 
 		FLet(id, value, body, __): hasFastSideEffects(env, value) || hasFastSideEffects(env, body);
-		FSizeOf(type, __): false;
 		FCallOp(language, op, args, __): {
 			println("Assuming " + op + " does not have side effects");
 			exists(args, \a -> hasFastSideEffects(env, a));
@@ -102,7 +100,6 @@ isFastCodeSizeSmall(f : FExp) -> bool {
 		FVar(__, __): true;
 
 		FLet(id, value, body, __): false;
-		FSizeOf(type, __): true;
 		FCallOp(language, op, args, __): false;
 		FCall(fn, args, __): false;
 		FSequence(exprs, __): false;
@@ -119,7 +116,6 @@ countFastVar(v : string, f : FExp) -> int {
 		FVar(id, __): b2i(id == v);
 
 		FLet(id, value, body, __): countFastVar(v, value) + countFastVar(v, body);
-		FSizeOf(type, __): 0;
 		FCallOp(language, op, args, __): fold(args, 0, \acc, a -> acc + countFastVar(v, a));
 		FCall(fn, args, __): fold(args, countFastVar(v, fn), \acc, a -> acc + countFastVar(v, a));
 		FSequence(exprs, __): fold(exprs, 0, \acc, a -> acc + countFastVar(v, a));
