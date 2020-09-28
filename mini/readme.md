@@ -24,19 +24,6 @@ be consistent.
 Also, we still maintain the property that if all type errors are fixed, all outputs will
 correspond to the current, latest version of the code.
 
-Basically, the compiler is a server that maintains this data structure:
-
-	// Files to compile
-	files : Queue<string>,
-	// Declarations to process
-	pendingDeclaration : Tree<string, FDeclaration>
-	// The last known good declarations that type check
-	lastKnownGoodDeclarations : Tree<string, FDeclaration>
-	// The set of outputs we should produce
-	outputs : Tree<string, FastAst>,
-	// Specific code to evaluate in the compile server
-	code : Queue<FExp>,
-
 For each item in a queue, we have a set of dependencies for it.
 We might have to give new ids for the last known good declarations,
 so we can juggle with multiple versions of the same code.
@@ -45,5 +32,8 @@ so we can juggle with multiple versions of the same code.
 
 Example compile flow:
 
-	1. compile "mini/tests/test.mini"
-	2. the file is read, each line is pushed to the compiler
+	1. Compile "mini/tests/test.mini"
+	2. The file is read, each line is pushed to the compiler
+	3. The definitions are added
+	4. Then we type check these definitions, and if the batch passed, we push it to the last known good
+	5. Then we produce outputs for each output defined
