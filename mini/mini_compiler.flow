@@ -23,7 +23,7 @@ miniCompile(db : MiniDb) -> MiniDb {
 			MiniValue(): {
 				pushMiniValue(ndb, val);
 			}
-			MiniFile(name): {
+			MiniFilename(name): {
 				withext = changeFileExt(name, ".mini");
 				filename = fastPath2path(db.includes, withext);
 				parseMiniFile(name, filename, ndb);
@@ -32,6 +32,9 @@ miniCompile(db : MiniDb) -> MiniDb {
 			MiniLet(name, value, body): todo();
 			MiniLambda(args, body): todo();
 			MiniCall(fn, args): todo();
+			MiniTypeInt(bits): todo();
+			MiniTypeFunction(args, rt): todo();
+			MiniTypeCall(id, typars): todo();
 		});
 	};
 }
