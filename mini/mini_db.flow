@@ -1,5 +1,6 @@
 import mini/mini_ast;
 import ds/set;
+import ds/simplegraph;
 
 export {
 	MiniDb(
@@ -8,21 +9,35 @@ export {
 		// The queue of stuff this compiler needs to work on.
 		queue : [Mini],
 
-		// TODO: Rename to pending declarations: Those that are not type-checked yet?
-		declarations : Tree<string, MiniDeclaration>,
+		// The program we are working on - is not consistent yet
+		inProgress : MiniAst,
 
-		// TODO: Add last known good, typed declarations: 
-		// These are typed versions of the values, that are known good for each backend?
+		// This is the last good version
+		lastKnownGood : MiniAst,
 
 		// This is the evaluation stack for the compiler itself
 		stack : [MiniValue],
-
-		// TODO: Add a dependency graph here for the last-known good set
 
 		// TODO: Add a set of outputs we are producing
 
 		// TODO: Add a set of names which have errors. Change this interface accordingly:
 		onError : (string) -> void,
+	);
+
+	// A consistent set of declarations
+	MiniAst(
+		// When was this set ready?
+		timestamp : double,
+		// The names defined in this program
+		declarations : Tree<string, MiniExp>,
+		// Where is each name defined? From name to file
+		declarationFile : Tree<string, string>,
+		// What names are declared in this file?
+		fileDeclarations : Tree<string, [string]>,
+		// The types of expressions
+		types : Tree<MiniExp, MiniType>,
+		// The dependency graph between names
+		dependency : SimpleGraph<string, bool>,
 	);
 
 	pushMiniDb(db : MiniDb, mini : Mini) -> MiniDb;

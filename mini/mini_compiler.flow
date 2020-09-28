@@ -28,7 +28,6 @@ miniCompile(db : MiniDb) -> MiniDb {
 				filename = fastPath2path(db.includes, withext);
 				parseMiniFile(name, filename, ndb);
 			}
-			MiniDeclaration(name, expr): todo();
 			MiniVar(name): todo();
 			MiniLet(name, value, body): todo();
 			MiniLambda(args, body): todo();
