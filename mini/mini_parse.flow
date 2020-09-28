@@ -1,0 +1,34 @@
+import mini/mini_db;
+import text/serialize;
+
+export {
+	parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb;
+}
+
+parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb {
+	content = getFileContent(path);
+	lines = strSplit(content, "\n");
+	fold(lines, db, \acc, line -> {
+		miniLine(acc, line)
+	});
+}
+
+miniLine(db : MiniDb, line : string) -> MiniDb {
+	fchar = getCharAt(line, 0);
+	if (line == "") db
+	else if (startsWith(line, "\"")) {
+		str = deserializeString(line);
+		pushMiniDb(db, MiniString(str.first));
+	} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
+		if (strContains(line, ".") || strContains(line, "e")) {
+			d = s2d(line);
+			pushMiniDb(db, MiniDouble(d));
+		} else {
+			i = s2i(line);
+			pushMiniDb(db, MiniInt(i));
+		}
+	} else {
+		db.onError("Does not handle " + line);
+		db;
+	}
+}

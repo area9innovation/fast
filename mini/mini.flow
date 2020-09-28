@@ -1,0 +1,9 @@
+import mini/mini_compiler;
+
+main() {
+	db = MiniDb(["."], [MiniFile("mini/tests/test.mini")], makeTree(), [], println);
+
+	fdb = miniCompile(db);
+	iter(fdb.stack, println);
+	quit(0);
+}

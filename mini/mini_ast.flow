@@ -1,0 +1,18 @@
+export {
+	Mini ::= MiniFile, MiniDeclaration, MiniExp;
+
+	MiniFile(name : string);
+
+	MiniDeclaration(name : string, expr : MiniExp);
+
+	MiniExp ::= MiniValue, MiniVar, MiniLet, MiniLambda, MiniCall;
+		MiniVar(name : string);
+		MiniLet(name : string, value : MiniExp, body : MiniExp);
+		MiniLambda(args : [string], body : MiniExp);
+		MiniCall(fn : MiniExp, args : [MiniExp]);
+
+	MiniValue ::= MiniInt, MiniDouble, MiniString;
+		MiniInt(value : int);
+		MiniDouble(value : double);
+		MiniString(value : string);
+}

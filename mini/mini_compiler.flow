@@ -1,0 +1,40 @@
+import mini/mini_db;
+import fast/fast_path;
+import mini/mini_parse;
+
+export {
+	miniCompile(db : MiniDb) -> MiniDb;
+}
+
+miniCompile(db : MiniDb) -> MiniDb {
+	if (db.queue == []) db
+	else {
+		val = db.queue[0];
+		rest = tail(db.queue);
+		ndb = MiniDb(db with queue = rest);
+
+		todo = \ -> {
+			println("Figure out how to compile " + toString(val));
+			ndb
+		}
+
+		miniCompile(switch (val) {
+			MiniValue(): {
+				pushMiniValue(ndb, val);
+			}
+			MiniFile(name): {
+				filename = fastPath2path(db.includes, name);
+				parseMiniFile(name, filename, ndb);
+			}
+			MiniDeclaration(name, expr): todo();
+			MiniVar(name): todo();
+			MiniLet(name, value, body): todo();
+			MiniLambda(args, body): todo();
+			MiniCall(fn, args): todo();
+		});
+	};
+}
+
+pushMiniValue(db : MiniDb, val : MiniValue) -> MiniDb {
+	MiniDb(db with stack = arrayPush(db.stack, val));
+}

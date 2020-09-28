@@ -1,0 +1,18 @@
+import mini/mini_ast;
+import ds/set;
+
+export {
+	MiniDb(
+		includes : [string],
+		queue : [Mini],
+		declarations : Tree<string, MiniDeclaration>,
+		stack : [MiniValue],
+		onError : (string) -> void,
+	);
+
+	pushMiniDb(db : MiniDb, mini : Mini) -> MiniDb;
+}
+
+pushMiniDb(db : MiniDb, mini : Mini) -> MiniDb {
+	MiniDb(db with queue = arrayPush(db.queue, mini));
+}
