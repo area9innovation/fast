@@ -1,4 +1,5 @@
 import mini/mini_db;
+import mini/mini_stack;
 import fast/fast_path;
 import mini/mini_parse;
 
@@ -23,7 +24,8 @@ miniCompile(db : MiniDb) -> MiniDb {
 				pushMiniValue(ndb, val);
 			}
 			MiniFile(name): {
-				filename = fastPath2path(db.includes, name);
+				withext = changeFileExt(name, ".mini");
+				filename = fastPath2path(db.includes, withext);
 				parseMiniFile(name, filename, ndb);
 			}
 			MiniDeclaration(name, expr): todo();
@@ -33,8 +35,4 @@ miniCompile(db : MiniDb) -> MiniDb {
 			MiniCall(fn, args): todo();
 		});
 	};
-}
-
-pushMiniValue(db : MiniDb, val : MiniValue) -> MiniDb {
-	MiniDb(db with stack = arrayPush(db.stack, val));
 }

@@ -1,0 +1,19 @@
+import mini/mini_db;
+
+export {
+	pushMiniValue(db : MiniDb, val : MiniValue) -> MiniDb;
+	popMiniValue(db : MiniDb) -> Pair<MiniValue, MiniDb>;
+}
+
+pushMiniValue(db : MiniDb, val : MiniValue) -> MiniDb {
+	MiniDb(db with stack = arrayPush(db.stack, val));
+}
+
+popMiniValue(db : MiniDb) -> Pair<MiniValue, MiniDb> {
+	if (db.stack == []) Pair(MiniInt(-1), db)
+	else {
+		n = length(db.stack);
+		elm = db.stack[n - 1];
+		Pair(elm, MiniDb(db with stack = subrange(db.stack, 0, n - 1)))
+	}
+}

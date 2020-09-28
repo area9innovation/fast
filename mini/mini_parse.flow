@@ -1,5 +1,7 @@
 import mini/mini_db;
 import text/serialize;
+import mini/mini_stack;
+import mini/mini_value;
 
 export {
 	parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb;
@@ -18,15 +20,18 @@ miniLine(db : MiniDb, line : string) -> MiniDb {
 	if (line == "") db
 	else if (startsWith(line, "\"")) {
 		str = deserializeString(line);
-		pushMiniDb(db, MiniString(str.first));
+		pushMiniValue(db, MiniString(str.first));
 	} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
 		if (strContains(line, ".") || strContains(line, "e")) {
 			d = s2d(line);
-			pushMiniDb(db, MiniDouble(d));
+			pushMiniValue(db, MiniDouble(d));
 		} else {
 			i = s2i(line);
-			pushMiniDb(db, MiniInt(i));
+			pushMiniValue(db, MiniInt(i));
 		}
+	} else if (line == "import") {
+		file = popMiniValue(db);
+		pushMiniDb(file.second, MiniFile(getMiniString(file.first)));
 	} else {
 		db.onError("Does not handle " + line);
 		db;

@@ -1,0 +1,12 @@
+import mini/mini_ast;
+
+export {
+	getMiniString(m : MiniValue) -> string;
+}
+
+getMiniString(m : MiniValue) -> string {
+	switch (m) {
+		MiniString(s): s;
+		default: "";
+	}
+}
