@@ -19,24 +19,48 @@ miniLine(db : MiniDb, line : string) -> MiniDb {
 	fchar = getCharAt(line, 0);
 	if (line == "") db
 	else if (startsWith(line, "\"")) {
+		// MiniString(value : string);
 		str = deserializeString(line);
 		pushMiniValue(db, MiniString(str.first));
 	} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
 		if (strContains(line, ".") || strContains(line, "e")) {
+			// MiniDouble(value : double);
 			d = s2d(line);
 			pushMiniValue(db, MiniDouble(d));
 		} else {
+			// MiniInt(value : int);
 			i = s2i(line);
 			pushMiniValue(db, MiniInt(i));
 		}
 	} else if (line == "import") {
+		// 	MiniFilename(name : string);
 		file = popMiniValue(db);
-		pushMiniDb(file.second, MiniFilename(getMiniString(file.first)));
+		evalMiniDb(file.second, MiniFilename(getMiniString(file.first)));
+	} else if (line == "var") {
+		// MiniVar(name : string);
+		var = popMiniValue(db);
+		pushMiniValue(var.second, MiniVar(getMiniString(var.first)));
 	} else if (line == "let") {
+		// MiniLet(name : string, value : MiniExp, body : MiniExp);
 		body = popMiniValue(db);
 		value = popMiniValue(body.second);
 		name = popMiniValue(value.second);
-		pushMiniDb(name.second, MiniLet(getMiniString(name.first), value.first, body.first));
+		pushMiniValue(name.second, MiniLet(getMiniString(name.first), value.first, body.first));
+	} else if (line == "int") {
+		//	MiniTypeInt(bits : int);
+		val = popMiniValue(db);
+		pushMiniValue(val.second, MiniTypeInt(getMiniInt(val.first)));
+
+	// 	MiniLambda(args : [string], body : MiniExp);
+	//	MiniCall(fn : MiniExp, args : [MiniExp]);
+	//	MiniTypeFunction(args : [MiniType], returnType : MiniType);
+	//	MiniTypeCall(id : string, typars : [MiniType]);
+	} else if (line == "nil") {
+		pushMiniValue(db, MiniCall(MiniVar("nil"), []));
+	} else if (line == "cons") {
+		val = popMiniValue(db);
+		list = popMiniValue(val.second);
+		pushMiniValue(list.second, MiniCall(MiniVar("cons"), [val.first, list.first]));
 	} else {
 		db.onError("Does not handle " + line);
 		db;

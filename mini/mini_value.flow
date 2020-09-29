@@ -1,12 +1,39 @@
 import mini/mini_ast;
+import ds/array;
 
 export {
-	getMiniString(m : MiniValue) -> string;
+	getMiniInt(m : MiniExp) -> int;
+	getMiniString(m : MiniExp) -> string;
+	getMiniArray(m : MiniExp) -> [MiniExp];
 }
 
-getMiniString(m : MiniValue) -> string {
+getMiniInt(m : MiniExp) -> int {
+	switch (m) {
+		MiniInt(i): i;
+		default: 0;
+	}
+}
+
+getMiniString(m : MiniExp) -> string {
 	switch (m) {
 		MiniString(s): s;
 		default: "";
+	}
+}
+
+getMiniArray(m : MiniExp) -> [MiniExp] {
+	switch (m) {
+		MiniCall(fn, args): {
+			switch (fn) {
+				MiniVar(id): {
+					if (id == "nil") []
+					else if (id == "cons") {
+						concat([args[0]], getMiniArray(args[1]))
+					} else [];
+				}
+				default: [];
+			}
+		}
+		default: [];
 	}
 }

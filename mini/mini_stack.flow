@@ -1,15 +1,15 @@
 import mini/mini_db;
 
 export {
-	pushMiniValue(db : MiniDb, val : MiniValue) -> MiniDb;
-	popMiniValue(db : MiniDb) -> Pair<MiniValue, MiniDb>;
+	pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb;
+	popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb>;
 }
 
-pushMiniValue(db : MiniDb, val : MiniValue) -> MiniDb {
+pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb {
 	MiniDb(db with stack = Cons(val, db.stack));
 }
 
-popMiniValue(db : MiniDb) -> Pair<MiniValue, MiniDb> {
+popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb> {
 	switch (db.stack) {
 		EmptyList(): Pair(MiniInt(-1), db)
 		Cons(h, t): {

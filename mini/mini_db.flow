@@ -16,7 +16,7 @@ export {
 		lastKnownGood : MiniAst,
 
 		// This is the evaluation stack for the compiler itself
-		stack : List<MiniValue>,
+		stack : List<MiniExp>,
 
 		// TODO: Add a set of outputs we are producing
 
@@ -40,9 +40,9 @@ export {
 		dependency : SimpleGraph<string, bool>,
 	);
 
-	pushMiniDb(db : MiniDb, mini : Mini) -> MiniDb;
+	evalMiniDb(db : MiniDb, mini : Mini) -> MiniDb;
 }
 
-pushMiniDb(db : MiniDb, mini : Mini) -> MiniDb {
+evalMiniDb(db : MiniDb, mini : Mini) -> MiniDb {
 	MiniDb(db with queue = arrayPush(db.queue, mini));
 }
