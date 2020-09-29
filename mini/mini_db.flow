@@ -16,7 +16,7 @@ export {
 		lastKnownGood : MiniAst,
 
 		// This is the evaluation stack for the compiler itself
-		stack : [MiniValue],
+		stack : List<MiniValue>,
 
 		// TODO: Add a set of outputs we are producing
 

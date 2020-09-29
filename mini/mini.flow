@@ -6,11 +6,11 @@ main() {
 		[MiniFilename("mini/tests/test.mini")], 
 		MiniAst(0.0, makeTree(), makeTree(), makeTree(), makeTree(), makeSimpleGraph()),
 		MiniAst(0.0, makeTree(), makeTree(), makeTree(), makeTree(), makeSimpleGraph()),
-		[], 
+		makeList(), 
 		println
 	);
 
 	fdb = miniCompile(db);
-	iter(fdb.stack, println);
+	iterList(fdb.stack, println);
 	quit(0);
 }

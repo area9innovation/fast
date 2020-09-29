@@ -47,6 +47,15 @@ Example compile flow:
 	4. Then we type check these definitions, and if the batch passed, we push it to the last known good
 	5. Then we produce outputs for each output defined
 
+## Plan
+
+1. Have Forth for the AST, so we can build any expression
+2. Compile this to JS
+
+## Backends
+
+Maybe we can do them just like functions in Fastlåst.
+
 ## Inspiration
 
 ### Query based compilers
@@ -63,7 +72,7 @@ The dependencies of each task is tracked using keys.
 It is important that dependencies are bi-directional, so when a key is changed, we
 can force cache eviction of the changed queries.
 
-Thus, the compiler is composed of functions of the form	 Key -> Value, where we have
+Thus, the compiler is composed of functions of the form	Key -> Value, where we have
 two kinds of queries: Inputs, and pure functions.
 
 ### Datalog for typechecking

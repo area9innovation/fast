@@ -32,6 +32,11 @@ miniLine(db : MiniDb, line : string) -> MiniDb {
 	} else if (line == "import") {
 		file = popMiniValue(db);
 		pushMiniDb(file.second, MiniFilename(getMiniString(file.first)));
+	} else if (line == "let") {
+		body = popMiniValue(db);
+		value = popMiniValue(body.second);
+		name = popMiniValue(value.second);
+		pushMiniDb(name.second, MiniLet(getMiniString(name.first), value.first, body.first));
 	} else {
 		db.onError("Does not handle " + line);
 		db;
