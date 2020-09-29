@@ -1,11 +1,5 @@
 "a"
-1
-"a"
-let
-"test.mini"
-import
 nil
 1
 cons
-2
-cons
+call
