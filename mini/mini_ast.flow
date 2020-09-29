@@ -1,18 +1,22 @@
 export {
-	Mini ::= MiniFilename, MiniExp;
+	MiniCommand ::= MiniFilename, MiniDeclare;
 
-	MiniFilename(name : string);
+		// Read this file and run it
+		MiniFilename(name : string);
+
+		// Declare this id to this expression
+		MiniDeclare(name : string, value : MiniExp);
+
+	MiniValue ::= MiniInt, MiniDouble, MiniString;
+		MiniInt(value : int);
+		MiniDouble(value : double);
+		MiniString(value : string);
 
 	MiniExp ::= MiniValue, MiniVar, MiniLet, MiniLambda, MiniCall, MiniType;
 		MiniVar(name : string);
 		MiniLet(name : string, value : MiniExp, body : MiniExp);
 		MiniLambda(args : [string], body : MiniExp);
 		MiniCall(fn : MiniExp, args : [MiniExp]);
-
-	MiniValue ::= MiniInt, MiniDouble, MiniString;
-		MiniInt(value : int);
-		MiniDouble(value : double);
-		MiniString(value : string);
 
 	MiniType ::= MiniTypeInt, MiniTypeFunction, MiniTypeCall;
 		// 0 bits is void, 1 is bool.

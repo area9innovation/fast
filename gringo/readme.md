@@ -96,7 +96,7 @@ operations are produced verbatim.
 - Figure out how to fix if else, which does not work in the exp grammar
 
 - We want to introduce a prefix + and prefix * to be used for
-right-associate semantic matching.
+  right-associate semantic matching.
 
 So "1.2.3" should result in a trace like "1 2 dot 3 dot", rather than "1 2 3 dot dot".
 

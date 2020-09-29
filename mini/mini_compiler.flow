@@ -20,21 +20,31 @@ miniCompile(db : MiniDb) -> MiniDb {
 		}
 
 		miniCompile(switch (val) {
-			MiniValue(): {
-				pushMiniValue(ndb, val);
-			}
 			MiniFilename(name): {
 				withext = changeFileExt(name, ".mini");
 				filename = fastPath2path(db.includes, withext);
 				parseMiniFile(name, filename, ndb);
 			}
-			MiniVar(name): todo();
-			MiniLet(name, value, body): todo();
-			MiniLambda(args, body): todo();
-			MiniCall(fn, args): todo();
-			MiniTypeInt(bits): todo();
-			MiniTypeFunction(args, rt): todo();
-			MiniTypeCall(id, typars): todo();
+			MiniDeclare(id, body): {
+				mexisting = lookupTree(db.lastKnownGood.declarations, id);
+
+				def = \ -> {
+					// OK, this is a new definition
+					println("TODO: Add this " + id);
+					println(body);
+					ndb;
+				}
+
+				mexisting ?? {
+					if (mexisting == body) {
+						// It is the same. Nothing to do.
+						ndb;
+					} else {
+						// OK, it is new. We should put it in and process it
+						def();
+					}
+				}  : def();
+			}
 		});
 	};
 }

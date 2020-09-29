@@ -2,9 +2,9 @@
 
 This is an experiment to build a queue-based, always live compiler.
 
-It takes inputs, and continuously compiles the result into valid programs.
+It takes commands, and continuously compiles the result into valid programs.
 
-As files are changed, we can immediately start to reprocess them, updating the queue.
+As files are changed, we can efficiently reprocess them, updating the queue.
 
 A key idea is to preserve OLD versions of declarations at the last stages, until a new
 one is ready to take over. That way, we will not accept new versions of code until all
@@ -24,15 +24,41 @@ be consistent.
 Also, we still maintain the property that if all type errors are fixed, all outputs will
 correspond to the current, latest version of the code.
 
-For each item in a queue, we have a set of dependencies for it.
-We might have to give new ids for the last known good declarations,
-so we can juggle with multiple versions of the same code.
+For each item in a queue, we have a set of dependencies for it. We might have to give new 
+ids for the last known good declarations, so we can juggle with multiple versions of the 
+same code.
+
+## Commands
+
+Mini takes commands in line format, using a stack to pass arguments where required:
+
+	1						- push an int on the stack
+	3.141					- push a double on the stack
+	"hello world"			- push a string on the stack
+	<string> import			- read the contents of the given file, and run that
+	<string> var			- push a var ref on the stack
+	<id> <val> <body> let	- push a let-binding on the stack
+	<args> <body> lambda	- push a lambda on the stack
+	<fn> <args>				- push a call on the stack
+
+	<int> inttype			- push an int-type on the stack
+	<types> <return> fntype	- push a function type on the stack
+	<id> <types> typecall	- push a type call on the stack
+
+	nil						- push the nil token on the stack
+	<list> <elm> cons		- push a list elm:list on the stack
+
+See "mini_parse" for the complete list.
+
+TODO:
+- Add <id> <val> define to enter a definition into the db
+- Add <grammar-file> parse
+
 
 ## Dependency tracking
 
 Keys:
-- files/timestamp
-- md5 of the content of a file
+- files/timestamp/md5 of the content of a file
 
 Values:
 - Mini
@@ -49,7 +75,7 @@ Example compile flow:
 
 ## Plan
 
-1. Have Forth for the AST, so we can build any expression
+1. Add gringo command, so we can send in any syntax
 2. Compile this to JS
 
 ## Backends

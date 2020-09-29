@@ -7,7 +7,7 @@ export {
 		// The include path we should use
 		includes : [string],
 		// The queue of stuff this compiler needs to work on.
-		queue : [Mini],
+		queue : [MiniCommand],
 
 		// The program we are working on - is not consistent yet
 		inProgress : MiniAst,
@@ -40,9 +40,9 @@ export {
 		dependency : SimpleGraph<string, bool>,
 	);
 
-	evalMiniDb(db : MiniDb, mini : Mini) -> MiniDb;
+	pushMiniCommand(db : MiniDb, mini : MiniCommand) -> MiniDb;
 }
 
-evalMiniDb(db : MiniDb, mini : Mini) -> MiniDb {
+pushMiniCommand(db : MiniDb, mini : MiniCommand) -> MiniDb {
 	MiniDb(db with queue = arrayPush(db.queue, mini));
 }

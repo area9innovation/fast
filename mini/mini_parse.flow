@@ -35,7 +35,7 @@ miniLine(db : MiniDb, line : string) -> MiniDb {
 	} else if (line == "import") {
 		// 	MiniFilename(name : string);
 		file = popMiniValue(db);
-		evalMiniDb(file.second, MiniFilename(getMiniString(file.first)));
+		pushMiniCommand(file.second, MiniFilename(getMiniString(file.first)));
 	} else if (line == "var") {
 		// MiniVar(name : string);
 		var = popMiniValue(db);
@@ -59,7 +59,7 @@ miniLine(db : MiniDb, line : string) -> MiniDb {
 		cargs = getMiniArray(args.first);
 		pushMiniValue(fn.second, MiniCall(fn.first, cargs));
 
-	} else if (line == "int") {
+	} else if (line == "inttype") {
 		//	MiniTypeInt(bits : int);
 		val = popMiniValue(db);
 		pushMiniValue(val.second, MiniTypeInt(getMiniInt(val.first)));
@@ -69,7 +69,7 @@ miniLine(db : MiniDb, line : string) -> MiniDb {
 		args = popMiniValue(rt.second);
 		targs = getMiniArray(args.first);
 		pushMiniValue(args.second, MiniTypeFunction(targs, rt.first));
-	} else if (line == "call") {
+	} else if (line == "typecall") {
 		//	MiniTypeCall(id : string, typars : [MiniType]);
 		typars = popMiniValue(db);
 		id = popMiniValue(typars.second);
