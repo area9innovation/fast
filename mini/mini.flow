@@ -4,8 +4,7 @@ main() {
 	db = MiniDb(
 		["."], 
 		[MiniFilename("mini/tests/test.mini")], 
-		MiniAst(0.0, makeTree(), makeTree(), makeTree(), makeTree(), makeSimpleGraph()),
-		MiniAst(0.0, makeTree(), makeTree(), makeTree(), makeTree(), makeSimpleGraph()),
+		MiniAst(makeTree(), makeTree()),
 		makeList(), 
 		println
 	);

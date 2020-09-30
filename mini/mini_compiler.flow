@@ -25,14 +25,19 @@ miniCompile(db : MiniDb) -> MiniDb {
 				filename = fastPath2path(db.includes, withext);
 				parseMiniFile(name, filename, ndb);
 			}
-			MiniDeclare(id, body): {
-				mexisting = lookupTree(db.lastKnownGood.declarations, id);
+			MiniDefine(file, id, body): {
+				mexisting = lookupTree(ndb.program.declarations, id);
 
 				def = \ -> {
+					pr = ndb.program;
 					// OK, this is a new definition
-					println("TODO: Add this " + id);
-					println(body);
-					ndb;
+					ndecl = MiniAst(pr with 
+						declarations = setTree(pr.declarations, id, body),
+						declarationFile = setTree(pr.declarationFile, id, file)
+					);
+					// TODO: Do dependency update
+					println("TODO: Update processing of stuff dependent on id: " + id);
+					MiniDb(ndb with program = ndecl);
 				}
 
 				mexisting ?? {

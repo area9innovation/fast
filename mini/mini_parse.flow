@@ -11,11 +11,11 @@ parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb {
 	content = getFileContent(path);
 	lines = strSplit(content, "\n");
 	fold(lines, db, \acc, line -> {
-		miniLine(acc, line)
+		miniLine(file, acc, line)
 	});
 }
 
-miniLine(db : MiniDb, line : string) -> MiniDb {
+miniLine(file : string, db : MiniDb, line : string) -> MiniDb {
 	fchar = getCharAt(line, 0);
 	if (line == "") db
 	else if (startsWith(line, "\"")) {
@@ -34,8 +34,13 @@ miniLine(db : MiniDb, line : string) -> MiniDb {
 		}
 	} else if (line == "import") {
 		// 	MiniFilename(name : string);
-		file = popMiniValue(db);
-		pushMiniCommand(file.second, MiniFilename(getMiniString(file.first)));
+		filename = popMiniValue(db);
+		pushMiniCommand(filename.second, MiniFilename(getMiniString(filename.first)));
+	} else if (line == "define") {
+		// MiniDefine(name : string, value : MiniExp);
+		value = popMiniValue(db);
+		name = popMiniValue(value.second);
+		pushMiniCommand(name.second, MiniDefine(file, getMiniString(name.first), value.first));
 	} else if (line == "var") {
 		// MiniVar(name : string);
 		var = popMiniValue(db);

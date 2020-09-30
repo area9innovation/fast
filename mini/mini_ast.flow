@@ -1,11 +1,11 @@
 export {
-	MiniCommand ::= MiniFilename, MiniDeclare;
+	MiniCommand ::= MiniFilename, MiniDefine;
 
 		// Read this file and run it
 		MiniFilename(name : string);
 
-		// Declare this id to this expression
-		MiniDeclare(name : string, value : MiniExp);
+		// Define this id to this expression
+		MiniDefine(file : string, name : string, value : MiniExp);
 
 	MiniValue ::= MiniInt, MiniDouble, MiniString;
 		MiniInt(value : int);

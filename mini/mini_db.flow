@@ -10,10 +10,7 @@ export {
 		queue : [MiniCommand],
 
 		// The program we are working on - is not consistent yet
-		inProgress : MiniAst,
-
-		// This is the last good version
-		lastKnownGood : MiniAst,
+		program : MiniAst,
 
 		// This is the evaluation stack for the compiler itself
 		stack : List<MiniExp>,
@@ -27,17 +24,17 @@ export {
 	// A consistent set of declarations
 	MiniAst(
 		// When was this set ready?
-		timestamp : double,
+		// timestamp : double,
 		// The names defined in this program
 		declarations : Tree<string, MiniExp>,
 		// Where is each name defined? From name to file
 		declarationFile : Tree<string, string>,
 		// What names are declared in this file?
-		fileDeclarations : Tree<string, [string]>,
+		// fileDeclarations : Tree<string, [string]>,
 		// The types of expressions
-		types : Tree<MiniExp, MiniType>,
+		// types : Tree<MiniExp, MiniType>,
 		// The dependency graph between names
-		dependency : SimpleGraph<string, bool>,
+		// dependency : SimpleGraph<string, bool>,
 	);
 
 	pushMiniCommand(db : MiniDb, mini : MiniCommand) -> MiniDb;
