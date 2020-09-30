@@ -29,6 +29,10 @@ export {
 		declarations : Tree<string, MiniExp>,
 		// Where is each name defined? From name to file
 		declarationFile : Tree<string, string>,
+		// What does this id depend on?
+		dependencies : Tree<string, Set<string>>,
+		// What depends on this id?
+		dependents : Tree<string, Set<string>>,
 		// What names are declared in this file?
 		// fileDeclarations : Tree<string, [string]>,
 		// The types of expressions

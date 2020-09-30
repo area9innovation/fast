@@ -4,12 +4,17 @@ main() {
 	db = MiniDb(
 		["."], 
 		[MiniFilename("mini/tests/test.mini")], 
-		MiniAst(makeTree(), makeTree()),
+		MiniAst(makeTree(), makeTree(), makeTree(), makeTree()),
 		makeList(), 
 		println
 	);
 
 	fdb = miniCompile(db);
 	iterList(fdb.stack, println);
+
+	traverseInOrder(fdb.program.dependencies, \k, v -> {
+		println(k + " depends on " + strGlue(set2array(v), ", "));
+	});
+
 	quit(0);
 }

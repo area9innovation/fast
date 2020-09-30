@@ -1,0 +1,39 @@
+import mini/mini_ast;
+import ds/set;
+
+export {
+	extractMiniDeps(m : MiniExp, acc : Set<string>, locals : Set<string>) -> Set<string>;
+}
+
+extractMiniDeps(m : MiniExp, acc : Set<string>, locals : Set<string>) -> Set<string> {
+	switch (m) {
+		MiniValue(): acc;
+		MiniVar(name): if (containsSet(locals, name)) acc else insertSet(acc, name);
+		MiniLet(name, value, body): {
+			nacc = extractMiniDeps(value, acc, locals);
+			extractMiniDeps(body, nacc, insertSet(locals, name));
+		}
+		MiniLambda(args, body): {
+			nlocals = fold(args, locals, insertSet);
+			extractMiniDeps(body, acc, nlocals);
+		}
+		MiniCall(fn, args): {
+			nacc = extractMiniDeps(fn, acc, locals);
+			fold(args, nacc, \acc1, arg -> {
+				extractMiniDeps(arg, acc1, locals)
+			});
+		}
+		MiniTypeInt(bits): acc;
+		MiniTypeFunction(args, returnType): {
+			nacc = fold(args, acc, \acc1, arg -> {
+				extractMiniDeps(arg, acc1, locals)
+			});
+			extractMiniDeps(returnType, nacc, locals);
+		}
+		MiniTypeCall(id, typars): {
+			fold(typars, acc, \acc1, arg -> {
+				extractMiniDeps(arg, acc1, locals)
+			});
+		}
+	}
+}

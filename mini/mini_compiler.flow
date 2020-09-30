@@ -1,5 +1,6 @@
 import mini/mini_db;
 import mini/mini_stack;
+import mini/mini_dependencies;
 import fast/fast_path;
 import mini/mini_parse;
 
@@ -30,13 +31,16 @@ miniCompile(db : MiniDb) -> MiniDb {
 
 				def = \ -> {
 					pr = ndb.program;
+
+					// Update the dependencies
+					npr = updateMiniDeps(pr, id, body);
+
 					// OK, this is a new definition
-					ndecl = MiniAst(pr with 
+					ndecl = MiniAst(npr with 
 						declarations = setTree(pr.declarations, id, body),
-						declarationFile = setTree(pr.declarationFile, id, file)
+						declarationFile = setTree(pr.declarationFile, id, file),
 					);
-					// TODO: Do dependency update
-					println("TODO: Update processing of stuff dependent on id: " + id);
+
 					MiniDb(ndb with program = ndecl);
 				}
 
@@ -52,4 +56,31 @@ miniCompile(db : MiniDb) -> MiniDb {
 			}
 		});
 	};
+}
+
+updateMiniDeps(pr : MiniAst, id : string, body : MiniExp) -> MiniAst {
+	npr = removeMiniDeps(pr, id);
+	addMiniDeps(npr, id, body)
+}
+
+addMiniDeps(pr : MiniAst, id : string, body : MiniExp) -> MiniAst {
+	deps = extractMiniDeps(body, makeSet(), makeSet());
+	println(id + " depends on " + strGlue(set2array(deps), ", "));
+	MiniAst(pr with
+		dependencies = setTree(pr.dependencies, id, deps),
+		dependents = foldSet(deps, pr.dependents, \acc, dep -> {
+			insertMultimap(acc, dep, id)
+		})
+	)
+}
+
+removeMiniDeps(pr : MiniAst, id : string) -> MiniAst {
+	deps = lookupMultimap(pr.dependencies, id);
+	MiniAst(
+		pr with
+		dependencies = removeFromTree(pr.dependencies, id),
+		dependents = foldSet(deps, pr.dependents, \acc, dep -> {
+			removeMultimap(acc, dep, id)
+		})
+	);
 }
