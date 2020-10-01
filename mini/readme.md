@@ -75,8 +75,18 @@ Example compile flow:
 
 ## Plan
 
+0. Rig up file reading and dependency tracking
+   - Update declaratinos per file when file changes
+   - Track imports/exports
+   - Do not require typecheck unless the type of an id changes
+   - Check imports/exports, undefined names
 1. Add gringo command, so we can send in any syntax
-2. Compile this to JS
+2. Compile this to JS - consider doing a statement-based intermediate AST
+3. Add jupyter-style notebook feature and "resident" icon for the compiler
+
+## Milestones
+
+1. Get hello-world to compile to JS
 
 ## Backends
 

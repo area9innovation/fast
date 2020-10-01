@@ -1,6 +1,7 @@
 import mini/mini_db;
 import mini/mini_stack;
 import mini/mini_dependencies;
+import mini/mini_topological;
 import fast/fast_path;
 import mini/mini_parse;
 
@@ -37,11 +38,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 
 				// Update the dependencies
 				npr = updateMiniDeps(db.program, id, body);
-
-				// All that are dependent on this id should be updated
-				dependents = lookupMultimap(npr.dependents, id);
-				toTypecheck = insertSet(dependents, id);
-				db2 = pushMiniCommand(db, MiniTypecheck(toTypecheck));
+				db2 = pushMiniCommand(db, MiniTypecheck(makeSet1(id)));
 
 				// OK, this is a new definition
 				ndecl = MiniAst(npr with 
@@ -63,8 +60,11 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			} : def();
 		}
 		MiniTypecheck(ids): {
-			// TODO: Here, we should do them in topological order.
-			println("TODO: Typecheck these " + strGlue(set2array(ids), ", "));
+			// Find a topological order of these ids
+			order = topologicalMiniOrder(db.program, ids);
+
+			println("TODO: Typecheck these in this order " + strGlue(order, ", "));
+
 			db;
 		}
 	}
