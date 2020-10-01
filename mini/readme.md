@@ -73,20 +73,24 @@ Example compile flow:
 	4. Then we type check these definitions, and if the batch passed, we push it to the last known good
 	5. Then we produce outputs for each output defined
 
-## Plan
-
-0. Rig up file reading and dependency tracking
-   - Update declaratinos per file when file changes
-   - Track imports/exports
-   - Do not require typecheck unless the type of an id changes
-   - Check imports/exports, undefined names
-1. Add gringo command, so we can send in any syntax
-2. Compile this to JS - consider doing a statement-based intermediate AST
-3. Add jupyter-style notebook feature and "resident" icon for the compiler
-
 ## Milestones
 
+
+0. Get type inference to work
+   - Do not require typecheck unless the type of an id changes
 1. Get hello-world to compile to JS
+  - consider doing a statement-based intermediate AST
+
+2. Rig up file reading and dependency tracking
+   - Update declarations per file when file changes
+   - Track imports/exports
+   - Check imports/exports, undefined names
+
+3. Get error messages with locations to work
+
+4. Add gringo command, so we can send in any syntax
+5. Add jupyter-style notebook feature and "resident" icon for the compiler
+
 
 ## Backends
 

@@ -69,12 +69,21 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				mfn = lookupTree(db.program.declarations, id);
 				mfn ?? {
 					type = typeInferenceMini(acc, mfn);
+					// Set the type in the type environment when inferring
 					setMiniType2(acc, id, type);
 				} : {
 					println("Unknown name " + id);
 				}
 				acc;
 			});
+
+			// Now, we should resolve the type-vars
+
+			// Then we should set the (resolved) type in the overall type environment
+			// and check if there is a change, and if so, request re-typecheck
+			// of dependent ids
+
+			
 
 			db;
 		}
