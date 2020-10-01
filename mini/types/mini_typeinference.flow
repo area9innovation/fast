@@ -1,0 +1,15 @@
+import mini/mini_db;
+import mini/types/mini_type2;
+
+export {
+	typeInferenceMini(ast : MiniAst, id : string, body : MiniExp) -> MiniAst;
+}
+
+MiniTypeEnv(
+	types : Tree<string, MiniType2>
+);
+
+typeInferenceMini(ast : MiniAst, id : string, body : MiniExp) -> MiniAst {
+	
+	ast;
+}
