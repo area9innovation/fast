@@ -4,7 +4,7 @@ main() {
 	db0 = MiniDb(
 		["."], 
 		makeTree(), 
-		MiniAst(makeTree(), makeTree(), makeTree(), makeTree()),
+		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
 		makeList(), 
 		println
 	);

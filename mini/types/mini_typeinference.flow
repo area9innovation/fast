@@ -2,14 +2,82 @@ import mini/mini_db;
 import mini/types/mini_type2;
 
 export {
-	typeInferenceMini(ast : MiniAst, id : string, body : MiniExp) -> MiniAst;
+	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
+	typeInferenceMini(env : MiniTypeEnv, body : MiniExp) -> MiniType2;
+	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> void;
 }
 
 MiniTypeEnv(
-	types : Tree<string, MiniType2>
+	ast : MiniAst,
+	mutable types : Tree<string, MiniType2>,
+	// What are the tyvars bound to?
+	mutable tyvars : Tree<int, MiniType2>,
+
+	// For the MLSub algorithm add these:
+	mutable tyvarLowerBounds : Tree<int, [MiniType2]>,
+	mutable tyvarUpperBounds : Tree<int, [MiniType2]>,
+
+	// What is the next tyvar id?
+	mutable tyvarId : int,
 );
 
-typeInferenceMini(ast : MiniAst, id : string, body : MiniExp) -> MiniAst {
-	
-	ast;
+makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
+	MiniTypeEnv(
+		ast,
+		makeTree(),
+		makeTree(),
+		makeTree(),
+		makeTree(),
+		0
+	);
+}
+
+typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
+	todo = \ -> {
+		println("What is the type of " + toString(ex));
+		makeMiniType2Var(env);
+	}
+	switch (ex) {
+		MiniInt(value): MiniType2Int(32);
+		MiniDouble(value): MiniType2Call("double", []);
+		MiniString(value): MiniType2Call("string", []);
+		MiniVar(name): {
+			mlocal = lookupTree(env.types, name);
+			mlocal ?? mlocal : {
+				mglobal = lookupTree(env.ast.types, name);
+				switch (mglobal) {
+					None(): {
+						println("Unknown name " + name);
+						makeMiniType2Var(env);
+					}
+					Some(t): t;
+				}
+			}
+		}
+		MiniLet(name, value, body): todo();
+		MiniLambda(args, body): todo();
+		MiniCall(fn, args): todo();
+		MiniTypeInt(bits): MiniType2Int(bits);
+		MiniTypeFunction(args, returnType): {
+			argTypes = map(args, \a -> {
+				typeInferenceMini(env, a)
+			});
+			retType = typeInferenceMini(env, returnType);
+			MiniType2Function(argTypes, retType);
+		}
+		MiniTypeCall(id, typars): {
+			MiniType2Call(id, map(typars, \tp -> typeInferenceMini(env, tp)));
+		}
+	}
+}
+
+makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var {
+	id = env.tyvarId;
+	env.tyvarId ::= id + 1;
+	MiniType2Var(id);
+}
+
+setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> void {
+	println(id + " = " + toString(type));
+	env.types ::= setTree(env.types, id, type);
 }

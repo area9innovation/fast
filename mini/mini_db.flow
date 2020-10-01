@@ -1,4 +1,5 @@
 import mini/mini_command;
+import mini/types/mini_type2;
 import ds/set;
 import ds/simplegraph;
 
@@ -35,8 +36,9 @@ export {
 		dependents : Tree<string, Set<string>>,
 		// What names are declared in this file?
 		// fileDeclarations : Tree<string, [string]>,
+
 		// The types of expressions
-		// types : Tree<MiniExp, MiniType>,
+		types : Tree<string, MiniType2>,
 		// The dependency graph between names
 		// dependency : SimpleGraph<string, bool>,
 	);

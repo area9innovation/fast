@@ -4,6 +4,7 @@ import mini/mini_dependencies;
 import mini/mini_topological;
 import fast/fast_path;
 import mini/mini_parse;
+import mini/types/mini_typeinference;
 
 export {
 	miniCompile(db : MiniDb) -> MiniDb;
@@ -63,7 +64,17 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			// Find a topological order of these ids
 			order = topologicalMiniOrder(db.program, ids);
 
-			println("TODO: Typecheck these in this order " + strGlue(order, ", "));
+			tenv = makeMiniTypeEnv(db.program);
+			tenv2 = fold(order, tenv, \acc, id -> {
+				mfn = lookupTree(db.program.declarations, id);
+				mfn ?? {
+					type = typeInferenceMini(acc, mfn);
+					setMiniType2(acc, id, type);
+				} : {
+					println("Unknown name " + id);
+				}
+				acc;
+			});
 
 			db;
 		}
