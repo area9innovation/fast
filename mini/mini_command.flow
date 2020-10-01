@@ -1,4 +1,5 @@
 import mini/mini_ast;
+import ds/set;
 
 export {
 	MiniCommand ::= MiniFilename, MiniDefine, MiniReprocess;
@@ -9,6 +10,6 @@ export {
 		// Define this id to this expression
 		MiniDefine(file : string, name : string, value : MiniExp);
 
-		// Re-process this id, since it's dependents are changed
-		MiniReprocess(id : string);
+		// Re-process these ids, since their dependents are changed
+		MiniReprocess(ids : Set<string>);
 }

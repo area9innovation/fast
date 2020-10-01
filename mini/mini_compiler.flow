@@ -34,9 +34,7 @@ miniCompile(db : MiniDb) -> MiniDb {
 
 					// All that are dependent on this id should be updated
 					dependents = lookupMultimap(npr.dependents, id);
-					db2 = foldSet(dependents, ndb, \acc, dep -> {
-						pushMiniCommand(acc, MiniReprocess(dep))
-					});
+					db2 = if (isEmptySet(dependents)) ndb else pushMiniCommand(ndb, MiniReprocess(dependents));
 
 					// OK, this is a new definition
 					ndecl = MiniAst(npr with 
@@ -57,10 +55,9 @@ miniCompile(db : MiniDb) -> MiniDb {
 					}
 				} : def();
 			}
-			MiniReprocess(id): {
-				// TODO: Here, we should find all reprocess requests and
-				// do them in topological order.
-				println("TODO: Reprocess this " + id);
+			MiniReprocess(ids): {
+				// TODO: Here, we should do them in topological order.
+				println("TODO: Reprocess these " + strGlue(set2array(ids), ", "));
 				ndb;
 			}
 		});
