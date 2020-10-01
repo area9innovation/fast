@@ -1,5 +1,6 @@
 import mini/mini_compiler;
 
+
 main() {
 	db0 = MiniDb(
 		["."], 
