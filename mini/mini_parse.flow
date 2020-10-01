@@ -5,6 +5,7 @@ import mini/mini_value;
 
 export {
 	parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb;
+	miniLine(file : string, db : MiniDb, line : string) -> MiniDb;
 }
 
 parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb {

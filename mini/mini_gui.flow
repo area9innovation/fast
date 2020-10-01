@@ -27,18 +27,31 @@ main() {
 	db = make(db0);
 
 	file = make("mini/tests/test.mini");
+	line = make("");
 
 	mrender(manager, true, 
 		MLines([
 			MText("The Mini Compile Server", [MTitle()]),
-			MTextInput(file, [], []),
-			MTextButton("COMPILE", \ -> {
-				thefile = getValue(file);
-				if (thefile != "") {
-					next(db, pushMiniCommand(getValue(db), MiniFilename(thefile)));
-				}
-				next(db, miniCompile(getValue(db)));
-			}, [], []),
+			MBaselineCols([
+				MTextInput(file, [], []),
+				MTextButton("COMPILE", \ -> {
+					thefile = getValue(file);
+					if (thefile != "") {
+						next(db, pushMiniCommand(getValue(db), MiniFilename(thefile)));
+					}
+					next(db, miniCompile(getValue(db)));
+				}, [], []),
+			]),
+			MBaselineCols([
+				MTextInput(line, [], []),
+				MTextButton("EVALUATE", \ -> {
+					theline = getValue(line);
+					if (theline != "") {
+						next(db, miniLine("", getValue(db), theline));
+					}
+					next(db, miniCompile(getValue(db)));
+				}, [], []),
+			]),
 			MSelect(db, viewMiniDb),
 		])
 	);
