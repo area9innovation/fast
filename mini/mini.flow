@@ -12,6 +12,7 @@ main() {
 	fdb = miniCompile(db);
 	iterList(fdb.stack, println);
 
+	println("Final dependencies:");
 	traverseInOrder(fdb.program.dependencies, \k, v -> {
 		println(k + " depends on " + strGlue(set2array(v), ", "));
 	});

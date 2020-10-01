@@ -1,4 +1,4 @@
-import mini/mini_ast;
+import mini/mini_command;
 import ds/set;
 import ds/simplegraph;
 
