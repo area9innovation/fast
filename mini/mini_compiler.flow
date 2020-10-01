@@ -9,59 +9,65 @@ export {
 }
 
 miniCompile(db : MiniDb) -> MiniDb {
-	if (db.queue == []) db
-	else {
-		val = db.queue[0];
-		rest = tail(db.queue);
-		ndb = MiniDb(db with queue = rest);
+	mcom = popMiniCommand(db);
+	ndb = mcom.first;
+	switch (mcom.second) {
+		None(): ndb;
+		Some(command): {
+			println("Running " + miniCommand2string(command));
+			miniCompile(runMiniCommand(ndb, command));
+		}
+	}
+}
 
-		miniCompile(switch (val) {
-			MiniFilename(name): {
-				withext = changeFileExt(name, ".mini");
-				filename = fastPath2path(db.includes, withext);
-				// Reads the lines of this file and runs them
-				parseMiniFile(name, filename, ndb);
+runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
+	switch (command) {
+		MiniFilename(name): {
+			withext = changeFileExt(name, ".mini");
+			filename = fastPath2path(db.includes, withext);
+			// Reads the lines of this file and runs them
+			parseMiniFile(name, filename, db);
+		}
+		MiniDefine(file, id, body): {
+			// Define or redefine this id to this body
+			mexisting = lookupTree(db.program.declarations, id);
+
+			def = \ -> {
+				// OK, we have either a new or changed definition
+
+				// Update the dependencies
+				npr = updateMiniDeps(db.program, id, body);
+
+				// All that are dependent on this id should be updated
+				dependents = lookupMultimap(npr.dependents, id);
+				toTypecheck = insertSet(dependents, id);
+				db2 = pushMiniCommand(db, MiniTypecheck(toTypecheck));
+
+				// OK, this is a new definition
+				ndecl = MiniAst(npr with 
+					declarations = setTree(npr.declarations, id, body),
+					declarationFile = setTree(npr.declarationFile, id, file),
+				);
+
+				MiniDb(db2 with program = ndecl);
 			}
-			MiniDefine(file, id, body): {
-				// Define or redefine this id to this body
-				mexisting = lookupTree(ndb.program.declarations, id);
 
-				def = \ -> {
-					// OK, we have either a new or changed definition
-
-					// Update the dependencies
-					npr = updateMiniDeps(ndb.program, id, body);
-
-					// All that are dependent on this id should be updated
-					dependents = lookupMultimap(npr.dependents, id);
-					db2 = if (isEmptySet(dependents)) ndb else pushMiniCommand(ndb, MiniReprocess(dependents));
-
-					// OK, this is a new definition
-					ndecl = MiniAst(npr with 
-						declarations = setTree(npr.declarations, id, body),
-						declarationFile = setTree(npr.declarationFile, id, file),
-					);
-
-					MiniDb(db2 with program = ndecl);
+			mexisting ?? {
+				if (mexisting == body) {
+					// It is the same. Nothing to do.
+					db;
+				} else {
+					// OK, it is new. We should put it in and process it
+					def();
 				}
-
-				mexisting ?? {
-					if (mexisting == body) {
-						// It is the same. Nothing to do.
-						ndb;
-					} else {
-						// OK, it is new. We should put it in and process it
-						def();
-					}
-				} : def();
-			}
-			MiniReprocess(ids): {
-				// TODO: Here, we should do them in topological order.
-				println("TODO: Reprocess these " + strGlue(set2array(ids), ", "));
-				ndb;
-			}
-		});
-	};
+			} : def();
+		}
+		MiniTypecheck(ids): {
+			// TODO: Here, we should do them in topological order.
+			println("TODO: Typecheck these " + strGlue(set2array(ids), ", "));
+			db;
+		}
+	}
 }
 
 updateMiniDeps(pr : MiniAst, id : string, body : MiniExp) -> MiniAst {

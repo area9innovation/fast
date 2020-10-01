@@ -1,13 +1,15 @@
 import mini/mini_compiler;
 
 main() {
-	db = MiniDb(
+	db0 = MiniDb(
 		["."], 
-		[MiniFilename("mini/tests/test.mini")], 
+		makeTree(), 
 		MiniAst(makeTree(), makeTree(), makeTree(), makeTree()),
 		makeList(), 
 		println
 	);
+
+	db = pushMiniCommand(db0, MiniFilename("mini/tests/test.mini"));
 
 	fdb = miniCompile(db);
 	iterList(fdb.stack, println);

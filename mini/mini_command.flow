@@ -1,8 +1,9 @@
 import mini/mini_ast;
 import ds/set;
+import algorithms;
 
 export {
-	MiniCommand ::= MiniFilename, MiniDefine, MiniReprocess;
+	MiniCommand ::= MiniFilename, MiniDefine, MiniTypecheck;
 
 		// Read this file and run it
 		MiniFilename(name : string);
@@ -10,6 +11,49 @@ export {
 		// Define this id to this expression
 		MiniDefine(file : string, name : string, value : MiniExp);
 
-		// Re-process these ids, since their dependents are changed
-		MiniReprocess(ids : Set<string>);
+		// Typecheck these ids, since their dependents are changed, or they are new
+		MiniTypecheck(ids : Set<string>);
+
+	// What order should commands be run in? 0 is first.
+	getMiniCommandPriority(m : MiniCommand) -> int;
+	
+	// If we need to run all these commands of the same type, can that be optimized?
+	combineMiniCommands(m : [MiniCommand]) -> [MiniCommand];
+
+	miniCommand2string(m : MiniCommand) -> string;
+}
+
+getMiniCommandPriority(c : MiniCommand) -> int {
+	switch (c) {
+		MiniFilename(name): 0;
+		MiniDefine(file, name, value): 1;
+		MiniTypecheck(ids): 2;
+	}
+}
+
+miniCommand2string(c : MiniCommand) -> string {
+	switch (c) {
+		MiniFilename(name): "File " + name;
+		MiniDefine(file, name, value): "Define " + name;
+		MiniTypecheck(ids): "Typecheck  " + strGlue(set2array(ids), ", ");
+	}
+}
+
+combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
+	if (ms == []) ms
+	else {
+		first = ms[0];
+		switch (first) {
+			MiniFilename(__): uniq(ms);
+			MiniDefine(__, __, __): ms;
+			MiniTypecheck(__): {
+				[MiniTypecheck(fold(ms, makeSet(), \acc, tc -> {
+					switch (tc) {
+						MiniTypecheck(ss): mergeSets(acc, ss);
+						default: acc;
+					}
+				}))]
+			}
+		}
+	}
 }

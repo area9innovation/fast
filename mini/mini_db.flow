@@ -6,8 +6,8 @@ export {
 	MiniDb(
 		// The include path we should use
 		includes : [string],
-		// The queue of stuff this compiler needs to work on.
-		queue : [MiniCommand],
+		// The prioritized queue of stuff this compiler needs to work on.
+		queue : Tree<int, [MiniCommand]>,
 
 		// The program we are working on - is not consistent yet
 		program : MiniAst,
@@ -42,8 +42,31 @@ export {
 	);
 
 	pushMiniCommand(db : MiniDb, mini : MiniCommand) -> MiniDb;
+
+	popMiniCommand(db : MiniDb) -> Pair<MiniDb, Maybe<MiniCommand>>;
 }
 
 pushMiniCommand(db : MiniDb, mini : MiniCommand) -> MiniDb {
-	MiniDb(db with queue = arrayPush(db.queue, mini));
+	prio = getMiniCommandPriority(mini);
+	MiniDb(db with queue = treePushToArrayUnique(db.queue, prio, mini));
+}
+
+popMiniCommand(db : MiniDb) -> Pair<MiniDb, Maybe<MiniCommand>> {
+	mp = popmin(db.queue);
+	switch (mp) {
+		EmptyPopResult(): Pair(db, None());
+		PopResult(prio, commands, rest): {
+			db1 = MiniDb(db with queue = rest);
+			if (commands == []) {
+				popMiniCommand(db1)
+			} else {
+				// See if we can combine some of them
+				comb = combineMiniCommands(commands);
+				he = comb[0];
+				ta = tail(comb);
+				db2 = if (ta != []) MiniDb(db1 with queue = setTree(db1.queue, prio, ta)) else db1;
+				Pair(db2, Some(he));
+			}
+		}
+	}
 }
