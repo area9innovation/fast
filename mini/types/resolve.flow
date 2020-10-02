@@ -1,0 +1,10 @@
+import mini/types/mini_type2;
+import mini/mini_db;
+
+export {
+	resolveMiniType(ast : MiniAst, type : MiniType2) -> MiniType2;
+}
+
+resolveMiniType(ast : MiniAst, type : MiniType2) -> MiniType2 {
+	type;
+}

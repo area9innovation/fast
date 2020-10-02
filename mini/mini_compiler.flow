@@ -5,6 +5,7 @@ import mini/mini_topological;
 import fast/fast_path;
 import mini/mini_parse;
 import mini/types/mini_typeinference;
+import mini/types/resolve;
 
 export {
 	miniCompile(db : MiniDb) -> MiniDb;
@@ -77,15 +78,12 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				acc;
 			});
 
-			// Now, we should resolve the type-vars
-
 			// Then we should set the (resolved) type in the overall type environment
 			// and check if there is a change, and if so, request re-typecheck
 			// of dependent ids
-
-			
-
-			db;
+			foldTree(tenv2.types, db, \id, type, acc -> {
+				updateMiniType(acc, id, resolveMiniType(db.program, type))
+			})
 		}
 	}
 }
@@ -116,3 +114,18 @@ removeMiniDeps(pr : MiniAst, id : string) -> MiniAst {
 		})
 	);
 }
+
+updateMiniType(db : MiniDb, id : string, type : MiniType2) -> MiniDb {
+	program = db.program;
+	mexist = lookupTree(program.types, id);
+	def = \ -> {
+		println("TODO: Propagate a type check of all dependents");
+		MiniDb(db with program = MiniAst(program with types = setTree(program.types, id, type)));
+	}
+	mexist ?? {
+		if (mexist == type) {
+			db;
+		} else def();
+	} : def();
+}
+

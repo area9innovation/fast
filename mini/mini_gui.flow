@@ -3,6 +3,7 @@ import material/material_snackbar;
 
 import mini/mini_compiler;
 import mini/mini_pretty;
+import mini/types/pretty;
 
 viewMiniDb(m : MiniDb) -> Material {
 	MLines(
@@ -10,8 +11,14 @@ viewMiniDb(m : MiniDb) -> Material {
 			foldList(m.stack, [MText("Stack:", [])], \acc, st -> {
 				arrayPush(acc, MText(miniPretty(st), []))
 			}),
-			fold(getTreeKeys(m.program.declarations), [MText("Ids",[])], \acc, st -> {
-				arrayPush(acc, MText(st, []))
+			foldTree(m.program.declarations, [MText("Ids",[])], \st, val, acc -> {
+				deps = lookupMultimap(m.program.dependencies, st);
+				mtype = lookupTree(m.program.types, st);
+				typeString = mtype ?? {
+					" : " + mtype2string(mtype)
+				} : "";
+				text = st  + typeString + " = " + miniPretty(val) + " « " + strGlue(set2array(deps), ", ");
+				arrayPush(acc, MText(text, []))
 			}),
 		)
 	);

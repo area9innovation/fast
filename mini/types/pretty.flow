@@ -1,0 +1,17 @@
+import mini/types/mini_type2;
+import text/blueprint;
+
+export {
+	mtype2string(t : MiniType2) -> string;
+}
+
+mtype2string(t : MiniType2) -> string {
+	switch (t) {
+		MiniType2Int(bits): "i" + i2s(bits);
+		MiniType2Function(args, returnType): "(" + superglue(args, mtype2string, ", ") + ") -> " + mtype2string(returnType);
+		MiniType2Call(id, typars): id + "<" + superglue(typars, mtype2string, ", ") + ">";
+		MiniType2Var(id): "α" + i2s(id);
+		MiniType2Par(id): id;
+		MiniType2Field(name, type): name + ":" + mtype2string(type);
+	}
+}
