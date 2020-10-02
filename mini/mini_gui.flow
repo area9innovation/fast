@@ -6,9 +6,14 @@ import mini/mini_pretty;
 
 viewMiniDb(m : MiniDb) -> Material {
 	MLines(
-		foldList(m.stack, [MText("Stack:", [])], \acc, st -> {
-			arrayPush(acc, MText(miniPretty(st), []))
-		})
+		concat(
+			foldList(m.stack, [MText("Stack:", [])], \acc, st -> {
+				arrayPush(acc, MText(miniPretty(st), []))
+			}),
+			fold(getTreeKeys(m.program.declarations), [MText("Ids",[])], \acc, st -> {
+				arrayPush(acc, MText(st, []))
+			}),
+		)
 	);
 }
 
@@ -28,6 +33,7 @@ main() {
 
 	file = make("mini/tests/test.mini");
 	line = make("");
+	lineFocus = make(true);
 
 	mrender(manager, true, 
 		MLines([
@@ -43,14 +49,17 @@ main() {
 				}, [], []),
 			]),
 			MBaselineCols([
-				MTextInput(line, [], []),
+				MTextInput(line, [], [
+					MEatKeyDown(\ke -> ke.utf!="enter"), TTextInputFocus(lineFocus)
+				]),
 				MTextButton("EVALUATE", \ -> {
 					theline = getValue(line);
 					if (theline != "") {
 						next(db, miniLine("", getValue(db), theline));
 					}
 					next(db, miniCompile(getValue(db)));
-				}, [], []),
+					next(lineFocus, true);
+				}, [], [MShortcut("enter")]),
 			]),
 			MSelect(db, viewMiniDb),
 		])
