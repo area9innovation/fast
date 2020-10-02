@@ -4,13 +4,13 @@ import mini/types/mini_type2;
 export {
 	MiniTypeEnv(
 		ast : MiniAst,
-		mutable types : Tree<string, MiniType2>,
+		types : Tree<string, MiniType2>,
 		// What are the tyvars bound to?
 		mutable tyvars : Tree<int, MiniType2>,
 
 		// For the MLSub algorithm add these:
-		mutable tyvarLowerBounds : Tree<int, [MiniType2]>,
-		mutable tyvarUpperBounds : Tree<int, [MiniType2]>,
+		tyvarLowerBounds : Tree<int, [MiniType2]>,
+		tyvarUpperBounds : Tree<int, [MiniType2]>,
 
 		// What is the next tyvar id?
 		mutable tyvarId : int,

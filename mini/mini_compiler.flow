@@ -4,7 +4,7 @@ import mini/mini_dependencies;
 import mini/mini_topological;
 import fast/fast_path;
 import mini/mini_parse;
-import mini/types/mini_typeinference;
+import mini/types/typeinference;
 import mini/types/resolve;
 import mini/types/pretty;
 
@@ -75,8 +75,8 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 					setMiniType2(acc, id, type);
 				} : {
 					println("Unknown name " + id);
+					acc;
 				}
-				acc;
 			});
 
 			// Then we should set the (resolved) type in the overall type environment

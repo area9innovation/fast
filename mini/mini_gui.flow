@@ -7,26 +7,26 @@ import mini/types/pretty;
 
 viewMiniDb(m : MiniDb) -> Material {
 	MLines(
-		concat(
+		concat3(
 			foldList(m.stack, [MText("Stack:", [])], \acc, st -> {
 				arrayPush(acc, MText(miniPretty(st), []))
 			}),
-			foldTree(m.program.declarations, [MText("Ids",[])], \st, val, acc -> {
+			[MFixedY(8.0)],
+			foldTree(m.program.declarations, [MText("Ids:",[])], \st, val, acc -> {
 				deps = lookupMultimap(m.program.dependencies, st);
 				mtype = lookupTree(m.program.types, st);
 				typeString = mtype ?? {
 					" : " + mtype2string(mtype)
 				} : "";
-				text = st  + typeString + " = " + miniPretty(val) + " « " + strGlue(set2array(deps), ", ");
+				text = st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", ");
 				arrayPush(acc, MText(text, []))
 			}),
 		)
 	);
 }
 
-main() {
-	manager = makeMaterialManager([]);
-	db0 = MiniDb(
+makeMiniDb(manager : MaterialManager) -> MiniDb {
+	MiniDb(
 		["."], 
 		makeTree(), 
 		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
@@ -35,8 +35,12 @@ main() {
 			showMSnackbar(manager, e, []);
 		}
 	);
+}
 
-	db = make(db0);
+main() {
+	manager = makeMaterialManager([]);
+
+	db = make(makeMiniDb(manager));
 
 	file = make("mini/tests/test.mini");
 	line = make("");
@@ -73,6 +77,10 @@ main() {
 					next(lineFocus, true);
 				}, [], [MShortcut("enter")]),
 			]),
+			MTextButton("RESET", \ -> {
+				next(db, makeMiniDb(manager));
+			}, [], []),
+			MFixedY(8.0),
 			MSelect(db, viewMiniDb),
 		])
 	);

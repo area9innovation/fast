@@ -3,7 +3,7 @@ import mini/types/typeenv;
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
 	typeInferenceMini(env : MiniTypeEnv, body : MiniExp) -> MiniType2;
-	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> void;
+	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv;
 }
 
 makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
@@ -39,7 +39,11 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 				}
 			}
 		}
-		MiniLet(name, value, body): todo();
+		MiniLet(name, value, body): {
+			vtype = typeInferenceMini(env, value);
+			nenv = setMiniType2(env, name, vtype);
+			typeInferenceMini(nenv, body);
+		}
 		MiniLambda(args, body): todo();
 		MiniCall(fn, args): todo();
 		MiniTypeInt(bits): MiniType2Int(bits);
@@ -62,7 +66,7 @@ makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var {
 	MiniType2Var(id);
 }
 
-setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> void {
+setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {
 // 	println(id + " = " + toString(type));
-	env.types ::= setTree(env.types, id, type);
+	MiniTypeEnv(env with types = setTree(env.types, id, type));
 }
