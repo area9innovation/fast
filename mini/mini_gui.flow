@@ -62,7 +62,12 @@ main() {
 				MTextButton("EVALUATE", \ -> {
 					theline = getValue(line);
 					if (theline != "") {
-						next(db, miniLine("", getValue(db), theline));
+						commands = strSplit(theline, " ");
+						next(db, 
+							fold(commands, getValue(db), \acc, command -> {
+								miniLine("", acc, command)
+							})
+						);
 					}
 					next(db, miniCompile(getValue(db)));
 					next(lineFocus, true);

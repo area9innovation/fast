@@ -30,7 +30,8 @@ buildMiniGraph(acc : MiniTopological) -> MiniTopological {
 			buildMiniGraph(nacc);
 		} else {
 			deps = lookupMultimap(acc.ast.dependents, id);
-			ngraph = foldSet(deps, acc.graph, \acc2 : SimpleGraph<string, bool>, dep : string -> {
+			graph = addSimpleNode(acc.graph, id);
+			ngraph = foldSet(deps, graph, \acc2 : SimpleGraph<string, bool>, dep : string -> {
 				if (containsSet(acc.visited, dep)) {
 					acc2
 				} else {

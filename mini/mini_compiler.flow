@@ -6,6 +6,7 @@ import fast/fast_path;
 import mini/mini_parse;
 import mini/types/mini_typeinference;
 import mini/types/resolve;
+import mini/types/pretty;
 
 export {
 	miniCompile(db : MiniDb) -> MiniDb;
@@ -40,7 +41,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 
 				// Update the dependencies
 				npr = updateMiniDeps(db.program, id, body);
-				db2 = pushMiniCommand(db, MiniTypecheck(makeSet1(id)));
+				db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
 
 				// OK, this is a new definition
 				ndecl = MiniAst(npr with 
@@ -61,9 +62,10 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				}
 			} : def();
 		}
-		MiniTypecheck(ids): {
+		MiniTypeInfer(ids): {
 			// Find a topological order of these ids
 			order = topologicalMiniOrder(db.program, ids);
+			println(order);
 
 			tenv = makeMiniTypeEnv(db.program);
 			tenv2 = fold(order, tenv, \acc, id -> {
@@ -82,7 +84,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			// and check if there is a change, and if so, request re-typecheck
 			// of dependent ids
 			foldTree(tenv2.types, db, \id, type, acc -> {
-				updateMiniType(acc, id, resolveMiniType(db.program, type))
+				updateMiniType(acc, ids, id, resolveMiniType(db.program, type))
 			})
 		}
 	}
@@ -95,7 +97,7 @@ updateMiniDeps(pr : MiniAst, id : string, body : MiniExp) -> MiniAst {
 
 addMiniDeps(pr : MiniAst, id : string, body : MiniExp) -> MiniAst {
 	deps = extractMiniDeps(body, makeSet(), makeSet());
-	println(id + " depends on " + strGlue(set2array(deps), ", "));
+	// println(id + " depends on " + strGlue(set2array(deps), ", "));
 	MiniAst(pr with
 		dependencies = setTree(pr.dependencies, id, deps),
 		dependents = foldSet(deps, pr.dependents, \acc, dep -> {
@@ -115,12 +117,17 @@ removeMiniDeps(pr : MiniAst, id : string) -> MiniAst {
 	);
 }
 
-updateMiniType(db : MiniDb, id : string, type : MiniType2) -> MiniDb {
+// OK, we have a new type for the "id".
+// The "types" is the set of types we are updating in this round
+// and we do not need to propagate any changes to those
+updateMiniType(db : MiniDb, updating : Set<string>, id : string, type : MiniType2) -> MiniDb {
 	program = db.program;
 	mexist = lookupTree(program.types, id);
 	def = \ -> {
-		println("TODO: Propagate a type check of all dependents");
-		MiniDb(db with program = MiniAst(program with types = setTree(program.types, id, type)));
+		deps = lookupMultimap(db.program.dependents, id);
+		newDeps = differenceSets(deps, updating);
+		ndb = if (isEmptySet(newDeps)) db else pushMiniCommand(db, MiniTypeInfer(newDeps));
+		MiniDb(ndb with program = MiniAst(program with types = setTree(program.types, id, type)));
 	}
 	mexist ?? {
 		if (mexist == type) {

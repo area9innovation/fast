@@ -3,7 +3,7 @@ import ds/set;
 import algorithms;
 
 export {
-	MiniCommand ::= MiniFilename, MiniDefine, MiniTypecheck;
+	MiniCommand ::= MiniFilename, MiniDefine, MiniTypeInfer;
 
 		// Read this file and run it
 		MiniFilename(name : string);
@@ -11,8 +11,8 @@ export {
 		// Define this id to this expression
 		MiniDefine(file : string, name : string, value : MiniExp);
 
-		// Typecheck these ids, since their dependents are changed, or they are new
-		MiniTypecheck(ids : Set<string>);
+		// Infer the type of these ids, since they are new
+		MiniTypeInfer(ids : Set<string>);
 
 	// What order should commands be run in? 0 is first.
 	getMiniCommandPriority(m : MiniCommand) -> int;
@@ -27,7 +27,7 @@ getMiniCommandPriority(c : MiniCommand) -> int {
 	switch (c) {
 		MiniFilename(name): 0;
 		MiniDefine(file, name, value): 1;
-		MiniTypecheck(ids): 2;
+		MiniTypeInfer(ids): 2;
 	}
 }
 
@@ -35,7 +35,7 @@ miniCommand2string(c : MiniCommand) -> string {
 	switch (c) {
 		MiniFilename(name): "File " + name;
 		MiniDefine(file, name, value): "Define " + name;
-		MiniTypecheck(ids): "Typecheck  " + strGlue(set2array(ids), ", ");
+		MiniTypeInfer(ids): "Infer type " + strGlue(set2array(ids), ", ");
 	}
 }
 
@@ -46,10 +46,10 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 		switch (first) {
 			MiniFilename(__): uniq(ms);
 			MiniDefine(__, __, __): ms;
-			MiniTypecheck(__): {
-				[MiniTypecheck(fold(ms, makeSet(), \acc, tc -> {
+			MiniTypeInfer(__): {
+				[MiniTypeInfer(fold(ms, makeSet(), \acc, tc -> {
 					switch (tc) {
-						MiniTypecheck(ss): mergeSets(acc, ss);
+						MiniTypeInfer(ss): mergeSets(acc, ss);
 						default: acc;
 					}
 				}))]

@@ -32,14 +32,16 @@ same code.
 
 Mini takes commands in line format, using a stack to pass arguments where required:
 
+	<name> <val> define		- define a top-level name
+	<string> import			- read the contents of the given file, and run that
+
 	1						- push an int on the stack
 	3.141					- push a double on the stack
 	"hello world"			- push a string on the stack
-	<string> import			- read the contents of the given file, and run that
 	<string> var			- push a var ref on the stack
 	<id> <val> <body> let	- push a let-binding on the stack
 	<args> <body> lambda	- push a lambda on the stack
-	<fn> <args>				- push a call on the stack
+	<fn> <args>	call		- push a call on the stack
 
 	<int> inttype			- push an int-type on the stack
 	<types> <return> fntype	- push a function type on the stack
@@ -51,9 +53,7 @@ Mini takes commands in line format, using a stack to pass arguments where requir
 See "mini_parse" for the complete list.
 
 TODO:
-- Add <id> <val> define to enter a definition into the db
 - Add <grammar-file> parse
-
 
 ## Dependency tracking
 
@@ -75,9 +75,7 @@ Example compile flow:
 
 ## Milestones
 
-
 0. Get type inference to work
-   - Do not require typecheck unless the type of an id changes
 1. Get hello-world to compile to JS
   - consider doing a statement-based intermediate AST
 
@@ -89,8 +87,8 @@ Example compile flow:
 3. Get error messages with locations to work
 
 4. Add gringo command, so we can send in any syntax
-5. Add jupyter-style notebook feature and "resident" icon for the compiler
 
+5. Add jupyter-style notebook feature and "resident" icon for the compiler
 
 ## Backends
 
