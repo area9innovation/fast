@@ -1,25 +1,10 @@
-import mini/mini_db;
-import mini/types/mini_type2;
+import mini/types/typeenv;
 
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
 	typeInferenceMini(env : MiniTypeEnv, body : MiniExp) -> MiniType2;
 	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> void;
 }
-
-MiniTypeEnv(
-	ast : MiniAst,
-	mutable types : Tree<string, MiniType2>,
-	// What are the tyvars bound to?
-	mutable tyvars : Tree<int, MiniType2>,
-
-	// For the MLSub algorithm add these:
-	mutable tyvarLowerBounds : Tree<int, [MiniType2]>,
-	mutable tyvarUpperBounds : Tree<int, [MiniType2]>,
-
-	// What is the next tyvar id?
-	mutable tyvarId : int,
-);
 
 makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 	MiniTypeEnv(
@@ -78,6 +63,6 @@ makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var {
 }
 
 setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> void {
-	println(id + " = " + toString(type));
+// 	println(id + " = " + toString(type));
 	env.types ::= setTree(env.types, id, type);
 }

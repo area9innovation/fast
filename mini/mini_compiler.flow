@@ -65,7 +65,6 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		MiniTypeInfer(ids): {
 			// Find a topological order of these ids
 			order = topologicalMiniOrder(db.program, ids);
-			println(order);
 
 			tenv = makeMiniTypeEnv(db.program);
 			tenv2 = fold(order, tenv, \acc, id -> {
@@ -84,7 +83,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			// and check if there is a change, and if so, request re-typecheck
 			// of dependent ids
 			foldTree(tenv2.types, db, \id, type, acc -> {
-				updateMiniType(acc, ids, id, resolveMiniType(db.program, type))
+				updateMiniType(acc, ids, id, resolveMiniType(tenv2, type))
 			})
 		}
 	}

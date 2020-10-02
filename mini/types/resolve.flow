@@ -1,10 +1,24 @@
-import mini/types/mini_type2;
-import mini/mini_db;
+import mini/types/typeenv;
 
 export {
-	resolveMiniType(ast : MiniAst, type : MiniType2) -> MiniType2;
+	// Convert type vars to real vars
+	resolveMiniType(env : MiniTypeEnv, type : MiniType2) -> MiniType2;
 }
 
-resolveMiniType(ast : MiniAst, type : MiniType2) -> MiniType2 {
-	type;
+resolveMiniType(env : MiniTypeEnv, type : MiniType2) -> MiniType2 {
+	switch (type) {
+		MiniType2Int(bits): type;
+		MiniType2Function(args, returnType): MiniType2Function(resolveMiniTypes(env, args), resolveMiniType(env, returnType));
+		MiniType2Call(id, typars): MiniType2Call(id, resolveMiniTypes(env, typars));
+		MiniType2Var(id): {
+			mtype = lookupTree(env.tyvars, id);
+			mtype ?? resolveMiniType(env, mtype) : type;
+		}
+		MiniType2Par(id): type;
+		MiniType2Field(name, ftype): MiniType2Field(name, resolveMiniType(env, ftype));
+	}
+}
+
+resolveMiniTypes(env : MiniTypeEnv, types : [MiniType2]) -> [MiniType2] {
+	map(types, \t -> resolveMiniType(env, t))
 }
