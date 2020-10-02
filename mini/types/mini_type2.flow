@@ -1,7 +1,7 @@
 
 export {
 	// The type languages used by the type inference
-	MiniType2 ::= MiniType2Int, MiniType2Function, MiniType2Call, MiniType2Var, MiniType2Par, MiniType2Field;
+	MiniType2 ::= MiniType2Int, MiniType2Function, MiniType2Call, MiniType2Var, MiniType2Par, MiniType2Record;
 
 		// Corresponds to MiniType's
 		MiniType2Int(bits : int);
@@ -17,6 +17,7 @@ export {
 		// Polymorphism
 		MiniType2Par(id : string);
 
-		// A field with a given type
-		MiniType2Field(name : string, type : MiniType2);
+		// An (anonymous) record type
+		MiniType2Record(fields : [MiniType2Field]);
+			MiniType2Field(name : string, type : MiniType2);
 }

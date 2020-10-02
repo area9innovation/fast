@@ -9,8 +9,8 @@ export {
 		mutable tyvars : Tree<int, MiniType2>,
 
 		// For the MLSub algorithm add these:
-		tyvarLowerBounds : Tree<int, [MiniType2]>,
-		tyvarUpperBounds : Tree<int, [MiniType2]>,
+		mutable tyvarLowerBounds : Tree<int, Set<MiniType2>>,
+		mutable tyvarUpperBounds : Tree<int, Set<MiniType2>>,
 
 		// What is the next tyvar id?
 		mutable tyvarId : int,

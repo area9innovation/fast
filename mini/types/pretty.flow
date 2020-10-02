@@ -12,6 +12,8 @@ mtype2string(t : MiniType2) -> string {
 		MiniType2Call(id, typars): id + "<" + superglue(typars, mtype2string, ", ") + ">";
 		MiniType2Var(id): "α" + i2s(id);
 		MiniType2Par(id): id;
-		MiniType2Field(name, type): name + ":" + mtype2string(type);
+		MiniType2Record(fields): {
+			"{" + superglue(fields, \field -> field.name + ":" + mtype2string(field.type), ", ") + "}";
+		}
 	}
 }

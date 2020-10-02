@@ -15,7 +15,11 @@ resolveMiniType(env : MiniTypeEnv, type : MiniType2) -> MiniType2 {
 			mtype ?? resolveMiniType(env, mtype) : type;
 		}
 		MiniType2Par(id): type;
-		MiniType2Field(name, ftype): MiniType2Field(name, resolveMiniType(env, ftype));
+		MiniType2Record(fields): {
+			MiniType2Record(map(fields, \field -> {
+				MiniType2Field(field.name, resolveMiniType(env, field.type));
+			}))
+		}
 	}
 }
 
