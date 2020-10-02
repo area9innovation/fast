@@ -1,0 +1,97 @@
+import mini/types/typeenv;
+import ds/tuples;
+
+export {
+	// Resolve the type to a concrete type
+	coalesceMiniType2(env : MiniTypeEnv, type : MiniType2) -> ResType;
+
+	ResType ::= 
+		/*ResTop, ResBottom, 
+		*/ 
+		ResUnion, ResIntersection, ResRecursiveType, 
+		ResFunctionType, ResTypeRecord, ResTypeVar, ResIntType,
+		ResTypeCall, ResTypePar;
+}
+
+	// ResTop();
+	// ResBottom();
+	ResUnion(types : Set<ResType>);
+	ResIntersection(types : Set<ResType>);
+	ResFunctionType(args : [ResType], rhs : ResType);
+	ResTypeRecord(fields : [Pair<string, ResType>]);
+	ResTypeCall(id : string, typars : [ResType]);
+	ResRecursiveType(id : int, type : ResType);
+	ResTypeVar(id : int);
+	ResIntType(bits : int);
+	ResTypePar(id : string);
+
+PolarVariable(id : int, polar : bool);
+
+CoalesceAcc(
+	env : MiniTypeEnv,
+	mutable recursive : Tree<PolarVariable, ResTypeVar>,
+	inProcess : Set<PolarVariable>
+);
+
+coalesceMiniType2(env : MiniTypeEnv, type : MiniType2) -> ResType {
+	goCoalesce(
+		CoalesceAcc(env, makeTree(), makeSet()), 
+		type,
+		true
+	);
+}
+
+goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
+	switch (type) {
+		MiniType2Int(bits): ResIntType(bits);
+		MiniType2Function(args, returnType): {
+			ResFunctionType(
+				map(args, \a -> {
+					goCoalesce(env, a, !polar)
+				}),
+				goCoalesce(env, returnType, polar)
+			)
+		}
+		MiniType2Call(id, typars): {
+			ResTypeCall(id, map(typars, \tp -> {
+				goCoalesce(env, tp, polar)
+			}));
+		}
+		MiniType2Var(id): {
+			vspol = PolarVariable(id, polar);
+			if (containsSet(env.inProcess, vspol)) {
+				tyvar = makeResTypeVar(env.env);
+				env.recursive ::= setTree(env.recursive, vspol, tyvar);
+				tyvar;
+			} else {
+				bounds = lookupMultimap(if (polar) env.env.tyvarLowerBounds else env.env.tyvarUpperBounds, id);
+				boundTypes = mapSet(bounds, \b -> {
+					nenv = CoalesceAcc(env with inProcess = insertSet(env.inProcess, vspol));
+					goCoalesce(nenv, b, polar)
+				});
+				res = if (polar) {
+					ResUnion(boundTypes)
+				} else {
+					ResIntersection(boundTypes);
+				};
+				// If this exist in the recursive map, return a recursive type
+				mrecid = lookupTree(env.recursive, vspol);
+				mrecid ?? {
+					ResRecursiveType(mrecid.id, res)
+				} : res;
+			}
+		}
+		MiniType2Par(id): ResTypePar(id);
+		MiniType2Record(fields): {
+			ResTypeRecord(map(fields, \f : MiniType2Field -> {
+				Pair(f.name, goCoalesce(env, f.type, polar))
+			}))
+		}
+	}
+}
+
+makeResTypeVar(env : MiniTypeEnv) -> ResTypeVar {
+	id = env.tyvarId;
+	env.tyvarId ::= id + 1;
+	ResTypeVar(id);
+}

@@ -76,6 +76,7 @@ Example compile flow:
 ## Milestones
 
 0. Get type inference to work
+  - Plug the coalescing in?
 1. Get hello-world to compile to JS
   - consider doing a statement-based intermediate AST
 

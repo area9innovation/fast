@@ -21,6 +21,9 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 /*
 We follow the algorithm from here:
 https://dl.acm.org/doi/abs/10.1145/3409006
+
+There is an implementation here:
+https://github.com/LPTK/simple-sub
 */
 typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 	switch (ex) {
@@ -121,7 +124,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType2, rhs : MiniType2) -> void {
 		MiniType2Call(lid, ltypars): {
 			switch (rhs) {
 				MiniType2Call(rid, rtypars): {
-					// OK, maybe we should instantiate these types
+					// TODO: Maybe we should instantiate these types?
 					if (lid != rid || length(ltypars) != length(rtypars)) {
 						error();
 					} else {
