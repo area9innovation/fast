@@ -3,7 +3,10 @@ import ds/set;
 import algorithms;
 
 export {
-	MiniCommand ::= MiniFilename, MiniDefine, MiniTypeInfer;
+	MiniCommand ::= MiniReadFile, MiniFilename, MiniDefine, MiniTypeInfer;
+
+		// Read a file and push it on the stack
+		MiniReadFile(name : string);
 
 		// Read this file and run it
 		MiniFilename(name : string);
@@ -25,14 +28,16 @@ export {
 
 getMiniCommandPriority(c : MiniCommand) -> int {
 	switch (c) {
-		MiniFilename(name): 0;
-		MiniDefine(file, name, value): 1;
-		MiniTypeInfer(ids): 2;
+		MiniReadFile(name): 0;
+		MiniFilename(name): 1;
+		MiniDefine(file, name, value): 2;
+		MiniTypeInfer(ids): 3;
 	}
 }
 
 miniCommand2string(c : MiniCommand) -> string {
 	switch (c) {
+		MiniReadFile(name): "Read file " + name;
 		MiniFilename(name): "File " + name;
 		MiniDefine(file, name, value): "Define " + name;
 		MiniTypeInfer(ids): "Infer type " + strGlue(set2array(ids), ", ");
@@ -54,6 +59,7 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 					}
 				}))]
 			}
+			MiniReadFile(__): uniq(ms);
 		}
 	}
 }

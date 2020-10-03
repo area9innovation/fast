@@ -37,6 +37,10 @@ miniLine(file : string, db : MiniDb, line : string) -> MiniDb {
 		// 	MiniFilename(name : string);
 		filename = popMiniValue(db);
 		pushMiniCommand(filename.second, MiniFilename(getMiniString(filename.first)));
+	} else if (line == "readfile") {
+		// 	MiniReadFile(name : string);
+		filename = popMiniValue(db);
+		pushMiniCommand(filename.second, MiniReadFile(getMiniString(filename.first)));
 	} else if (line == "define") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);

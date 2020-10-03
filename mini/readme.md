@@ -33,7 +33,8 @@ same code.
 Mini takes commands in line format, using a stack to pass arguments where required:
 
 	<name> <val> define		- define a top-level name
-	<string> import			- read the contents of the given file, and run that
+	<file> readfile			- read the contents of the given file
+	<file> import			- read the contents of the given file, and eval each line
 
 	1						- push an int on the stack
 	3.141					- push a double on the stack

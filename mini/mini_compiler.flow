@@ -26,6 +26,11 @@ miniCompile(db : MiniDb) -> MiniDb {
 
 runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 	switch (command) {
+		MiniReadFile(name): {
+			path = fastPath2path(db.includes, name);
+			content = getFileContent(path);
+			pushMiniValue(db, MiniString(content));
+		}
 		MiniFilename(name): {
 			withext = changeFileExt(name, ".mini");
 			filename = fastPath2path(db.includes, withext);
