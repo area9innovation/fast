@@ -1,0 +1,54 @@
+import mini/forth/forth;
+import mini/commands/db;
+import text/serialize;
+import mini/forth/stack;
+import mini/exp/value;
+
+export {
+	// Evaluate this
+	miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb;
+}
+
+miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
+	fchar = getCharAt(command, 0);
+	if (command == "") db
+	else if (startsWith(command, "\"")) {
+		// MiniString(value : string);
+		str = deserializeString(command);
+		pushMiniValue(db, MiniString(str.first));
+	} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
+		if (strContains(command, ".") || strContains(command, "e")) {
+			// MiniDouble(value : double);
+			d = s2d(command);
+			pushMiniValue(db, MiniDouble(d));
+		} else {
+			// MiniInt(value : int);
+			i = s2i(command);
+			pushMiniValue(db, MiniInt(i));
+		}
+	} else if (command == "import") {
+		// 	MiniFilename(name : string);
+		filename = popMiniValue(db);
+		pushMiniCommand(filename.second, MiniFilename(getMiniString(filename.first)));
+	} else if (command == "evalfile") {
+		// 	MiniEvalFile(name : string, command);
+		filename = popMiniValue(db);
+		evalcommand = popMiniValue(filename.second);
+		pushMiniCommand(evalcommand.second, MiniEvalFile(getMiniString(filename.first), getMiniString(evalcommand.first)));
+	} else if (command == "define") {
+		// MiniDefine(name : string, value : MiniExp);
+		value = popMiniValue(db);
+		name = popMiniValue(value.second);
+		pushMiniCommand(name.second, MiniDefine(file, getMiniString(name.first), value.first));
+	} else {
+		mbuiltin = lookupTree(db.forth.definitions, command);
+		mbuiltin ?? {
+			MiniDb(
+				db with forth = mbuiltin(db.forth)
+			)
+		} : {
+			db.onError("Does not handle " + command);
+			db;
+		}
+	}
+}

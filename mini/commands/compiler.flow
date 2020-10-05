@@ -33,10 +33,11 @@ miniCompile(db : MiniDb) -> MiniDb {
 
 runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 	switch (command) {
-		MiniReadFile(name): {
+		MiniEvalFile(name, evalcommand): {
 			path = fastPath2path(db.includes, name);
 			content = getFileContent(path);
-			pushMiniValue(db, MiniString(content));
+			ndb = pushMiniValue(db, MiniString(content));
+			miniEvalForth(name, ndb, evalcommand);
 		}
 		MiniFilename(name): {
 			withext = changeFileExt(name, ".mini");

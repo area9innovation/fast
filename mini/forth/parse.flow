@@ -1,60 +1,17 @@
 import mini/commands/db;
 import text/serialize;
 import mini/forth/stack;
+import mini/forth/eval;
 import mini/exp/value;
 
 export {
 	parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb;
-	miniLine(file : string, db : MiniDb, line : string) -> MiniDb;
 }
 
 parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb {
 	content = getFileContent(path);
 	lines = strSplit(content, "\n");
 	fold(lines, db, \acc, line -> {
-		miniLine(file, acc, line)
+		miniEvalForth(file, acc, line)
 	});
-}
-
-miniLine(file : string, db : MiniDb, line : string) -> MiniDb {
-	fchar = getCharAt(line, 0);
-	if (line == "") db
-	else if (startsWith(line, "\"")) {
-		// MiniString(value : string);
-		str = deserializeString(line);
-		pushMiniValue(db, MiniString(str.first));
-	} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
-		if (strContains(line, ".") || strContains(line, "e")) {
-			// MiniDouble(value : double);
-			d = s2d(line);
-			pushMiniValue(db, MiniDouble(d));
-		} else {
-			// MiniInt(value : int);
-			i = s2i(line);
-			pushMiniValue(db, MiniInt(i));
-		}
-	} else if (line == "import") {
-		// 	MiniFilename(name : string);
-		filename = popMiniValue(db);
-		pushMiniCommand(filename.second, MiniFilename(getMiniString(filename.first)));
-	} else if (line == "readfile") {
-		// 	MiniReadFile(name : string);
-		filename = popMiniValue(db);
-		pushMiniCommand(filename.second, MiniReadFile(getMiniString(filename.first)));
-	} else if (line == "define") {
-		// MiniDefine(name : string, value : MiniExp);
-		value = popMiniValue(db);
-		name = popMiniValue(value.second);
-		pushMiniCommand(name.second, MiniDefine(file, getMiniString(name.first), value.first));
-	} else {
-		mbuiltin = lookupTree(db.forth.definitions, line);
-		mbuiltin ?? {
-			MiniDb(
-				db with forth = mbuiltin(db.forth)
-			)
-		} : {
-			db.onError("Does not handle " + line);
-			db;
-		}
-	}
 }

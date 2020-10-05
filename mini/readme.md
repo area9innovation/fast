@@ -1,5 +1,26 @@
 # Mini
 
+- [Mini](#mini)
+	- [Mini Server](#mini-server)
+	- [Mini Commands](#mini-commands)
+	- [Mini Forth](#mini-forth)
+		- [Values](#values)
+		- [Common stack operations](#common-stack-operations)
+		- [Arithmetic](#arithmetic)
+		- [String](#string)
+		- [List](#list)
+		- [AST](#ast)
+		- [Compile server commands](#compile-server-commands)
+		- [TODO](#todo)
+	- [Step by step compilation](#step-by-step-compilation)
+	- [Milestones](#milestones)
+	- [Backends](#backends)
+	- [Last known good idea](#last-known-good-idea)
+	- [Inspiration](#inspiration)
+		- [Query based compilers](#query-based-compilers)
+		- [Datalog for typechecking](#datalog-for-typechecking)
+		- [Salsa](#salsa)
+
 This is an experiment to build a queue-based, always live compiler.
 
 It takes commands, and compiles the result into valid programs.
@@ -14,18 +35,20 @@ efficiently update only the parts that need it.
 The compile server is based on these different languages:
 
 - commands: These provide the interface to the compiler itself to support compiles,
-  lookups and similar (think of this as a Language Server Protocol)
+  reading files, and such. This exposes the low-level compilation and dependency handling engine.
 - forth: This is a Forth interpreter used by the server to construct and manipulate ASTs.
   Since Gringo is based on a Forth-language, this is a good fit to allow interfacing the
-  parser with the comple server.
+  parser with the compile server.
+  Think of this as the Language Server Protocol language to interface with the compiler.
 - exp: This is the AST for the program we are compiling. This is an extremely minimal
-  AST, in order to keep the compiler as simple as possible
-- types: The language comes with type inference for a Flow-like type system
+  AST, in order to keep the compiler as simple as possible. This expresses the programs
+  we compile.
+- types: The language comes with type inference for a Flow-like type system.
 
 Later, we will add:
-- Gringo syntax
-- Runtime for forth
-- Runtime for exp, where we define the types for ==, +, -, etc.
+- Gringo syntax support to help convert strings to Forth-commands (and thus ASTs)
+- Runtime for Forth
+- Std. runtime for exp, where we define the types for ==, +, -, etc.
 
 ## Mini Commands
 
@@ -56,26 +79,22 @@ TODO:
 - Re-do the file interface so that we can have a Forth program to run
   after reading a file
 
-## Mini Forth & command interface
-
-The interface to the compiler is modelled as a Forth. Using this language,
-Mini takes commands, using a stack to pass arguments where required. Some
-commands have access to the compiler commands:
-
-	<name> <val> define		- define a top-level name in the program
-	<file> readfile			- read the contents of the given file
-	<file> import			- read the contents of the given file, and eval each line
-						      (todo: this should probably be renamed, since it works on Forth)
-
 ## Mini Forth
 
-Values:
+The interface to the compiler is modelled as a Forth. The Forth interpreter
+has a stack at runtime, which is used to construct AST and other manipulations.
+
+The values in this Forth correspond to the values in the expression language.
+Besides stack and Forth contructs, this Forth also serves as the interface
+to the compile server itself.
+
+### Values
 
 	1						- push an int on the stack
 	3.141					- push a double on the stack
 	"hello world"			- push a string on the stack
 
-Common stack operations:
+### Common stack operations
 
 	x drop ->
 	x dup -> x x
@@ -84,7 +103,7 @@ Common stack operations:
 	x y z rot -> y z x
 	x y dup2 -> x y x y
 
-In addition, we support common int/double operations:
+### Arithmetic
 
 	x y + -> x+y
 	x y - -> x-y
@@ -92,7 +111,7 @@ In addition, we support common int/double operations:
 	x y / -> x/y
 	x y % -> x%y
 
-String:
+### String
 
 	<string> length -> <int>
 	<string> <int> getchar -> <string>
@@ -101,7 +120,11 @@ String:
 	<int> i2s -> <string>
 	<string> <string> + -> <string>
 
-AST:
+### List
+	nil						- push the nil token on the stack
+	<list> <elm> cons		- push a list elm:list on the stack
+
+### AST
 	<string> var			- push a var ref on the stack
 	<id> <val> <body> let	- push a let-binding on the stack
 	<args> <body> lambda	- push a lambda on the stack
@@ -111,26 +134,43 @@ AST:
 	<types> <return> fntype	- push a function type on the stack
 	<id> <types> typecall	- push a type call on the stack
 
-	nil						- push the nil token on the stack
-	<list> <elm> cons		- push a list elm:list on the stack
+### Compile server commands
+
+	<name> <val> define		- define a top-level name in the program
+	<file> readfile			- read the contents of the given file
+	<file> import			- read the contents of the given file, and eval each line
+						      (todo: this should probably be renamed, since it works on Forth)
 
 TODO:
+- Change import to run a command on each line
+
+  <file> import  = <file> [runeachline] readfile 
+
+  runeachline = strsplit [eval] map
+
+This way, we can skip it, in case the file is not changed?
+
+### TODO
+- uncons, comparisons, and, or, not
+- ifte, while, def, eval, map, quoting
+- add std. lib
 - Add "<grammar-file> parse"
 
-## Example compile queue
+## Step by step compilation
 
-Example compile flow:
-
-	1. Compile "mini/tests/test.mini"
-	2. The file is read, each line is pushed to the compiler
-	3. The definitions are added
-	4. Then we type check these definitions, and if the batch passed, we push it to the last known good
-	5. Then we produce outputs for each output defined
+1. MiniReadfile("file.mini") is pushed as a command
+2. The contents of this file is read. If the file or its dependents are not 
+   changed since last time, the command is skipped and nothing happens.
+3. If there is a change, then we push the content of the file on the stack
+   and evaluate each line using the Forth engine
+4. This in turn will construct an AST in the compiler, tracking any other
+   file reads or definitions and keep a dependency graph in the compiler up to date
+5. As we push new definitions, they are type checked in topological order
 
 ## Milestones
 
 - Add "def" and quoting to allow defining commands.
-- Change "import" to be strsplit and then unquote/eval on each
+- Change "import" to be strsplit and then unquote/eval on each?
 - Get Gringo to parse files read, so we can send in any syntax
 - Get type inference to work. Plug the coalescing in?
 

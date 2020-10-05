@@ -1,11 +1,12 @@
 import mini/forth/forth;
 import mini/exp/value;
+import mini/exp/pretty;
 import ds/tree;
 import string;
 import math/math;
 
 export {
-	// General Forth builtins
+	// General Forth builtins that only work on the Forth stack
 	getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth>;
 }
 
@@ -132,10 +133,9 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		// x print ->
 		Pair("print", \stack -> {
 			elm = popMStack(stack);
-			println(elm);
+			println(miniPretty(elm.first));
 			elm.second;
 		}),
-
 
 		// <string> strlen -> <int>
 		Pair("strlen", \stack -> {
@@ -249,6 +249,9 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(id.second, MiniTypeCall(getMiniString(id.first), ttypars));
 		}),
 
+		//
+		// List
+		//
 
 		Pair("nil", \stack -> {
 			pushMStack(stack, MiniCall(MiniVar("nil"), []));
@@ -259,6 +262,8 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			list = popMStack(val.second);
 			pushMStack(list.second, MiniCall(MiniVar("cons"), [val.first, list.first]));		
 		}),
+
+		// TODO: uncons, comparisons, and, or, not
 	])
 }
 

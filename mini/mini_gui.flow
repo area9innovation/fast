@@ -60,7 +60,7 @@ main() {
 						commands = strSplit(theline, " ");
 						next(db, 
 							fold(commands, getValue(db), \acc, command -> {
-								miniLine("", acc, command)
+								miniEvalForth("", acc, command)
 							})
 						);
 					}
