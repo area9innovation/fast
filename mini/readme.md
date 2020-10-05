@@ -113,6 +113,7 @@ as the interface to the compile server itself through special commands.
 
 ### Common stack operations
 
+	nop ->
 	x drop ->
 	x dup -> x x
 	x y swap -> y x
@@ -182,6 +183,7 @@ We have a simple standard library of useful Forth definitions defined in forth/l
 It defines:
 
 	<file> import			    - read the contents of the given file, and eval each line
+	<file> readfile				- read the contents of the given file and push on the stack
 
 ### TODO
 - uncons, comparisons, and, or, not

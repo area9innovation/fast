@@ -11,9 +11,6 @@ export {
 
 	// Evaluate these ids
 	miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb;
-
-	pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb;
-	popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb>;
 }
 
 miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
@@ -44,13 +41,13 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		ndb = name.second;
 
-		fn = prepareGringoParser(getMiniString(grammar.first));
+		fn = prepareGringoParser(gringoForthAction(), getMiniString(grammar.first));
 		thename = getMiniString(name.first);
 
 		println("Grammar " + thename + " = " + strLeft(getMiniString(grammar.first), 100));
 
 		MiniDb(
-			ndb with forth = MiniForth(ndb.forth with definitions = setTree(ndb.forth.definitions, thename, fn))
+			ndb with natives = setTree(ndb.natives, thename, fn)
 		)
 	} else if (startsWith(command, "def ")) {
 		// OK, defining a new Forth word (macro)
@@ -73,33 +70,41 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		if (macro != []) {
 			miniEvalForths(file, db, macro)
 		} else {
-			mbuiltin = 
-				if (startsWith(command, "\"")) {
-					Some(\forth -> {
-						// MiniString(value : string);
-						str = deserializeString(command);
-						pushMStack(forth, MiniString(str.first));
-					})
-				} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
-					Some(\forth -> {
-						if (strContains(command, ".") || strContains(command, "e")) {
-							// MiniDouble(value : double);
-							d = s2d(command);
-							pushMStack(forth, MiniDouble(d));
-						} else {
-							// MiniInt(value : int);
-							i = s2i(command);
-							pushMStack(forth, MiniInt(i));
-						}
-					})
-				} else lookupTree(db.forth.definitions, command);
-			mbuiltin ?? {
-				MiniDb(
-					db with forth = mbuiltin(db.forth)
-				)
-			} : {
-				db.onError("Does not handle " + command);
-				db;
+			mnative = lookupTree(db.natives, command);
+			switch (mnative) {
+				None(): {
+					mbuiltin = 
+						if (startsWith(command, "\"")) {
+							Some(\forth -> {
+								// MiniString(value : string);
+								str = deserializeString(command);
+								pushMStack(forth, MiniString(str.first));
+							})
+						} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
+							Some(\forth -> {
+								if (strContains(command, ".") || strContains(command, "e")) {
+									// MiniDouble(value : double);
+									d = s2d(command);
+									pushMStack(forth, MiniDouble(d));
+								} else {
+									// MiniInt(value : int);
+									i = s2i(command);
+									pushMStack(forth, MiniInt(i));
+								}
+							})
+						} else lookupTree(db.forth.definitions, command);
+					mbuiltin ?? {
+						MiniDb(
+							db with forth = mbuiltin(db.forth)
+						)
+					} : {
+						db.onError("Does not handle " + command);
+						db;
+					}
+				}
+				Some(nativ): {
+					nativ(db);
+				}
 			}
 		}
 	}
@@ -112,15 +117,14 @@ miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
 }
 
 
-pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb {
-	MiniDb(db with forth = MiniForth(db.forth with stack = Cons(val, db.forth.stack)));
-}
 
-popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb> {
-	switch (db.forth.stack) {
-		EmptyList(): Pair(MiniInt(-1), db)
-		Cons(h, t): {
-			Pair(h, MiniDb(db with forth = MiniForth(db.forth with stack = t)))
+gringoForthAction() -> GringoAction<MiniDb> {
+	GringoAction(
+		\db : MiniDb, command -> {
+			miniEvalForth("", db, command);
+		},
+		\acc : MiniDb, token -> {
+			pushMiniValue(acc, MiniString(token));
 		}
-	}
+	)
 }

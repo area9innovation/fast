@@ -5,33 +5,20 @@ import mini/exp/value;
 import gringo/gringo_lib;
 
 export {
-	prepareGringoParser(grammar : string) -> (MiniForth) -> MiniForth;
+	prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb) -> MiniDb;
 }
 
-prepareGringoParser(grammar : string) -> (MiniForth) -> MiniForth {
+prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb) -> MiniDb {
 	gterm = parseGringoGrammar(grammar);
 
 	println("The result of the parse:");
 	println(gterm2string(gterm));
 
-	\forth : MiniForth -> {
-		text = popMStack(forth);
+	\db : MiniDb -> {
+		text = popMiniValue(db);
 		// Here, we should parse the grammar using Forth actions
-		env = GringoEnv(getMiniString(text.first), makeTree(), 0, gringoForthAction(), text.second, false, false);
-		genv : GringoEnv<MiniForth> = gringoParse(env, gterm);
+		env = GringoEnv(getMiniString(text.first), makeTree(), 0, actions, text.second, false, false);
+		genv : GringoEnv<MiniDb> = gringoParse(env, gterm);
 		genv.output;
 	}
-}
-
-gringoForthAction() -> GringoAction<MiniForth> {
-	GringoAction(
-		\acc : MiniForth, command -> {
-			// TODO: This should be evaluation instead
-			//miniEvalForth("", db, command);
-			pushMStack(acc, MiniString(command));
-		},
-		\acc : MiniForth, token -> {
-			pushMStack(acc, MiniString(token));
-		}
-	)
 }

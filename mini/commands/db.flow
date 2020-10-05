@@ -19,6 +19,8 @@ export {
 
 		// Here, we define macros
 		macros : Tree<string, [string]>,
+		// And here we define natives
+		natives : Tree<string, (MiniDb) -> MiniDb>,
 
 		// TODO: Add a set of outputs we are producing
 
