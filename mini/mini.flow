@@ -1,14 +1,9 @@
+import mini/commands/init;
 import mini/commands/compiler;
 
 
 main() {
-	db0 = MiniDb(
-		["."], 
-		makeTree(), 
-		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
-		MiniForth(makeList()), 
-		println
-	);
+	db0 = makeMiniDb(["."], println);
 
 	db = pushMiniCommand(db0, MiniFilename("mini/tests/test.mini"));
 

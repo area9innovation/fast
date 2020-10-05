@@ -1,0 +1,276 @@
+import mini/forth/forth;
+import mini/exp/value;
+import ds/tree;
+import string;
+import math/math;
+
+export {
+	// General Forth builtins
+	getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth>;
+}
+
+getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
+	pairs2tree([
+
+		//
+		// General stack manipulation
+		//
+
+		// x drop ->
+		Pair("drop", \stack -> {
+			elm = popMStack(stack);
+			elm.second;
+		}),
+
+		// x dup -> x x
+		Pair("dup", \stack -> {
+			elm = popMStack(stack);
+			pushMStack(stack, elm.first);
+		}),
+
+		// x y dup2 -> x y x y
+		Pair("dup2", \stack -> {
+			elm1 = popMStack(stack);
+			elm2 = popMStack(elm1.second);
+			ns = pushMStack(stack, elm2.first);
+			pushMStack(ns, elm1.first);
+		}),
+
+		// x y z dup3 -> x y z x y z
+		Pair("dup3", \stack -> {
+			elm1 = popMStack(stack);
+			elm2 = popMStack(elm1.second);
+			elm3 = popMStack(elm2.second);
+			ns0 = pushMStack(stack, elm3.first);
+			ns1 = pushMStack(ns0, elm2.first);
+			pushMStack(ns1, elm1.first);
+		}),
+
+		// w x y z dup3 -> w x y z w x y z
+		Pair("dup4", \stack -> {
+			elm1 = popMStack(stack);
+			elm2 = popMStack(elm1.second);
+			elm3 = popMStack(elm2.second);
+			elm4 = popMStack(elm3.second);
+			ns0 = pushMStack(stack, elm4.first);
+			ns1 = pushMStack(ns0, elm3.first);
+			ns2 = pushMStack(ns1, elm2.first);
+			pushMStack(ns2, elm1.first);
+		}),
+
+		// x y z rot -> y z x
+		Pair("rot", \stack -> {
+			z = popMStack(stack);
+			y = popMStack(z.second);
+			x = popMStack(y.second);
+			ns0 = pushMStack(x.second, y.first);
+			ns1 = pushMStack(ns0, z.first);
+			pushMStack(ns1, x.first);
+		}),
+
+		// x y swap -> y x
+		Pair("swap", \stack -> {
+			y = popMStack(stack);
+			x = popMStack(y.second);
+			ns = pushMStack(x.second, y.first);
+			pushMStack(ns, x.first);
+		}),
+
+		//
+		// Arithmetic
+		//
+
+
+		// x y + -> x+y
+		Pair("+", \stack -> {
+			y = popMStack(stack);
+			x = popMStack(y.second);
+			if (isMiniInt(x.first) && isMiniInt(y.first)) {
+				pushMStack(x.second, MiniInt(getMiniInt(x.first) + getMiniInt(y.first)));
+			} else if (isMiniDouble(x.first) && isMiniDouble(y.first)) {
+				pushMStack(x.second, MiniDouble(getMiniDouble(x.first) + getMiniDouble(y.first)));
+			} else if (isMiniString(x.first) && isMiniString(y.first)) {
+				pushMStack(x.second, MiniString(getMiniString(x.first) + getMiniString(y.first)));
+			} else {
+				println("Can only add ints and strings");
+				stack;
+			}
+		}),
+
+		// x y - -> x-y
+		Pair("-", \stack -> {
+			y = popMStack(stack);
+			x = popMStack(y.second);
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) - getMiniInt(y.first)));
+		}),
+
+		// x y * -> x*y
+		Pair("*", \stack -> {
+			y = popMStack(stack);
+			x = popMStack(y.second);
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) * getMiniInt(y.first)));
+		}),
+
+		// x y / -> x/y
+		Pair("/", \stack -> {
+			y = popMStack(stack);
+			x = popMStack(y.second);
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) / getMiniInt(y.first)));
+		}),
+
+		// x y % -> x%y
+		Pair("%", \stack -> {
+			y = popMStack(stack);
+			x = popMStack(y.second);
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) % getMiniInt(y.first)));
+		}),
+
+		//
+		// Strings
+		//
+
+		// x print ->
+		Pair("print", \stack -> {
+			elm = popMStack(stack);
+			println(elm);
+			elm.second;
+		}),
+
+
+		// <string> strlen -> <int>
+		Pair("strlen", \stack -> {
+			x = popMStack(stack);
+			st = getMiniString(x.first);
+			pushMStack(x.second, MiniInt(strlen(st)));
+		}),
+
+		// <string> <int> getchar -> <string>
+		Pair("getchar", \stack -> {
+			i = popMStack(stack);
+			x = popMStack(i.second);
+			st = getMiniString(x.first);
+			pushMStack(x.second, MiniString(getCharAt(st, getMiniInt(i.first))));
+		}),
+
+		// <string> <int> getcode -> <int>
+		Pair("getcode", \stack -> {
+			i = popMStack(stack);
+			x = popMStack(i.second);
+			st = getMiniString(x.first);
+			pushMStack(x.second, MiniInt(getCharCodeAt(st, getMiniInt(i.first))));
+		}),
+
+		// <string> s2i -> <int>
+		Pair("s2i", \stack -> {
+			x = popMStack(stack);
+			st = getMiniString(x.first);
+			pushMStack(x.second, MiniInt(s2i(st)));
+		}),
+
+		// <int> i2s -> <string>
+		Pair("i2s", \stack -> {
+			x = popMStack(stack);
+			st = getMiniInt(x.first);
+			pushMStack(x.second, MiniString(i2s(st)));
+		}),
+
+		// <string> <int> <string> substring -> <string>
+		Pair("strContainsAt", \stack -> {
+			s = popMStack(stack);
+			i = popMStack(s.second);
+			x = popMStack(i.second);
+			st = getMiniString(x.first);
+			pushMStack(x.second, MiniInt(b2i(strContainsAt(st, getMiniInt(i.first), getMiniString(s.first)))));
+		}),
+
+		// <string> <int> <int> substring -> <string>
+		Pair("substring", \stack -> {
+			l = popMStack(stack);
+			i = popMStack(l.second);
+			x = popMStack(i.second);
+			st = getMiniString(x.first);
+			pushMStack(x.second, MiniString(substring(st, getMiniInt(i.first), getMiniInt(l.first))));
+		}),
+
+		//
+		// AST manipulation
+		//
+
+		Pair("var", \stack -> {
+			// MiniVar(name : string);
+			var = popMStack(stack);
+			pushMStack(var.second, MiniVar(getMiniString(var.first)));
+		}),
+
+		Pair("let", \stack -> {
+			// MiniLet(name : string, value : MiniExp, body : MiniExp);
+			body = popMStack(stack);
+			value = popMStack(body.second);
+			name = popMStack(value.second);
+			pushMStack(name.second, MiniLet(getMiniString(name.first), value.first, body.first));
+		}),
+
+		Pair("lambda", \stack -> {
+			// 	MiniLambda(args : [string], body : MiniExp);
+			body = popMStack(stack);
+			args = popMStack(body.second);
+			sargs = map(getMiniArray(args.first), getMiniString);
+			pushMStack(args.second, MiniLambda(sargs, body.first));
+		}),
+
+		Pair("call", \stack -> {
+			//	MiniCall(fn : MiniExp, args : [MiniExp]);
+			args = popMStack(stack);
+			fn = popMStack(args.second);
+			cargs = getMiniArray(args.first);
+			pushMStack(fn.second, MiniCall(fn.first, cargs));
+		}),
+
+		Pair("inttype", \stack -> {
+			//	MiniTypeInt(bits : int);
+			val = popMStack(stack);
+			pushMStack(val.second, MiniTypeInt(getMiniInt(val.first)));
+		}),
+
+		Pair("fntype", \stack -> {
+			//	MiniTypeFunction(args : [MiniType], returnType : MiniType);
+			rt = popMStack(stack);
+			args = popMStack(rt.second);
+			targs = getMiniArray(args.first);
+			pushMStack(args.second, MiniTypeFunction(targs, rt.first));
+		}),
+
+		Pair("typecall", \stack -> {
+
+			//	MiniTypeCall(id : string, typars : [MiniType]);
+			typars = popMStack(stack);
+			id = popMStack(typars.second);
+			ttypars = getMiniArray(typars.first);
+			pushMStack(id.second, MiniTypeCall(getMiniString(id.first), ttypars));
+		}),
+
+
+		Pair("nil", \stack -> {
+			pushMStack(stack, MiniCall(MiniVar("nil"), []));
+		}),
+
+		Pair("cons", \stack -> {
+			val = popMStack(stack);
+			list = popMStack(val.second);
+			pushMStack(list.second, MiniCall(MiniVar("cons"), [val.first, list.first]));		
+		}),
+	])
+}
+
+pushMStack(f : MiniForth, val : MiniExp) -> MiniForth {
+	MiniForth(f with stack = Cons(val, f.stack));
+}
+
+popMStack(f : MiniForth) -> Pair<MiniExp, MiniForth> {
+	switch (f.stack) {
+		EmptyList(): Pair(MiniInt(-1), f)
+		Cons(h, t): {
+			Pair(h, MiniForth(f with stack = t))
+		}
+	}
+}

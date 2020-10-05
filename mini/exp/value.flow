@@ -3,14 +3,26 @@ import ds/array;
 
 export {
 	getMiniInt(m : MiniExp) -> int;
+	getMiniDouble(m : MiniExp) -> double;
 	getMiniString(m : MiniExp) -> string;
 	getMiniArray(m : MiniExp) -> [MiniExp];
+
+	isMiniInt(m : MiniExp) -> bool;
+	isMiniDouble(m : MiniExp) -> bool;
+	isMiniString(m : MiniExp) -> bool;
 }
 
 getMiniInt(m : MiniExp) -> int {
 	switch (m) {
 		MiniInt(i): i;
 		default: 0;
+	}
+}
+
+getMiniDouble(m : MiniExp) -> double {
+	switch (m) {
+		MiniDouble(d): d;
+		default: 0.0;
 	}
 }
 
@@ -35,5 +47,27 @@ getMiniArray(m : MiniExp) -> [MiniExp] {
 			}
 		}
 		default: [];
+	}
+}
+
+
+isMiniInt(m : MiniExp) -> bool {
+	switch (m) {
+		MiniInt(i): true;
+		default: false;
+	}
+}
+
+isMiniDouble(m : MiniExp) -> bool {
+	switch (m) {
+		MiniDouble(d): true;
+		default: false;
+	}
+}
+
+isMiniString(m : MiniExp) -> bool {
+	switch (m) {
+		MiniString(i): true;
+		default: false;
 	}
 }

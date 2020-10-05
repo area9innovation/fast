@@ -1,0 +1,12 @@
+import mini/forth/builtins;
+
+export {
+	makeMiniForth() -> MiniForth;
+}
+
+makeMiniForth() -> MiniForth {
+	MiniForth(
+		getForthBuiltins(),
+		makeList()
+	)
+}

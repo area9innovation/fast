@@ -46,53 +46,15 @@ miniLine(file : string, db : MiniDb, line : string) -> MiniDb {
 		value = popMiniValue(db);
 		name = popMiniValue(value.second);
 		pushMiniCommand(name.second, MiniDefine(file, getMiniString(name.first), value.first));
-	} else if (line == "var") {
-		// MiniVar(name : string);
-		var = popMiniValue(db);
-		pushMiniValue(var.second, MiniVar(getMiniString(var.first)));
-	} else if (line == "let") {
-		// MiniLet(name : string, value : MiniExp, body : MiniExp);
-		body = popMiniValue(db);
-		value = popMiniValue(body.second);
-		name = popMiniValue(value.second);
-		pushMiniValue(name.second, MiniLet(getMiniString(name.first), value.first, body.first));
-	} else if (line == "lambda") {
-		// 	MiniLambda(args : [string], body : MiniExp);
-		body = popMiniValue(db);
-		args = popMiniValue(body.second);
-		sargs = map(getMiniArray(args.first), getMiniString);
-		pushMiniValue(args.second, MiniLambda(sargs, body.first));
-	} else if (line == "call") {
-		//	MiniCall(fn : MiniExp, args : [MiniExp]);
-		args = popMiniValue(db);
-		fn = popMiniValue(args.second);
-		cargs = getMiniArray(args.first);
-		pushMiniValue(fn.second, MiniCall(fn.first, cargs));
-
-	} else if (line == "inttype") {
-		//	MiniTypeInt(bits : int);
-		val = popMiniValue(db);
-		pushMiniValue(val.second, MiniTypeInt(getMiniInt(val.first)));
-	} else if (line == "fntype") {
-		//	MiniTypeFunction(args : [MiniType], returnType : MiniType);
-		rt = popMiniValue(db);
-		args = popMiniValue(rt.second);
-		targs = getMiniArray(args.first);
-		pushMiniValue(args.second, MiniTypeFunction(targs, rt.first));
-	} else if (line == "typecall") {
-		//	MiniTypeCall(id : string, typars : [MiniType]);
-		typars = popMiniValue(db);
-		id = popMiniValue(typars.second);
-		ttypars = getMiniArray(typars.first);
-		pushMiniValue(id.second, MiniTypeCall(getMiniString(id.first), ttypars));
-	} else if (line == "nil") {
-		pushMiniValue(db, MiniCall(MiniVar("nil"), []));
-	} else if (line == "cons") {
-		val = popMiniValue(db);
-		list = popMiniValue(val.second);
-		pushMiniValue(list.second, MiniCall(MiniVar("cons"), [val.first, list.first]));
 	} else {
-		db.onError("Does not handle " + line);
-		db;
+		mbuiltin = lookupTree(db.forth.definitions, line);
+		mbuiltin ?? {
+			MiniDb(
+				db with forth = mbuiltin(db.forth)
+			)
+		} : {
+			db.onError("Does not handle " + line);
+			db;
+		}
 	}
 }

@@ -67,11 +67,41 @@ commands have access to the compiler commands:
 	<file> import			- read the contents of the given file, and eval each line
 						      (todo: this should probably be renamed, since it works on Forth)
 
-## Mini Forth stack only
+## Mini Forth
+
+Values:
 
 	1						- push an int on the stack
 	3.141					- push a double on the stack
 	"hello world"			- push a string on the stack
+
+Common stack operations:
+
+	x drop ->
+	x dup -> x x
+	x print ->
+	x y swap -> y x
+	x y z rot -> y z x
+	x y dup2 -> x y x y
+
+In addition, we support common int/double operations:
+
+	x y + -> x+y
+	x y - -> x-y
+	x y * -> x*y
+	x y / -> x/y
+	x y % -> x%y
+
+String:
+
+	<string> length -> <int>
+	<string> <int> getchar -> <string>
+	<string> <int> getcode -> <int>
+	<string> s2i -> <int>
+	<int> i2s -> <string>
+	<string> <string> + -> <string>
+
+AST:
 	<string> var			- push a var ref on the stack
 	<id> <val> <body> let	- push a let-binding on the stack
 	<args> <body> lambda	- push a lambda on the stack
@@ -83,8 +113,6 @@ commands have access to the compiler commands:
 
 	nil						- push the nil token on the stack
 	<list> <elm> cons		- push a list elm:list on the stack
-
-See "forth/mini_parse" for the complete list.
 
 TODO:
 - Add "<grammar-file> parse"

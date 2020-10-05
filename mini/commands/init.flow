@@ -1,0 +1,16 @@
+import mini/commands/db;
+import mini/forth/init;
+
+export {
+	makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb;
+}
+
+makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
+	MiniDb(
+		includes, 
+		makeTree(), 
+		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
+		makeMiniForth(),
+		onError
+	);
+}

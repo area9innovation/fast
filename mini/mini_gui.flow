@@ -1,6 +1,7 @@
 import material/material2tropic;
 import material/material_snackbar;
 
+import mini/commands/init;
 import mini/commands/compiler;
 import mini/exp/pretty;
 import mini/types/pretty;
@@ -25,22 +26,12 @@ viewMiniDb(m : MiniDb) -> Material {
 	);
 }
 
-makeMiniDb(manager : MaterialManager) -> MiniDb {
-	MiniDb(
-		["."], 
-		makeTree(), 
-		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
-		MiniForth(makeList()), 
-		\e -> {
-			showMSnackbar(manager, e, []);
-		}
-	);
-}
-
 main() {
 	manager = makeMaterialManager([]);
 
-	db = make(makeMiniDb(manager));
+	db = make(makeMiniDb(["."], \e -> {
+		showMSnackbar(manager, e, []);
+	}));
 
 	file = make("mini/tests/test.mini");
 	line = make("");
@@ -78,7 +69,7 @@ main() {
 				}, [], [MShortcut("enter")]),
 			]),
 			MTextButton("RESET", \ -> {
-				next(db, makeMiniDb(manager));
+				next(db, makeMiniDb(getValue(db).includes, getValue(db).onError));
 			}, [], []),
 			MFixedY(8.0),
 			MSelect(db, viewMiniDb),

@@ -1,8 +1,11 @@
 import mini/exp/exp;
 import ds/list;
+import ds/tree;
 
 export {
 	MiniForth(
+		// Definitions
+		definitions : Tree<string, (forth : MiniForth) -> MiniForth>,
 		// This is the evaluation stack for the compiler itself
 		stack : List<MiniExp>,
 	);
