@@ -9,15 +9,29 @@ export {
 }
 
 prepareGringoParser(grammar : string) -> (MiniForth) -> MiniForth {
-	println("TODO: We should prepare this grammar here: " + grammar);
-
 	gterm = parseGringoGrammar(grammar);
+
+	println("The result of the parse:");
+	println(gterm2string(gterm));
 
 	\forth : MiniForth -> {
 		text = popMStack(forth);
-
-		env = GringoEnv(getMiniString(text.first), makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false);
-		genv = gringoParse(env, gterm);
-		text.second;
+		// Here, we should parse the grammar using Forth actions
+		env = GringoEnv(getMiniString(text.first), makeTree(), 0, gringoForthAction(), text.second, false, false);
+		genv : GringoEnv<MiniForth> = gringoParse(env, gterm);
+		genv.output;
 	}
+}
+
+gringoForthAction() -> GringoAction<MiniForth> {
+	GringoAction(
+		\acc : MiniForth, command -> {
+			// TODO: This should be evaluation instead
+			//miniEvalForth("", db, command);
+			pushMStack(acc, MiniString(command));
+		},
+		\acc : MiniForth, token -> {
+			pushMStack(acc, MiniString(token));
+		}
+	)
 }

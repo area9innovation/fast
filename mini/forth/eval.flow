@@ -19,11 +19,7 @@ export {
 miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 	fchar = getCharAt(command, 0);
 	if (command == "") db
-	else if (command == "import") {
-		// TODO: This can be defines
-		filename = popMiniValue(db);
-		pushMiniCommand(filename.second, MiniEvalFile(getMiniString(filename.first), "evallines"));
-	} else if (command == "evalfile") {
+	else if (command == "evalfile") {
 		// 	MiniEvalFile(name : string, command);
 		filename = popMiniValue(db);
 		evalcommand = popMiniValue(filename.second);
@@ -50,10 +46,11 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		fn = prepareGringoParser(getMiniString(grammar.first));
 		thename = getMiniString(name.first);
-		println("Defining " + thename);
+
+		println("Grammar " + thename + " = " + strLeft(getMiniString(grammar.first), 100));
 
 		MiniDb(
-			ndb with forth = MiniForth(db.forth with definitions = setTree(db.forth.definitions, thename, fn))
+			ndb with forth = MiniForth(ndb.forth with definitions = setTree(ndb.forth.definitions, thename, fn))
 		)
 	} else if (startsWith(command, "def ")) {
 		// OK, defining a new Forth word (macro)

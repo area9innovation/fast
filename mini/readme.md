@@ -171,7 +171,9 @@ are represented in the exp language.
 	<name> <val> define		    - define a top-level name in the program
 
 ### Gringo grammars
-	<id> <grammar> prepare		- prepares the given grammar as a new builtin which can parse
+	<id> <grammar> prepare		- prepares the given grammar as a new builtin which can parse files with that grammar
+
+TODO: Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
 
 ## Forth standard library
 
@@ -185,7 +187,6 @@ It defines:
 - uncons, comparisons, and, or, not
 - ifte, while, def, eval, map, quoting
 - add std. lib
-- Add "<grammar-file> <id> prepare" to prepare a parsing function based on that grammar
 
 ## Step by step compilation
 
