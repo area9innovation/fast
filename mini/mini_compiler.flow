@@ -1,14 +1,20 @@
+import fast/fast_path;
+
 import mini/mini_db;
-import mini/mini_stack;
 import mini/mini_dependencies;
 import mini/mini_topological;
-import fast/fast_path;
-import mini/mini_parse;
+
+import mini/forth/mini_stack;
+import mini/forth/mini_parse;
+
 import mini/types/typeinference;
 import mini/types/resolve;
 import mini/types/pretty;
 
 export {
+	// TODO: Split this into two:
+	// - One for mini-forth
+	// - The other for the compiler backend stuff
 	miniCompile(db : MiniDb) -> MiniDb;
 }
 

@@ -1,6 +1,6 @@
 import mini/mini_db;
 import text/serialize;
-import mini/mini_stack;
+import mini/forth/mini_stack;
 import mini/mini_value;
 
 export {

@@ -1,4 +1,5 @@
 import mini/mini_db;
+import ds/simplegraph;
 
 export {
 	// Find an order that respects topological order

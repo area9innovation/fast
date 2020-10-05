@@ -1,12 +1,12 @@
-import mini/mini_command;
-import mini/types/mini_type2;
-import ds/set;
-import ds/simplegraph;
+import mini/forth/mini_command;
+import mini/mini_ast;
 
 export {
+	// This is the state of our compiler
 	MiniDb(
 		// The include path we should use
 		includes : [string],
+
 		// The prioritized queue of stuff this compiler needs to work on.
 		queue : Tree<int, [MiniCommand]>,
 
@@ -20,27 +20,6 @@ export {
 
 		// TODO: Add a set of names which have errors. Change this interface accordingly:
 		onError : (string) -> void,
-	);
-
-	// A consistent set of declarations
-	MiniAst(
-		// When was this set ready?
-		// timestamp : double,
-		// The names defined in this program
-		declarations : Tree<string, MiniExp>,
-		// Where is each name defined? From name to file
-		declarationFile : Tree<string, string>,
-		// What does this id depend on?
-		dependencies : Tree<string, Set<string>>,
-		// What depends on this id?
-		dependents : Tree<string, Set<string>>,
-		// What names are declared in this file?
-		// fileDeclarations : Tree<string, [string]>,
-
-		// The types of expressions
-		types : Tree<string, MiniType2>,
-		// The dependency graph between names
-		// dependency : SimpleGraph<string, bool>,
 	);
 
 	pushMiniCommand(db : MiniDb, mini : MiniCommand) -> MiniDb;

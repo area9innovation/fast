@@ -1,5 +1,6 @@
 import mini/types/typeenv;
 import mini/types/pretty;
+import ds/treeutils;
 
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
