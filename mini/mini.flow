@@ -1,4 +1,4 @@
-import mini/mini_compiler;
+import mini/commands/mini_compiler;
 
 
 main() {

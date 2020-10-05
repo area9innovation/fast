@@ -1,7 +1,7 @@
-import mini/mini_db;
+import mini/commands/mini_db;
 import text/serialize;
 import mini/forth/mini_stack;
-import mini/mini_value;
+import mini/exp/mini_value;
 
 export {
 	parseMiniFile(file : string, path : string, db : MiniDb) -> MiniDb;

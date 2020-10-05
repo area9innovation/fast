@@ -1,8 +1,9 @@
-import mini/mini_exp;
+import mini/exp/mini_exp;
 import ds/set;
 import algorithms;
 
 export {
+	// These are the commands that the underlying compiler understands
 	MiniCommand ::= MiniReadFile, MiniFilename, MiniDefine, MiniTypeInfer;
 
 		// Read a file and push it on the stack

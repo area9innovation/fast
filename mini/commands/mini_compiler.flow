@@ -1,8 +1,9 @@
 import fast/fast_path;
 
-import mini/mini_db;
-import mini/mini_dependencies;
-import mini/mini_topological;
+import mini/commands/mini_db;
+
+import mini/exp/mini_dependencies;
+import mini/exp/mini_topological;
 
 import mini/forth/mini_stack;
 import mini/forth/mini_parse;

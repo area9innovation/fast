@@ -1,4 +1,4 @@
-import mini/mini_exp;
+import mini/exp/mini_exp;
 import ds/array;
 
 export {
