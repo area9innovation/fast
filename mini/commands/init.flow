@@ -16,6 +16,6 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		onError
 	);
 
-	lib = "#include mini/forth/lib/lib.forth";
+	lib = getFileContent("mini/forth/lib/lib.forth");
 	miniEvalForths("", db, strSplit(lib, "\n"))
 }

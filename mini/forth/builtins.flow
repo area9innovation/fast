@@ -79,6 +79,11 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(ns, x.first);
 		}),
 
+		Pair("nop", \stack -> {
+			stack
+		}),
+
+
 		//
 		// Arithmetic
 		//
