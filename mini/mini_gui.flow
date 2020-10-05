@@ -45,7 +45,7 @@ main() {
 				MTextButton("COMPILE", \ -> {
 					thefile = getValue(file);
 					if (thefile != "") {
-						next(db, pushMiniCommand(getValue(db), MiniFilename(thefile)));
+						next(db, pushMiniCommand(getValue(db), MiniEvalFile(thefile, "evallines")));
 					}
 					next(db, miniCompile(getValue(db)));
 				}, [], []),

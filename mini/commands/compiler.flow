@@ -39,12 +39,6 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			ndb = pushMiniValue(db, MiniString(content));
 			miniEvalForth(name, ndb, evalcommand);
 		}
-		MiniFilename(name): {
-			withext = changeFileExt(name, ".mini");
-			filename = fastPath2path(db.includes, withext);
-			// Reads the lines of this file and runs them
-			parseMiniFile(name, filename, db);
-		}
 		MiniDefine(file, id, body): {
 			// Define or redefine this id to this body
 			mexisting = lookupTree(db.program.declarations, id);

@@ -5,7 +5,7 @@ import mini/commands/compiler;
 main() {
 	db0 = makeMiniDb(["."], println);
 
-	db = pushMiniCommand(db0, MiniFilename("mini/tests/test.mini"));
+	db = pushMiniCommand(db0, MiniEvalFile("mini/tests/test.mini", "evallines"));
 
 	fdb = miniCompile(db);
 	iterList(fdb.forth.stack, println);

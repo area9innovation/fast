@@ -10,6 +10,7 @@
 		- [String](#string)
 		- [List](#list)
 		- [AST](#ast)
+		- [Evaluation](#evaluation)
 		- [Compile server commands](#compile-server-commands)
 		- [TODO](#todo)
 	- [Step by step compilation](#step-by-step-compilation)
@@ -76,8 +77,8 @@ commands, so we will not do type inference if there are pending files to be
 read and parsed.
 
 TODO:
-- Re-do the file interface so that we can have a Forth program to run
-  after reading a file
+- Set up file dependency tracking, so we do not have to re-evaluate files that
+  are not changed
 
 ## Mini Forth
 
@@ -134,21 +135,22 @@ to the compile server itself.
 	<types> <return> fntype	- push a function type on the stack
 	<id> <types> typecall	- push a type call on the stack
 
+### Evaluation
+
+	<string> evallines  	- evaluates each line in this string as a separate command
+
 ### Compile server commands
 
-	<name> <val> define		- define a top-level name in the program
-	<file> readfile			- read the contents of the given file
-	<file> import			- read the contents of the given file, and eval each line
-						      (todo: this should probably be renamed, since it works on Forth)
+	<file> <command> evalfile   - reads the content of the given file and commands "command" on it, if changed
+	<name> <val> define		    - define a top-level name in the program
+	<file> import			    - read the contents of the given file, and eval each line
 
 TODO:
-- Change import to run a command on each line
+- Change import to be define
 
-  <file> import  = <file> [runeachline] readfile 
+  <file> import  = <file> "evallines" readfile
 
-  runeachline = strsplit [eval] map
-
-This way, we can skip it, in case the file is not changed?
+This way, we can skip it, in case the file is not changed.
 
 ### TODO
 - uncons, comparisons, and, or, not

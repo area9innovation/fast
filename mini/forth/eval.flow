@@ -5,7 +5,7 @@ import mini/forth/stack;
 import mini/exp/value;
 
 export {
-	// Evaluate this
+	// Evaluate this - these commands can have side-effects on the compiler
 	miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb;
 }
 
@@ -27,9 +27,9 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 			pushMiniValue(db, MiniInt(i));
 		}
 	} else if (command == "import") {
-		// 	MiniFilename(name : string);
+		// TODO: This can be defines
 		filename = popMiniValue(db);
-		pushMiniCommand(filename.second, MiniFilename(getMiniString(filename.first)));
+		pushMiniCommand(filename.second, MiniEvalFile(getMiniString(filename.first), "evallines"));
 	} else if (command == "evalfile") {
 		// 	MiniEvalFile(name : string, command);
 		filename = popMiniValue(db);
@@ -40,6 +40,14 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		value = popMiniValue(db);
 		name = popMiniValue(value.second);
 		pushMiniCommand(name.second, MiniDefine(file, getMiniString(name.first), value.first));
+	} else if (command == "evallines") {
+		// Splits each line in the string, and evaluates it
+		// TODO: Could maybe be strsplit, and then some kind of foreach
+		content = popMiniValue(db);
+		lines = strSplit(getMiniString(content.first), "\n");
+		fold(lines, content.second, \acc, line -> {
+			miniEvalForth(file, acc, line)
+		});
 	} else {
 		mbuiltin = lookupTree(db.forth.definitions, command);
 		mbuiltin ?? {

@@ -7,6 +7,7 @@ import math/math;
 
 export {
 	// General Forth builtins that only work on the Forth stack
+	// without any side-effects for the compile server
 	getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth>;
 }
 
