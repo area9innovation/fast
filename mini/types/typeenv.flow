@@ -1,5 +1,5 @@
-import mini/commands/mini_db;
-import mini/types/mini_type2;
+import mini/exp/ast;
+import mini/types/type2;
 
 export {
 	// The environment used when doing type inference

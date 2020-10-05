@@ -1,8 +1,8 @@
 import material/material2tropic;
 import material/material_snackbar;
 
-import mini/commands/mini_compiler;
-import mini/exp/mini_pretty;
+import mini/commands/compiler;
+import mini/exp/pretty;
 import mini/types/pretty;
 
 viewMiniDb(m : MiniDb) -> Material {

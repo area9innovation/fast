@@ -1,4 +1,4 @@
-import mini/types/mini_type2;
+import mini/types/type2;
 import text/blueprint;
 
 export {

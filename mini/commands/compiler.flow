@@ -1,11 +1,11 @@
 import fast/fast_path;
 
-import mini/commands/mini_db;
+import mini/commands/db;
 
-import mini/exp/mini_dependencies;
-import mini/exp/mini_topological;
+import mini/exp/dependencies;
+import mini/exp/topological;
 
-import mini/forth/mini_stack;
+import mini/forth/stack;
 import mini/forth/parse;
 
 import mini/types/typeinference;

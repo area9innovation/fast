@@ -1,4 +1,4 @@
-import mini/exp/mini_exp;
+import mini/exp/exp;
 import ds/set;
 import algorithms;
 

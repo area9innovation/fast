@@ -1,4 +1,4 @@
-import mini/exp/mini_ast;
+import mini/exp/ast;
 import ds/simplegraph;
 
 export {

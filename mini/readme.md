@@ -9,19 +9,65 @@ with changed ids.  It is based on having a database of definitions in memory.
 We track the dependencies between definitions, and as code is changed, we 
 efficiently update only the parts that need it.
 
+## Mini Server
+
+The compile server is based on these different languages:
+
+- commands: These provide the interface to the compiler itself to support compiles,
+  lookups and similar (think of this as a Language Server Protocol)
+- forth: This is a Forth interpreter used by the server to construct and manipulate ASTs.
+  Since Gringo is based on a Forth-language, this is a good fit to allow interfacing the
+  parser with the comple server.
+- exp: This is the AST for the program we are compiling. This is an extremely minimal
+  AST, in order to keep the compiler as simple as possible
+- types: The language comes with type inference for a Flow-like type system
+
+Later, we will add:
+- Gringo syntax
+- Runtime for forth
+- Runtime for exp, where we define the types for ==, +, -, etc.
+
 ## Mini Commands
 
-The compiler supports a range of commands:
+The compiler supports a range of commands (see `commands/command`):
 
-   Read file
+	// Read a file and push it on the stack
+	ReadFile(name : string);
+
+	// Read this file and run it
+	Filename(name : string);
+
+	// Define this id to this expression (with the origin file)
+	Define(file : string, name : string, value : MiniExp);
+
+	// Infer the type of these ids, since they are new or changed
+	TypeInfer(ids : Set<string>);
+
+These are evaluated by the compile server, and used to do the raw reading
+and compiling of programs. The key point about these commands is that they
+understand dependency tracking, and thus do not propagate any changes unless
+there is something to do.
+
+The compile server is smart enough to know the relative priority of these
+commands, so we will not do type inference if there are pending files to be
+read and parsed.
+
+TODO:
+- Re-do the file interface so that we can have a Forth program to run
+  after reading a file
+
+## Mini Forth & command interface
 
 The interface to the compiler is modelled as a Forth. Using this language,
-Mini takes commands, using a stack to pass arguments where required:
+Mini takes commands, using a stack to pass arguments where required. Some
+commands have access to the compiler commands:
 
 	<name> <val> define		- define a top-level name in the program
 	<file> readfile			- read the contents of the given file
 	<file> import			- read the contents of the given file, and eval each line
 						      (todo: this should probably be renamed, since it works on Forth)
+
+## Mini Forth stack only
 
 	1						- push an int on the stack
 	3.141					- push a double on the stack
@@ -54,7 +100,6 @@ Example compile flow:
 	5. Then we produce outputs for each output defined
 
 ## Milestones
-
 
 - Add "def" and quoting to allow defining commands.
 - Change "import" to be strsplit and then unquote/eval on each
