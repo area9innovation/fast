@@ -6,14 +6,14 @@ export {
 }
 
 pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb {
-	MiniDb(db with stack = Cons(val, db.stack));
+	MiniDb(db with forth = MiniForth(db.forth with stack = Cons(val, db.forth.stack)));
 }
 
 popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb> {
-	switch (db.stack) {
+	switch (db.forth.stack) {
 		EmptyList(): Pair(MiniInt(-1), db)
 		Cons(h, t): {
-			Pair(h, MiniDb(db with stack = t))
+			Pair(h, MiniDb(db with forth = MiniForth(db.forth with stack = t)))
 		}
 	}
 }

@@ -1,14 +1,17 @@
-import mini/mini_db;
+import mini/commands/mini_db;
 import mini/types/mini_type2;
 
 export {
+	// The environment used when doing type inference
 	MiniTypeEnv(
+		// The program we are typing
 		ast : MiniAst,
+		// The types of ids so far
 		types : Tree<string, MiniType2>,
 		// What are the tyvars bound to?
 		mutable tyvars : Tree<int, MiniType2>,
 
-		// For the MLSub algorithm add these:
+		// For the MLSub algorithm, we keep track of bounds:
 		mutable tyvarLowerBounds : Tree<int, Set<MiniType2>>,
 		mutable tyvarUpperBounds : Tree<int, Set<MiniType2>>,
 

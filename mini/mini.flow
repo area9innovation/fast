@@ -6,14 +6,14 @@ main() {
 		["."], 
 		makeTree(), 
 		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
-		makeList(), 
+		MiniForth(makeList()), 
 		println
 	);
 
 	db = pushMiniCommand(db0, MiniFilename("mini/tests/test.mini"));
 
 	fdb = miniCompile(db);
-	iterList(fdb.stack, println);
+	iterList(fdb.forth.stack, println);
 
 	println("Final dependencies:");
 	traverseInOrder(fdb.program.dependencies, \k, v -> {

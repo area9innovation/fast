@@ -1,0 +1,9 @@
+import mini/exp/mini_exp;
+import ds/list;
+
+export {
+	MiniForth(
+		// This is the evaluation stack for the compiler itself
+		stack : List<MiniExp>,
+	);
+}

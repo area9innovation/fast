@@ -1,14 +1,14 @@
 import material/material2tropic;
 import material/material_snackbar;
 
-import mini/mini_compiler;
-import mini/mini_pretty;
+import mini/commands/mini_compiler;
+import mini/exp/mini_pretty;
 import mini/types/pretty;
 
 viewMiniDb(m : MiniDb) -> Material {
 	MLines(
 		concat3(
-			foldList(m.stack, [MText("Stack:", [])], \acc, st -> {
+			foldList(m.forth.stack, [MText("Stack:", [])], \acc, st -> {
 				arrayPush(acc, MText(miniPretty(st), []))
 			}),
 			[MFixedY(8.0)],
@@ -30,7 +30,7 @@ makeMiniDb(manager : MaterialManager) -> MiniDb {
 		["."], 
 		makeTree(), 
 		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
-		makeList(), 
+		MiniForth(makeList()), 
 		\e -> {
 			showMSnackbar(manager, e, []);
 		}

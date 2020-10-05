@@ -6,7 +6,7 @@ import mini/exp/mini_dependencies;
 import mini/exp/mini_topological;
 
 import mini/forth/mini_stack;
-import mini/forth/mini_parse;
+import mini/forth/parse;
 
 import mini/types/typeinference;
 import mini/types/resolve;
