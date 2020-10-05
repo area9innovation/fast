@@ -5,8 +5,8 @@ import mini/commands/db;
 import mini/exp/dependencies;
 import mini/exp/topological;
 
+import mini/forth/eval;
 import mini/forth/stack;
-import mini/forth/parse;
 
 import mini/types/typeinference;
 import mini/types/resolve;

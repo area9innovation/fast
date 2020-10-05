@@ -58,11 +58,7 @@ main() {
 					theline = getValue(line);
 					if (theline != "") {
 						commands = if (startsWith(theline, "def ")) [theline] else strSplit(theline, " ");
-						next(db, 
-							fold(commands, getValue(db), \acc, command -> {
-								miniEvalForth("", acc, command)
-							})
-						);
+						next(db, miniEvalForths("", getValue(db), commands));
 					}
 					next(db, miniCompile(getValue(db)));
 					next(lineFocus, true);

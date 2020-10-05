@@ -1,12 +1,13 @@
 import mini/commands/db;
 import mini/forth/init;
+import mini/forth/eval;
 
 export {
 	makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb;
 }
 
 makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
-	MiniDb(
+	db = MiniDb(
 		includes, 
 		makeTree(), 
 		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
@@ -14,4 +15,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		makeTree(),
 		onError
 	);
+
+	lib = "#include mini/forth/lib/lib.forth";
+	miniEvalForths("", db, strSplit(lib, "\n"))
 }

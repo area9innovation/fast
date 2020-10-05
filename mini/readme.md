@@ -51,15 +51,31 @@ Later, we will add:
 - Runtime for Forth
 - Std. runtime for exp, where we define the types for ==, +, -, etc.
 
+## Pipeline
+
+This diagram illustrates the intended processing pipeline:
+
+	Source file in flow or other high level language
+	-> This file is read by Mini if changed
+	-> This is parsed by a Gringo parser for Flow
+	-> This results in a bunch of Forth commands to be evaluated in Mini
+	-> This leads to commands that set definitions of ids in Mini
+	-> Thus, we build the AST for the parsed program in the exp language
+	-> These definitions are typed by the type inference and checker
+	-> We run optimizations of the AST
+	-> We generate code in the backend
+	-> This is written as files, linked and processed for the final output
+
+The key point is that we are incremental at the id level, so if there is no
+change in an id, even if we parse the file again, we do not have to redo all
+dependents on that id. This should hopefully speed things up.
+
 ## Mini Commands
 
 The compiler supports a range of commands (see `commands/command`):
 
-	// Read a file and push it on the stack
-	ReadFile(name : string);
-
-	// Read this file and run it
-	Filename(name : string);
+	// Read a file and push it on the stack and run this Forth command on it
+	ReadFile(name : string, command : string);
 
 	// Define this id to this expression (with the origin file)
 	Define(file : string, name : string, value : MiniExp);
@@ -82,15 +98,15 @@ TODO:
 
 ## Mini Forth
 
-The interface to the compiler is modelled as a Forth. The Forth interpreter
+The interface to the compiler is exposed as a Forth interpreter. The Forth interpreter
 has a stack at runtime, which is used to construct AST and other manipulations.
 
 The values in this Forth correspond to the values in the expression language.
-Besides stack and Forth contructs, this Forth also serves as the interface
-to the compile server itself.
+Besides providing the stack, macros and Forth definitions, this Forth also serves 
+as the interface to the compile server itself through special commands.
 
 ### Values
-
+	
 	1						- push an int on the stack
 	3.141					- push a double on the stack
 	"hello world"			- push a string on the stack
@@ -99,10 +115,15 @@ to the compile server itself.
 
 	x drop ->
 	x dup -> x x
-	x print ->
 	x y swap -> y x
 	x y z rot -> y z x
 	x y dup2 -> x y x y
+
+### Misc
+
+	x print ->
+
+	// Comment is ignored
 
 ### Arithmetic
 
@@ -122,6 +143,10 @@ to the compile server itself.
 	<string> <string> + -> <string>
 
 ### List
+
+Lists are "Cons"-based, single-linked, functional lists, a la List<> in Flow, although they
+are represented in the exp language.
+
 	nil						- push the nil token on the stack
 	<list> <elm> cons		- push a list elm:list on the stack
 
@@ -144,20 +169,20 @@ to the compile server itself.
 
 	<file> <command> evalfile   - reads the content of the given file and commands "command" on it, if changed
 	<name> <val> define		    - define a top-level name in the program
+
+## Forth standard library
+
+We have a simple standard library of useful Forth definitions defined in forth/lib/lib.forth.
+
+It defines:
+
 	<file> import			    - read the contents of the given file, and eval each line
-
-TODO:
-- Change import to be define
-
-  <file> import  = <file> "evallines" readfile
-
-This way, we can skip it, in case the file is not changed.
 
 ### TODO
 - uncons, comparisons, and, or, not
 - ifte, while, def, eval, map, quoting
 - add std. lib
-- Add "<grammar-file> parse"
+- Add "<grammar-file> <id> prepare" to prepare a parsing function based on that grammar
 
 ## Step by step compilation
 

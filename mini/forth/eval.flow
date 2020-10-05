@@ -7,6 +7,9 @@ import mini/exp/value;
 export {
 	// Evaluate this - these commands can have side-effects on the compiler
 	miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb;
+
+	// Evaluate these ids
+	miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb;
 }
 
 miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
@@ -62,6 +65,8 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 				db with macros = setTree(db.macros, name, commands)
 			)
 		}
+	} else if (startsWith(command, "// ")) {
+		db;
 	} else {
 		macro = getTreeArrayValue(db.macros, command);
 		if (macro != []) {
