@@ -4,7 +4,7 @@ import ds/tree;
 
 export {
 	MiniForth(
-		// Definitions
+		// Definitions for pure functinos
 		definitions : Tree<string, (forth : MiniForth) -> MiniForth>,
 		// This is the evaluation stack for the compiler itself
 		stack : List<MiniExp>,

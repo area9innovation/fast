@@ -138,6 +138,7 @@ to the compile server itself.
 ### Evaluation
 
 	<string> evallines  	- evaluates each line in this string as a separate command
+	def <id> <commands>		- defines a new word as this sequence of commands separated by space
 
 ### Compile server commands
 

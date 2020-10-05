@@ -17,6 +17,9 @@ export {
 		// The forth stack we use in the compiler server
 		forth : MiniForth,
 
+		// Here, we define macros
+		macros : Tree<string, [string]>,
+
 		// TODO: Add a set of outputs we are producing
 
 		// TODO: Add a set of names which have errors. Change this interface accordingly:

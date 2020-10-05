@@ -48,15 +48,39 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		fold(lines, content.second, \acc, line -> {
 			miniEvalForth(file, acc, line)
 		});
-	} else {
-		mbuiltin = lookupTree(db.forth.definitions, command);
-		mbuiltin ?? {
+	} else if (startsWith(command, "def ")) {
+		// OK, defining a new Forth word (macro)
+		parts = strSplit(command, " ");
+		if (length(parts) < 2) {
+			db.onError("def expects a name and the commands");
+			db
+		} else {
+			name = parts[0];
+			commands = tailFrom(parts, 2);
 			MiniDb(
-				db with forth = mbuiltin(db.forth)
+				db with macros = setTree(db.macros, name, commands)
 			)
-		} : {
-			db.onError("Does not handle " + command);
-			db;
+		}
+	} else {
+		macro = getTreeArrayValue(db.macros, command);
+		if (macro != []) {
+			miniEvalForths(file, db, macro)
+		} else {
+			mbuiltin = lookupTree(db.forth.definitions, command);
+			mbuiltin ?? {
+				MiniDb(
+					db with forth = mbuiltin(db.forth)
+				)
+			} : {
+				db.onError("Does not handle " + command);
+				db;
+			}
 		}
 	}
+}
+
+miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
+	fold(commands, db, \acc, command -> {
+		miniEvalForth(file, acc, command);
+	})
 }
