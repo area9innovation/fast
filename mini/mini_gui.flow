@@ -8,12 +8,16 @@ import mini/types/pretty;
 
 viewMiniDb(m : MiniDb) -> Material {
 	MLines(
-		concat3(
-			foldList(m.forth.stack, [MText("Stack:", [])], \acc, st -> {
-				arrayPush(acc, MText(miniPretty(st), []))
+		concatA([
+			foldTree(m.macros, [MText("Forth definitions:", [MSubtitle1()])], \name, def, acc -> {
+				arrayPush(acc, MText("  " + name, []))
 			}),
 			[MFixedY(8.0)],
-			foldTree(m.program.declarations, [MText("Ids:",[])], \st, val, acc -> {
+			foldList(m.forth.stack, [MText("Stack:", [MSubtitle1()])], \acc, st -> {
+				arrayPush(acc, MText("  " + miniPretty(st), []))
+			}),
+			[MFixedY(8.0)],
+			foldTree(m.program.declarations, [MText("Ids:", [MSubtitle1()])], \st, val, acc -> {
 				deps = lookupMultimap(m.program.dependencies, st);
 				mtype = lookupTree(m.program.types, st);
 				typeString = mtype ?? {
@@ -22,7 +26,7 @@ viewMiniDb(m : MiniDb) -> Material {
 				text = st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", ");
 				arrayPush(acc, MText(text, []))
 			}),
-		)
+		])
 	);
 }
 
