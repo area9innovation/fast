@@ -57,7 +57,7 @@ main() {
 				MTextButton("EVALUATE", \ -> {
 					theline = getValue(line);
 					if (theline != "") {
-						commands = strSplit(theline, " ");
+						commands = if (startsWith(theline, "def ")) [theline] else strSplit(theline, " ");
 						next(db, 
 							fold(commands, getValue(db), \acc, command -> {
 								miniEvalForth("", acc, command)

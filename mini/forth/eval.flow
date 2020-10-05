@@ -55,8 +55,9 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 			db.onError("def expects a name and the commands");
 			db
 		} else {
-			name = parts[0];
+			name = parts[1];
 			commands = tailFrom(parts, 2);
+			// println("Defining macro " + name + " as " + strGlue(commands, " "));
 			MiniDb(
 				db with macros = setTree(db.macros, name, commands)
 			)
