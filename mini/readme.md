@@ -170,6 +170,9 @@ are represented in the exp language.
 	<file> <command> evalfile   - reads the content of the given file and commands "command" on it, if changed
 	<name> <val> define		    - define a top-level name in the program
 
+### Gringo grammars
+	<id> <grammar> prepare		- prepares the given grammar as a new builtin which can parse
+
 ## Forth standard library
 
 We have a simple standard library of useful Forth definitions defined in forth/lib/lib.forth.

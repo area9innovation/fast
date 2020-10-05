@@ -1,19 +1,19 @@
-import mini/commands/db;
+import mini/forth/forth;
 
 export {
-	pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb;
-	popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb>;
+	pushMStack(f : MiniForth, val : MiniExp) -> MiniForth;
+	popMStack(f : MiniForth) -> Pair<MiniExp, MiniForth>;
 }
 
-pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb {
-	MiniDb(db with forth = MiniForth(db.forth with stack = Cons(val, db.forth.stack)));
+pushMStack(f : MiniForth, val : MiniExp) -> MiniForth {
+	MiniForth(f with stack = Cons(val, f.stack));
 }
 
-popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb> {
-	switch (db.forth.stack) {
-		EmptyList(): Pair(MiniInt(-1), db)
+popMStack(f : MiniForth) -> Pair<MiniExp, MiniForth> {
+	switch (f.stack) {
+		EmptyList(): Pair(MiniInt(-1), f)
 		Cons(h, t): {
-			Pair(h, MiniDb(db with forth = MiniForth(db.forth with stack = t)))
+			Pair(h, MiniForth(f with stack = t))
 		}
 	}
 }

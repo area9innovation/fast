@@ -1,0 +1,27 @@
+import gringo/gringo_grammar;
+import gringo/gringo_parse;
+import gringo/gringo_prepare;
+import gringo/gringo_ast_actions;
+
+export {
+	// Given a grammar string, prepare it to be used for parsing
+	parseGringoGrammar(grammar : string) -> GTerm;
+}
+
+parseGringoGrammar(text : string) -> GTerm {
+	// doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool, debugGrammar : bool) -> GringoEnv<?> {
+	grammar = gringoGrammar();
+	ogrammar = prepareGringoGrammar(grammar);
+	env = GringoEnv(text, makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false);
+	genv = gringoParse(env, ogrammar);
+
+	if (genv.fail) {
+		println("Parsing failed");
+	}
+	remaining = strRight(env.input, genv.i);
+	if (remaining != "") {
+		println("Did not parse: " + remaining);
+	}
+
+	prepareGringoGrammar(optimizeGTerm(getAstResult(genv.output)));
+}

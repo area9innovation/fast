@@ -1,0 +1,23 @@
+import mini/forth/forth;
+import mini/forth/stack;
+import mini/exp/value;
+
+import gringo/gringo_lib;
+
+export {
+	prepareGringoParser(grammar : string) -> (MiniForth) -> MiniForth;
+}
+
+prepareGringoParser(grammar : string) -> (MiniForth) -> MiniForth {
+	println("TODO: We should prepare this grammar here: " + grammar);
+
+	gterm = parseGringoGrammar(grammar);
+
+	\forth : MiniForth -> {
+		text = popMStack(forth);
+
+		env = GringoEnv(getMiniString(text.first), makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false);
+		genv = gringoParse(env, gterm);
+		text.second;
+	}
+}

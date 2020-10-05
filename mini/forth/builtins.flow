@@ -1,4 +1,5 @@
 import mini/forth/forth;
+import mini/forth/stack;
 import mini/exp/value;
 import mini/exp/pretty;
 import ds/tree;
@@ -267,15 +268,3 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 	])
 }
 
-pushMStack(f : MiniForth, val : MiniExp) -> MiniForth {
-	MiniForth(f with stack = Cons(val, f.stack));
-}
-
-popMStack(f : MiniForth) -> Pair<MiniExp, MiniForth> {
-	switch (f.stack) {
-		EmptyList(): Pair(MiniInt(-1), f)
-		Cons(h, t): {
-			Pair(h, MiniForth(f with stack = t))
-		}
-	}
-}
