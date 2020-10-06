@@ -9,9 +9,7 @@ import = "import" s $path ws ';' ws $$".flow" $"changeFileExt" $"parsefile";
 dynamicImport = "require" s $path ws ';' ws; // TODO: AST
 export = "export" ws '{' ws toplevelDeclaration+ '}' ws; // TODO: AST
 forbid = "forbid" s $path ws ';' ws; // TODO: AST
-
-	path = bid path_more*;
-		path_more = '/' bid;
+	path = bid ('/' bid)*;
 
 toplevelDeclaration = 
 	native
@@ -31,8 +29,7 @@ assign = id ws '=' ws exp ';'? ws $"define";
 union = id ws (typars $"drop")? ws "::=" ws typenames ';' ws $$"union" $"swap" $"typecall" $"define";
 
 	// listof(typename, ",")
-	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)?
-		| $"nil";
+	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
 
 // For now, we ignore the types
 // TODO: Extract the type and use a binop to declare the type of the body
@@ -42,8 +39,7 @@ function = id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws // TODO: AST
 	;
 
 	// listof(funarg, ",")
-	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)?
-		| $"nil";
+	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)? | $"nil";
 
 	// For now, we just drop the types
 	funarg = id ws (':' ws type $"drop")?;
@@ -52,14 +48,16 @@ function = id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws // TODO: AST
 	brace_or_semi = brace ';'? ws;
 
 // TODO: AST and mutable
-structdecl = id ws ':' ws '(' ws funargs? ')' ws ';' ws;
+structdecl = id ws ':' ws '(' ws funargs ')' ws ';' ws;
 
 vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
-	// TODO: AST
+	// TODO: AST, and how to do it?
 	| id ws ':' ws type ';'? ws;
 
 exp = (
-		id ws "=" ws exp ";" ws exp $"let"
+		"if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"ife" $"swap" $"call"
+		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"if" $"swap" $"call"
+		| id ws "=" ws exp ";" ws exp $"let"
 	 	| id ws ":" type "=" ws exp ";" $"swap" $$":" $"binop" ws exp $"let"
 		// if
 		// exp "." field ::= exp

@@ -227,7 +227,7 @@ It defines:
 - Parse flow:
   - export, require, forbid
   - toplevel: fn types, var-declaration, struct-def
-  - exp: if, id=v (no val), id.f ::= val, :=, |>
+  - exp: id=v (no val), id.f ::= val, :=, |>
 	maybe ?? exp : exp
 	e(exp with fields)
 	ref switch cast require unsafe

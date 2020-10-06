@@ -1,3 +1,3 @@
 import mini/tests/more;
 
-1
+a = if (1) 2 else if (3) 4;
