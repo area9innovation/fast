@@ -181,6 +181,20 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(x.second, MiniString(i2s(st)));
 		}),
 
+		// <string> s2d -> <double>
+		Pair("s2d", \stack -> {
+			x = popMStack(stack);
+			st = getMiniString(x.first);
+			pushMStack(x.second, MiniDouble(s2d(st)));
+		}),
+
+		// <double> d2s -> <string>
+		Pair("d2s", \stack -> {
+			x = popMStack(stack);
+			st = getMiniDouble(x.first);
+			pushMStack(x.second, MiniString(d2s(st)));
+		}),
+
 		// <string> <int> <string> substring -> <string>
 		Pair("strContainsAt", \stack -> {
 			s = popMStack(stack);

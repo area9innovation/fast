@@ -146,6 +146,8 @@ as the interface to the compile server itself through special commands.
 	<string> <int> getcode -> <int>
 	<string> s2i -> <int>
 	<int> i2s -> <string>
+	<string> s2d -> <double>
+	<double> d2s -> <string>
 	<string> <string> + -> <string>
 
 ### List

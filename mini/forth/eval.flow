@@ -47,7 +47,7 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		fn = prepareGringoParser(gringoForthAction(), getMiniString(grammar.first));
 		thename = getMiniString(name.first);
 
-		println("Grammar " + thename + " = " + strLeft(getMiniString(grammar.first), 100));
+		// println("Grammar " + thename + " = " + strLeft(getMiniString(grammar.first), 100));
 
 		MiniDb(
 			ndb with natives = setTree(ndb.natives, thename, fn)
