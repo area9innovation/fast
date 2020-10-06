@@ -1,12 +1,15 @@
 exp = 
 	id ws "=" ws exp ";" ws exp $"let"
+	|> '\' $"nil" id $"cons" ws "->" ws exp $"lambda"
 	|> (
-	"(" ws exp ")" ws 
+		"(" ws exp ")" ws 
 		| id ws $"var"
 		| $('0'-'9'+ "." '0'-'9'*) $"s2d"
 		| $("." '0'-'9'+) $"s2d"
 		| int ws $"s2i"
 	);
+
+// funargs = $"nil" (id ws $"cons)*;
 
 id = $(('a'-'z' | 'A'-'Z' | '_') ('a'-'z' | 'A'-'Z' | '0'-'9' | '_')*);
 int = $'0'-'9'+;
