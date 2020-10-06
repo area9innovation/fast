@@ -226,7 +226,7 @@ It defines:
 
 - Parse flow:
   - import, export, require, forbid
-  - toplevel: native, global, fn, declaration, union-def, struct-def
+  - toplevel: native, global, fn types, declaration, union-def, struct-def
   - exp: if, id=v (no val), id.f ::= val, :=, |>, ||, &&
 	== != <= >= < > + - * / % 
 	maybe ?? exp : exp

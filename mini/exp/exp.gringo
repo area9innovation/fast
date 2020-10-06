@@ -25,16 +25,19 @@ toplevelDeclaration =
 
 toplevelDeclaration = function;
 
-function = id ws '(' ws funargs ')' ws returnType? ';' ws
-	| id ws '(' ws funargs ')' ws returnType brace_or_semi
-	| id ws '(' ws funargs ')' ws exp ';'? ws
+// For now, we ignore the types
+// TODO: Extract the type and use a binop to declare the type of the body
+function = id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws // TODO: AST for type?
+	| id ws '(' ws funargs ')' ws returnType $"drop" brace_or_semi $"lambda" $"define"
+	| id ws '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
 	;
 
 	// listof(funarg, ",")
 	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)?
 		| $"nil";
 
-	funarg = id ws (':' ws type)?;
+	// For now, we just drop the types
+	funarg = id ws (':' ws type $"drop")?;
 	returnType = "->" ws type;
 
 	brace_or_semi = brace ';'? ws;
@@ -63,6 +66,7 @@ exp =
 		| int ws $"s2i"
 	);
 
+// TODO: Maybe this should be binops instead of an array?
 brace = "{" ws expsemis "}" ws $$";" $"var" $"swap" $"call";
 
 type = 	
