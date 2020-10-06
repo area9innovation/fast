@@ -35,6 +35,7 @@ union = id ws (typars $"drop")? ws "::=" ws typenames ';' ws $$"union" $"swap" $
 // TODO: Extract the type and use a binop to declare the type of the body
 function = id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws // TODO: AST for type?
 	| id ws '(' ws funargs ')' ws returnType $"drop" brace_or_semi $"lambda" $"define"
+	| id ws '(' ws funargs ')' ws brace_or_semi $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
 	;
 
@@ -59,7 +60,6 @@ exp = (
 		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"if" $"swap" $"call"
 		| id ws "=" ws exp ";" ws exp $"let"
 	 	| id ws ":" type "=" ws exp ";" $"swap" $$":" $"binop" ws exp $"let"
-		// if
 		// exp "." field ::= exp
 	)
 	|> exp "||" ws exp $$"||" $"binop"
@@ -102,6 +102,7 @@ exp = (
 		| $("." '0'-'9'+) $"s2d"
 		| int ws $"s2i"
 		| brace
+		| string
 		| "[" ws exps "]" $$"[" $"unop"
 		| '^' ws exp $$"deref" $"unop"
 	);
@@ -142,6 +143,28 @@ expsemis = $"nil" exp $"cons" (";" ws exp $"cons")* (";" ws)?
 // listof(exp, ",")
 exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)?
 	| $"nil";
+
+// TODO: AST
+string = '"' "#inc" "lude" s path '"' ws
+	| singlestring
+	| $"nil" (singlestring $"cons")+ $"concatStrings"
+	;
+
+singlestring = '"' $(onechar_)* '"' ws;
+
+onechar_ = backslash "u" hexdigit_ hexdigit_ hexdigit_ hexdigit_
+	| backslash "X" hexdigit_ hexdigit_ hexdigit_ hexdigit_
+	| backslash "x" hexdigit_ hexdigit_
+	| backslash escapedchar_
+	| !'"' !backslash char_;
+
+hexdigit_ = '0'-'9'
+	| 'a'-'f'
+	| 'A'-'F';
+
+escapedchar_ = backslash | '"' | "n" | "t" | "r";
+
+char_ = '0x0000'-'0xffff';
 
 id = $bid;
 
