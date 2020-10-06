@@ -3,6 +3,7 @@ import material/material_snackbar;
 
 import mini/backends/ast2bprogram;
 import mini/backends/flow;
+import mini/backends/js;
 
 import mini/commands/init;
 import mini/commands/compiler;
@@ -92,6 +93,7 @@ main() {
 				MTextButton("COMPILE", \ -> {
 					program = miniAst2BProgram(getValue(db).program);
 					println(bprogram2flow(program));
+					println(bprogram2js(program));
 				}, [], [])
 			]),
 			MFixedY(8.0),

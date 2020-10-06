@@ -21,7 +21,7 @@ bdeclaration2flow(b : BDeclaration) -> string {
 				"body", bstatement2flow(body)
 			]);
 		}
-		BGlobalVar(name, body): name + " = " + bexp2flow(body);
+		BGlobalVar(name, body): name + " = " + bexp2flow(body) + ";";
 		BComment(comment): comment;
 	}
 }

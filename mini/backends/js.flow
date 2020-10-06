@@ -1,0 +1,93 @@
+import mini/backends/bprogram;
+import text/blueprint;
+
+export {
+	bprogram2js(b : BProgram) -> string;
+}
+
+bprogram2js(b : BProgram) -> string {
+	superglue(b.declarations, bdeclaration2js, "\n");
+}
+
+bdeclaration2js(b : BDeclaration) -> string {
+	switch (b) {
+		BFunction(name, args, body): {
+			blueprint("
+				function %name%(%args%) {
+					%body%
+				}", [
+				"name", name,
+				"args", superglue(args, \fa -> fa.name, ", "),
+				"body", bstatement2js(body, true)
+			]);
+		}
+		BGlobalVar(name, body): "var " + name + " = " + bexp2js(body) + ";";
+		BComment(comment): comment;
+	}
+}
+
+bstatement2js(b : BStatement, withReturn : bool) -> string {
+	switch (b) {
+		BIfStatement(cond, then, else_): {
+			blueprint("
+				if (%cond%) {
+					%then%
+				} else {
+					%else%
+				}", [
+				"cond", bexp2js(cond),
+				"then", bstatement2js(then, withReturn),
+				"else", bstatement2js(else_, withReturn),
+			])
+		}
+		BLetStatement(name, value, body): {
+			blueprint("
+				%name% = %value%;
+				%body%", [
+					"name", name,
+					"value", bexp2js(value),
+					"body", bstatement2js(body, withReturn),
+			])
+		}
+		BReturnVoid(): if (withReturn) "return" else "";
+		BReturn(val): (if (withReturn) "return " else "") + bexp2js(val);
+		BSequence(statements): {
+			"{" + supergluei(statements, \i, stat -> {
+				bstatement2js(stat, i == length(statements) - 1)
+			}, ";\n") + "}";
+		}
+		BComment(comment): comment;
+	}
+}
+
+bexp2js(b : BExp) -> string {
+	switch (b) {
+		BValue(): bvalue2js(b);
+		BVar(name): name;
+		BLet(name, value, body): {
+			blueprint("
+				%name% = %value%;
+				%body%", [
+					"name", name,
+					"value", bexp2js(value),
+					"body", bexp2js(body),
+			])
+		}
+		BLambda(args, body): "function(" 
+			+ superglue(args, \fa -> fa.name, ", ") + "{" 
+			+ bstatement2js(BReturn(body), true)
+			+ "}"
+		;
+		BCall(fn, args): bexp2js(fn) + "(" + superglue(args, bexp2js, ", ") + ")";
+		BIf(cond, then, else_): "(" + bexp2js(cond) + " ? " + bexp2js(then) + " : " + bexp2js(else_) + ")";
+		BComment(comment): comment + "\n";
+	}
+}
+
+bvalue2js(b : BValue) -> string {
+	switch (b) {
+		BInt(value): i2s(value);
+		BDouble(value): d2s(value);
+		BString(value): toString(value);
+	}
+}
