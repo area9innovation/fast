@@ -25,19 +25,29 @@ toplevelDeclaration =
 
 toplevelDeclaration = function;
 
-// TODO:
-function = exp;
+function = id ws '(' ws funargs ')' ws returnType? ';' ws
+	| id ws '(' ws funargs ')' ws returnType brace_or_semi
+	| id ws '(' ws funargs ')' ws exp ';'? ws
+	;
+
+	// listof(funarg, ",")
+	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)?
+		| $"nil";
+
+	funarg = id ws (':' ws type)?;
+	returnType = "->" ws type;
+
+	brace_or_semi = brace ';'? ws;
 
 exp = 
-	// Sequence
-	"{" ws expsemis "}" ws $$";" $"var" $"swap" $"call"
+	brace
 
 	|> (
 		id ws "=" ws exp ";" ws exp $"let"
 	 	| id ws ":" type "=" ws exp ";" $"swap" $$":" $"binop" ws exp $"let"
 	)
 
-	|> '\' funargs ws "->" ws exp $"lambda"
+	|> '\' lambdaargs ws "->" ws exp $"lambda"
 
 	|> exp "(" ws exps ")" ws $"call"
 
@@ -52,6 +62,8 @@ exp =
 		| $("." '0'-'9'+) $"s2d"
 		| int ws $"s2i"
 	);
+
+brace = "{" ws expsemis "}" ws $$";" $"var" $"swap" $"call";
 
 type = 	
 		"bool" ws $"1" $"inttype"
@@ -71,17 +83,19 @@ type =
 
 typars = "<" ws types ">" ws;
 
+// listof(type, ",")
 types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)?
 	| $"nil";
 
-funargs = $"nil" (id ws $"cons")*;
+lambdaargs = $"nil" (id ws $"cons")*;
 
+// listof(exp, ";")
 expsemis = $"nil" exp $"cons" (";" ws exp $"cons")* (";" ws)?
 	| $"nil";
 
+// listof(exp, ",")
 exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)?
 	| $"nil";
-
 
 id = $bid;
 

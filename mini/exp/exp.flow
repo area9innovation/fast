@@ -7,6 +7,7 @@ export {
 	MiniExp ::= MiniValue, MiniVar, MiniLet, MiniLambda, MiniCall, MiniType;
 		MiniVar(name : string);
 		MiniLet(name : string, value : MiniExp, body : MiniExp);
+		// OK, what to do about types on the args?
 		MiniLambda(args : [string], body : MiniExp);
 		MiniCall(fn : MiniExp, args : [MiniExp]);
 
