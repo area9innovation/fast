@@ -128,6 +128,7 @@ gringo file=path/grammar.gringo <options>
 	testfile=<filename> tests the grammar on the contents of that file.
     result=1 prints the output of the test parse.
     result=<file> saves the output of the test parse.
+	trace=1 will print debugging while parsing the test
 ");
 
 		quit(0);
