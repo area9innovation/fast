@@ -33,6 +33,26 @@ viewMiniDb(m : MiniDb) -> Material {
 	);
 }
 
+makeEvalLine(db : DynamicBehaviour<MiniDb>, def : string, focus : bool) -> Material {
+	line = make(def);
+	lineFocus = make(true);
+
+	MBaselineCols([
+		MTextInput(line, [], [
+			MEatKeyDown(\ke -> ke.utf!="enter"), TTextInputFocus(lineFocus)
+		]),
+		MTextButton("EVALUATE", \ -> {
+			theline = getValue(line);
+			if (theline != "") {
+				commands = if (startsWith(theline, "def ")) [theline] else strSplit(theline, " ");
+				next(db, miniEvalForths("", getValue(db), commands));
+			}
+			next(db, miniCompile(getValue(db)));
+			next(lineFocus, true);
+		}, [], [MShortcut("enter")]),
+	])
+}
+
 main() {
 	manager = makeMaterialManager([]);
 
@@ -41,8 +61,6 @@ main() {
 	}));
 
 	file = make("mini/tests/test.mini");
-	line = make("");
-	lineFocus = make(true);
 
 	mrender(manager, true, 
 		MLines([
@@ -57,20 +75,8 @@ main() {
 					next(db, miniCompile(getValue(db)));
 				}, [], []),
 			]),
-			MBaselineCols([
-				MTextInput(line, [], [
-					MEatKeyDown(\ke -> ke.utf!="enter"), TTextInputFocus(lineFocus)
-				]),
-				MTextButton("EVALUATE", \ -> {
-					theline = getValue(line);
-					if (theline != "") {
-						commands = if (startsWith(theline, "def ")) [theline] else strSplit(theline, " ");
-						next(db, miniEvalForths("", getValue(db), commands));
-					}
-					next(db, miniCompile(getValue(db)));
-					next(lineFocus, true);
-				}, [], [MShortcut("enter")]),
-			]),
+			makeEvalLine(db, "prepexp", true),
+			makeEvalLine(db, "\"mini/tests/test.exp\" parsefile", false),
 			MTextButton("RESET", \ -> {
 				next(db, makeMiniDb(getValue(db).includes, getValue(db).onError));
 			}, [], []),

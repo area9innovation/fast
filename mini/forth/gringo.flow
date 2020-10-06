@@ -11,14 +11,23 @@ export {
 prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb) -> MiniDb {
 	gterm = parseGringoGrammar(grammar);
 
-	println("The result of the parse:");
-	println(gterm2string(gterm));
+	// println("The result of the parse:");
+	// println(gterm2string(gterm));
 
 	\db : MiniDb -> {
 		text = popMiniValue(db);
 		// Here, we should parse the grammar using Forth actions
 		env = GringoEnv(getMiniString(text.first), makeTree(), 0, actions, text.second, false, false);
 		genv : GringoEnv<MiniDb> = gringoParse(env, gterm);
+
+		if (genv.fail) {
+			println("Parsing failed");
+		}
+		remaining = strRight(env.input, genv.i);
+		if (remaining != "") {
+			println("Did not parse: " + remaining);
+		}
+
 		genv.output;
 	}
 }
