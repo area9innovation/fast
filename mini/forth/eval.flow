@@ -19,11 +19,11 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 
 	fchar = getCharAt(command, 0);
 	if (command == "") db
-	else if (command == "evalfile") {
-		// 	MiniEvalFile(name : string, command);
+	else if (command == "processfile") {
+		// 	MiniProcessFile(name : string, command);
 		filename = popMiniValue(db);
 		evalcommand = popMiniValue(filename.second);
-		pushMiniCommand(evalcommand.second, MiniEvalFile(getMiniString(filename.first), getMiniString(evalcommand.first)));
+		pushMiniCommand(evalcommand.second, MiniProcessFile(getMiniString(filename.first), getMiniString(evalcommand.first)));
 	} else if (command == "define") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);
@@ -117,8 +117,8 @@ miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
 	n = length(commands);
 	foldi(commands, db, \i, acc, command -> {
 		// Check if we have an async command elsewhere than the end
-		if (i != n - 1 && command == "evalfile") {
-			println("Commands after evalfile will not work correctly");
+		if (i != n - 1 && command == "processfile") {
+			println("Commands after processfile will not work correctly");
 		}
 		miniEvalForth(file, acc, command);
 	})

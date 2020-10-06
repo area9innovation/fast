@@ -173,13 +173,13 @@ are represented in the exp language.
 
 ### Compile server commands
 
-	<file> <command> evalfile
-        - reads the content of the given file and once read, pushed it on the stack and 
-        - runs "command" on it. This is only done if the file is changed compared to last time
+	<file> <command> processfile
+        - reads the content of the given file and once read, push it on the stack and 
+          runs "command" on it. This is only done if the file is changed compared to last time
 		  we read it.
-    	  Notice this is "async", so whatever follows evalfile will run immediately after
-		  this command, WITHOUT the file content on the stack, and the command will run will
-		  a potentially empty/different stack in the second run.
+    	  Notice this is "async", so whatever follows processfile will run immediately after
+		  this command, WITHOUT the file content on the stack. Also, the callback command will run
+		  a different stack in the second run.
 
 	<name> <val> define		    - define a top-level name in the program
 
@@ -194,8 +194,9 @@ We have a simple standard library of useful Forth definitions defined in forth/l
 
 It defines:
 
-	<file> import			    - read the contents of the given file, and eval each line
+	<file> evalfile		   		- read the contents of the given file, and eval each line
 	<file> readfile				- read the contents of the given file and push on the stack
+	prepexp						- prepares the expression parser "parseexp"
 
 ### TODO
 - uncons, comparisons, and, or, not
