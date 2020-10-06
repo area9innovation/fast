@@ -231,7 +231,7 @@ It defines:
 	maybe ?? exp : exp
 	! -
 	e.id  e[e] e(exp with fields)
-	true false ref switch cast require unsafe
+	ref switch cast require unsafe
 	string-include [array] ^ $
 	hex-number
 	string-escapes
