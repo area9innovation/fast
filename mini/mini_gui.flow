@@ -90,6 +90,7 @@ main() {
 				}, [], []),
 				MTextButton("COMPILE", \ -> {
 					program = miniAst2BProgram(getValue(db).program);
+					println(program);
 				}, [], [])
 			]),
 			MFixedY(8.0),

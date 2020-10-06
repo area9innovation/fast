@@ -1,6 +1,7 @@
 import mini/exp/ast;
 import mini/backend/bprogram;
 import mini/exp/topological;
+import mini/exp/pretty;
 
 export {
 	miniAst2BProgram(ast : MiniAst) -> BProgram;
@@ -11,8 +12,60 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 
 	order = topologicalMiniOrder(ast, ids);
 
-	println("Program order:");
-	println(order);
+	BProgram(
+		map(order, \id -> {
+			mdecl = lookupTree(ast.declarations, id);
+			mdecl ?? {
+				miniExp2BDeclaration(id, mdecl)
+			} : BComment("// ERROR: Unknown id " + id)
+		})
+	);
+}
 
-	BProgram([]);
+
+miniExp2BDeclaration(declid : string, e : MiniExp) -> BDeclaration {
+	error = \ -> {
+		BComment("// Can not convert " + miniPretty(e) + " for " + declid);
+	}
+	switch (e) {
+		MiniValue(): BGlobalVar(declid, miniValue2BValue(e));
+		MiniVar(name): error();
+		MiniLet(name, value, body): error();
+		MiniLambda(args, body): {
+			bbody = miniExp2BStatement(body);
+			BFunction(declid, map(args, \a -> BFunArg(a)), bbody);
+		}
+		MiniCall(fn, args): error();
+		MiniTypeInt(bits): error();
+		MiniTypeFunction(args, returnType): error();
+		MiniTypeCall(id, typars): error();
+	}
+}
+
+
+miniValue2BValue(v : MiniValue) -> BValue {
+	switch (v) {
+		MiniInt(value): BInt(value);
+		MiniDouble(value): BDouble(value);
+		MiniString(value): BString(value);
+	}
+}
+
+miniExp2BStatement(e : MiniExp) -> BStatement {
+	switch (e) {
+		MiniValue(): BReturn(miniValue2BValue(e));
+		MiniVar(name): BReturn(miniExp2BExp(e));
+		MiniLambda(args, body): BReturn(miniExp2BExp(e));
+		MiniCall(fn, args): {
+			BReturn(miniExp2BExp(e))
+		}
+		default: BComment("// Can not convert " + miniPretty(e) + " to statement yet");
+	}
+}
+
+miniExp2BExp(e : MiniExp) -> BExp {
+	switch (e) {
+		MiniValue(): miniValue2BValue(e);
+		default: BComment("// Can not convert " + miniPretty(e) + " to exp yet");
+	}
 }

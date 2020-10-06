@@ -236,7 +236,10 @@ It defines:
 	string-escapes
 	comments
 
-- Get type inference to work. Plug the coalescing in?
+- Get type inference to work: 
+  - Fix polymorphism
+  - Plug the coalescing in
+  - Add canonicalize
 
 - Get hello-world to compile to JS
   - consider doing a statement-based intermediate AST

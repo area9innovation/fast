@@ -1,15 +1,17 @@
 export {
 	BProgram(declarations : [BDeclaration]);
 
-	BDeclaration ::= BFunction, BGlobalVar;
+	BDeclaration ::= BFunction, BGlobalVar, BComment;
 
 	BFunction(name : string, args : [BFunArg], body : BStatement);
 		BFunArg(name : string);
 
 	BGlobalVar(name : string, body : BExp);
 
+	BComment(comment : string);
+
 	// Statement-based languages can get this format:
-	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BSequence;
+	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BSequence, BComment;
 		BIfStatement(cond : BExp, then : BStatement, else_ : BStatement);
 		BLetStatement(name : string, value : BExp, body : BStatement);
 		BSequence(statements : [BStatement]);
@@ -19,7 +21,7 @@ export {
 		// Return a value
 		BReturn(val : BExp);
 
-	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf;
+	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BComment;
 		BVar(name : string);
 		// The type is the type of the body
 		BLet(name : string, value : BExp, body : BExp);
