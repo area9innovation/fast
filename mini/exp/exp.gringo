@@ -5,6 +5,7 @@ exp =
 
 	|> id ws "=" ws exp ";" ws exp $"let"
 	|> '\' funargs ws "->" ws exp $"lambda"
+	|> exp "(" ws exps ")" ws $"call"
 	|> (
 		"(" ws exp ")" ws 
 		| id ws $"var"
@@ -12,6 +13,9 @@ exp =
 		| $("." '0'-'9'+) $"s2d"
 		| int ws $"s2i"
 	);
+
+exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)?
+	| $"nil";
 
 funargs = $"nil" (id ws $"cons")*;
 

@@ -40,7 +40,7 @@ getMiniArray(m : MiniExp) -> [MiniExp] {
 				MiniVar(id): {
 					if (id == "nil") []
 					else if (id == "cons") {
-						concat([args[0]], getMiniArray(args[1]))
+						concat(getMiniArray(args[1]), [args[0]])
 					} else [];
 				}
 				default: [];
