@@ -203,7 +203,7 @@ It defines:
 ### TODO
 - uncons, comparisons, and, or, not
 - ifte, while, def, eval, map, quoting
-- add std. lib
+- optimize getMArray to use list2array
 
 ## Step by step compilation
 
@@ -218,9 +218,21 @@ It defines:
 
 ## Milestones
 
-- Add "def" and quoting to allow defining commands.
-- Change "import" to be strsplit and then unquote/eval on each?
-- Get Gringo to parse files read, so we can send in any syntax
+- Parse flow:
+  - import, export, require, forbid
+  - toplevel: native, global, fn, declaration, union-def, struct-def
+  - types: fntype, named type, array, ?, bool, int, double, string, flow, void, native, ref
+  - exp: if, id:type=v, id=v (no val), id.f ::= val, :=, |>, ||, &&
+	== != <= >= < > + - * / % 
+	maybe ?? exp : exp
+	! -
+	e.id  e[e] e(exp with fields)
+	true false ref switch cast require unsafe
+	string-include [array] ^ $
+	hex-number
+	string-escapes
+	comments
+
 - Get type inference to work. Plug the coalescing in?
 
 - Get hello-world to compile to JS
