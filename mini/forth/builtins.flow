@@ -95,7 +95,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			y = popMStack(stack);
 			x = popMStack(y.second);
 			if (isMiniInt(x.first) && isMiniInt(y.first)) {
-				pushMStack(x.second, MiniInt(getMiniInt(x.first) + getMiniInt(y.first)));
+				pushMStack(x.second, MiniInt(getMiniInt(x.first) + getMiniInt(y.first), 0));
 			} else if (isMiniDouble(x.first) && isMiniDouble(y.first)) {
 				pushMStack(x.second, MiniDouble(getMiniDouble(x.first) + getMiniDouble(y.first)));
 			} else if (isMiniString(x.first) && isMiniString(y.first)) {
@@ -110,28 +110,28 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		Pair("-", \stack -> {
 			y = popMStack(stack);
 			x = popMStack(y.second);
-			pushMStack(x.second, MiniInt(getMiniInt(x.first) - getMiniInt(y.first)));
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) - getMiniInt(y.first), 0));
 		}),
 
 		// x y * -> x*y
 		Pair("*", \stack -> {
 			y = popMStack(stack);
 			x = popMStack(y.second);
-			pushMStack(x.second, MiniInt(getMiniInt(x.first) * getMiniInt(y.first)));
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) * getMiniInt(y.first), 0));
 		}),
 
 		// x y / -> x/y
 		Pair("/", \stack -> {
 			y = popMStack(stack);
 			x = popMStack(y.second);
-			pushMStack(x.second, MiniInt(getMiniInt(x.first) / getMiniInt(y.first)));
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) / getMiniInt(y.first), 0));
 		}),
 
 		// x y % -> x%y
 		Pair("%", \stack -> {
 			y = popMStack(stack);
 			x = popMStack(y.second);
-			pushMStack(x.second, MiniInt(getMiniInt(x.first) % getMiniInt(y.first)));
+			pushMStack(x.second, MiniInt(getMiniInt(x.first) % getMiniInt(y.first), 0));
 		}),
 
 		//
@@ -149,7 +149,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		Pair("strlen", \stack -> {
 			x = popMStack(stack);
 			st = getMiniString(x.first);
-			pushMStack(x.second, MiniInt(strlen(st)));
+			pushMStack(x.second, MiniInt(strlen(st), 0));
 		}),
 
 		// <string> <int> getchar -> <string>
@@ -165,14 +165,14 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			i = popMStack(stack);
 			x = popMStack(i.second);
 			st = getMiniString(x.first);
-			pushMStack(x.second, MiniInt(getCharCodeAt(st, getMiniInt(i.first))));
+			pushMStack(x.second, MiniInt(getCharCodeAt(st, getMiniInt(i.first)), 0));
 		}),
 
 		// <string> s2i -> <int>
 		Pair("s2i", \stack -> {
 			x = popMStack(stack);
 			st = getMiniString(x.first);
-			pushMStack(x.second, MiniInt(s2i(st)));
+			pushMStack(x.second, MiniInt(s2i(st), 0));
 		}),
 
 		// <int> i2s -> <string>
@@ -202,7 +202,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			i = popMStack(s.second);
 			x = popMStack(i.second);
 			st = getMiniString(x.first);
-			pushMStack(x.second, MiniInt(b2i(strContainsAt(st, getMiniInt(i.first), getMiniString(s.first)))));
+			pushMStack(x.second, MiniInt(b2i(strContainsAt(st, getMiniInt(i.first), getMiniString(s.first))), 0));
 		}),
 
 		// <string> <int> <int> substring -> <string>
@@ -230,7 +230,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		Pair("var", \stack -> {
 			// MiniVar(name : string);
 			var = popMStack(stack);
-			pushMStack(var.second, MiniVar(getMiniString(var.first)));
+			pushMStack(var.second, MiniVar(getMiniString(var.first), 0));
 		}),
 
 		Pair("let", \stack -> {
@@ -238,7 +238,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			body = popMStack(stack);
 			value = popMStack(body.second);
 			name = popMStack(value.second);
-			pushMStack(name.second, MiniLet(getMiniString(name.first), value.first, body.first));
+			pushMStack(name.second, MiniLet(getMiniString(name.first), value.first, body.first, 0));
 		}),
 
 		Pair("lambda", \stack -> {
@@ -246,7 +246,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			body = popMStack(stack);
 			args = popMStack(body.second);
 			sargs = map(getMiniArray(args.first), getMiniString);
-			pushMStack(args.second, MiniLambda(sargs, body.first));
+			pushMStack(args.second, MiniLambda(sargs, body.first, 0));
 		}),
 
 		Pair("call", \stack -> {
@@ -254,7 +254,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			args = popMStack(stack);
 			fn = popMStack(args.second);
 			cargs = getMiniArray(args.first);
-			pushMStack(fn.second, MiniCall(fn.first, cargs));
+			pushMStack(fn.second, MiniCall(fn.first, cargs, 0));
 		}),
 
 		Pair("inttype", \stack -> {
@@ -284,13 +284,13 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		//
 
 		Pair("nil", \stack -> {
-			pushMStack(stack, MiniCall(MiniVar("nil"), []));
+			pushMStack(stack, MiniCall(MiniVar("nil", 0), [], 0));
 		}),
 
 		Pair("cons", \stack -> {
 			val = popMStack(stack);
 			list = popMStack(val.second);
-			pushMStack(list.second, MiniCall(MiniVar("cons"), [val.first, list.first]));		
+			pushMStack(list.second, MiniCall(MiniVar("cons", 0), [val.first, list.first], 0));
 		}),
 
 		// TODO: uncons, comparisons, and, or, not

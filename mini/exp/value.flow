@@ -14,7 +14,7 @@ export {
 
 getMiniInt(m : MiniExp) -> int {
 	switch (m) {
-		MiniInt(i): i;
+		MiniInt(i, __): i;
 		default: 0;
 	}
 }
@@ -35,9 +35,9 @@ getMiniString(m : MiniExp) -> string {
 
 getMiniArray(m : MiniExp) -> [MiniExp] {
 	switch (m) {
-		MiniCall(fn, args): {
+		MiniCall(fn, args, __): {
 			switch (fn) {
-				MiniVar(id): {
+				MiniVar(id, __): {
 					if (id == "nil") []
 					else if (id == "cons") {
 						concat(getMiniArray(args[1]), [args[0]])
@@ -53,7 +53,7 @@ getMiniArray(m : MiniExp) -> [MiniExp] {
 
 isMiniInt(m : MiniExp) -> bool {
 	switch (m) {
-		MiniInt(i): true;
+		MiniInt(i, __): true;
 		default: false;
 	}
 }

@@ -1,18 +1,18 @@
 export {
 	MiniValue ::= MiniInt, MiniDouble, MiniString;
-		MiniInt(value : int);
+		MiniInt(value : int, tyvar : int);
 		MiniDouble(value : double);
 		MiniString(value : string);
 
 	MiniExp ::= MiniValue, MiniVar, MiniLet, MiniLambda, MiniCall, MiniType;
-		MiniVar(name : string);
-		MiniLet(name : string, value : MiniExp, body : MiniExp);
+		MiniVar(name : string, tyvar : int);
+		MiniLet(name : string, value : MiniExp, body : MiniExp, tyvar : int);
 		// OK, what to do about types on the args?
-		MiniLambda(args : [string], body : MiniExp);
-		MiniCall(fn : MiniExp, args : [MiniExp]);
+		MiniLambda(args : [string], body : MiniExp, tyvar : int);
+		MiniCall(fn : MiniExp, args : [MiniExp], tyvar : int);
 
 	MiniType ::= MiniTypeInt, MiniTypeFunction, MiniTypeCall;
-		// 0 bits is void, 1 is bool.
+		// 0 bits is void, 1 is bool, 32 is normal.
 		MiniTypeInt(bits : int);
 		MiniTypeFunction(args : [MiniExp], returnType : MiniExp);
 		MiniTypeCall(id : string, typars : [MiniExp]);

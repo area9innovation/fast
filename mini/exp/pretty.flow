@@ -7,25 +7,25 @@ export {
 
 miniPretty(m : MiniExp) -> string {
 	switch (m) {
-		MiniInt(value): i2s(value);
+		MiniInt(value, __): i2s(value);
 		MiniDouble(value): d2s(value);
 		MiniString(value): toString(value);
-		MiniVar(name): name;
-		MiniLet(name, value, body): blueprint("
+		MiniVar(name, __): name;
+		MiniLet(name, value, body, __): blueprint("
 			%name% = %value%;
 			%body%",
 			[ "name", name,
 			  "value", miniPretty(value),
 			  "body", miniPretty(body)]
 		);
-		MiniLambda(args, body): blueprint("
+		MiniLambda(args, body, __): blueprint("
 			\\%args% -> {
 				%body%
 			}",
 			[ "args", strGlue(args, ", "),
 			  "body", miniPretty(body)]
 		);
-		MiniCall(fn, args): miniPretty(fn) + "(" + superglue(args, miniPretty, ", ") + ")";
+		MiniCall(fn, args, __): miniPretty(fn) + "(" + superglue(args, miniPretty, ", ") + ")";
 		MiniTypeInt(bits): "i" + i2s(bits);
 		MiniTypeFunction(args, returnType): "type (" + superglue(args, miniPretty, ", ") + ") -> " + miniPretty(returnType);
 		MiniTypeCall(id, typars): "type " + id + "<" + superglue(typars, miniPretty, ", ") + ">";

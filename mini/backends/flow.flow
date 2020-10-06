@@ -1,0 +1,87 @@
+import mini/backends/bprogram;
+import text/blueprint;
+
+export {
+	bprogram2flow(b : BProgram) -> string;
+}
+
+bprogram2flow(b : BProgram) -> string {
+	superglue(b.declarations, bdeclaration2flow, "\n");
+}
+
+bdeclaration2flow(b : BDeclaration) -> string {
+	switch (b) {
+		BFunction(name, args, body): {
+			blueprint("
+				%name%(%args%) {
+					%body%
+				}", [
+				"name", name,
+				"args", superglue(args, \fa -> fa.name, ", "),
+				"body", bstatement2flow(body)
+			]);
+		}
+		BGlobalVar(name, body): name + " = " + bexp2flow(body);
+		BComment(comment): comment;
+	}
+}
+
+bstatement2flow(b : BStatement) -> string {
+	switch (b) {
+		BIfStatement(cond, then, else_): {
+			blueprint("
+				if (%cond%) {
+					%then%
+				} else {
+					%else%
+				}", [
+				"cond", bexp2flow(cond),
+				"then", bstatement2flow(then),
+				"else", bstatement2flow(else_),
+			])
+		}
+		BLetStatement(name, value, body): {
+			blueprint("
+				%name% = %value%;
+				%body%", [
+					"name", name,
+					"value", bexp2flow(value),
+					"body", bstatement2flow(body),
+			])
+		}
+		BReturnVoid(): "{}";
+		BReturn(val): bexp2flow(val);
+		BSequence(statements): {
+			"{" + superglue(statements, bstatement2flow, ";\n") + "}";
+		}
+		BComment(comment): comment;
+	}
+}
+
+bexp2flow(b : BExp) -> string {
+	switch (b) {
+		BValue(): bvalue2flow(b);
+		BVar(name): name;
+		BLet(name, value, body): {
+			blueprint("
+				%name% = %value%;
+				%body%", [
+					"name", name,
+					"value", bexp2flow(value),
+					"body", bexp2flow(body),
+			])
+		}
+		BLambda(args, body): "\\" + superglue(args, \fa -> fa.name, ", ") + " -> " + bexp2flow(body);
+		BCall(fn, args): bexp2flow(fn) + "(" + superglue(args, bexp2flow, ", ") + ")";
+		BIf(cond, then, else_): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}";
+		BComment(comment): comment + "\n";
+	}
+}
+
+bvalue2flow(b : BValue) -> string {
+	switch (b) {
+		BInt(value): i2s(value);
+		BDouble(value): d2s(value);
+		BString(value): toString(value);
+	}
+}

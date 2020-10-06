@@ -1,5 +1,5 @@
 import mini/exp/ast;
-import mini/backend/bprogram;
+import mini/backends/bprogram;
 import mini/exp/topological;
 import mini/exp/pretty;
 
@@ -22,41 +22,40 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 	);
 }
 
-
 miniExp2BDeclaration(declid : string, e : MiniExp) -> BDeclaration {
 	error = \ -> {
 		BComment("// Can not convert " + miniPretty(e) + " for " + declid);
 	}
 	switch (e) {
 		MiniValue(): BGlobalVar(declid, miniValue2BValue(e));
-		MiniVar(name): error();
-		MiniLet(name, value, body): error();
-		MiniLambda(args, body): {
-			bbody = miniExp2BStatement(body);
+		MiniVar(name, tv): error();
+		MiniLet(name, value, body, tv): error();
+		MiniLambda(args, body, tv): {
+			bbody = miniExp2BReturn(body);
 			BFunction(declid, map(args, \a -> BFunArg(a)), bbody);
 		}
-		MiniCall(fn, args): error();
+		MiniCall(fn, args, tv): error();
 		MiniTypeInt(bits): error();
 		MiniTypeFunction(args, returnType): error();
 		MiniTypeCall(id, typars): error();
 	}
 }
 
-
 miniValue2BValue(v : MiniValue) -> BValue {
 	switch (v) {
-		MiniInt(value): BInt(value);
+		MiniInt(value, tv): BInt(value);
 		MiniDouble(value): BDouble(value);
 		MiniString(value): BString(value);
 	}
 }
 
-miniExp2BStatement(e : MiniExp) -> BStatement {
+miniExp2BReturn(e : MiniExp) -> BStatement {
 	switch (e) {
 		MiniValue(): BReturn(miniValue2BValue(e));
-		MiniVar(name): BReturn(miniExp2BExp(e));
-		MiniLambda(args, body): BReturn(miniExp2BExp(e));
-		MiniCall(fn, args): {
+		MiniVar(name, tv): BReturn(miniExp2BExp(e));
+		MiniLambda(args, body, tv): BReturn(miniExp2BExp(e));
+		MiniCall(fn, args, tv): {
+			println(fn);
 			BReturn(miniExp2BExp(e))
 		}
 		default: BComment("// Can not convert " + miniPretty(e) + " to statement yet");

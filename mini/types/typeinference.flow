@@ -34,10 +34,10 @@ https://github.com/LPTK/simple-sub
 */
 typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 	switch (ex) {
-		MiniInt(value): MiniType2Int(32);
+		MiniInt(value, __): MiniType2Int(32);
 		MiniDouble(value): MiniType2Call("double", []);
 		MiniString(value): MiniType2Call("string", []);
-		MiniVar(name): {
+		MiniVar(name, __): {
 			mlocal = lookupTree(env.types, name);
 			mlocal ?? mlocal : {
 				mglobal = lookupTree(env.ast.types, name);
@@ -50,19 +50,19 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 				}
 			}
 		}
-		MiniLet(name, value, body): {
+		MiniLet(name, value, body, __): {
 			vtype = typeInferenceMini(env, value);
 			nenv = setMiniType2(env, name, vtype);
 			typeInferenceMini(nenv, body);
 		}
-		MiniLambda(args, body): {
+		MiniLambda(args, body, __): {
 			argTypes = map(args, \arg -> makeMiniType2Var(env));
 			nenv = foldi(args, env, \i, acc, arg -> {
 				setMiniType2(acc, arg, argTypes[i])
 			});
 			typeInferenceMini(nenv, body);
 		}
-		MiniCall(fn, args): {
+		MiniCall(fn, args, __): {
 			resType = makeMiniType2Var(env);
 			fnType = typeInferenceMini(env, fn);
 			callType = MiniType2Function(
