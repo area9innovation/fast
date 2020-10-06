@@ -15,7 +15,7 @@
 		- [Evaluation](#evaluation)
 		- [Compile server commands](#compile-server-commands)
 		- [Gringo grammars](#gringo-grammars)
-	- [Forth standard library](#forth-standard-library)
+		- [Forth standard library](#forth-standard-library)
 		- [TODO](#todo)
 	- [Step by step compilation](#step-by-step-compilation)
 	- [Milestones](#milestones)
@@ -157,6 +157,8 @@ are represented in the exp language.
 
 	nil						- push the nil token on the stack
 	<list> <elm> cons		- push a list elm:list on the stack
+	<elm1> list1			- push cons(elm1, nil)
+	<elm1> <elm2> list2		- push cons(elm2, cons(elm1, nil))
 
 ### AST
 	<string> var			- push a var ref on the stack
@@ -167,6 +169,8 @@ are represented in the exp language.
 	<int> inttype			- push an int-type on the stack
 	<types> <return> fntype	- push a function type on the stack
 	<id> <types> typecall	- push a type call on the stack
+
+	<e1> <e2> <op> binop    - push call(var(op), cons(e2, cons(e1, nil))
 
 ### Evaluation
 
@@ -188,9 +192,11 @@ are represented in the exp language.
 ### Gringo grammars
 	<id> <grammar> prepare		- prepares the given grammar as a new builtin which can parse files with that grammar
 
+	prepexp						- prepares the expression parser "parseexp"
+
 TODO: Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
 
-## Forth standard library
+### Forth standard library
 
 We have a simple standard library of useful Forth definitions defined in forth/lib/lib.forth.
 
@@ -198,7 +204,6 @@ It defines:
 
 	<file> evalfile		   		- read the contents of the given file, and eval each line
 	<file> readfile				- read the contents of the given file and push on the stack
-	prepexp						- prepares the expression parser "parseexp"
 
 ### TODO
 - uncons, comparisons, and, or, not
@@ -221,8 +226,7 @@ It defines:
 - Parse flow:
   - import, export, require, forbid
   - toplevel: native, global, fn, declaration, union-def, struct-def
-  - types: fntype, named type, array, ?, bool, int, double, string, flow, void, native, ref
-  - exp: if, id:type=v, id=v (no val), id.f ::= val, :=, |>, ||, &&
+  - exp: if, id=v (no val), id.f ::= val, :=, |>, ||, &&
 	== != <= >= < > + - * / % 
 	maybe ?? exp : exp
 	! -

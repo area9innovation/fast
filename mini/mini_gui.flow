@@ -77,6 +77,7 @@ main() {
 			]),
 			makeEvalLine(db, "prepexp", true),
 			makeEvalLine(db, "\"mini/tests/test.exp\" parsefile", false),
+			makeEvalLine(db, "\"a:int\" parseexp", false),
 			MTextButton("RESET", \ -> {
 				next(db, makeMiniDb(getValue(db).includes, getValue(db).onError));
 			}, [], []),

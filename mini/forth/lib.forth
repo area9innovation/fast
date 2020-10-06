@@ -12,3 +12,12 @@ def prepexp "parseexp" "prepare" "mini/exp/exp.gringo" processfile
 def readfile "nop" swap processfile
 
 def parsefile "parseexp" swap processfile
+
+// <a> -> cons(a, nil)
+def list1 nil swap cons
+
+// <a> <b> -> cons(a, cons(b, nil))
+def list2 swap nil swap cons swap cons
+
+// <exp> <exp> <string>  -> <call>(var(string), [exp, exp])
+def binop var rot rot list2 call
