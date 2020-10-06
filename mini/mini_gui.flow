@@ -12,6 +12,9 @@ viewMiniDb(m : MiniDb) -> Material {
 			foldTree(m.macros, [MText("Forth definitions:", [MSubtitle1()])], \name, def, acc -> {
 				arrayPush(acc, MText("  " + name, []))
 			}),
+			foldTree(m.natives, [], \name, def, acc -> {
+				arrayPush(acc, MText("  " + name, []))
+			}),
 			[MFixedY(8.0)],
 			foldList(m.forth.stack, [MText("Stack:", [MSubtitle1()])], \acc, st -> {
 				arrayPush(acc, MText("  " + miniPretty(st), []))

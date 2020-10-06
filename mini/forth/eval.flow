@@ -14,6 +14,9 @@ export {
 }
 
 miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
+	// println("\nRunning " + command + " with stack:");
+	// iterList(db.forth.stack, println);
+
 	fchar = getCharAt(command, 0);
 	if (command == "") db
 	else if (command == "evalfile") {
@@ -111,7 +114,12 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 }
 
 miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
-	fold(commands, db, \acc, command -> {
+	n = length(commands);
+	foldi(commands, db, \i, acc, command -> {
+		// Check if we have an async command elsewhere than the end
+		if (i != n - 1 && command == "evalfile") {
+			println("Commands after evalfile will not work correctly");
+		}
 		miniEvalForth(file, acc, command);
 	})
 }

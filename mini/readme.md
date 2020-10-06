@@ -2,16 +2,20 @@
 
 - [Mini](#mini)
 	- [Mini Server](#mini-server)
+	- [Pipeline](#pipeline)
 	- [Mini Commands](#mini-commands)
 	- [Mini Forth](#mini-forth)
 		- [Values](#values)
 		- [Common stack operations](#common-stack-operations)
+		- [Misc](#misc)
 		- [Arithmetic](#arithmetic)
 		- [String](#string)
 		- [List](#list)
 		- [AST](#ast)
 		- [Evaluation](#evaluation)
 		- [Compile server commands](#compile-server-commands)
+		- [Gringo grammars](#gringo-grammars)
+	- [Forth standard library](#forth-standard-library)
 		- [TODO](#todo)
 	- [Step by step compilation](#step-by-step-compilation)
 	- [Milestones](#milestones)
@@ -21,6 +25,7 @@
 		- [Query based compilers](#query-based-compilers)
 		- [Datalog for typechecking](#datalog-for-typechecking)
 		- [Salsa](#salsa)
+- [Optimizations](#optimizations)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -168,7 +173,14 @@ are represented in the exp language.
 
 ### Compile server commands
 
-	<file> <command> evalfile   - reads the content of the given file and commands "command" on it, if changed
+	<file> <command> evalfile
+        - reads the content of the given file and once read, pushed it on the stack and 
+        - runs "command" on it. This is only done if the file is changed compared to last time
+		  we read it.
+    	  Notice this is "async", so whatever follows evalfile will run immediately after
+		  this command, WITHOUT the file content on the stack, and the command will run will
+		  a potentially empty/different stack in the second run.
+
 	<name> <val> define		    - define a top-level name in the program
 
 ### Gringo grammars
@@ -309,3 +321,25 @@ Query:
 
 Database:
 - All the internal state
+
+
+# Optimizations
+
+Memory is the most important one, it seems:
+
+Add a warning to the compiler if we capture too big a closure. I.e.
+
+	Foo(a : [int], b : bool);
+
+	foo(foo : Foo) {
+		timer(1000, \ -> {
+				println(foo.b);
+		})
+	}
+
+	main() {
+		foo(Foo(generate(0, 1000000), false));
+	}
+
+Use typed arrays for ints?
+

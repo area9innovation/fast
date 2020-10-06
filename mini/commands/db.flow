@@ -5,19 +5,23 @@ import mini/forth/forth;
 export {
 	// This is the state of our compiler
 	MiniDb(
-		// The include path we should use
+		// The include path we should use to find files
 		includes : [string],
 
 		// The prioritized queue of stuff this compiler needs to work on.
 		queue : Tree<int, [MiniCommand]>,
 
-		// The program we are working on - is not consistent yet
+		// Here we track what files we have read, so we can quickly check if they should be
+		// read again or not
+		// fileCache : MiniFileCache,
+
+		// The program we are working on
 		program : MiniAst,
 
 		// The forth stack we use in the compiler server
 		forth : MiniForth,
 
-		// Here, we define macros
+		// Here, we define macros for the Forth - TODO: Replace with natives
 		macros : Tree<string, [string]>,
 		// And here we define natives
 		natives : Tree<string, (MiniDb) -> MiniDb>,

@@ -1,6 +1,8 @@
 // <file> import -> each line is evaluated
-def readfile "nop" swap evalfile
 def import "evallines" swap evalfile
-def gringo readfile "prepare"
-// Debug why this does not work:
-def prepexp "mini/exp/exp.gringo" readfile "parseexp" swap prepare
+
+// It is important evalfile is the last
+def prepexp "parseexp" "prepare" "mini/exp/exp.gringo" evalfile
+
+// Do not use this in a sequence, since it is async
+def readfile "nop" swap evalfile

@@ -1,6 +1,7 @@
 import fast/fast_path;
 
 import mini/commands/db;
+import mini/commands/dependencies;
 
 import mini/exp/dependencies;
 import mini/exp/topological;
@@ -25,7 +26,8 @@ miniCompile(db : MiniDb) -> MiniDb {
 	switch (mcom.second) {
 		None(): ndb;
 		Some(command): {
-			println("Running " + miniCommand2string(command));
+			// println("Running command " + miniCommand2string(command) + " with stack");
+			// iterList(db.forth.stack, println);
 			miniCompile(runMiniCommand(ndb, command));
 		}
 	}
@@ -94,33 +96,6 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			})
 		}
 	}
-}
-
-updateMiniDeps(pr : MiniAst, id : string, body : MiniExp) -> MiniAst {
-	npr = removeMiniDeps(pr, id);
-	addMiniDeps(npr, id, body)
-}
-
-addMiniDeps(pr : MiniAst, id : string, body : MiniExp) -> MiniAst {
-	deps = extractMiniDeps(body, makeSet(), makeSet());
-	// println(id + " depends on " + strGlue(set2array(deps), ", "));
-	MiniAst(pr with
-		dependencies = setTree(pr.dependencies, id, deps),
-		dependents = foldSet(deps, pr.dependents, \acc, dep -> {
-			insertMultimap(acc, dep, id)
-		})
-	)
-}
-
-removeMiniDeps(pr : MiniAst, id : string) -> MiniAst {
-	deps = lookupMultimap(pr.dependencies, id);
-	MiniAst(
-		pr with
-		dependencies = removeFromTree(pr.dependencies, id),
-		dependents = foldSet(deps, pr.dependents, \acc, dep -> {
-			removeMultimap(acc, dep, id)
-		})
-	);
 }
 
 // OK, we have a new type for the "id".
