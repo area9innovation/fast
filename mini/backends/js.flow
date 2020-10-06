@@ -42,7 +42,7 @@ bstatement2js(b : BStatement, withReturn : bool) -> string {
 		}
 		BLetStatement(name, value, body): {
 			blueprint("
-				%name% = %value%;
+				var %name% = %value%;
 				%body%", [
 					"name", name,
 					"value", bexp2js(value),
@@ -66,8 +66,10 @@ bexp2js(b : BExp) -> string {
 		BVar(name): name;
 		BLet(name, value, body): {
 			blueprint("
-				%name% = %value%;
-				%body%", [
+				function() {
+				var %name% = %value%;
+				%body%
+				}()", [
 					"name", name,
 					"value", bexp2js(value),
 					"body", bexp2js(body),
