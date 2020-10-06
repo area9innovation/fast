@@ -4,7 +4,7 @@ import ds/treeutils;
 
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
-	typeInferenceMini(env : MiniTypeEnv, body : MiniExp) -> MiniType2;
+	typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniType2;
 	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv;
 }
 
@@ -17,6 +17,12 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		makeTree(),
 		0
 	);
+}
+
+typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniType2 {
+	// TODO: Set up an environment for this scope where we can remember
+	// the types
+	typeInferenceMini(env, ex);
 }
 
 /*
@@ -82,6 +88,8 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 
 constrainMiniType(env : MiniTypeEnv, lhs : MiniType2, rhs : MiniType2) -> void {
 	// if cache contains (lhs, rhs) return else cache += (lhs, rhs)
+
+	// println("Constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));
 
 	error = \ -> {
 		println("Cannot constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));

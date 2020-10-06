@@ -1,0 +1,7 @@
+fact(n : int) -> int {
+	1
+}
+
+main() {
+	fact(5);
+}

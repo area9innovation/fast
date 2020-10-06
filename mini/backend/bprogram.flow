@@ -1,0 +1,39 @@
+export {
+	BProgram(declarations : [BDeclaration]);
+
+	BDeclaration ::= BFunction, BGlobalVar;
+
+	BFunction(name : string, args : [BFunArg], body : BStatement);
+		BFunArg(name : string);
+
+	BGlobalVar(name : string, body : BExp);
+
+	// Statement-based languages can get this format:
+	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BSequence;
+		BIfStatement(cond : BExp, then : BStatement, else_ : BStatement);
+		BLetStatement(name : string, value : BExp, body : BStatement);
+		BSequence(statements : [BStatement]);
+
+		// The empty return. We could maybe have BVoid and BVoidType instead?
+		BReturnVoid();
+		// Return a value
+		BReturn(val : BExp);
+
+	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf;
+		BVar(name : string);
+		// The type is the type of the body
+		BLet(name : string, value : BExp, body : BExp);
+
+		BLambda(args : [BFunArg], body : BExp);
+
+		BCall(fn : BExp, args : [BExp]);
+		BIf(cond : BExp, then : BExp, else_ : BExp);
+
+
+	// The backends get this language
+	BValue ::= BInt, BDouble, BString;
+		BInt(value : int);
+		BDouble(value : double);
+		BString(value : string);
+
+}

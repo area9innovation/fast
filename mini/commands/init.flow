@@ -1,6 +1,7 @@
 import mini/commands/db;
 import mini/forth/init;
 import mini/forth/eval;
+import mini/types/builtin;
 
 export {
 	makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb;
@@ -10,7 +11,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 	db = MiniDb(
 		includes, 
 		makeTree(), 
-		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), makeTree()),
+		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), getBuiltinMiniTypes()),
 		makeMiniForth(),
 		makeTree(),
 		makeTree(),

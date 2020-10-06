@@ -11,7 +11,7 @@ export {
 prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb) -> MiniDb {
 	gterm = parseGringoGrammar(grammar);
 
-	// println("The result of the parse:");
+	// println("The grammar we will parse:");
 	// println(gterm2string(gterm));
 
 	\db : MiniDb -> {
@@ -22,6 +22,8 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 
 		if (genv.fail) {
 			println("Parsing failed");
+		} else {
+			// println("Parse success");
 		}
 		remaining = strRight(env.input, genv.i);
 		if (remaining != "") {

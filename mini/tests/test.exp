@@ -1,3 +1,10 @@
-import mini/tests/more;
+fact(n : int) -> int {
+	if (n <= 1) { n }
+	else {
+		n * fact(n - 1)
+	}
+}
 
-a = if (1) 2 else if (3) 4;
+main() {
+	fact(5);
+}

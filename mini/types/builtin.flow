@@ -1,0 +1,26 @@
+import ds/tree;
+import mini/types/type2;
+
+export {
+	getBuiltinMiniTypes() -> Tree<string, MiniType2>;
+}
+
+getBuiltinMiniTypes() -> Tree<string, MiniType2> {
+	pairs2tree([
+		Pair(";", MiniType2Function([MiniType2Par("?"), MiniType2Par("??")], MiniType2Par("??"))),
+		Pair("==", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
+		Pair("!=", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
+		Pair("<=", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
+		Pair("<", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
+		Pair(">=", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
+		Pair(">", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
+
+
+		Pair("+", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
+		Pair("-", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
+		Pair("*", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
+		Pair("/", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
+		Pair("%", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
+
+	])
+}

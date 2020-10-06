@@ -33,15 +33,17 @@ buildMiniGraph(acc : MiniTopological) -> MiniTopological {
 			deps = lookupMultimap(acc.ast.dependents, id);
 			graph = addSimpleNode(acc.graph, id);
 			ngraph = foldSet(deps, graph, \acc2 : SimpleGraph<string, bool>, dep : string -> {
-				if (containsSet(acc.visited, dep)) {
+				if (containsSet(acc.visited, dep) || id == dep) {
+					// We do no need self-loops
 					acc2
-				} else {
+				} else { 
 					addSimpleEdge(acc2, id, dep, false, 0)
 				}
 			});
 			acc2 = MiniTopological(
 				nacc with graph = ngraph,
-				queue = mergeSets(nacc.queue, deps)
+				queue = mergeSets(nacc.queue, deps),
+				visited = insertSet(nacc.visited, id)
 			);
 			buildMiniGraph(acc2);
 		}

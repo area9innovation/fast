@@ -26,8 +26,12 @@ miniCompile(db : MiniDb) -> MiniDb {
 	switch (mcom.second) {
 		None(): ndb;
 		Some(command): {
-			// println("Running command " + miniCommand2string(command) + " with stack");
-			// iterList(db.forth.stack, println);
+			if (true) {
+				println(miniCommand2string(command));
+			} else {
+				println("Running command " + miniCommand2string(command) + " with stack");
+				iterList(db.forth.stack, println);
+			}
 			miniCompile(runMiniCommand(ndb, command));
 		}
 	}
@@ -75,11 +79,16 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			// Find a topological order of these ids
 			order = topologicalMiniOrder(db.program, ids);
 
+			if (false) {
+				println("Typing in this order:");
+				println(order);
+			}
+			
 			tenv = makeMiniTypeEnv(db.program);
 			tenv2 = fold(order, tenv, \acc, id -> {
 				mfn = lookupTree(db.program.declarations, id);
 				mfn ?? {
-					type = typeInferenceMini(acc, mfn);
+					type = typeInferenceMiniScope(acc, id, mfn);
 					// Set the type in the type environment when inferring
 					setMiniType2(acc, id, type);
 				} : {

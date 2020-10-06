@@ -1,0 +1,41 @@
+// Later, when we have types, we can use this
+export {
+	// The backends get this language
+	BValue ::= BInt, BDouble, BString;
+		BInt(value : int, type : BType);
+		BDouble(value : double, type : BType);
+		BString(value : string, type : BType);
+
+	// Statement-based languages can get this format:
+	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BFunction, BSequence;
+		BIfStatement(cond : BExp, then : BStatement, else_ : BStatement, type : BType);
+		// The type is the type of the body
+		BLetStatement(name : string, value : BExp, body : BStatement, type : BType);
+		BSequence(statements : [BStatement]);
+
+		// The empty return. We could maybe have BVoid and BVoidType instead?
+		BReturnVoid();
+		// Return a value
+		BReturn(val : BExp, type : BType);
+		BFunction(name : string, args : [BFunArg], body : BStatement, type : BType);
+			BFunArg(name : string, type : BType);
+
+	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf;
+		BVar(name : string, type : BType);
+		// The type is the type of the body
+		BLet(name : string, value : BExp, body : BExp, type : BType);
+
+		BLambda(args : [BFunArg], body : BExp, type : BType);
+
+		BCall(fn : BExp, args : [BExp]);
+		BIf(cond : BExp, then : BExp, else_ : BExp);
+
+	BType ::= BTypeInt, BTypeFunction, BTypeCall;
+		// 0 bits is void, 1 is bool.
+		BTypeInt(bits : int);
+		BTypeFunction(args : [BType], returnType : BType);
+		BTypeCall(id : string, typars : [BType]);
+
+		// TODO: Should we have inline type here?
+		// Nah, it can be some call
+}

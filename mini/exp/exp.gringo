@@ -33,7 +33,8 @@ union = id ws (typars $"drop")? ws "::=" ws typenames ';' ws $$"union" $"swap" $
 
 // For now, we ignore the types
 // TODO: Extract the type and use a binop to declare the type of the body
-function = id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws // TODO: AST for type?
+function = 
+	  id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws
 	| id ws '(' ws funargs ')' ws returnType $"drop" brace_or_semi $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws brace_or_semi $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
