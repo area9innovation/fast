@@ -19,5 +19,8 @@ def list1 nil swap cons
 // <a> <b> -> cons(a, cons(b, nil))
 def list2 swap nil swap cons swap cons
 
+// <exp> <string>  -> <call>(var(string), [exp])
+def unop var swap list1 call
+
 // <exp> <exp> <string>  -> <call>(var(string), [exp, exp])
 def binop var rot rot list2 call

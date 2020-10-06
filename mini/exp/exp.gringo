@@ -58,17 +58,40 @@ vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 	// TODO: AST
 	| id ws ':' ws type ';'? ws;
 
-exp = 
-	brace
-
-	|> (
+exp = (
 		id ws "=" ws exp ";" ws exp $"let"
 	 	| id ws ":" type "=" ws exp ";" $"swap" $$":" $"binop" ws exp $"let"
+		// if
+		// exp "." field ::= exp
 	)
+	|> exp "||" ws exp $$"||" $"binop"
+	|> exp "&&" ws exp $$"&&" $"binop"
+	|> (
+		exp "==" ws exp $$"==" $"binop"
+		| exp "!=" ws exp $$"!=" $"binop"
+		| exp "<=" ws exp $$"<=" $"binop"
+		| exp "<" ws exp $$"<" $"binop"
+		| exp ">=" ws exp $$">=" $"binop"
+		| exp ">" ws exp $$">" $"binop"
+	)
+	|> (exp "+" ws exp $$"+" $"binop"
+		| exp "-" ws exp $$"-" $"binop"
+	)
+	|> (exp "*" ws exp $$"*" $"binop"
+		| exp "/" ws exp $$"/" $"binop"
+		| exp "%" ws exp $$"%" $"binop"
+	)
+	// maybe ?? exp : exp
 
-	|> '\' lambdaargs ws "->" ws exp $"lambda"
-
-	|> exp "(" ws exps ")" ws $"call"
+	|> (
+		'!' ws exp $$"not" $"unop"
+		| '-' ws exp $$"neg" $"unop"
+		| backslash lambdaargs ws "->" ws exp $"lambda"
+		| exp "(" ws exps ")" ws $"call"
+		| exp "." ws id ws $$"." $"binop"
+		| exp "[" ws exp "]" ws $$"index" $"binop"
+		// '(' ws call "with" s fields ')' ws;
+	)
 
 	|> exp ":" ws type $$":" $"binop"
 
@@ -80,6 +103,9 @@ exp =
 		| $('0'-'9'+ "." '0'-'9'*) $"s2d"
 		| $("." '0'-'9'+) $"s2d"
 		| int ws $"s2i"
+		| brace
+		| "[" ws exps "]" $$"[" $"unop"
+		| '^' ws exp $$"deref" $"unop"
 	);
 
 // TODO: Maybe this should be binops instead of an array?
@@ -124,6 +150,8 @@ id = $bid;
 bid = ('a'-'z' | 'A'-'Z' | '_') ('a'-'z' | 'A'-'Z' | '0'-'9' | '_')*;
 
 int = $'0'-'9'+;
+
+backslash = '\';
 
 ws = s*;
 s = " " | "	" | "

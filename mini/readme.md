@@ -225,15 +225,13 @@ It defines:
 ## Milestones
 
 - Parse flow:
-  - import, export, require, forbid
-  - toplevel: native, global, fn types, declaration, union-def, struct-def
-  - exp: if, id=v (no val), id.f ::= val, :=, |>, ||, &&
-	== != <= >= < > + - * / % 
+  - export, require, forbid
+  - toplevel: fn types, var-declaration, struct-def
+  - exp: if, id=v (no val), id.f ::= val, :=, |>
 	maybe ?? exp : exp
-	! -
-	e.id  e[e] e(exp with fields)
+	e(exp with fields)
 	ref switch cast require unsafe
-	string-include [array] ^ $
+	string-include $
 	hex-number
 	string-escapes
 	comments
