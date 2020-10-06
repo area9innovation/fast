@@ -13,17 +13,26 @@ forbid = "forbid" s $path ws ';' ws; // TODO: AST
 	path = bid path_more*;
 		path_more = '/' bid;
 
-/*
 toplevelDeclaration = 
 	native
 	| assign
 	| union
 	| function
-	| typedecl;
+	| structdecl
+	| vardecl;
 
-	*/
+// TODO: AST
+native = "native" s id ws ':' ws ("io" ws)? type '=' ws $name ws ';' ws;
+	name = bid ('.' bid)*;
 
-toplevelDeclaration = function;
+assign = id ws '=' ws exp ';'? ws $"define";
+
+// TODO: AST for typars
+union = id ws (typars $"drop")? ws "::=" ws typenames ';' ws $$"union" $"swap" $"typecall" $"define";
+
+	// listof(typename, ",")
+	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)?
+		| $"nil";
 
 // For now, we ignore the types
 // TODO: Extract the type and use a binop to declare the type of the body
@@ -41,6 +50,13 @@ function = id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws // TODO: AST
 	returnType = "->" ws type;
 
 	brace_or_semi = brace ';'? ws;
+
+// TODO: AST and mutable
+structdecl = id ws ':' ws '(' ws funargs? ')' ws ';' ws;
+
+vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
+	// TODO: AST
+	| id ws ':' ws type ';'? ws;
 
 exp = 
 	brace
@@ -78,12 +94,14 @@ type =
 		| "void" ws $$"void" $"nil" $"typecall"
 		| "native" ws $$"native" $"nil" $"typecall"
 		| "ref" ws type $"list1" $$"ref" $"swap" $"typecall"
-		| id ws typars $"typecall"
-		| id ws $"nil" $"typecall"
+		| typename
 		| "[" ws type "]" ws $"list1" $$"array" $"swap" $"typecall"
 		| $("?"+) $"nil" $"typecall"
 		| "(" ws types ")" ws "->" type $"fntype"
 	;
+
+typename = id ws typars $"typecall"
+		| id ws $"nil" $"typecall";
 
 typars = "<" ws types ">" ws;
 
