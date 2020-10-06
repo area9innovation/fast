@@ -5,6 +5,7 @@ import mini/exp/pretty;
 import ds/tree;
 import string;
 import math/math;
+import fs/filesystem;
 
 export {
 	// General Forth builtins that only work on the Forth stack
@@ -211,6 +212,15 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			x = popMStack(i.second);
 			st = getMiniString(x.first);
 			pushMStack(x.second, MiniString(substring(st, getMiniInt(i.first), getMiniInt(l.first))));
+		}),
+
+		// <string> <string> changeFileExt -> <string>
+		Pair("changeFileExt", \stack -> {
+			e = popMStack(stack);
+			f = popMStack(e.second);
+			ext = getMiniString(e.first);
+			file = getMiniString(f.first);
+			pushMStack(f.second, MiniString(changeFileExt(file, ext)));
 		}),
 
 		//

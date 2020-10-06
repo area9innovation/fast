@@ -149,6 +149,7 @@ as the interface to the compile server itself through special commands.
 	<string> s2d -> <double>
 	<double> d2s -> <string>
 	<string> <string> + -> <string>
+	<file> <ext> changeFileExt -> <string>
 
 ### List
 

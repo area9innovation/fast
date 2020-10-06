@@ -1,3 +1,33 @@
+flow = '\uFEFF'? ws importExport* toplevelDeclaration*;
+
+importExport = import
+	| dynamicImport
+	| export
+	| forbid;
+
+import = "import" s $path ws ';' ws $$".flow" $"changeFileExt" $"parsefile";
+dynamicImport = "require" s $path ws ';' ws; // TODO: AST
+export = "export" ws '{' ws toplevelDeclaration+ '}' ws; // TODO: AST
+forbid = "forbid" s $path ws ';' ws; // TODO: AST
+
+	path = bid path_more*;
+		path_more = '/' bid;
+
+/*
+toplevelDeclaration = 
+	native
+	| assign
+	| union
+	| function
+	| typedecl;
+
+	*/
+
+toplevelDeclaration = function;
+
+// TODO:
+function = exp;
+
 exp = 
 	// Sequence
 	"{" ws expsemis "}" ws $$";" $"var" $"swap" $"call"
@@ -53,10 +83,13 @@ exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)?
 	| $"nil";
 
 
-id = $(('a'-'z' | 'A'-'Z' | '_') ('a'-'z' | 'A'-'Z' | '0'-'9' | '_')*);
+id = $bid;
+
+bid = ('a'-'z' | 'A'-'Z' | '_') ('a'-'z' | 'A'-'Z' | '0'-'9' | '_')*;
+
 int = $'0'-'9'+;
 
 ws = s*;
 s = " " | "	" | "
 ";
-exp
+flow

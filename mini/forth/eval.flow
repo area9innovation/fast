@@ -101,7 +101,7 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 							db with forth = mbuiltin(db.forth)
 						)
 					} : {
-						db.onError("Does not handle " + command);
+						db.onError("Does not know " + command);
 						db;
 					}
 				}
