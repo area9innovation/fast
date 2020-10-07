@@ -1,0 +1,81 @@
+digraph graphname {
+"Assembly" -> "Text rendering & basic input";
+"Assembly" -> "Edit";
+"Text rendering & basic input" -> "Edit";
+
+"Edit" -> "Forth";
+"Assembly" -> "Forth";
+"Forth" -> "Vi";
+"Edit" -> "Vi";
+"Forth" -> "Untyped Lambda";
+"Untyped Lambda" -> "Mini";
+
+"Vi" -> "Mini C";
+
+"Forth" -> "Mini C";
+
+"Mini C" -> "Malloc";
+"Malloc" -> "GC";
+"Mini C" -> "GC";
+
+"Malloc" -> "Stdlib";
+
+"GC" -> "Mini";
+
+"Flow" -> "FRP";
+
+"Stdlib" -> "DB engine";
+
+"DB engine" -> "SQL";
+
+"Mini" -> "Flow";
+
+"Mini C" -> "DB engine";
+
+"Mini C" -> "Vector graphics";
+"Stdlib" -> "Vector graphics";
+
+"Untyped Lambda" -> "Gringo";
+"Gringo" -> "SQL";
+
+"Flow" -> "SQL";
+"Gringo" -> "Mini";
+
+"DB engine" -> "Mini"
+
+"Flow" -> "Comapping";
+"Material" -> "Comapping";
+
+"Material" -> "VS Code";
+"Comapping" -> "VS Code";
+
+"VS Code" -> "Wigi";
+
+"VS Code" -> "Prime";
+
+"Material" -> "Shape";
+
+"Wigi" -> "Rhapsode";
+
+"Prime" -> "Rhapsode";
+
+"FRP" -> "Material";
+
+"Text rendering & basic input" -> "Vector graphics";
+"Vector graphics" -> "Render tree";
+"Render tree" -> "CSS Grid & Paragraph Layout";
+"CSS Grid & Paragraph Layout" -> "Material";
+
+"Master server" -> "Rhapsode";
+
+"Shape" -> "Meta app";
+"SQL" -> "Meta app";
+
+"Meta app" -> "Rhapsode";
+
+"SQL" -> "Rhapsode";
+
+"SQL" -> "Master server";
+
+
+}
