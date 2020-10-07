@@ -273,7 +273,9 @@ TODO:
   Or maybe it is some helpers in Forth with blueprint style expansion?
   Seems like pattern matching would be useful.
   Also, we potentially want to define how to expand the BProgram AST constructs in 
-  a natural way
+  a natural way.
+  Should also be useful to implement natives. So it is a mixed syntax language,
+  maybe the fastlåst way is reasonable.
 
 - Types
 - Keyword renaming
