@@ -98,6 +98,7 @@ exp = (
 		"(" ws exp ")" ws 
 		| "true" ws $"1" $"1" $"inttype" $$":" $"binop"
 		| "false" ws $"0" $"1" $"inttype" $$":" $"binop"
+		| "ref" ws exp $$"__ref" $"unop"
 		| id ws $"var"
 		| $('0'-'9'+ "." '0'-'9'*) $"s2d"
 		| $("." '0'-'9'+) $"s2d"

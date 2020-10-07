@@ -6,12 +6,28 @@ export {
 }
 
 getBuiltinMiniTypes() -> Tree<string, MiniType2> {
+
+	v = MiniType2Int(0);
+	b = MiniType2Call("bool", []);
+	i = MiniType2Int(32);
+	s = MiniType2Call("string", []);
+
+	at = \t -> MiniType2Call("array", [t]);
+	reftype = \t -> MiniType2Call("ref", [t]);
+
 	ta = MiniType2Par("?");
 	tb = MiniType2Par("??");
-	b = MiniType2Call("bool", []);
-	v = MiniType2Int(0);
+
 	pairs2tree([
+		Pair("__ifte", MiniType2Function([b, ta, ta], ta)),
+		Pair("__ift", MiniType2Function([b, v, v], v)),
+
+		// TODO: This is not binary in the grammar.
 		Pair(";", MiniType2Function([ta, tb], tb)),
+
+		Pair("||", MiniType2Function([b, b], b)),
+		Pair("&&", MiniType2Function([b, b], b)),
+
 		Pair("==", MiniType2Function([ta, ta], b)),
 		Pair("!=", MiniType2Function([ta, ta], b)),
 		Pair("<=", MiniType2Function([ta, ta], b)),
@@ -21,12 +37,24 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 
 		Pair("+", MiniType2Function([ta, ta], ta)),
 		Pair("-", MiniType2Function([ta, ta], ta)),
+
 		Pair("*", MiniType2Function([ta, ta], ta)),
 		Pair("/", MiniType2Function([ta, ta], ta)),
 		Pair("%", MiniType2Function([ta, ta], ta)),
 
+		Pair("__not", MiniType2Function([b], b)),
+		Pair("__neg", MiniType2Function([ta], ta)),
 
-		Pair("__ifte", MiniType2Function([b, ta, ta], ta)),
-		Pair("__ift", MiniType2Function([b, v, v], v)),
+		Pair(".", MiniType2Function([ta, s], tb)),
+
+		Pair("__index", MiniType2Function([at(ta), i], ta)),
+
+		// : is special and should probably be grabbed by the type inference?
+
+		// TODO: This is not unary, so we have to figure something out here
+		Pair("[", MiniType2Function([ta], at(ta))),
+
+		Pair("__ref", MiniType2Function([ta], reftype(ta))),
+		Pair("__deref", MiniType2Function([reftype(ta)], ta)),
 	])
 }
