@@ -280,6 +280,7 @@ TODO:
 - Constant prop
 - Dead-code elimination
 - Lift first-order functions to top-level?
+- Have first-order representation ready for C, Java, Wasm where they are needed
 - Inlining
 - Mangling of overloading?
 - Specialization of polymorphism
