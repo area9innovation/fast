@@ -15,17 +15,19 @@
 		- [Evaluation](#evaluation)
 		- [Compile server commands](#compile-server-commands)
 		- [Gringo grammars](#gringo-grammars)
-		- [Forth standard library](#forth-standard-library)
-		- [TODO](#todo)
-	- [Step by step compilation](#step-by-step-compilation)
+		- [Interactives and the Forth standard library](#interactives-and-the-forth-standard-library)
+		- [TODO Forth primitives](#todo-forth-primitives)
 	- [Milestones](#milestones)
 	- [Backends](#backends)
+		- [JS](#js)
+		- [Flow](#flow)
+- [Optimizations](#optimizations)
+- [Appendix](#appendix)
 	- [Last known good idea](#last-known-good-idea)
 	- [Inspiration](#inspiration)
 		- [Query based compilers](#query-based-compilers)
 		- [Datalog for typechecking](#datalog-for-typechecking)
 		- [Salsa](#salsa)
-- [Optimizations](#optimizations)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -50,11 +52,8 @@ The compile server is based on these different languages:
   AST, in order to keep the compiler as simple as possible. This expresses the programs
   we compile.
 - types: The language comes with type inference for a Flow-like type system.
-
-Later, we will add:
-- Gringo syntax support to help convert strings to Forth-commands (and thus ASTs)
-- Runtime for Forth
-- Std. runtime for exp, where we define the types for ==, +, -, etc.
+- bprogram: This is the fully-typed statement-based backend AST suitable for lots of backends.
+- gringo: This is used to define the syntax of languages we compile
 
 ## Pipeline
 
@@ -63,13 +62,14 @@ This diagram illustrates the intended processing pipeline:
 	Source file in flow or other high level language
 	-> This file is read by Mini if changed
 	-> This is parsed by a Gringo parser for Flow
-	-> This results in a bunch of Forth commands to be evaluated in Mini
+	-> This results in a bunch of Forth commands evaluated in Mini
 	-> This leads to commands that set definitions of ids in Mini
 	-> Thus, we build the AST for the parsed program in the exp language
-	-> These definitions are typed by the type inference and checker
+	-> These definitions are typed by the type inference and checker in topological order
 	-> We run optimizations of the AST
-	-> We generate code in the backend
-	-> This is written as files, linked and processed for the final output
+	-> We lower the AST to BProgram for the backends
+	-> We generate code in the backends
+	-> The result is written as files, linked and processed for the final output
 
 The key point is that we are incremental at the id level, so if there is no
 change in an id, even if we parse the file again, we do not have to redo all
@@ -77,7 +77,7 @@ dependents on that id. This should hopefully speed things up.
 
 ## Mini Commands
 
-The compiler supports a range of commands (see `commands/command`):
+The compiler supports a range of commands (see `commands/command.flow`):
 
 	// Read a file and push it on the stack and run this Forth command on it
 	ReadFile(name : string, command : string);
@@ -100,11 +100,15 @@ read and parsed.
 TODO:
 - Set up file dependency tracking, so we do not have to re-evaluate files that
   are not changed
+- Consider a forward-type declaration command to allow "stitching" types declarations
+  and definitions together without propagation too much
+- Command to define what files to compile to what, with what options
+- Command to run executables we have constructed
 
 ## Mini Forth
 
 The interface to the compiler is exposed as a Forth interpreter. The Forth interpreter
-has a stack at runtime, which is used to construct AST and other manipulations.
+has a stack at runtime, which is used to construct the desugared AST.
 
 The values in this Forth correspond to the values in the expression language.
 Besides providing the stack, macros and Forth definitions, this Forth also serves 
@@ -154,7 +158,7 @@ as the interface to the compile server itself through special commands.
 ### List
 
 Lists are "Cons"-based, single-linked, functional lists, a la List<> in Flow, although they
-are represented in the exp language.
+are represented in the exp language as a sequence of calls to cons and nil functions.
 
 	nil						- push the nil token on the stack
 	<list> <elm> cons		- push a list elm:list on the stack
@@ -162,6 +166,10 @@ are represented in the exp language.
 	<elm1> <elm2> list2		- push cons(elm2, cons(elm1, nil))
 
 ### AST
+
+These commands build up the AST for the program to compile. The idea is to construct the AST
+value, and then use "define" to commit the definition to the compile server.
+
 	<string> var			- push a var ref on the stack
 	<id> <val> <body> let	- push a let-binding on the stack
 	<args> <body> lambda	- push a lambda on the stack
@@ -186,18 +194,24 @@ are represented in the exp language.
 		  we read it.
     	  Notice this is "async", so whatever follows processfile will run immediately after
 		  this command, WITHOUT the file content on the stack. Also, the callback command will run
-		  a different stack in the second run.
+		  a different stack in the second run. Use with care!
 
 	<name> <val> define		    - define a top-level name in the program
 
 ### Gringo grammars
-	<id> <grammar> prepare		- prepares the given grammar as a new builtin which can parse files with that grammar
+	<id> <grammar> prepare
+    	- prepares the given Gringo grammar as a new builtin which can parse files with that grammar
 
-	prepexp						- prepares the expression parser "parseexp"
+	prepexp
+		- prepares the expression parser "parseexp" for parsing flow
 
-TODO: Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
+TODO: 
+- Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
+- Rename prepexp to prepflow, since it is really flow
+- Consider adding other syntaxes, just to demonstrate the multi-headed nature of Mini. Maybe a
+  subset of JS or Java?
 
-### Forth standard library
+### Interactives and the Forth standard library
 
 We have a simple standard library of useful Forth definitions defined in forth/lib/lib.forth.
 
@@ -206,25 +220,17 @@ It defines:
 	<file> evalfile		   		- read the contents of the given file, and eval each line
 	<file> readfile				- read the contents of the given file and push on the stack
 
-### TODO
+Both of these are async, so only use them in the interactive context, or with care.
+
+### TODO Forth primitives
+
 - uncons, comparisons, and, or, not
 - ifte, while, def, eval, map, quoting
 - optimize getMArray to use list2array
 
-## Step by step compilation
-
-1. MiniReadfile("file.mini") is pushed as a command
-2. The contents of this file is read. If the file or its dependents are not 
-   changed since last time, the command is skipped and nothing happens.
-3. If there is a change, then we push the content of the file on the stack
-   and evaluate each line using the Forth engine
-4. This in turn will construct an AST in the compiler, tracking any other
-   file reads or definitions and keep a dependency graph in the compiler up to date
-5. As we push new definitions, they are type checked in topological order
-
 ## Milestones
 
-- Parse flow:
+- Parse flow syntax. Missing:
   - export, require, forbid
   - toplevel: fn types, var-declaration, struct-def
   - exp: id=v (no val), id.f ::= val, :=, |>
@@ -232,8 +238,8 @@ It defines:
 	e(exp with fields)
 	switch cast require unsafe
 	string-include $
-	hex-number
-	string-escapes
+	hex-number for ints
+	string-escapes in AST
 	comments
 
 - Get type inference to work: 
@@ -241,8 +247,7 @@ It defines:
   - Plug the coalescing in
   - Add canonicalize
 
-- Get hello-world to compile to JS
-  - consider doing a statement-based intermediate AST
+- Get hello-world to compile to JS: Fix operators
 
 - Rig up file reading and dependency tracking
    - Update declarations per file when file changes (size/timestamps/md5)
@@ -255,7 +260,70 @@ It defines:
 
 ## Backends
 
-Maybe we can do them just like functions in Fastlåst.
+The backends are based on the BProgram representation, which makes them very minimal.
+
+TODO:
+- Operators with precedence and limited overloading
+
+- "inline" definitions a la fastlåst for code gen of operators and such
+  Could be a new DSL for this
+
+   ||(l : i1, r : i1) -> i1 { ($l) || ($r) }
+
+  Or maybe it is some helpers in Forth with blueprint style expansion?
+  Seems like pattern matching would be useful.
+  Also, we potentially want to define how to expand the BProgram AST constructs in 
+  a natural way
+
+- Types
+- Keyword renaming
+- Constant prop
+- Dead-code elimination
+- Lift first-order functions to top-level?
+- Inlining
+- Mangling of overloading?
+- Specialization of polymorphism
+- Unfolding of expressions into statements
+- Linking
+- Running the output
+- Cross-calls
+
+Languages to add:
+- Java
+- C
+- C++
+- Rust
+- Wasm
+
+### JS
+
+We have a minimal JS backend.
+
+### Flow
+
+We have a minimal Flow backend.
+
+# Optimizations
+
+Memory is the most important one, it seems:
+
+Add a warning to the compiler if we capture too big a closure. I.e.
+
+	Foo(a : [int], b : bool);
+
+	foo(foo : Foo) {
+		timer(1000, \ -> {
+				println(foo.b);
+		})
+	}
+
+	main() {
+		foo(Foo(generate(0, 1000000), false));
+	}
+
+Use typed arrays for ints?
+
+# Appendix
 
 ## Last known good idea
 
@@ -313,7 +381,6 @@ There is an encoding of the AST in terms of structs.
 They use ids for each node, to allow references that way.
 This is a way to avoid "nested" matching.
 
-
 ### Salsa
 
 https://github.com/salsa-rs/salsa
@@ -342,25 +409,3 @@ Query:
 
 Database:
 - All the internal state
-
-
-# Optimizations
-
-Memory is the most important one, it seems:
-
-Add a warning to the compiler if we capture too big a closure. I.e.
-
-	Foo(a : [int], b : bool);
-
-	foo(foo : Foo) {
-		timer(1000, \ -> {
-				println(foo.b);
-		})
-	}
-
-	main() {
-		foo(Foo(generate(0, 1000000), false));
-	}
-
-Use typed arrays for ints?
-
