@@ -263,20 +263,8 @@ Both of these are async, so only use them in the interactive context, or with ca
 The backends are based on the BProgram representation, which makes them very minimal.
 
 TODO:
-- Operators with precedence and limited overloading
-
-- "inline" definitions a la fastlåst for code gen of operators and such
-  Could be a new DSL for this
-
-   ||(l : i1, r : i1) -> i1 { ($l) || ($r) }
-
-  Or maybe it is some helpers in Forth with blueprint style expansion?
-  Seems like pattern matching would be useful.
-  Also, we potentially want to define how to expand the BProgram AST constructs in 
-  a natural way.
-  Should also be useful to implement natives. So it is a mixed syntax language,
-  maybe the fastlåst way is reasonable.
-
+- Prefix operators with precedence and limited overloading
+- Figure out how to implement natives?
 - Types
 - Keyword renaming
 - Constant prop

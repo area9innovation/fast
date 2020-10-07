@@ -1,0 +1,66 @@
+import ds/tree;
+import mini/backends/bprogram;
+import text/blueprint;
+
+export {
+	// Produce code for this binary operator, with the given precedence
+	produceCallOrBinOp(call : BCall, rec : (BExp) -> string) -> string;
+}
+
+binOps = pairs2tree([
+	Pair("||", 10),
+
+	Pair("&&", 20),
+
+	Pair("==", 30),
+	Pair("!=", 30),
+	Pair("<=", 30),
+	Pair("<", 30),
+	Pair(">=", 30),
+	Pair(">", 30),
+
+	Pair("+", 40),
+	Pair("-", 40),
+
+	Pair("*", 50),
+	Pair("/", 50),
+	Pair("%", 50),
+]);
+
+produceCallOrBinOp(call : BCall, rec : (BExp) -> string) -> string {
+	prec = getBPrecedence(call);
+	def = \ -> {
+		rec(call.fn) + "(" + superglue(call.args, rec, ", ") + ")"
+	}
+	if (prec != 100) {
+		op = getBBinOp(call);
+		leftPrec = getBPrecedence(call.args[0]);
+		rightPrec = getBPrecedence(call.args[1]);
+		left = rec(call.args[0]);
+		right = rec(call.args[1]);
+		wrap = \p, t -> if (p < prec) "(" + t + ")" else t;
+		wrap(leftPrec, left) + " " + op + " " + wrap(rightPrec, right);
+	} else {
+		// OK, unknown or non-binary, so use normal call
+		def();
+	}
+}
+
+getBBinOp(b : BExp) -> string {
+	switch (b) {
+		BCall(fn, args): {
+			if (length(args) == 2) {
+				switch (fn) {
+					BVar(v): v;
+					default: "";
+				}
+			} else "";
+		}
+		default: "";
+	}
+}
+
+getBPrecedence(b : BExp) -> int {
+	op = getBBinOp(b);
+	lookupTreeDef(binOps, op, 100);
+}

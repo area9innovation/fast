@@ -1,4 +1,5 @@
 import mini/backends/bprogram;
+import mini/backends/operators;
 import text/blueprint;
 
 export {
@@ -49,12 +50,12 @@ bstatement2js(b : BStatement, withReturn : bool) -> string {
 					"body", bstatement2js(body, withReturn),
 			])
 		}
-		BReturnVoid(): if (withReturn) "return" else "";
-		BReturn(val): (if (withReturn) "return " else "") + bexp2js(val);
+		BReturnVoid(): if (withReturn) "return;" else "";
+		BReturn(val): (if (withReturn) "return " else "") + bexp2js(val) + ";";
 		BSequenceStatement(statements): {
 			"{" + supergluei(statements, \i, stat -> {
 				bstatement2js(stat, i == length(statements) - 1)
-			}, ";\n") + "}";
+			}, "\n") + "}";
 		}
 		BComment(comment): comment;
 	}
@@ -80,7 +81,7 @@ bexp2js(b : BExp) -> string {
 			+ bstatement2js(BReturn(body), true)
 			+ "}"
 		;
-		BCall(fn, args): bexp2js(fn) + "(" + superglue(args, bexp2js, ", ") + ")";
+		BCall(fn, args): produceCallOrBinOp(b, bexp2js);
 		BIf(cond, then, else_): "(" + bexp2js(cond) + " ? " + bexp2js(then) + " : " + bexp2js(else_) + ")";
 		BSequence(statements): {
 			"(" + superglue(statements, bexp2js, ", ") + ")";

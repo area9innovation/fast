@@ -1,4 +1,5 @@
 import mini/backends/bprogram;
+import mini/backends/operators;
 import text/blueprint;
 
 export {
@@ -72,7 +73,7 @@ bexp2flow(b : BExp) -> string {
 			])
 		}
 		BLambda(args, body): "\\" + superglue(args, \fa -> fa.name, ", ") + " -> " + bexp2flow(body);
-		BCall(fn, args): bexp2flow(fn) + "(" + superglue(args, bexp2flow, ", ") + ")";
+		BCall(fn, args): produceCallOrBinOp(b, bexp2flow);
 		BIf(cond, then, else_): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}";
 		BSequence(statements): {
 			"{" + superglue(statements, bexp2flow, "; ") + "}";

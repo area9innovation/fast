@@ -5,6 +5,11 @@ fact(n : int) -> int {
 	}
 }
 
+prec() -> int {
+	1 + 2 * 3 + 4 % 6 + 2 * (3 + 4);
+}
+
 main() {
+	prec();
 	fact(5);
 }
