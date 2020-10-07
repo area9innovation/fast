@@ -55,16 +55,65 @@ miniExp2BReturn(e : MiniExp) -> BStatement {
 		MiniVar(name, tv): BReturn(miniExp2BExp(e));
 		MiniLambda(args, body, tv): BReturn(miniExp2BExp(e));
 		MiniCall(fn, args, tv): {
-			println(fn);
-			BReturn(miniExp2BExp(e))
+			switch (fn) {
+				MiniVar(fname, __): {
+					if (fname == "__ifte") {
+						BIfStatement(miniExp2BExp(args[0]), miniExp2BReturn(args[1]), miniExp2BReturn(args[2]));
+					} else if (fname == ";") {
+						n = length(args);
+						if (n == 0) {
+							BReturnVoid();
+						} else if (n == 1) {
+							miniExp2BReturn(args[0]);
+						} else {
+							BSequenceStatement(map(args, miniExp2BReturn));
+						}
+					} else {
+						println(fname);
+						BReturn(miniExp2BExp(e))
+					}
+				}
+				default: BReturn(miniExp2BExp(e))
+			}
 		}
 		default: BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 	}
 }
 
 miniExp2BExp(e : MiniExp) -> BExp {
+	error = \ -> {
+		BComment("// Can not convert " + miniPretty(e) + " to exp");
+	}
 	switch (e) {
 		MiniValue(): miniValue2BValue(e);
-		default: BComment("// Can not convert " + miniPretty(e) + " to exp yet");
+		MiniVar(name, tyvar): BVar(name);
+		MiniLet(name, value, body, tyvar): BLet(name, miniExp2BExp(value), miniExp2BExp(body));
+		MiniLambda(args, body, tyvar): {
+			bbody = miniExp2BExp(body);
+			BLambda(map(args, \a -> BFunArg(a)), bbody);
+		}
+		MiniCall(fn, args, tyvar): {
+			switch (fn) {
+				MiniVar(fname, __): {
+					if (fname == "__ifte") {
+						BIf(miniExp2BExp(args[0]), miniExp2BExp(args[1]), miniExp2BExp(args[2]));
+					} else if (fname == ";") {
+						n = length(args);
+						if (n == 1) {
+							miniExp2BExp(args[0]);
+						} else {
+							BSequence(map(args, miniExp2BExp));
+						}
+					} else {
+						println(fname);
+						BCall(miniExp2BExp(fn), map(args, miniExp2BExp));
+					}
+				}
+				default: BCall(miniExp2BExp(fn), map(args, miniExp2BExp));
+			}
+		}
+		MiniTypeInt(bits): error();
+		MiniTypeFunction(args, returnType): error();
+		MiniTypeCall(id, typars): error();
 	}
 }

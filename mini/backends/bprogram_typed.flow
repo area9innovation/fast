@@ -7,11 +7,11 @@ export {
 		BString(value : string, type : BType);
 
 	// Statement-based languages can get this format:
-	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BFunction, BSequence;
+	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BFunction, BSequenceStatement;
 		BIfStatement(cond : BExp, then : BStatement, else_ : BStatement, type : BType);
 		// The type is the type of the body
 		BLetStatement(name : string, value : BExp, body : BStatement, type : BType);
-		BSequence(statements : [BStatement]);
+		BSequenceStatement(statements : [BStatement]);
 
 		// The empty return. We could maybe have BVoid and BVoidType instead?
 		BReturnVoid();

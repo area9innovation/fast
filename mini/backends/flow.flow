@@ -51,7 +51,7 @@ bstatement2flow(b : BStatement) -> string {
 		}
 		BReturnVoid(): "{}";
 		BReturn(val): bexp2flow(val);
-		BSequence(statements): {
+		BSequenceStatement(statements): {
 			"{" + superglue(statements, bstatement2flow, ";\n") + "}";
 		}
 		BComment(comment): comment;
@@ -74,6 +74,9 @@ bexp2flow(b : BExp) -> string {
 		BLambda(args, body): "\\" + superglue(args, \fa -> fa.name, ", ") + " -> " + bexp2flow(body);
 		BCall(fn, args): bexp2flow(fn) + "(" + superglue(args, bexp2flow, ", ") + ")";
 		BIf(cond, then, else_): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}";
+		BSequence(statements): {
+			"{" + superglue(statements, bexp2flow, "; ") + "}";
+		}
 		BComment(comment): comment + "\n";
 	}
 }

@@ -51,7 +51,7 @@ bstatement2js(b : BStatement, withReturn : bool) -> string {
 		}
 		BReturnVoid(): if (withReturn) "return" else "";
 		BReturn(val): (if (withReturn) "return " else "") + bexp2js(val);
-		BSequence(statements): {
+		BSequenceStatement(statements): {
 			"{" + supergluei(statements, \i, stat -> {
 				bstatement2js(stat, i == length(statements) - 1)
 			}, ";\n") + "}";
@@ -82,6 +82,9 @@ bexp2js(b : BExp) -> string {
 		;
 		BCall(fn, args): bexp2js(fn) + "(" + superglue(args, bexp2js, ", ") + ")";
 		BIf(cond, then, else_): "(" + bexp2js(cond) + " ? " + bexp2js(then) + " : " + bexp2js(else_) + ")";
+		BSequence(statements): {
+			"(" + superglue(statements, bexp2js, ", ") + ")";
+		}
 		BComment(comment): comment + "\n";
 	}
 }

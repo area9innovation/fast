@@ -11,17 +11,17 @@ export {
 	BComment(comment : string);
 
 	// Statement-based languages can get this format:
-	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BSequence, BComment;
+	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BSequenceStatement, BComment;
 		BIfStatement(cond : BExp, then : BStatement, else_ : BStatement);
 		BLetStatement(name : string, value : BExp, body : BStatement);
-		BSequence(statements : [BStatement]);
+		BSequenceStatement(statements : [BStatement]);
 
 		// The empty return. We could maybe have BVoid and BVoidType instead?
 		BReturnVoid();
 		// Return a value
 		BReturn(val : BExp);
 
-	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BComment;
+	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BComment;
 		BVar(name : string);
 		// The type is the type of the body
 		BLet(name : string, value : BExp, body : BExp);
@@ -30,7 +30,7 @@ export {
 
 		BCall(fn : BExp, args : [BExp]);
 		BIf(cond : BExp, then : BExp, else_ : BExp);
-
+		BSequence(exps : [BExp]);
 
 	// The backends get this language
 	BValue ::= BInt, BDouble, BString;

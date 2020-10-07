@@ -57,8 +57,8 @@ vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 	| id ws ':' ws type ';'? ws;
 
 exp = (
-		"if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"ife" $"swap" $"call"
-		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"if" $"swap" $"call"
+		"if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
+		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
 		| id ws "=" ws exp ";" ws exp $"let"
 	 	| id ws ":" type "=" ws exp ";" $"swap" $$":" $"binop" ws exp $"let"
 		// exp "." field ::= exp
@@ -83,12 +83,12 @@ exp = (
 	// maybe ?? exp : exp
 
 	|> (
-		'!' ws exp $$"not" $"unop"
-		| '-' ws exp $$"neg" $"unop"
+		'!' ws exp $$"__not" $"unop"
+		| '-' ws exp $$"__neg" $"unop"
 		| backslash lambdaargs ws "->" ws exp $"lambda"
 		| exp "(" ws exps ")" ws $"call"
 		| exp "." ws id ws $$"." $"binop"
-		| exp "[" ws exp "]" ws $$"index" $"binop"
+		| exp "[" ws exp "]" ws $$"__index" $"binop"
 		// '(' ws call "with" s fields ')' ws;
 	)
 
@@ -105,7 +105,7 @@ exp = (
 		| brace
 		| string
 		| "[" ws exps "]" $$"[" $"unop"
-		| '^' ws exp $$"deref" $"unop"
+		| '^' ws exp $$"__deref" $"unop"
 	);
 
 // TODO: Maybe this should be binops instead of an array?

@@ -6,21 +6,27 @@ export {
 }
 
 getBuiltinMiniTypes() -> Tree<string, MiniType2> {
+	ta = MiniType2Par("?");
+	tb = MiniType2Par("??");
+	b = MiniType2Call("bool", []);
+	v = MiniType2Int(0);
 	pairs2tree([
-		Pair(";", MiniType2Function([MiniType2Par("?"), MiniType2Par("??")], MiniType2Par("??"))),
-		Pair("==", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
-		Pair("!=", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
-		Pair("<=", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
-		Pair("<", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
-		Pair(">=", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
-		Pair(">", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Call("bool", []))),
+		Pair(";", MiniType2Function([ta, tb], tb)),
+		Pair("==", MiniType2Function([ta, ta], b)),
+		Pair("!=", MiniType2Function([ta, ta], b)),
+		Pair("<=", MiniType2Function([ta, ta], b)),
+		Pair("<", MiniType2Function([ta, ta], b)),
+		Pair(">=", MiniType2Function([ta, ta], b)),
+		Pair(">", MiniType2Function([ta, ta], b)),
+
+		Pair("+", MiniType2Function([ta, ta], ta)),
+		Pair("-", MiniType2Function([ta, ta], ta)),
+		Pair("*", MiniType2Function([ta, ta], ta)),
+		Pair("/", MiniType2Function([ta, ta], ta)),
+		Pair("%", MiniType2Function([ta, ta], ta)),
 
 
-		Pair("+", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
-		Pair("-", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
-		Pair("*", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
-		Pair("/", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
-		Pair("%", MiniType2Function([MiniType2Par("?"), MiniType2Par("?")], MiniType2Par("?"))),
-
+		Pair("__ifte", MiniType2Function([b, ta, ta], ta)),
+		Pair("__ift", MiniType2Function([b, v, v], v)),
 	])
 }
