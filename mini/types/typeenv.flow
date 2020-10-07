@@ -1,5 +1,6 @@
 import mini/exp/ast;
 import mini/types/type2;
+import mini/types/restype;
 
 export {
 	// The environment used when doing type inference
@@ -8,8 +9,6 @@ export {
 		ast : MiniAst,
 		// The types of ids so far
 		types : Tree<string, MiniType2>,
-		// What are the tyvars bound to?
-		mutable tyvars : Tree<int, MiniType2>,
 
 		// For the MLSub algorithm, we keep track of bounds:
 		mutable tyvarLowerBounds : Tree<int, Set<MiniType2>>,
@@ -17,5 +16,8 @@ export {
 
 		// What is the next tyvar id?
 		mutable tyvarId : int,
+
+		// What are the tyvars bound to in terms of resolved types?
+		mutable tyvars : Tree<int, ResType>,
 	);
 }

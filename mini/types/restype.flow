@@ -1,0 +1,18 @@
+import ds/set;
+
+export {
+	ResType ::= 
+		ResUnion, ResIntersection, ResRecursiveType, 
+		ResFunctionType, ResTypeRecord, ResTypeVar, ResIntType,
+		ResTypeCall, ResTypePar;
+
+	ResUnion(types : Set<ResType>);
+	ResIntersection(types : Set<ResType>);
+	ResFunctionType(args : [ResType], rhs : ResType);
+	ResTypeRecord(fields : [Pair<string, ResType>]);
+	ResTypeCall(id : string, typars : [ResType]);
+	ResRecursiveType(id : int, type : ResType);
+	ResTypeVar(id : int);
+	ResIntType(bits : int);
+	ResTypePar(id : string);
+}

@@ -1,29 +1,12 @@
 import mini/types/typeenv;
+import mini/types/restype;
 import ds/tuples;
+import ds/treeutils;
 
 export {
 	// Resolve the type to a concrete type
 	coalesceMiniType2(env : MiniTypeEnv, type : MiniType2) -> ResType;
-
-	ResType ::= 
-		/*ResTop, ResBottom, 
-		*/ 
-		ResUnion, ResIntersection, ResRecursiveType, 
-		ResFunctionType, ResTypeRecord, ResTypeVar, ResIntType,
-		ResTypeCall, ResTypePar;
 }
-
-	// ResTop();
-	// ResBottom();
-	ResUnion(types : Set<ResType>);
-	ResIntersection(types : Set<ResType>);
-	ResFunctionType(args : [ResType], rhs : ResType);
-	ResTypeRecord(fields : [Pair<string, ResType>]);
-	ResTypeCall(id : string, typars : [ResType]);
-	ResRecursiveType(id : int, type : ResType);
-	ResTypeVar(id : int);
-	ResIntType(bits : int);
-	ResTypePar(id : string);
 
 PolarVariable(id : int, polar : bool);
 

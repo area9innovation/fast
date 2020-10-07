@@ -1,0 +1,29 @@
+import mini/types/typeinference;
+import mini/exp/topological;
+
+export {
+	typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv;
+}
+
+typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
+	// Find a topological order of these ids
+	order = topologicalMiniOrder(ast, ids);
+
+	if (false) {
+		println("Typing in this order:");
+		println(order);
+	}
+	
+	tenv = makeMiniTypeEnv(ast);
+	tenv2 = fold(order, tenv, \acc, id -> {
+		mfn = lookupTree(ast.declarations, id);
+		mfn ?? {
+			typeInferenceMiniScope(acc, id, mfn);
+		} : {
+			println("Unknown name " + id);
+			acc;
+		}
+	});
+
+	tenv2;
+}
