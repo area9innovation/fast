@@ -264,8 +264,9 @@ Both of these are async, so only use them in the interactive context, or with ca
 The backends are based on the BProgram representation, which makes them very minimal.
 
 TODO:
+- Figure out how to implement natives? println -> inlined console.log and similar.
+  Do an embedded DSL in the compiler itself.
 - Prefix operators with precedence and limited overloading
-- Figure out how to implement natives?
 - Types
 - Keyword renaming
 - Constant prop
