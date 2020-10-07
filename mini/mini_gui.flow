@@ -91,6 +91,7 @@ main() {
 					next(db, MiniDb(tdb with forth = MiniForth(tdb.forth with stack = makeList())));
 				}, [], []),
 				MTextButton("COMPILE", \ -> {
+					println("COMPILING");
 					program = miniAst2BProgram(getValue(db).program);
 					println(bprogram2flow(program));
 					println(bprogram2js(program));

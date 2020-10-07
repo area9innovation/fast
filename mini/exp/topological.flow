@@ -14,7 +14,10 @@ MiniTopological(
 );
 
 topologicalMiniOrder(ast : MiniAst, ids : Set<string>) -> [string] {
+	// The arrows point from what is used by something to what uses it
 	graph = buildMiniGraph(MiniTopological(ast, ids, makeSet(), makeSimpleGraph()));
+
+	// setFileContent("deps.dot", simpleGraph2dot(graph.graph, "", [], \n -> [DotLabel(n)], \e -> []));
 
 	order = topoSortSimpleGraph(graph.graph);
 	filter(order, \dep -> {
@@ -26,6 +29,7 @@ buildMiniGraph(acc : MiniTopological) -> MiniTopological {
 	mp = popMinSet(acc.queue);
 	mp ?? {
 		id = mp.value;
+		// println("Visiting " + id + " with visted " + strGlue(set2array(acc.visited), ", "));
 		nacc = MiniTopological(acc with queue = mp.rest);
 		if (containsSet(acc.visited, id)) {
 			buildMiniGraph(nacc);
@@ -33,10 +37,10 @@ buildMiniGraph(acc : MiniTopological) -> MiniTopological {
 			deps = lookupMultimap(acc.ast.dependents, id);
 			graph = addSimpleNode(acc.graph, id);
 			ngraph = foldSet(deps, graph, \acc2 : SimpleGraph<string, bool>, dep : string -> {
-				if (containsSet(acc.visited, dep) || id == dep) {
+				if (id == dep || hasSimpleEdge(acc2, id, dep)) {
 					// We do no need self-loops
 					acc2
-				} else { 
+				} else {
 					addSimpleEdge(acc2, id, dep, false, 0)
 				}
 			});
