@@ -59,6 +59,8 @@ miniExp2BReturn(e : MiniExp) -> BStatement {
 				MiniVar(fname, __): {
 					if (fname == "__ifte") {
 						BIfStatement(miniExp2BExp(args[0]), miniExp2BReturn(args[1]), miniExp2BReturn(args[2]));
+					} else if (fname == "__ift") {
+						BIfStatement(miniExp2BExp(args[0]), miniExp2BReturn(args[1]), BReturnVoid());
 					} else if (fname == ";") {
 						n = length(args);
 						if (n == 0) {
@@ -69,7 +71,6 @@ miniExp2BReturn(e : MiniExp) -> BStatement {
 							BSequenceStatement(map(args, miniExp2BReturn));
 						}
 					} else {
-						println(fname);
 						BReturn(miniExp2BExp(e))
 					}
 				}
@@ -97,6 +98,8 @@ miniExp2BExp(e : MiniExp) -> BExp {
 				MiniVar(fname, __): {
 					if (fname == "__ifte") {
 						BIf(miniExp2BExp(args[0]), miniExp2BExp(args[1]), miniExp2BExp(args[2]));
+					} else if (fname == "__ift") {
+						BIf(miniExp2BExp(args[0]), miniExp2BExp(args[1]), BSequence([]));
 					} else if (fname == ";") {
 						n = length(args);
 						if (n == 1) {
@@ -105,7 +108,6 @@ miniExp2BExp(e : MiniExp) -> BExp {
 							BSequence(map(args, miniExp2BExp));
 						}
 					} else {
-						println(fname);
 						BCall(miniExp2BExp(fn), map(args, miniExp2BExp));
 					}
 				}

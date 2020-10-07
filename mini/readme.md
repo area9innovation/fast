@@ -230,7 +230,7 @@ It defines:
   - exp: id=v (no val), id.f ::= val, :=, |>
 	maybe ?? exp : exp
 	e(exp with fields)
-	ref switch cast require unsafe
+	switch cast require unsafe
 	string-include $
 	hex-number
 	string-escapes

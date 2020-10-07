@@ -4,7 +4,7 @@ import ds/treeutils;
 
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
-	typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniType2;
+	typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniTypeEnv;
 	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv;
 }
 
@@ -19,10 +19,18 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 	);
 }
 
-typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniType2 {
+typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniTypeEnv {
 	// TODO: Set up an environment for this scope where we can remember
 	// the types
-	typeInferenceMini(env, ex);
+	type = makeMiniType2Var(env);
+	nenv = setMiniType2(env, scope, type);
+
+	rt = typeInferenceMini(nenv, ex);
+
+	// OK, we constrain the type
+	constrainMiniType(nenv, type, rt);
+
+	nenv;
 }
 
 /*

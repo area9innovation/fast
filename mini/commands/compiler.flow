@@ -88,9 +88,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			tenv2 = fold(order, tenv, \acc, id -> {
 				mfn = lookupTree(db.program.declarations, id);
 				mfn ?? {
-					type = typeInferenceMiniScope(acc, id, mfn);
-					// Set the type in the type environment when inferring
-					setMiniType2(acc, id, type);
+					typeInferenceMiniScope(acc, id, mfn);
 				} : {
 					println("Unknown name " + id);
 					acc;
