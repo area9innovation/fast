@@ -102,6 +102,7 @@ TODO:
   are not changed
 - Consider a forward-type declaration command to allow "stitching" types declarations
   and definitions together without propagation too much
+- Add "desugaring"/"export" checking phase, which might also do the stitching type thing?
 - Command to define what files to compile to what, with what options
 - Command to run executables we have constructed
 

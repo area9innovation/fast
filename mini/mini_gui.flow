@@ -93,8 +93,11 @@ main() {
 				MTextButton("COMPILE", \ -> {
 					println("COMPILING");
 					program = miniAst2BProgram(getValue(db).program);
-					println(bprogram2flow(program));
-					println(bprogram2js(program));
+					flowprogram = bprogram2flow(program);
+					jsprogram = bprogram2js(program);
+					setFileContent("output.flow", flowprogram);
+					setFileContent("output.js", jsprogram);
+					{}
 				}, [], [])
 			]),
 			MFixedY(8.0),
