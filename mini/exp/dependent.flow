@@ -12,6 +12,9 @@ export {
 	);
 
 	updateMiniDependent(dep : MiniDependent, id : string, deps : Set<string>) -> MiniDependent;
+
+	// What does this id depend on? Will include itself!
+	getMiniDependencies(dep : MiniDependent, id : string, transitive : bool) -> Set<string>;
 }
 
 
@@ -39,4 +42,22 @@ removeMiniDeps(pr : MiniDependent, id : string) -> MiniDependent {
 			removeMultimap(acc, dep, id)
 		})
 	);
+}
+
+getMiniDependencies(dep : MiniDependent, id : string, transitive : bool) -> Set<string> {
+	if (transitive) {
+		collectMiniDependencies(dep, makeSet1(id), id)
+	} else {
+		lookupMultimap(dep.dependencies, id);
+	}
+}
+
+collectMiniDependencies(dep : MiniDependent, acc : Set<string>, id : string) -> Set<string> {
+	deps = lookupMultimap(dep.dependencies, id);
+	foldSet(deps, acc, \acc2, id2 -> {
+		if (containsSet(acc2, id2)) acc2
+		else {
+			collectMiniDependencies(dep, insertSet(acc2, id), id2)
+		}
+	})
 }

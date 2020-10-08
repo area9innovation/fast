@@ -8,7 +8,13 @@ export {
 }
 
 miniAst2BProgram(ast : MiniAst) -> BProgram {
-	ids : Set<string> = buildSet(getTreeKeys(ast.declarations));
+	// Here we effectively do DCE:
+	// TODO: Also include all top-level vars with side-effects
+	ids0 : Set<string> = getMiniDependencies(ast.idDependents, "main", true);
+	ids = if (isEmptySet(ids0)) {
+		println("Could not find main. Keep everything");
+		buildSet(getTreeKeys(ast.declarations)) 
+	} else ids0;
 
 	order = topologicalMiniOrder(ast.idDependents, ids);
 

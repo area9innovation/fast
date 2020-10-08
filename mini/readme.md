@@ -290,6 +290,8 @@ Languages to add:
 
 We have a minimal JS backend.
 
+Fix : to write bools, and ignore in other cases
+
 ### Flow
 
 We have a minimal Flow backend.

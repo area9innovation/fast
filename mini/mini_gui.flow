@@ -25,7 +25,7 @@ viewMiniDb(m : MiniDb) -> Material {
 			}),
 			[MFixedY(8.0)],
 			foldTree(m.program.declarations, [MText("Ids:", [MSubtitle1()])], \st, val, acc -> {
-				deps = lookupMultimap(m.program.idDependents.dependencies, st);
+				deps = getMiniDependencies(m.program.idDependents, st, false);
 				mtype = lookupTree(m.program.types, st);
 				typeString = mtype ?? {
 					" : " + mtype2string(mtype)
@@ -101,7 +101,9 @@ main() {
 				}, [], [])
 			]),
 			MFixedY(8.0),
-			MSelect(db, viewMiniDb),
+			MScroll(
+				MSelect(db, viewMiniDb), TFillXY(), []
+			)
 		])
 	);
 }

@@ -77,7 +77,7 @@ bexp2js(b : BExp) -> string {
 			])
 		}
 		BLambda(args, body): "function(" 
-			+ superglue(args, \fa -> fa.name, ", ") + "{" 
+			+ superglue(args, \fa -> fa.name, ", ") + ") {" 
 			+ bstatement2js(BReturn(body), true)
 			+ "}"
 		;
