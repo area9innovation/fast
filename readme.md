@@ -1275,3 +1275,7 @@ https://www.prisma.io/blog/prisma-raises-series-a-saks1zr7kip6
 
 - Consider to use this library to expose things in Jupyter
 	https://github.com/jupyter-xeus/xeus
+
+- Check out this to find a pattern for streaming apps:
+
+  https://itnext.io/your-single-page-app-is-now-a-polyfill-7881fb01694e

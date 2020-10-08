@@ -102,22 +102,21 @@ exp =
 		| exp 
 			(
 			"(" ws exps ")" ws $"call"
+			| '(' ws exp "with" s $"list2" fields $"cons" ')' ws $$"__with" $"var" $"swap" $"call"
 			| "." ws id ws $$"." $"binop"
 			| "[" ws exp "]" ws $$"__index" $"binop"
-			// | '(' ws call "with" s fields ')' ws;
 			| ":" ws type $$":" $"binop"
 			)+
 	)
-
 	|> (
 		"(" ws exp ")" ws 
-		| "true" ws $"1" $"1" $"inttype" $$":" $"binop"
-		| "false" ws $"0" $"1" $"inttype" $$":" $"binop"
-		| "ref" ws exp $$"__ref" $"unop"
+		| "true" !letterOrDigit ws $"1" $"1" $"inttype" $$":" $"binop"
+		| "false" !letterOrDigit ws $"0" $"1" $"inttype" $$":" $"binop"
+		| "ref" !letterOrDigit ws exp $$"__ref" $"unop"
 		| switch
-		| "cast" ws $$"__cast" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
-		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
-		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
+		| "cast" !letterOrDigit ws $$"__cast" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
+		| "if" !letterOrDigit ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
+		| "if" !letterOrDigit ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
 		| id ws $"var"
 		| "0x" $(hexdigit+) ws $"parsehex"
 		| $('0'-'9'+ "." '0'-'9'*) ws $"s2d"
@@ -129,29 +128,33 @@ exp =
 		| '^' ws exp $$"__deref" $"unop"
 	);
 
+	// listof(fieldassign, ",")
+	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")* | $"nil";
+		fieldassign = id ws '=' ws exp $$"__fieldassign" $"binop";
+
 // TODO: Maybe this should be binops instead of an array? We could have a "unroll" Forth that turns lists into binops
 brace = "{" ws expsemis "}" ws $$";" $"var" $"swap" $"call";
 
 	// listof(exp, ";")
 	expsemis = $"nil" exp $"cons" (";" ws exp $"cons")* (";" ws)? | $"nil";
 
-switch = "switch" ws '(' ws exp ')' ws '{' ws $"nil" (defaultOrNamedCase  $"cons")* '}' ws $$"__switch" $"binop";
+switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws $"nil" (defaultOrNamedCase  $"cons")* '}' ws $$"__switch" $"binop";
 
-defaultOrNamedCase = "default" ws ':' ws exp (';' ws)? $$"__default" $"unop"
+defaultOrNamedCase = "default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__default" $"unop"
 	| id ws '(' ws names ')' $$"__pattern" $"binop" ws ':' ws exp (';' ws)? $$"__case" $"binop";
 
 // listof(id, ",")
 names = $"nil" id $"cons" ws (',' ws id $"cons")* | $"nil";
 
 type = 	
-		"bool" ws $"1" $"inttype"
-		| "int" ws $"32" $"inttype"
-		| "double" ws $$"double" $"nil" $"typecall"
-		| "string" ws $$"string" $"nil" $"typecall"
-		| "flow" ws $$"flow" $"nil" $"typecall"
-		| "void" ws $$"void" $"nil" $"typecall"
-		| "native" ws $$"native" $"nil" $"typecall"
-		| "ref" ws type $"list1" $$"ref" $"swap" $"typecall"
+		"bool" !letterOrDigit ws $"1" $"inttype"
+		| "int" !letterOrDigit ws $"32" $"inttype"
+		| "double" !letterOrDigit ws $$"double" $"nil" $"typecall"
+		| "string" !letterOrDigit ws $$"string" $"nil" $"typecall"
+		| "flow" !letterOrDigit ws $$"flow" $"nil" $"typecall"
+		| "void" !letterOrDigit ws $$"void" $"nil" $"typecall"
+		| "native" !letterOrDigit ws $$"native" $"nil" $"typecall"
+		| "ref" !letterOrDigit ws type $"list1" $$"ref" $"swap" $"typecall"
 		| "(" ws namedargs ")" ws "->" ws type $"fntype"
 		| "(" ws types ")" ws "->" ws type $"fntype"
 		| typename
@@ -185,7 +188,7 @@ exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";
 
 string = '"' "#inc" "lude" s path '"' ws   // TODO: AST
 	| singlestring
-	| $"nil" (singlestring $"cons")+ $"concatStrings"
+// 	| $"nil" (singlestring $"cons")+ $"concatStrings"
 	;
 
 singlestring = '"' $(onechar_)* '"' ws;
@@ -206,16 +209,24 @@ anychar = '0x0000'-'0xffff';
 
 id = $bid;
 
-bid = ('a'-'z' | 'A'-'Z' | '_') ('a'-'z' | 'A'-'Z' | '0'-'9' | '_')*;
+bid = ('a'-'z' | 'A'-'Z' | '_') (letterOrDigit)*;
+
+letterOrDigit = 'a'-'z'
+	| 'A'-'Z'
+	| '_'
+	| '0'-'9';
+
 
 int = $'0'-'9'+;
 
 backslash = '\';
 
-ws = s*;
+ws = cs*;
+
+s = cs+;
 
 // We do not have \n and \t and such, so these are here verbatim
-s = " " | "	" | "
+cs = " " | "	" | "
 " | "//" (!"
 " anychar)* "
 " | "/*" (!"*/" anychar)* "*/";

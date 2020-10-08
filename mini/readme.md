@@ -237,12 +237,10 @@ Both of these are async, so only use them in the interactive context, or with ca
 
 - Parse flow syntax. Missing:
   - dlist.flow: mutable, mut assign
-  - simplegraph.flow: with
 
   - require, forbid
   - exp: id=v (no val), id.f ::= val
 	maybe ?? exp : exp
-	e(exp with fields)
 	require unsafe
 	string-include $
 	string-escapes in AST
@@ -273,10 +271,23 @@ Here, we need a semi-colon after the if in the sequence:
 		c;
 	}
 
+	{
+		a = 1;
+		if (true) { 1 }	// ; required here
+		c;
+	}
+
 Also need it after switch:
 
 	{
 		a = switch (b) { ... }		// ; required here
+		c
+	}
+
+And after local lambdas:
+
+	{ 
+		a = \ -> { ... }			// ; required here
 		c
 	}
 
@@ -295,6 +306,11 @@ Trailing top-level semi-colon:
 	foo() {
 		...
 	};				// foo() { }
+
+We do not support multi-strings:'
+
+	"Hello " "World"	// "Hello World"
+
 
 ## Backends
 
