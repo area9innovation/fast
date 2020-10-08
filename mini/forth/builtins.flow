@@ -138,13 +138,6 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		// Strings
 		//
 
-		// x print ->
-		Pair("print", \stack -> {
-			elm = popMStack(stack);
-			println(miniPretty(elm.first));
-			elm.second;
-		}),
-
 		// <string> strlen -> <int>
 		Pair("strlen", \stack -> {
 			x = popMStack(stack);
@@ -290,7 +283,58 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		Pair("cons", \stack -> {
 			val = popMStack(stack);
 			list = popMStack(val.second);
+			switch (list.first) {
+				MiniCall(fn, __, __): {
+					switch (fn) {
+						MiniVar(n, __): {
+							if (n == "nil" || n == "cons") {
+
+							} else {
+								println("Expected list for cons, not " + toString(list.first));
+							}
+						}
+						default: println("Expected list for cons, not " + toString(list.first));
+					}
+				}
+				default: {
+					println("Expected list for cons, not " + toString(list.first));
+				}
+			}
 			pushMStack(list.second, MiniCall(MiniVar("cons", 0), [val.first, list.first], 0));
+		}),
+
+		Pair("isnil", \stack -> {
+			list = popMStack(stack);
+			isnil = switch (list.first) {
+				MiniCall(fn, __, __): {
+					switch (fn) {
+						MiniVar(n, __): n == "nil";
+						default: false;
+					}
+				}
+				default: false;
+			}
+			pushMStack(list.second, MiniInt(b2i(isnil), 0))
+		}),
+
+		//
+		// Debugging
+		//
+
+		// x print ->
+		Pair("print", \stack -> {
+			elm = popMStack(stack);
+			println(miniPretty(elm.first));
+			elm.second;
+		}),
+
+		// x y dump -> x y
+		Pair("dump", \stack -> {
+			println("Stack:");
+			iterList(stack.stack, \st -> {
+				println(miniPretty(st));
+			});
+			stack;
 		}),
 
 		// TODO: uncons, comparisons, and, or, not

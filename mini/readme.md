@@ -133,6 +133,7 @@ as the interface to the compile server itself through special commands.
 ### Misc
 
 	x print ->
+	x y debug -> x y 
 
 	// Comment is ignored
 
@@ -165,6 +166,7 @@ are represented in the exp language as a sequence of calls to cons and nil funct
 	<list> <elm> cons		- push a list elm:list on the stack
 	<elm1> list1			- push cons(elm1, nil)
 	<elm1> <elm2> list2		- push cons(elm2, cons(elm1, nil))
+	<list> isnil   -> 0/1   - 1 if the list is nil, 0 otherwise
 
 ### AST
 

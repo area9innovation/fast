@@ -22,8 +22,7 @@ toplevelDeclaration =
 	| functionOrStruct
 	| vardecl;
 
-// TODO: AST
-native = "native" s id ws ':' ws ("io" ws)? type '=' ws $name ws ';' ws;
+native = "native" s id ws ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" ws $$"io" $"cons")? $"isnil" $"-" type $"list2" '=' ws $name $"cons" ws ';' ws $"call" $"define";
 	name = bid ('.' bid)*;
 
 assign = id ws '=' ws exp ';'? ws $"define";
@@ -66,8 +65,8 @@ functionOrStruct =
 	returnType = ws "->" ws type;
 
 vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
-	// TODO: AST, and how to do it?
-	| id ws ':' ws type ';'? ws;
+	// TODO: AST, and how to do it? We just drop for now
+	| id ws ':' ws type ';'? ws $"drop" $"drop";
 
 exp = (
 		"if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
@@ -175,8 +174,8 @@ lambdaargs = $"nil" id $"cons" ("," ws id $"cons")* ("," ws)? | $"nil";
 // listof(exp, ",")
 exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";
 
-// TODO: AST
-string = '"' "#inc" "lude" s path '"' ws
+
+string = '"' "#inc" "lude" s path '"' ws   // TODO: AST
 	| singlestring
 	| $"nil" (singlestring $"cons")+ $"concatStrings"
 	;

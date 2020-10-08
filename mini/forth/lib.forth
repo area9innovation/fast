@@ -18,7 +18,7 @@ def parsefile "parseexp" swap processfile
 // <a> -> cons(a, nil)
 def list1 nil swap cons
 
-// <a> <b> -> cons(a, cons(b, nil))
+// <a> <b> -> cons(b, cons(a, nil))
 def list2 swap nil swap cons swap cons
 
 // <exp> <string>  -> <call>(var(string), [exp])
