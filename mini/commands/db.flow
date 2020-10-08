@@ -13,6 +13,7 @@ export {
 
 		// Here we track what files we have read, so we can quickly check if they should be
 		// read again or not
+		fileDependencies : MiniDependent,
 		// fileCache : MiniFileCache,
 
 		// The program we are working on

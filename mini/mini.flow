@@ -5,15 +5,10 @@ import mini/commands/compiler;
 main() {
 	db0 = makeMiniDb(["."], println);
 
-	db = pushMiniCommand(db0, MiniProcessFile("mini/tests/test.mini", "evallines"));
+	db = pushMiniCommand(db0, MiniProcessFile("", "mini/tests/test.mini", "evallines"));
 
 	fdb = miniCompile(db);
 	iterList(fdb.forth.stack, println);
-
-	println("Final dependencies:");
-	traverseInOrder(fdb.program.dependencies, \k, v -> {
-		println(k + " depends on " + strGlue(set2array(v), ", "));
-	});
 
 	quit(0);
 }

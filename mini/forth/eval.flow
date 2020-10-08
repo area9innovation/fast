@@ -23,7 +23,7 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		// 	MiniProcessFile(name : string, command);
 		filename = popMiniValue(db);
 		evalcommand = popMiniValue(filename.second);
-		pushMiniCommand(evalcommand.second, MiniProcessFile(getMiniString(filename.first), getMiniString(evalcommand.first)));
+		pushMiniCommand(evalcommand.second, MiniProcessFile(file, getMiniString(filename.first), getMiniString(evalcommand.first)));
 	} else if (command == "define") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);

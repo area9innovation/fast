@@ -38,9 +38,10 @@ miniCompile(db : MiniDb) -> MiniDb {
 
 runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 	switch (command) {
-		MiniProcessFile(name, evalcommand): {
+		MiniProcessFile(usedByFile, name, evalcommand): {
 			path = fastPath2path(db.includes, name);
 			content = getFileContent(path);
+			// TODO: Update deps
 			ndb = pushMiniValue(db, MiniString(content));
 			miniEvalForth(name, ndb, evalcommand);
 		}
