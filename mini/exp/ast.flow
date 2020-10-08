@@ -1,5 +1,6 @@
 import mini/types/type2;
 import mini/exp/exp;
+import mini/exp/dependent;
 import ds/set;
 
 export {
@@ -11,10 +12,10 @@ export {
 		declarations : Tree<string, MiniExp>,
 		// Where is each name defined? From name to file
 		declarationFile : Tree<string, string>,
-		// What does this id depend on?
-		dependencies : Tree<string, Set<string>>,
-		// What depends on this id?
-		dependents : Tree<string, Set<string>>,
+
+		// What ids are dependent on what?
+		idDependents : MiniDependent,
+
 		// What names are declared in this file?
 		// fileDeclarations : Tree<string, [string]>,
 

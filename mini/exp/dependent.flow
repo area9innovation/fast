@@ -1,0 +1,42 @@
+import ds/set;
+import ds/treeutils;
+
+export {
+	// Helper structure to track dependencies between ids.
+	// See topological for helper that can do topological order on this
+	MiniDependent(
+		// What does this id depend on?
+		dependencies : Tree<string, Set<string>>,
+		// What depends on this id?
+		dependents : Tree<string, Set<string>>,
+	);
+
+	updateMiniDependent(dep : MiniDependent, id : string, deps : Set<string>) -> MiniDependent;
+}
+
+
+updateMiniDependent(dep : MiniDependent, id : string, deps : Set<string>) -> MiniDependent {
+	npr = removeMiniDeps(dep, id);
+	addMiniDeps(npr, id, deps)
+}
+
+
+addMiniDeps(pr : MiniDependent, id : string, deps : Set<string>) -> MiniDependent {
+	MiniDependent(pr with
+		dependencies = setTree(pr.dependencies, id, deps),
+		dependents = foldSet(deps, pr.dependents, \acc, dep -> {
+			insertMultimap(acc, dep, id)
+		})
+	)
+}
+
+removeMiniDeps(pr : MiniDependent, id : string) -> MiniDependent {
+	deps = lookupMultimap(pr.dependencies, id);
+	MiniDependent(
+		pr with
+		dependencies = removeFromTree(pr.dependencies, id),
+		dependents = foldSet(deps, pr.dependents, \acc, dep -> {
+			removeMultimap(acc, dep, id)
+		})
+	);
+}

@@ -10,7 +10,7 @@ export {
 miniAst2BProgram(ast : MiniAst) -> BProgram {
 	ids : Set<string> = buildSet(getTreeKeys(ast.declarations));
 
-	order = topologicalMiniOrder(ast, ids);
+	order = topologicalMiniOrder(ast.idDependents, ids);
 
 	BProgram(
 		map(order, \id -> {

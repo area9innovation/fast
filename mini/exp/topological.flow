@@ -1,19 +1,19 @@
-import mini/exp/ast;
+import mini/exp/dependent;
 import ds/simplegraph;
 
 export {
 	// Find an order that respects topological order
-	topologicalMiniOrder(ast : MiniAst, ids : Set<string>) -> [string];
+	topologicalMiniOrder(ast : MiniDependent, ids : Set<string>) -> [string];
 }
 
 MiniTopological(
-	ast : MiniAst,
+	ast : MiniDependent,
 	queue : Set<string>,
 	visited : Set<string>,
 	graph : SimpleGraph<string, bool>
 );
 
-topologicalMiniOrder(ast : MiniAst, ids : Set<string>) -> [string] {
+topologicalMiniOrder(ast : MiniDependent, ids : Set<string>) -> [string] {
 	// The arrows point from what is used by something to what uses it
 	graph = buildMiniGraph(MiniTopological(ast, ids, makeSet(), makeSimpleGraph()));
 

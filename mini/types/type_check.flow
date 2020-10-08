@@ -7,7 +7,7 @@ export {
 
 typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 	// Find a topological order of these ids
-	order = topologicalMiniOrder(ast, ids);
+	order = topologicalMiniOrder(ast.idDependents, ids);
 
 	if (false) {
 		println("Typing in this order:");
@@ -24,6 +24,8 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 			acc;
 		}
 	});
+
+	// 
 
 	tenv2;
 }

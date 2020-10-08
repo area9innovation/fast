@@ -1,7 +1,6 @@
 import fast/fast_path;
 
 import mini/commands/db;
-import mini/commands/dependencies;
 
 import mini/exp/dependencies;
 import mini/exp/topological;
@@ -53,7 +52,8 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				// OK, we have either a new or changed definition
 
 				// Update the dependencies
-				npr = updateMiniDeps(db.program, id, body);
+				deps = extractMiniDeps(body, makeSet(), makeSet());
+				npr = MiniAst(db.program with idDependents = updateMiniDependent(db.program.idDependents, id, deps));
 				db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
 
 				// OK, this is a new definition
@@ -95,7 +95,7 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string, type : MiniType
 	program = db.program;
 	mexist = lookupTree(program.types, id);
 	def = \ -> {
-		deps = lookupMultimap(db.program.dependents, id);
+		deps = lookupMultimap(db.program.idDependents.dependents, id);
 		newDeps = differenceSets(deps, updating);
 		ndb = if (isEmptySet(newDeps)) db else pushMiniCommand(db, MiniTypeInfer(newDeps));
 		MiniDb(ndb with program = MiniAst(program with types = setTree(program.types, id, type)));
@@ -106,4 +106,3 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string, type : MiniType
 		} else def();
 	} : def();
 }
-
