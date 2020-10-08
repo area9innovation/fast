@@ -114,17 +114,19 @@ exp = (
 		| "false" ws $"0" $"1" $"inttype" $$":" $"binop"
 		| "ref" ws exp $$"__ref" $"unop"
 		| switch
+		| "cast" ws $$"__cast" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
 		| id ws $"var"
-		| $('0'-'9'+ "." '0'-'9'*) $"s2d"
-		| $("." '0'-'9'+) $"s2d"
+		| "0x" $(hexdigit+) ws $"parsehex"
+		| $('0'-'9'+ "." '0'-'9'*) ws $"s2d"
+		| $("." '0'-'9'+) ws $"s2d"
 		| int ws $"s2i"
 		| brace
 		| string
-		| "[" ws exps "]" $$"[" $"unop"
+		| "[" ws exps "]" ws $$"[" $"unop"	// Consider to unroll this?
 		| '^' ws exp $$"__deref" $"unop"
 	);
 
-// TODO: Maybe this should be binops instead of an array?
+// TODO: Maybe this should be binops instead of an array? We could have a "unroll" Forth that turns lists into binops
 brace = "{" ws expsemis "}" ws $$";" $"var" $"swap" $"call";
 
 	// listof(exp, ";")
@@ -168,8 +170,11 @@ types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)? | $"nil";
 	// For now, we just drop the id
 	namedarg = id $"drop" ws ':' ws type;
 
-// listof(id)
-lambdaargs = $"nil" id $"cons" ("," ws id $"cons")* ("," ws)? | $"nil";
+// listof(lambdaarg)
+lambdaargs = $"nil" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? | $"nil";
+
+	// We just drop the type for now
+	lambdaarg = funarg;
 
 // listof(exp, ",")
 exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";
@@ -182,13 +187,13 @@ string = '"' "#inc" "lude" s path '"' ws   // TODO: AST
 
 singlestring = '"' $(onechar_)* '"' ws;
 
-onechar_ = backslash "u" hexdigit_ hexdigit_ hexdigit_ hexdigit_
-	| backslash "X" hexdigit_ hexdigit_ hexdigit_ hexdigit_
-	| backslash "x" hexdigit_ hexdigit_
+onechar_ = backslash "u" hexdigit hexdigit hexdigit hexdigit
+	| backslash "X" hexdigit hexdigit hexdigit hexdigit
+	| backslash "x" hexdigit hexdigit
 	| backslash escapedchar_
 	| !'"' !backslash anychar;
 
-hexdigit_ = '0'-'9'
+hexdigit = '0'-'9'
 	| 'a'-'f'
 	| 'A'-'F';
 

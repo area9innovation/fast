@@ -81,6 +81,7 @@ main() {
 			]),
 			makeEvalLine(db, "prepexp", true),
 			makeEvalLine(db, "\"mini/tests/test.flow\" parsefile", false),
+			makeEvalLine(db, "\"ds/array.flow\" parsefile", false),
 			makeEvalLine(db, "\"a()->int{1}\" parseexp", false),
 			MBaselineCols([
 				MTextButton("RESET", \ -> {

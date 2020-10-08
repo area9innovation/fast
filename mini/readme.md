@@ -154,6 +154,7 @@ as the interface to the compile server itself through special commands.
 	<int> i2s -> <string>
 	<string> s2d -> <double>
 	<double> d2s -> <string>
+	<string> parsehex -> int
 	<string> <string> + -> <string>
 	<file> <ext> changeFileExt -> <string>
 
@@ -238,9 +239,8 @@ Both of these are async, so only use them in the interactive context, or with ca
   - exp: id=v (no val), id.f ::= val
 	maybe ?? exp : exp
 	e(exp with fields)
-	cast require unsafe
+	require unsafe
 	string-include $
-	hex-number for ints
 	string-escapes in AST
 
 - Get type inference to work: 
