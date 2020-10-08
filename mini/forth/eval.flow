@@ -4,6 +4,7 @@ import mini/commands/db;
 import text/serialize;
 import mini/forth/stack;
 import mini/exp/value;
+import mini/exp/pretty;
 
 export {
 	// Evaluate this - these commands can have side-effects on the compiler
@@ -28,7 +29,13 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);
 		name = popMiniValue(value.second);
-		pushMiniCommand(name.second, MiniDefine(file, getMiniString(name.first), value.first));
+		names = getMiniString(name.first);
+		if (names == "") {
+			println("Expected string for name for define, got " + miniPretty(name.first) + " "  + toString(name.first));
+		} else {
+			// println("Defined " + names);
+		}
+		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
 	} else if (command == "evallines") {
 		// Splits each line in the string, and evaluates it
 		// TODO: Could maybe be strsplit, and then some kind of foreach

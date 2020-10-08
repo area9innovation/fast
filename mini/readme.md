@@ -232,23 +232,21 @@ Both of these are async, so only use them in the interactive context, or with ca
 ## Milestones
 
 - Parse flow syntax. Missing:
-  - export, require, forbid
-  - toplevel: fn types, var-declaration, struct-def
-  - exp: id=v (no val), id.f ::= val, :=, |>
+  - require, forbid
+  - exp: id=v (no val), id.f ::= val
 	maybe ?? exp : exp
 	e(exp with fields)
-	switch cast require unsafe
+	cast require unsafe
 	string-include $
 	hex-number for ints
 	string-escapes in AST
-	comments
 
 - Get type inference to work: 
   - Fix polymorphism
   - Plug the coalescing in
   - Add canonicalize
 
-- Get hello-world to compile to JS: Fix operators
+- Get hello-world to compile to JS: Figure out natives/linking
 
 - Rig up file reading and dependency tracking
    - Update declarations per file when file changes (size/timestamps/md5)

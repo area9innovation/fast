@@ -5,9 +5,13 @@ importExport = import
 	| export
 	| forbid;
 
+// TODO: We should set some marker that a new file is started, instead of immediately adding the parse
 import = "import" s $path ws ';' ws $$".flow" $"changeFileExt" $"parsefile";
+
 dynamicImport = "require" s $path ws ';' ws; // TODO: AST
-export = "export" ws '{' ws toplevelDeclaration+ '}' ws; // TODO: AST
+
+// TODO: AST. We could set some marker that the following are exported.
+export = "export" ws '{' ws toplevelDeclaration+ '}' ws; 
 forbid = "forbid" s $path ws ';' ws; // TODO: AST
 	path = bid ('/' bid)*;
 
@@ -15,8 +19,7 @@ toplevelDeclaration =
 	native
 	| assign
 	| union
-	| function
-	| structdecl
+	| functionOrStruct
 	| vardecl;
 
 // TODO: AST
@@ -33,11 +36,20 @@ union = id ws (typars $"drop")? ws "::=" ws typenames ';' ws $$"union" $"swap" $
 
 // For now, we ignore the types
 // TODO: Extract the type and use a binop to declare the type of the body
-function = 
-	  id ws '(' ws funargs ')' ws (returnType $"drop")? ';' ws
-	| id ws '(' ws funargs ')' ws returnType $"drop" brace_or_semi $"lambda" $"define"
-	| id ws '(' ws funargs ')' ws brace_or_semi $"lambda" $"define"
+functionOrStruct = 
+	// Forward declaration - we drop for now
+	  id ws '(' ws funargs ')' ws returnType $"drop" ';' ws $"drop" $"drop"
+	//  id ws '(' ws funargs ')' ws returnType $"drop" ';' ws $"nil" $$";" $"var" $"call" $"lambda" $"define"	// We leave the body nil
+	| id ws '(' ws structargs ')' ws ';' ws $$"__struct" $"swap" $"typecall" $"define" // This is a struct!
+	| id ws '(' ws funargs ')' ws returnType $"drop" brace $"lambda" $"define"
+	| id ws '(' ws funargs ')' ws brace $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
+
+	// Forward type declarations
+	| id ws ':' ws '(' ws funargs ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
+	| id ws ':' ws '(' ws types ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
+	// Struct
+	| id ws ':' ws '(' ws structargs ')' ws ';' ws $$"__struct"  $"swap" $"typecall"  $"define"
 	;
 
 	// listof(funarg, ",")
@@ -45,12 +57,13 @@ function =
 
 	// For now, we just drop the types
 	funarg = id ws (':' ws type $"drop")?;
-	returnType = "->" ws type;
 
-	brace_or_semi = brace ';'? ws;
+	// TODO: mutable
+	// listof(funarg, ",")
+	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
+	structarg = id ws ':' ws type $$":" $"binop";
 
-// TODO: AST and mutable
-structdecl = id ws ':' ws '(' ws funargs ')' ws ';' ws;
+	returnType = ws "->" ws type;
 
 vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 	// TODO: AST, and how to do it?
@@ -63,6 +76,8 @@ exp = (
 	 	| id ws ":" type "=" ws exp ";" $"swap" $$":" $"binop" ws exp $"let"
 		// exp "." field ::= exp
 	)
+	|> exp ":=" ws exp $$":=" $"binop"
+	|> exp "|>" ws exp $$"|>" $"binop"
 	|> exp "||" ws exp $$"||" $"binop"
 	|> exp "&&" ws exp $$"&&" $"binop"
 	|> (
@@ -99,6 +114,7 @@ exp = (
 		| "true" ws $"1" $"1" $"inttype" $$":" $"binop"
 		| "false" ws $"0" $"1" $"inttype" $$":" $"binop"
 		| "ref" ws exp $$"__ref" $"unop"
+		| switch
 		| id ws $"var"
 		| $('0'-'9'+ "." '0'-'9'*) $"s2d"
 		| $("." '0'-'9'+) $"s2d"
@@ -112,6 +128,17 @@ exp = (
 // TODO: Maybe this should be binops instead of an array?
 brace = "{" ws expsemis "}" ws $$";" $"var" $"swap" $"call";
 
+	// listof(exp, ";")
+	expsemis = $"nil" exp $"cons" (";" ws exp $"cons")* (";" ws)? | $"nil";
+
+switch = "switch" ws '(' ws exp ')' ws '{' ws $"nil" (defaultOrNamedCase  $"cons")* '}' ws $$"__switch" $"binop";
+
+defaultOrNamedCase = "default" ws ':' ws exp (';' ws)? $$"__default" $"unop"
+	| id ws '(' ws names ')' $$"__pattern" $"binop" ws ':' ws exp (';' ws)? $$"__case" $"binop";
+
+// listof(id, ",")
+names = $"nil" id $"cons" ws (',' ws id $"cons")* | $"nil";
+
 type = 	
 		"bool" ws $"1" $"inttype"
 		| "int" ws $"32" $"inttype"
@@ -121,10 +148,11 @@ type =
 		| "void" ws $$"void" $"nil" $"typecall"
 		| "native" ws $$"native" $"nil" $"typecall"
 		| "ref" ws type $"list1" $$"ref" $"swap" $"typecall"
+		| "(" ws namedargs ")" ws "->" ws type $"fntype"
+		| "(" ws types ")" ws "->" ws type $"fntype"
 		| typename
 		| "[" ws type "]" ws $"list1" $$"array" $"swap" $"typecall"
-		| $("?"+) $"nil" $"typecall"
-		| "(" ws types ")" ws "->" type $"fntype"
+		| $("?"+) ws $"nil" $"typecall"
 	;
 
 typename = id ws typars $"typecall"
@@ -133,18 +161,19 @@ typename = id ws typars $"typecall"
 typars = "<" ws types ">" ws;
 
 // listof(type, ",")
-types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)?
-	| $"nil";
+types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)? | $"nil";
 
-lambdaargs = $"nil" (id ws $"cons")*;
+	// listof(namedargs, ",")
+	namedargs = $"nil" namedarg $"cons" ("," ws namedarg $"cons")* ("," ws)? | $"nil";
 
-// listof(exp, ";")
-expsemis = $"nil" exp $"cons" (";" ws exp $"cons")* (";" ws)?
-	| $"nil";
+	// For now, we just drop the id
+	namedarg = id $"drop" ws ':' ws type;
+
+// listof(id)
+lambdaargs = $"nil" id $"cons" ("," ws id $"cons")* ("," ws)? | $"nil";
 
 // listof(exp, ",")
-exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)?
-	| $"nil";
+exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";
 
 // TODO: AST
 string = '"' "#inc" "lude" s path '"' ws
@@ -158,7 +187,7 @@ onechar_ = backslash "u" hexdigit_ hexdigit_ hexdigit_ hexdigit_
 	| backslash "X" hexdigit_ hexdigit_ hexdigit_ hexdigit_
 	| backslash "x" hexdigit_ hexdigit_
 	| backslash escapedchar_
-	| !'"' !backslash char_;
+	| !'"' !backslash anychar;
 
 hexdigit_ = '0'-'9'
 	| 'a'-'f'
@@ -166,7 +195,7 @@ hexdigit_ = '0'-'9'
 
 escapedchar_ = backslash | '"' | "n" | "t" | "r";
 
-char_ = '0x0000'-'0xffff';
+anychar = '0x0000'-'0xffff';
 
 id = $bid;
 
@@ -177,6 +206,10 @@ int = $'0'-'9'+;
 backslash = '\';
 
 ws = s*;
+
+// We do not have \n and \t and such, so these are here verbatim
 s = " " | "	" | "
-";
+" | "//" (!"
+" anychar)* "
+" | "/*" (!"*/" anychar)* "*/";
 flow

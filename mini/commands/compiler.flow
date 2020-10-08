@@ -41,7 +41,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		MiniProcessFile(usedByFile, name, evalcommand): {
 			path = fastPath2path(db.includes, name);
 			content = getFileContent(path);
-			// TODO: Update deps
+			// TODO: Update deps: We have to collect all of them from each file
 			ndb = pushMiniValue(db, MiniString(content));
 			miniEvalForth(name, ndb, evalcommand);
 		}

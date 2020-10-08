@@ -60,7 +60,7 @@ makeEvalLine(db : DynamicBehaviour<MiniDb>, def : string, focus : bool) -> Mater
 main() {
 	manager = makeMaterialManager([]);
 
-	db = make(makeMiniDb(["."], \e -> {
+	db = make(makeMiniDb([".","c:\\flow9\\lib\\"], \e -> {
 		showMSnackbar(manager, e, []);
 	}));
 
@@ -80,7 +80,7 @@ main() {
 				}, [], []),
 			]),
 			makeEvalLine(db, "prepexp", true),
-			makeEvalLine(db, "\"mini/tests/test.exp\" parsefile", false),
+			makeEvalLine(db, "\"mini/tests/test.flow\" parsefile", false),
 			makeEvalLine(db, "\"a()->int{1}\" parseexp", false),
 			MBaselineCols([
 				MTextButton("RESET", \ -> {

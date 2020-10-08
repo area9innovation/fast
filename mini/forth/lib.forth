@@ -7,6 +7,8 @@ def evalfile "evallines" swap processfile
 // It is important processfile is the last
 def prepexp "parseexp" "prepare" "mini/exp/exp.gringo" processfile
 
+def debug dup print
+
 // Do not use this in a sequence, since it is async
 // <file> -> <filecontent>
 def readfile "nop" swap processfile
