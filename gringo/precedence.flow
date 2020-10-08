@@ -27,7 +27,7 @@ expandPrecedenceInRule(id : string, term : GTerm, body : GTerm, level : int) -> 
 		GPrecedence(left, right): {
 			newid = id + (if (level == 0) "" else i2s(level));
 			nextid = id + i2s(level + 1);
-			nleft = replaceLeftRecursion(GVar(id), GVar(nextid), GVar(newid), left);
+			nleft = replaceLeftRecursion(id, GVar(nextid), GVar(newid), false, false, left);
 			GRule(newid, 
 				GChoice(
 					nleft, 
@@ -47,31 +47,49 @@ expandPrecedenceInRule(id : string, term : GTerm, body : GTerm, level : int) -> 
 
 
 // Does basic replacement in the term
-replaceLeftRecursion(find : GTerm, replaceLeft : GTerm, replaceRest : GTerm, g : GTerm) -> GTerm {
-	if (g == find) replaceLeft
-	else switch (g) {
+// somethingBefore and somethingFollows help find left- and right-recursions
+// somethingBefore is true if we already potentially matched tokens before this term in this rule
+// somethingFollows is true if we can potentially match tokens after this term in this rule
+replaceLeftRecursion(find : string, replaceLeft : GTerm, replaceRest : GTerm, somethingBefore : bool, somethingFollows : bool, g : GTerm) -> GTerm {
+	switch (g) {
 		GRule(id, term, body): {
-			nbody = replaceLeftRecursion(find, replaceLeft, replaceRest, body);
-			nterm = replaceLeftRecursion(find, replaceLeft, replaceRest, term);
+			nbody = replaceLeftRecursion(find, replaceLeft, replaceRest, false, false, body);
+			nterm = replaceLeftRecursion(find, replaceLeft, replaceRest, false, false, term);
 			GRule(id, nterm, nbody);
 		}
-		GPrecedence(left, right): GPrecedence(replaceLeftRecursion(find, replaceLeft, replaceRest, left), replaceLeftRecursion(find, replaceLeft, replaceRest, right)); 
-		GChoice(left, right): GChoice(replaceLeftRecursion(find, replaceLeft, replaceRest, left), replaceLeftRecursion(find, replaceLeft, replaceRest, right)); 
-		GSeq(left, right): {
-			GSeq(
-				replaceLeftRecursion(find, replaceLeft, replaceRest, left),
-				// OK, we use the other replacement for the rest
-				replaceLeftRecursion(find, replaceRest, replaceRest, right), 
+		GPrecedence(left, right): {
+			GPrecedence(
+				replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, left), 
+				replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, right)
+			); 
+		}
+		GChoice(left, right): {
+			GChoice(
+				replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, left), 
+				replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, right)
 			);
 		}
-		GStar(term): GStar(replaceLeftRecursion(find, replaceLeft, replaceRest, term));
-		GPlus(term): GPlus(replaceLeftRecursion(find, replaceLeft, replaceRest, term));
-		GOpt(term): GOpt(replaceLeftRecursion(find, replaceLeft, replaceRest, term));
-		GNegate(term): GNegate(replaceLeftRecursion(find, replaceLeft, replaceRest, term));
-		GUnquote(term): GUnquote(replaceLeftRecursion(find, replaceLeft, replaceRest, term));
+		GSeq(left, right): {
+			GSeq(
+				replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, isSomething(right), left),
+				// OK, we use the other replacement for the rest
+				replaceLeftRecursion(find, replaceRest, replaceRest, isSomething(left), somethingFollows, right), 
+			);
+		}
+		GStar(term): GStar(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+		GPlus(term): GPlus(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+		GOpt(term): GOpt(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+		GNegate(term): GNegate(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+		GUnquote(term): GUnquote(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GString(text): g;
 		GRange(lower, upper): g;
-		GVar(id): g;
+		GVar(id): {
+			if (id == find && !(somethingBefore && somethingFollows)) {
+				// If we are left- or right- recursive, we do replacement
+				// If there is something both before and after, it can not be left- or right-recursion
+				replaceLeft 
+			} else g;
+		}
 		GEpsilon(): g;
 	}
 }
@@ -80,5 +98,24 @@ getGSequence(g : GTerm) -> [GTerm] {
 	switch (g) {
 		GSeq(l, r): concat(getGSequence(l), getGSequence(r));
 		default: [g];
+	}
+}
+
+// Could this match some token?
+isSomething(g : GTerm) -> bool {
+	switch (g) {
+		GRule(id, term, body): isSomething(body);
+		GPrecedence(left, right): isSomething(left) || isSomething(right);
+		GChoice(left, right): isSomething(left) || isSomething(right);
+		GSeq(left, right): isSomething(left) || isSomething(right);
+		GStar(term): isSomething(term);
+		GPlus(term): isSomething(term);
+		GOpt(term): isSomething(term);
+		GNegate(term): false;
+		GUnquote(term): false;
+		GString(text): true;
+		GRange(lower, upper): true;
+		GVar(id): true;	// Technically, we could have "null" rules, but we ignore that
+		GEpsilon(): false;
 	}
 }
