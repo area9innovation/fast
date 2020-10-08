@@ -8,7 +8,7 @@ import net/url_parameter;
 import fs/filesystem;
 
 main() {
-	file0 = getUrlParameter("file");
+	file0 = getUrlParameterDef("file", "gringo/exp.gringo");
 
 	if (file0 != "") {
 		grammar = gringoGrammar();
@@ -86,7 +86,7 @@ main() {
 			}
 
 			// Test parse
-			test = getUrlParameter("test");
+			test = getUrlParameterDef("test", "1[1+2]");
 			testfile = getUrlParameter("testfile");
 			testtext = if (test != "") test else if (testfile != "") getFileContent(testfile) else "";
 			if (testtext != "") {

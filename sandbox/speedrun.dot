@@ -20,19 +20,22 @@ digraph graphname {
 
 "Malloc" -> "Stdlib";
 
-"GC" -> "Mini";
+"GC" -> "Untyped Lambda";
 
 "Flow" -> "FRP";
 
 "Stdlib" -> "DB engine";
 
+"Render tree" -> "NEdit";
+
 "DB engine" -> "SQL";
+
+"NEdit" -> "Mini";
 
 "Mini" -> "Flow";
 
 "Mini C" -> "DB engine";
 
-"Mini C" -> "Vector graphics";
 "Stdlib" -> "Vector graphics";
 
 "Untyped Lambda" -> "Gringo";
@@ -43,7 +46,7 @@ digraph graphname {
 
 "DB engine" -> "Mini"
 
-"Flow" -> "Comapping";
+"CRDT" -> "Comapping";
 "Material" -> "Comapping";
 
 "Material" -> "VS Code";
@@ -57,8 +60,6 @@ digraph graphname {
 
 "Wigi" -> "Rhapsode";
 
-"Prime" -> "Rhapsode";
-
 "FRP" -> "Material";
 
 "Text rendering & basic input" -> "Vector graphics";
@@ -66,10 +67,12 @@ digraph graphname {
 "Render tree" -> "CSS Grid & Paragraph Layout";
 "CSS Grid & Paragraph Layout" -> "Material";
 
-"Master server" -> "Rhapsode";
-
 "Shape" -> "Meta app";
 "SQL" -> "Meta app";
+
+"Master server" -> "CRDT";
+
+"CRDT" -> "Meta app";
 
 "Meta app" -> "Rhapsode";
 
@@ -77,5 +80,8 @@ digraph graphname {
 
 "SQL" -> "Master server";
 
+"Prime" -> "Page editor";
+
+"Page editor" -> "Rhapsode";
 
 }
