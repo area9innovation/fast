@@ -18,6 +18,7 @@
 		- [Interactives and the Forth standard library](#interactives-and-the-forth-standard-library)
 		- [TODO Forth primitives](#todo-forth-primitives)
 	- [Milestones](#milestones)
+	- [Known syntaxs differences](#known-syntaxs-differences)
 	- [Backends](#backends)
 		- [JS](#js)
 		- [Flow](#flow)
@@ -235,6 +236,9 @@ Both of these are async, so only use them in the interactive context, or with ca
 ## Milestones
 
 - Parse flow syntax. Missing:
+  - dlist.flow: mutable, mut assign
+  - simplegraph.flow: with
+
   - require, forbid
   - exp: id=v (no val), id.f ::= val
 	maybe ?? exp : exp
@@ -258,6 +262,39 @@ Both of these are async, so only use them in the interactive context, or with ca
 - Get error messages with locations to work
 
 - Add jupyter-style notebook feature and "resident" icon for the compiler
+
+## Known syntaxs differences
+
+Here, we need a semi-colon after the if in the sequence:
+
+	{
+		a = 1;
+		if (true) 1 else { 1 + 2}	// ; required here
+		c;
+	}
+
+Also need it after switch:
+
+	{
+		a = switch (b) { ... }		// ; required here
+		c
+	}
+
+Parenthesis around types are not supported:
+
+	a : (int); // a : int;
+
+Functions with only some args named: We want all args to have names:
+
+	f(int, b : int) -> {		// f(a : int, b : int)
+		...
+	}
+
+Trailing top-level semi-colon:
+
+	foo() {
+		...
+	};				// foo() { }
 
 ## Backends
 

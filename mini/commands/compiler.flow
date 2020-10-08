@@ -30,7 +30,7 @@ miniCompile(db : MiniDb) -> MiniDb {
 			} else {
 				println("Running command " + miniCommand2string(command) + " with stack");
 				iterList(db.forth.stack, println);
-			}
+			};
 			miniCompile(runMiniCommand(ndb, command));
 		}
 	}
