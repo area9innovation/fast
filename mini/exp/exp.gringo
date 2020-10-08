@@ -68,11 +68,10 @@ vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 	// TODO: AST, and how to do it? We just drop for now
 	| id ws ':' ws type ';'? ws $"drop" $"drop";
 
-exp = (
-		"if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
-		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
-		| id ws "=" ws exp ";" ws exp $"let"
-	 	| id ws ":" type "=" ws exp ";" $"swap" $$":" $"binop" ws exp $"let"
+exp = 
+	(
+		id ws "=" ws exp ";" ws exp $"let"
+	 	| id ws ":" ws type "=" ws  exp ";" $"swap" $$":" $"binop" ws exp $"let"
 		// exp "." field ::= exp
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
@@ -100,13 +99,15 @@ exp = (
 		'!' ws exp $$"__not" $"unop"
 		| '-' ws exp $$"__neg" $"unop"
 		| backslash lambdaargs ws "->" ws exp $"lambda"
-		| exp "(" ws exps ")" ws $"call"
-		| exp "." ws id ws $$"." $"binop"
-		| exp "[" ws exp "]" ws $$"__index" $"binop"
-		// '(' ws call "with" s fields ')' ws;
+		| exp 
+			(
+			"(" ws exps ")" ws $"call"
+			| "." ws id ws $$"." $"binop"
+			| "[" ws exp "]" ws $$"__index" $"binop"
+			// | '(' ws call "with" s fields ')' ws;
+			| ":" ws type $$":" $"binop"
+			)+
 	)
-
-	|> exp ":" ws type $$":" $"binop"
 
 	|> (
 		"(" ws exp ")" ws 
@@ -115,6 +116,8 @@ exp = (
 		| "ref" ws exp $$"__ref" $"unop"
 		| switch
 		| "cast" ws $$"__cast" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
+		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
+		| "if" ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
 		| id ws $"var"
 		| "0x" $(hexdigit+) ws $"parsehex"
 		| $('0'-'9'+ "." '0'-'9'*) ws $"s2d"

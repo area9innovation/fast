@@ -79,9 +79,6 @@ operations are produced verbatim.
 
 ## TODO
 
-- 1[1+1] does not parse in the exp.gringo grammar, since the second exp in exp[exp] 
-  should be top-level exp, since it is neither left- nor right-recursive
-
 - Warn if the "last" level of a GPrecedence sequence has left- or right-
   recursion, which will break precedence
 
