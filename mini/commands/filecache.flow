@@ -1,0 +1,47 @@
+import fs/filesystem;
+
+export {
+	makeMiniFileCache() -> MiniFileCache;
+
+	// Should we read this file again?
+	shouldReadFile(cache : MiniFileCache, file : string) -> bool;
+
+	MiniFileCache(
+		files : ref Tree<string, MiniFileCacheEntry>,
+	);
+}
+
+makeMiniFileCache() -> MiniFileCache {
+	MiniFileCache(ref makeTree())
+}
+
+shouldReadFile(cache : MiniFileCache, file : string) -> bool {
+	update = \ -> {
+		entry = getMiniFileEntry(file);
+		cache.files := setTree(^(cache.files), file, entry);
+		true;
+	}
+
+	mentry = lookupTree(^(cache.files), file);
+	mentry ?? {
+		newEntry = getMiniFileEntry(file);
+		if (newEntry == mentry) {
+			false
+		} else {
+			update();
+		}
+	} : {
+		update();
+	}
+}
+
+getMiniFileEntry(file : string) -> MiniFileCacheEntry {
+	MiniFileCacheEntry(file, fileSize(file), fileModified(file), if (isUrlParameterTrue("md5")) fileChecksum(file) else "");
+}
+
+MiniFileCacheEntry(
+	file : string,
+	filesize : double,
+	modified : double,
+	md5 : string
+);

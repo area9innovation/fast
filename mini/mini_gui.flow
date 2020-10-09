@@ -89,10 +89,10 @@ main() {
 					});
 				}, [], []),
 			]),
-			makeEvalLine(db, remaining, "prepexp", true),
+			makeEvalLine(db, remaining, "prepflow", true),
 			makeEvalLine(db, remaining, "\"mini/tests/test.flow\" parsefile", false),
 			makeEvalLine(db, remaining, "\"ds/simplegraph.flow\" parsefile", false),
-			makeEvalLine(db, remaining, "\"a()->int{1}\" parseexp", false),
+			makeEvalLine(db, remaining, "\"a()->int{1}\" parseflow", false),
 			MBaselineCols([
 				MTextButton("RESET", \ -> {
 					next(error, "");

@@ -5,7 +5,7 @@ def evalfile "evallines" swap processfile
 //   ->   
 //        defines    <string> parseexp ->
 // It is important processfile is the last
-def prepexp "parseexp" "prepare" "mini/exp/exp.gringo" processfile
+def prepflow "parseflow" "prepare" "mini/exp/exp.gringo" processfile
 
 def debug dup print
 
@@ -13,7 +13,7 @@ def debug dup print
 // <file> -> <filecontent>
 def readfile "nop" swap processfile
 
-def parsefile "parseexp" swap processfile
+def parsefile "parseflow" swap processfile
 
 // <a> -> cons(a, nil)
 def list1 nil swap cons

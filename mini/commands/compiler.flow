@@ -65,10 +65,15 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 	switch (command) {
 		MiniProcessFile(usedByFile, name, evalcommand): {
 			path = fastPath2path(db.includes, name);
-			content = getFileContent(path);
-			// TODO: Update deps: We have to collect all of them from each file
-			ndb = pushMiniValue(db, MiniString(content));
-			miniEvalForth(name, ndb, evalcommand);
+			if (shouldReadFile(db.fileCache, path)) {
+				content = getFileContent(path);
+				// TODO: Update deps: We have to collect all of them from each file
+				ndb = pushMiniValue(db, MiniString(content));
+				miniEvalForth(name, ndb, evalcommand);
+			} else {
+				// OK, this is already read. We can skip it
+				db;
+			}
 		}
 		MiniDefine(file, id, body): {
 			// Define or redefine this id to this body

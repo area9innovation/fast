@@ -99,8 +99,6 @@ commands, so we will not do type inference if there are pending files to be
 read and parsed.
 
 TODO:
-- Set up file dependency tracking, so we do not have to re-evaluate files that
-  are not changed
 - Consider a forward-type declaration command to allow "stitching" types declarations
   and definitions together without propagation too much
 - Add "desugaring"/"export" checking phase, which might also do the stitching type thing?
@@ -212,7 +210,6 @@ value, and then use "define" to commit the definition to the compile server.
 
 TODO: 
 - Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
-- Rename prepexp to prepflow, since it is really flow
 - Consider adding other syntaxes, just to demonstrate the multi-headed nature of Mini. Maybe a
   subset of JS or Java?
 
