@@ -5,7 +5,7 @@ def evalfile "evallines" swap processfile
 //   ->   
 //        defines    <string> parseexp ->
 // It is important processfile is the last
-def prepflow "parseflow" "prepare" "mini/exp/exp.gringo" processfile
+def prepflow "parseflow" "prepare" "mini/exp/flow.gringo" processfile
 
 def debug dup print
 
