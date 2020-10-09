@@ -24,7 +24,7 @@ viewMiniDb(m : MiniDb) -> Material {
 				arrayPush(acc, MText("  " + miniPretty(st), []))
 			}),
 			[MFixedY(8.0)],
-			foldTree(m.program.declarations, [MText("Ids:", [MSubtitle1()])], \st, val, acc -> {
+/*			foldTree(m.program.declarations, [MText("Ids:", [MSubtitle1()])], \st, val, acc -> {
 				deps = getMiniDependencies(m.program.idDependents, st, false);
 				mtype = lookupTree(m.program.types, st);
 				typeString = mtype ?? {
@@ -32,12 +32,12 @@ viewMiniDb(m : MiniDb) -> Material {
 				} : "";
 				text = st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", ");
 				arrayPush(acc, MText(text, []))
-			}),
+			}),*/
 		])
 	);
 }
 
-makeEvalLine(db : DynamicBehaviour<MiniDb>, def : string, focus : bool) -> Material {
+makeEvalLine(db : DynamicBehaviour<MiniDb>, remaining : DynamicBehaviour<string>, def : string, focus : bool) -> Material {
 	line = make(def);
 	lineFocus = make(true);
 
@@ -51,8 +51,10 @@ makeEvalLine(db : DynamicBehaviour<MiniDb>, def : string, focus : bool) -> Mater
 			if (theline != "") {
 				commands = if (startsWith(theline, "def ")) [theline] else strSplit(theline, " ");
 				next(db, miniEvalForths("", getValue(db), commands));
-			}
-			next(db, miniCompile(getValue(db)));
+			};
+			miniCompile(getValue(db), remaining, \done -> {
+				next(db, done)
+			});
 			next(lineFocus, true);
 		}, [], [MShortcut("enter")]),
 	])
@@ -70,6 +72,8 @@ main() {
 
 	file = make("mini/tests/test.mini");
 
+	remaining = make("");
+
 	mrender(manager, true, 
 		MLines([
 			MText("The Mini Compile Server", [MTitle()]),
@@ -80,13 +84,15 @@ main() {
 					if (thefile != "") {
 						next(db, pushMiniCommand(getValue(db), MiniProcessFile("", thefile, "evallines")));
 					}
-					next(db, miniCompile(getValue(db)));
+					miniCompile(getValue(db), remaining, \done -> {
+						next(db, done)
+					});
 				}, [], []),
 			]),
-			makeEvalLine(db, "prepexp", true),
-			makeEvalLine(db, "\"mini/tests/test.flow\" parsefile", false),
-			makeEvalLine(db, "\"ds/dlist.flow\" parsefile", false),
-			makeEvalLine(db, "\"a()->int{1}\" parseexp", false),
+			makeEvalLine(db, remaining, "prepexp", true),
+			makeEvalLine(db, remaining, "\"mini/tests/test.flow\" parsefile", false),
+			makeEvalLine(db, remaining, "\"ds/simplegraph.flow\" parsefile", false),
+			makeEvalLine(db, remaining, "\"a()->int{1}\" parseexp", false),
 			MBaselineCols([
 				MTextButton("RESET", \ -> {
 					next(error, "");
@@ -105,7 +111,8 @@ main() {
 					setFileContent("output.flow", flowprogram);
 					setFileContent("output.js", jsprogram);
 					{}
-				}, [], [])
+				}, [], []),
+				MSelect(remaining, \s -> { MText(s, [])})
 			]),
 			MFixedY(8.0),
 			MSelect(error, \e -> MText(e, [MRed(500)])),

@@ -17,7 +17,9 @@ export {
 
 	// What order should commands be run in? 0 is first.
 	getMiniCommandPriority(m : MiniCommand) -> int;
-	
+
+	getMiniCommandFromPriority(p : int) -> string;
+
 	// If we need to run all these commands of the same type, can that be optimized?
 	combineMiniCommands(m : [MiniCommand]) -> [MiniCommand];
 
@@ -30,6 +32,10 @@ getMiniCommandPriority(c : MiniCommand) -> int {
 		MiniDefine(file, name, value): 1;
 		MiniTypeInfer(ids): 2;
 	}
+}
+
+getMiniCommandFromPriority(p : int) -> string {
+	["Files", "Defines", "Typechecks"][p]
 }
 
 miniCommand2string(c : MiniCommand) -> string {

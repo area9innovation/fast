@@ -12,24 +12,51 @@ import mini/types/type_check;
 import mini/types/resolve;
 import mini/types/pretty;
 
+import behaviour;
+
 export {
-	// TODO: Make this async, and give a signal when the queue is empty
-	miniCompile(db : MiniDb) -> MiniDb;
+	// Run the commands requested.
+	// Keep progress updated in the remaining behaviour.
+	// When all is done, we call onDone with the resulting db
+	miniCompile(db : MiniDb, remaining : DynamicBehaviour<string>, onDone : (MiniDb) -> void) -> void;
 }
 
-miniCompile(db : MiniDb) -> MiniDb {
+miniCompile(db : MiniDb, remaining : DynamicBehaviour<string>, onDone : (MiniDb) -> void) -> void {
 	mcom = popMiniCommand(db);
 	ndb = mcom.first;
 	switch (mcom.second) {
-		None(): ndb;
+		None(): {
+			next(remaining, "Done");
+			onDone(ndb);
+		}
 		Some(command): {
 			if (true) {
-				println(miniCommand2string(command));
+				// println(miniCommand2string(command));
 			} else {
 				println("Running command " + miniCommand2string(command) + " with stack");
 				iterList(db.forth.stack, println);
 			};
-			miniCompile(runMiniCommand(ndb, command));
+			res = runMiniCommand(ndb, command);
+			priority = getMiniCommandPriority(command);
+			commandCounts = foldTree(db.queue, makeTree(), \prio, cmds, acc -> {
+				setTree(acc, prio, lookupTreeDef(acc, prio, 0) + length(cmds))
+			});
+			totalCount = sum(getTreeValues(commandCounts));
+			if (priority == 0 || (totalCount % 100) == 0) {
+				status = foldTree(commandCounts, "", \prio, count, acc -> {
+					if (count > 0) {
+						acc + getMiniCommandFromPriority(prio) + ": " + i2s(count) + " "
+					} else acc;
+				});
+				next(remaining, status);
+				deferUntilRender(
+					\ -> {
+						miniCompile(res, remaining, onDone)
+					}					
+				)
+			} else {
+				miniCompile(res, remaining, onDone)
+			}
 		}
 	}
 }

@@ -54,6 +54,11 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 		// TODO: This is not unary, so we have to figure something out here
 		Pair("[", MiniType2Function([ta], at(ta))),
 
+	//__switch __case __pattern  __default  __native  __struct __structarg  __with  __mutassign   __fieldassign
+	// :
+
+		Pair("__cast", MiniType2Function([ta, ta, tb], tb)),
+
 		Pair("__ref", MiniType2Function([ta], reftype(ta))),
 		Pair("__deref", MiniType2Function([reftype(ta)], ta)),
 	])
