@@ -57,10 +57,9 @@ functionOrStruct =
 	// For now, we just drop the types
 	funarg = id ws (':' ws type $"drop")?;
 
-	// TODO: mutable
 	// listof(funarg, ",")
 	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
-	structarg = id ws ':' ws type $$":" $"binop";
+	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ws ':' ws type $"cons" $$"__structarg" $"swap" $"call";
 
 	returnType = ws "->" ws type;
 
@@ -72,7 +71,6 @@ exp =
 	(
 		id ws "=" ws exp ";" ws exp $"let"
 	 	| id ws ":" ws type "=" ws  exp ";" $"swap" $$":" $"binop" ws exp $"let"
-		// exp "." field ::= exp
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
 	|> exp "|>" ws exp $$"|>" $"binop"
@@ -103,6 +101,7 @@ exp =
 			(
 			"(" ws exps ")" ws $"call"
 			| '(' ws exp "with" s $"list2" fields $"cons" ')' ws $$"__with" $"var" $"swap" $"call"
+			| "." ws id ws $"list2" "::=" ws exp $"cons" $$"__mutassign" $"swap" $"call"
 			| "." ws id ws $$"." $"binop"
 			| "[" ws exp "]" ws $$"__index" $"binop"
 			| ":" ws type $$":" $"binop"

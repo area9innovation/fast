@@ -13,9 +13,9 @@ import mini/types/pretty;
 viewMiniDb(m : MiniDb) -> Material {
 	MLines(
 		concatA([
-			foldTree(m.macros, [MText("Forth definitions:", [MSubtitle1()])], \name, def, acc -> {
-				arrayPush(acc, MText("  " + name, []))
-			}),
+			[
+				MParagraph("Forth definitions: " + strGlue(getTreeKeys(m.forth.definitions), ", "), []),
+			],
 			foldTree(m.natives, [], \name, def, acc -> {
 				arrayPush(acc, MText("  " + name, []))
 			}),
@@ -46,6 +46,7 @@ makeEvalLine(db : DynamicBehaviour<MiniDb>, def : string, focus : bool) -> Mater
 			MEatKeyDown(\ke -> ke.utf!="enter"), TTextInputFocus(lineFocus)
 		]),
 		MTextButton("EVALUATE", \ -> {
+			getValue(db).onError("");
 			theline = getValue(line);
 			if (theline != "") {
 				commands = if (startsWith(theline, "def ")) [theline] else strSplit(theline, " ");
@@ -60,8 +61,11 @@ makeEvalLine(db : DynamicBehaviour<MiniDb>, def : string, focus : bool) -> Mater
 main() {
 	manager = makeMaterialManager([]);
 
+	error = make("");
+
 	db = make(makeMiniDb([".","c:\\flow9\\lib\\"], \e -> {
-		showMSnackbar(manager, e, []);
+		println(e);
+		next(error, e);
 	}));
 
 	file = make("mini/tests/test.mini");
@@ -81,13 +85,15 @@ main() {
 			]),
 			makeEvalLine(db, "prepexp", true),
 			makeEvalLine(db, "\"mini/tests/test.flow\" parsefile", false),
-			makeEvalLine(db, "\"ds/array.flow\" parsefile", false),
+			makeEvalLine(db, "\"ds/dlist.flow\" parsefile", false),
 			makeEvalLine(db, "\"a()->int{1}\" parseexp", false),
 			MBaselineCols([
 				MTextButton("RESET", \ -> {
+					next(error, "");
 					next(db, makeMiniDb(getValue(db).includes, getValue(db).onError));
 				}, [], []),
 				MTextButton("CLEAR STACK", \ -> {
+					next(error, "");
 					tdb = getValue(db);
 					next(db, MiniDb(tdb with forth = MiniForth(tdb.forth with stack = makeList())));
 				}, [], []),
@@ -101,6 +107,8 @@ main() {
 					{}
 				}, [], [])
 			]),
+			MFixedY(8.0),
+			MSelect(error, \e -> MText(e, [MRed(500)])),
 			MFixedY(8.0),
 			MScroll(
 				MSelect(db, viewMiniDb), TFillXY(), []

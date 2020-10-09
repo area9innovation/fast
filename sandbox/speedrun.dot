@@ -24,6 +24,8 @@ digraph graphname {
 
 "Flow" -> "FRP";
 
+"Flow" -> "Autofold";
+
 "Stdlib" -> "DB engine";
 
 "Render tree" -> "NEdit";
@@ -40,13 +42,16 @@ digraph graphname {
 
 "Untyped Lambda" -> "Gringo";
 "Gringo" -> "SQL";
-
-"Flow" -> "SQL";
+"Autofold" -> "Master server";
+"Autofold" -> "SQL";
 "Gringo" -> "Mini";
 
 "DB engine" -> "Mini"
 
-"CRDT" -> "Comapping";
+"CRDT" -> "EditorDSL";
+
+"EditorDSL" -> "Comapping";
+
 "Material" -> "Comapping";
 
 "Material" -> "VS Code";
@@ -56,9 +61,13 @@ digraph graphname {
 
 "VS Code" -> "Prime";
 
+"Wigi" -> "Lowcode";
+"Prime" -> "Lowcode";
+
+"Autofold" -> "Shape";
 "Material" -> "Shape";
 
-"Wigi" -> "Rhapsode";
+"Lowcode" -> "Rhapsode";
 
 "FRP" -> "Material";
 

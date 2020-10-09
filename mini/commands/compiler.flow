@@ -13,9 +13,7 @@ import mini/types/resolve;
 import mini/types/pretty;
 
 export {
-	// TODO: Split this into two:
-	// - One for mini-forth
-	// - The other for the compiler backend stuff
+	// TODO: Make this async, and give a signal when the queue is empty
 	miniCompile(db : MiniDb) -> MiniDb;
 }
 

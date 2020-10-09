@@ -27,7 +27,7 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 		}
 		remaining = strRight(env.input, genv.i);
 		if (remaining != "") {
-			println("Did not parse: " + remaining);
+			db.onError("Did not parse: " + remaining);
 		}
 
 		genv.output;

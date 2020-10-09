@@ -236,10 +236,9 @@ Both of these are async, so only use them in the interactive context, or with ca
 ## Milestones
 
 - Parse flow syntax. Missing:
-  - dlist.flow: mutable, mut assign
 
   - require, forbid
-  - exp: id=v (no val), id.f ::= val
+  - exp: id=v (no val)
 	maybe ?? exp : exp
 	require unsafe
 	string-include $
@@ -301,7 +300,7 @@ Functions with only some args named: We want all args to have names:
 		...
 	}
 
-Trailing top-level semi-colon:
+Trailing top-level semi-colon after brace is not allowed:
 
 	foo() {
 		...
