@@ -5,10 +5,8 @@ import ds/treeutils;
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
 
-	typeInferenceMiniScope(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv;
-
-	// This is a helper, which we probably do not need to keep here
-	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv;
+	// Do type inference on this declaration
+	typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv;
 }
 
 makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
@@ -22,9 +20,10 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 	);
 }
 
-typeInferenceMiniScope(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv {
+typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv {
 	type = makeMiniType2Var(env);
-	nenv = setMiniType2(env, id, type);
+
+	nenv = setMiniLocalType2(env, id, type);
 
 	rt = typeInferenceMini(nenv, ex);
 
@@ -47,7 +46,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 		MiniDouble(value): MiniType2Call("double", []);
 		MiniString(value): MiniType2Call("string", []);
 		MiniVar(name, __): {
-			mlocal = lookupTree(env.types, name);
+			mlocal = lookupTree(env.localTypes, name);
 			setMiniType2Var(env, ex, mlocal ?? mlocal : {
 				mglobal = lookupTree(env.ast.types, name);
 				switch (mglobal) {
@@ -61,13 +60,13 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 		}
 		MiniLet(name, value, body, tv): {
 			vtype = typeInferenceMini(env, value);
-			nenv = setMiniType2(env, name, vtype);
+			nenv = setMiniLocalType2(env, name, vtype);
 			setMiniType2Var(nenv, ex, typeInferenceMini(nenv, body));
 		}
 		MiniLambda(args, body, __): {
 			argTypes = map(args, \arg -> makeMiniType2Var(env));
 			nenv = foldi(args, env, \i, acc, arg -> {
-				setMiniType2(acc, arg, argTypes[i])
+				setMiniLocalType2(acc, arg, argTypes[i])
 			});
 			setMiniType2Var(nenv, ex, typeInferenceMini(nenv, body));
 		}
@@ -193,9 +192,9 @@ makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var {
 	MiniType2Var(id);
 }
 
-setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {
+setMiniLocalType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {
 // 	println(id + " = " + toString(type));
-	MiniTypeEnv(env with types = setTree(env.types, id, type));
+	MiniTypeEnv(env with localTypes = setTree(env.localTypes, id, type));
 }
 
 setMiniType2Var(env : MiniTypeEnv, ex : MiniExp, type : MiniType2) -> MiniType2 {

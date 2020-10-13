@@ -7,8 +7,8 @@ export {
 	MiniTypeEnv(
 		// The program we are typing
 		ast : MiniAst,
-		// The types of ids so far
-		types : Tree<string, MiniType2>,
+		// The types of local ids so far
+		localTypes : Tree<string, MiniType2>,
 
 		// For the MLSub algorithm, we keep track of bounds:
 		mutable tyvarLowerBounds : Tree<int, Set<MiniType2>>,

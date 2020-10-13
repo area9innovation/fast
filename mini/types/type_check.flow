@@ -22,11 +22,12 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 	}
 	
 	tenv = makeMiniTypeEnv(ast);
+	// Do type inference and constraining of all ids
 	tenv2 = fold(order, tenv, \acc, id -> {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
 			// OK, find the type of this
-			typeInferenceMiniScope(acc, id, mfn);
+			typeInferenceMiniDeclaration(acc, id, mfn);
 		} : {
 			println("Unknown name " + id);
 			acc;
@@ -35,11 +36,21 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 
 	println("\nBefore resolution:");
 	debugMiniTypeEnv(tenv2);
+	println("\nDeclarations before:");
 	iter(order, \id -> {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
 			println(miniPrettyTyped(tenv2, mfn));
 		} : {}
+	});
+
+	// Next, set the type in the overall environment from the local environment
+	println("\nResolving locals:");
+	foldTree(tenv2.localTypes, ast, \local, type, acc -> {
+
+		res = resolveMiniType(tenv2, type);
+		println(local + " : " + debugMiniType(tenv2, res));
+		acc;
 	});
 
 	println("\nAfter resolution:");

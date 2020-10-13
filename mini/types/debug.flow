@@ -2,17 +2,14 @@ import mini/exp/pretty_typed;
 
 export {
 	debugMiniTypeEnv(env : MiniTypeEnv) -> void;
+
+	debugMiniType(env : MiniTypeEnv, type : MiniType2) -> string;
 }
 
 debugMiniTypeEnv(env : MiniTypeEnv) -> void {
-	println("Ids:");
-	traverseInOrder(env.types, \name, type -> {
-		switch (type) {
-			MiniType2Var(id): {	
-				println(name + " : " + miniPrettyTypeVar(env, id));
-			}
-			default: println(name + " : " + mtype2string(type));
-		}
+	println("Local types:");
+	traverseInOrder(env.localTypes, \name, type -> {
+		println(name + " : " + debugMiniType(env, type));
 	});
 
 	println("Type vars:");
@@ -20,4 +17,13 @@ debugMiniTypeEnv(env : MiniTypeEnv) -> void {
 		println(miniPrettyTypeVar(env, id));
 	});
 	{}
+}
+
+debugMiniType(env : MiniTypeEnv, type : MiniType2) -> string {
+	switch (type) {
+		MiniType2Var(id): {	
+			miniPrettyTypeVar(env, id);
+		}
+		default: " : " + mtype2string(type);
+	}
 }
