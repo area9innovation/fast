@@ -1,0 +1,46 @@
+import mini/types/restype;
+import mini/types/type2;
+
+export {
+	simplifyResType(r : ResType) -> MiniType2;
+}
+
+simplifyResType(r : ResType) -> MiniType2 {
+	todo = \ -> {
+		println("Can not convert " + toString(r));
+		MiniType2Call("flow", []);
+	}
+	switch (r) {
+		ResUnion(types): {
+			mpop = popMinSet(types);
+			mpop ?? {
+				if (isEmptySet(mpop.rest)) {
+					simplifyResType(mpop.value);
+				} else {
+					todo();
+				}
+			} : {
+				MiniType2Call("topOrBottom", []);
+			}
+		}
+		ResIntersection(types): {
+			mpop : Maybe<PopSetResult<ResType>> = popMinSet(types);
+			mpop ?? {
+				if (isEmptySet(mpop.rest)) {
+					simplifyResType(mpop.value);
+				} else {
+					todo();
+				}
+			} : {
+				MiniType2Call("topOrBottom", []);
+			}
+		}
+		ResRecursiveType(id, type): simplifyResType(type);
+		ResFunctionType(args, rhs): MiniType2Function(map(args, simplifyResType), simplifyResType(rhs));
+		ResTypeRecord(fields): todo();
+		ResTypeVar(id): todo();
+		ResIntType(bits): MiniType2Int(bits);
+		ResTypeCall(id, typars): MiniType2Call(id, map(typars, simplifyResType));
+		ResTypePar(id): MiniType2Call(id, []);
+	}
+}
