@@ -5,6 +5,8 @@ import mini/exp/pretty;
 
 export {
 	miniAst2BProgram(ast : MiniAst) -> BProgram;
+
+	miniExp2BDeclaration(declid : string, e : MiniExp) -> BDeclaration;
 }
 
 miniAst2BProgram(ast : MiniAst) -> BProgram {
@@ -28,6 +30,8 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 	);
 }
 
+todoMiniType = MiniType2Call("flow", []);
+
 miniExp2BDeclaration(declid : string, e : MiniExp) -> BDeclaration {
 	error = \ -> {
 		BComment("// Can not convert " + miniPretty(e) + " for " + declid);
@@ -49,7 +53,7 @@ miniExp2BDeclaration(declid : string, e : MiniExp) -> BDeclaration {
 
 miniValue2BValue(v : MiniValue) -> BValue {
 	switch (v) {
-		MiniInt(value, tv): BInt(value);
+		MiniInt(value, tv): BInt(value, todoMiniType);
 		MiniDouble(value): BDouble(value);
 		MiniString(value): BString(value);
 	}
@@ -93,31 +97,31 @@ miniExp2BExp(e : MiniExp) -> BExp {
 	}
 	switch (e) {
 		MiniValue(): miniValue2BValue(e);
-		MiniVar(name, tyvar): BVar(name);
-		MiniLet(name, value, body, tyvar): BLet(name, miniExp2BExp(value), miniExp2BExp(body));
+		MiniVar(name, tyvar): BVar(name, todoMiniType);
+		MiniLet(name, value, body, tyvar): BLet(name, miniExp2BExp(value), miniExp2BExp(body), todoMiniType);
 		MiniLambda(args, body, tyvar): {
 			bbody = miniExp2BExp(body);
-			BLambda(map(args, \a -> BFunArg(a)), bbody);
+			BLambda(map(args, \a -> BFunArg(a)), bbody, todoMiniType);
 		}
 		MiniCall(fn, args, tyvar): {
 			switch (fn) {
 				MiniVar(fname, __): {
 					if (fname == "__ifte") {
-						BIf(miniExp2BExp(args[0]), miniExp2BExp(args[1]), miniExp2BExp(args[2]));
+						BIf(miniExp2BExp(args[0]), miniExp2BExp(args[1]), miniExp2BExp(args[2]), todoMiniType);
 					} else if (fname == "__ift") {
-						BIf(miniExp2BExp(args[0]), miniExp2BExp(args[1]), BSequence([]));
+						BIf(miniExp2BExp(args[0]), miniExp2BExp(args[1]), BSequence([], todoMiniType), todoMiniType);
 					} else if (fname == ";") {
 						n = length(args);
 						if (n == 1) {
 							miniExp2BExp(args[0]);
 						} else {
-							BSequence(map(args, miniExp2BExp));
+							BSequence(map(args, miniExp2BExp), todoMiniType);
 						}
 					} else {
-						BCall(miniExp2BExp(fn), map(args, miniExp2BExp));
+						BCall(miniExp2BExp(fn), map(args, miniExp2BExp), todoMiniType);
 					}
 				}
-				default: BCall(miniExp2BExp(fn), map(args, miniExp2BExp));
+				default: BCall(miniExp2BExp(fn), map(args, miniExp2BExp), todoMiniType);
 			}
 		}
 		MiniTypeInt(bits): error();

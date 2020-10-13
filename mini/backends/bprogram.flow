@@ -1,3 +1,5 @@
+import mini/types/type2;
+
 export {
 	BProgram(declarations : [BDeclaration]);
 
@@ -22,19 +24,19 @@ export {
 		BReturn(val : BExp);
 
 	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BComment;
-		BVar(name : string);
+		BVar(name : string, type : MiniType2);
 		// The type is the type of the body
-		BLet(name : string, value : BExp, body : BExp);
+		BLet(name : string, value : BExp, body : BExp, type : MiniType2);
 
-		BLambda(args : [BFunArg], body : BExp);
+		BLambda(args : [BFunArg], body : BExp, type : MiniType2);
 
-		BCall(fn : BExp, args : [BExp]);
-		BIf(cond : BExp, then : BExp, else_ : BExp);
-		BSequence(exps : [BExp]);
+		BCall(fn : BExp, args : [BExp], type : MiniType2);
+		BIf(cond : BExp, then : BExp, else_ : BExp, type : MiniType2);
+		BSequence(exps : [BExp], type : MiniType2);
 
 	// The backends get this language
 	BValue ::= BInt, BDouble, BString;
-		BInt(value : int);
+		BInt(value : int, type : MiniType2);
 		BDouble(value : double);
 		BString(value : string);
 

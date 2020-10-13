@@ -6,10 +6,9 @@ import ds/set;
 export {
 	// A consistent set of declarations
 	MiniAst(
-		// When was this set ready?
-		// timestamp : double,
 		// The names defined in this program
 		declarations : Tree<string, MiniExp>,
+
 		// Where is each name defined? From name to file
 		declarationFile : Tree<string, string>,
 
@@ -21,7 +20,5 @@ export {
 
 		// The types of expressions
 		types : Tree<string, MiniType2>,
-		// The dependency graph between names
-		// dependency : SimpleGraph<string, bool>,
 	);
 }

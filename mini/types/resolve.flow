@@ -11,7 +11,7 @@ resolveMiniType(env : MiniTypeEnv, type : MiniType2) -> MiniType2 {
 		MiniType2Function(args, returnType): MiniType2Function(resolveMiniTypes(env, args), resolveMiniType(env, returnType));
 		MiniType2Call(id, typars): MiniType2Call(id, resolveMiniTypes(env, typars));
 		MiniType2Var(id): {
-			mtype = lookupTree(env.tyvars, id);
+			mtype : Maybe<MiniType2> = lookupTree(env.tyvars, id);
 			mtype ?? resolveMiniType(env, mtype) : type;
 		}
 		MiniType2Par(id): type;

@@ -62,8 +62,8 @@ bstatement2flow(b : BStatement) -> string {
 bexp2flow(b : BExp) -> string {
 	switch (b) {
 		BValue(): bvalue2flow(b);
-		BVar(name): name;
-		BLet(name, value, body): {
+		BVar(name, __): name;
+		BLet(name, value, body, __): {
 			blueprint("
 				%name% = %value%;
 				%body%", [
@@ -72,10 +72,10 @@ bexp2flow(b : BExp) -> string {
 					"body", bexp2flow(body),
 			])
 		}
-		BLambda(args, body): "\\" + superglue(args, \fa -> fa.name, ", ") + " -> " + bexp2flow(body);
-		BCall(fn, args): produceCallOrBinOp(b, bexp2flow);
-		BIf(cond, then, else_): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}";
-		BSequence(statements): {
+		BLambda(args, body, __): "\\" + superglue(args, \fa -> fa.name, ", ") + " -> " + bexp2flow(body);
+		BCall(fn, args, __): produceCallOrBinOp(b, bexp2flow);
+		BIf(cond, then, else_, __): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}";
+		BSequence(statements, __): {
 			"{" + superglue(statements, bexp2flow, "; ") + "}";
 		}
 		BComment(comment): comment + "\n";
@@ -84,7 +84,7 @@ bexp2flow(b : BExp) -> string {
 
 bvalue2flow(b : BValue) -> string {
 	switch (b) {
-		BInt(value): i2s(value);
+		BInt(value, type): if (type == MiniType2Int(1)) b2s(i2b(value)) else i2s(value);
 		BDouble(value): d2s(value);
 		BString(value): toString(value);
 	}

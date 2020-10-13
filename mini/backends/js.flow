@@ -64,8 +64,8 @@ bstatement2js(b : BStatement, withReturn : bool) -> string {
 bexp2js(b : BExp) -> string {
 	switch (b) {
 		BValue(): bvalue2js(b);
-		BVar(name): name;
-		BLet(name, value, body): {
+		BVar(name, __): name;
+		BLet(name, value, body, __): {
 			blueprint("
 				function() {
 				var %name% = %value%;
@@ -76,14 +76,14 @@ bexp2js(b : BExp) -> string {
 					"body", bexp2js(body),
 			])
 		}
-		BLambda(args, body): "function(" 
+		BLambda(args, body, __): "function(" 
 			+ superglue(args, \fa -> fa.name, ", ") + ") {" 
 			+ bstatement2js(BReturn(body), true)
 			+ "}"
 		;
-		BCall(fn, args): produceCallOrBinOp(b, bexp2js);
-		BIf(cond, then, else_): "(" + bexp2js(cond) + " ? " + bexp2js(then) + " : " + bexp2js(else_) + ")";
-		BSequence(statements): {
+		BCall(fn, args, __): produceCallOrBinOp(b, bexp2js);
+		BIf(cond, then, else_, __): "(" + bexp2js(cond) + " ? " + bexp2js(then) + " : " + bexp2js(else_) + ")";
+		BSequence(statements, __): {
 			"(" + superglue(statements, bexp2js, ", ") + ")";
 		}
 		BComment(comment): comment + "\n";
@@ -92,7 +92,7 @@ bexp2js(b : BExp) -> string {
 
 bvalue2js(b : BValue) -> string {
 	switch (b) {
-		BInt(value): i2s(value);
+		BInt(value, type): if (type == MiniType2Int(1)) b2s(i2b(value)) else i2s(value);
 		BDouble(value): d2s(value);
 		BString(value): toString(value);
 	}

@@ -48,10 +48,10 @@ produceCallOrBinOp(call : BCall, rec : (BExp) -> string) -> string {
 
 getBBinOp(b : BExp) -> string {
 	switch (b) {
-		BCall(fn, args): {
+		BCall(fn, args, __): {
 			if (length(args) == 2) {
 				switch (fn) {
-					BVar(v): v;
+					BVar(v, __): v;
 					default: "";
 				}
 			} else "";

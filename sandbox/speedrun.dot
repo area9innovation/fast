@@ -93,4 +93,7 @@ digraph graphname {
 
 "Page editor" -> "Rhapsode";
 
+"VS Code plugin" ->  "VS Code";
+
 }
+

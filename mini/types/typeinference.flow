@@ -4,7 +4,10 @@ import ds/treeutils;
 
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
-	typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniTypeEnv;
+
+	typeInferenceMiniScope(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv;
+
+	// This is a helper, which we probably do not need to keep here
 	setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv;
 }
 
@@ -19,11 +22,9 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 	);
 }
 
-typeInferenceMiniScope(env : MiniTypeEnv, scope : string, ex : MiniExp) -> MiniTypeEnv {
-	// TODO: Set up an environment for this scope where we can remember
-	// the types
+typeInferenceMiniScope(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv {
 	type = makeMiniType2Var(env);
-	nenv = setMiniType2(env, scope, type);
+	nenv = setMiniType2(env, id, type);
 
 	rt = typeInferenceMini(nenv, ex);
 
@@ -42,12 +43,12 @@ https://github.com/LPTK/simple-sub
 */
 typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 	switch (ex) {
-		MiniInt(value, __): MiniType2Int(32);
+		MiniInt(value, __): setMiniType2Var(env, ex, MiniType2Int(32));
 		MiniDouble(value): MiniType2Call("double", []);
 		MiniString(value): MiniType2Call("string", []);
 		MiniVar(name, __): {
 			mlocal = lookupTree(env.types, name);
-			mlocal ?? mlocal : {
+			setMiniType2Var(env, ex, mlocal ?? mlocal : {
 				mglobal = lookupTree(env.ast.types, name);
 				switch (mglobal) {
 					None(): {
@@ -56,19 +57,19 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 					}
 					Some(t): t;
 				}
-			}
+			});
 		}
-		MiniLet(name, value, body, __): {
+		MiniLet(name, value, body, tv): {
 			vtype = typeInferenceMini(env, value);
 			nenv = setMiniType2(env, name, vtype);
-			typeInferenceMini(nenv, body);
+			setMiniType2Var(nenv, ex, typeInferenceMini(nenv, body));
 		}
 		MiniLambda(args, body, __): {
 			argTypes = map(args, \arg -> makeMiniType2Var(env));
 			nenv = foldi(args, env, \i, acc, arg -> {
 				setMiniType2(acc, arg, argTypes[i])
 			});
-			typeInferenceMini(nenv, body);
+			setMiniType2Var(nenv, ex, typeInferenceMini(nenv, body));
 		}
 		MiniCall(fn, args, __): {
 			resType = makeMiniType2Var(env);
@@ -78,7 +79,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 				resType
 			);
 			constrainMiniType(env, fnType, callType);
-			resType;
+			setMiniType2Var(env, ex, resType);
 		}
 		MiniTypeInt(bits): MiniType2Int(bits);
 		MiniTypeFunction(args, returnType): {
@@ -197,6 +198,43 @@ setMiniType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {
 	MiniTypeEnv(env with types = setTree(env.types, id, type));
 }
 
+setMiniType2Var(env : MiniTypeEnv, ex : MiniExp, type : MiniType2) -> MiniType2 {
+	def = \tv -> {
+		id = if (tv == 0) {
+			ttv = makeMiniType2Var(env);
+			switch (ex) {
+				MiniInt(value, tyvar): ex.tyvar ::= ttv.id;
+				MiniVar(name, tyvar): ex.tyvar ::= ttv.id;
+				MiniLet(name, value, body, tyvar): ex.tyvar ::= ttv.id;
+				MiniLambda(args, body, tyvar): ex.tyvar ::= ttv.id;
+				MiniCall(fn, args, tyvar): ex.tyvar ::= ttv.id;
+
+				MiniTypeInt(bits): {};
+				MiniTypeFunction(args, returnType): {};
+				MiniTypeCall(id, typars): {};
+				MiniDouble(value): {};
+				MiniString(value): {};
+			};
+			ttv.id;
+		} else tv;
+		addMiniLowerBound(env, id, type);
+		addMiniUpperBound(env, id, type);
+		type;
+	}
+	switch (ex) {
+		MiniInt(value, tyvar): def(tyvar);
+		MiniVar(name, tyvar): def(tyvar);
+		MiniLet(name, value, body, tyvar): def(tyvar);
+		MiniLambda(args, body, tyvar): def(tyvar);
+		MiniCall(fn, args, tyvar): def(tyvar);
+
+		MiniTypeInt(bits): type;
+		MiniTypeFunction(args, returnType): type;
+		MiniTypeCall(id, typars): type;
+		MiniDouble(value): type;
+		MiniString(value): type;
+	}
+}
 
 addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniType2) -> void {
 	env.tyvarLowerBounds ::= insertMultimap(env.tyvarLowerBounds, tyvar, type);

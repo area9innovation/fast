@@ -18,6 +18,6 @@ export {
 		mutable tyvarId : int,
 
 		// What are the tyvars bound to in terms of resolved types?
-		mutable tyvars : Tree<int, ResType>,
+		mutable tyvars : Tree<int, MiniType2>,
 	);
 }

@@ -1,4 +1,6 @@
 import mini/types/typeinference;
+import mini/types/coalescing;
+import mini/types/simplify;
 import mini/exp/topological;
 
 export {
@@ -25,7 +27,15 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 		}
 	});
 
-	// 
+	// OK, coalesce all tyvars?
+	if (false) {
+		generate(0, tenv2.tyvarId, \id -> {
+			restype = coalesceMiniType2(tenv2, MiniType2Var(id));
+			simple = simplifyResType(restype);
+			println(i2s(id) + " = " + mtype2string(simple));
+		});
+		{}
+	}
 
 	tenv2;
 }
