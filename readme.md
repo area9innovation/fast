@@ -55,6 +55,7 @@ Currently, it is still alpha, but it shows some interesting promise.
 		- [Object Relation Mapping (ORM)](#object-relation-mapping-orm)
 		- [Syntax ideas](#syntax-ideas)
 		- [Random todos](#random-todos)
+	- [Autofold](#autofold)
 
 ## Introduction
 
@@ -891,18 +892,6 @@ We have a wish list of the work-horses:
 
 Many languages have those directly available, and there, we can reuse them through inlines.
 
-In addition to representing the raw data, we also want a stdlib with good functions to work on these.
-We would like this family with arbitray combinations:
-
-	 hash, map, fold, iter, filter, filtermap, find, forall, exists, serialization, deserialization, 
-	 conversions, math operations, reflection of types, reflection of code… defined on data structures. 
-	 No need for iterators this way..
-
-  This can arguably be done with transducers:
-	 https://medium.com/javascript-scene/transducers-efficient-data-processing-pipelines-in-javascript-7985330fe73d
-
-  Another idea is to consider a lot of these structures as special kinds of graphs. That might provide 
-  another way to get the generic helpers done.
 
 TODO:
 - Implement more data structures in more languages
@@ -1279,3 +1268,22 @@ https://www.prisma.io/blog/prisma-raises-series-a-saks1zr7kip6
 - Check out this to find a pattern for streaming apps:
 
   https://itnext.io/your-single-page-app-is-now-a-polyfill-7881fb01694e
+
+## Autofold
+
+We would like to have a way to produce this family with arbitray combinations of structures:
+
+	 hash, map, fold, iter, filter, filtermap, find, forall, exists, serialization, deserialization, 
+	 conversions, math operations, reflection of types, reflection of code…
+
+  This can arguably be done with transducers:
+	https://medium.com/javascript-scene/transducers-efficient-data-processing-pipelines-in-javascript-7985330fe73d
+
+  Another approach is traversal systems (to do: read and understand)
+	https://chrispenner.ca/posts/traversal-systems
+
+  An advanced approach is to consider that these functions are proof-tactics applied on the structures:
+	https://reasonablypolymorphic.com/blog/towards-tactics/index.html
+     
+Another idea is to consider these as graph structures, and implement graph algorithms for these.
+
