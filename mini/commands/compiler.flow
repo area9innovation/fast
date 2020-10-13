@@ -107,33 +107,38 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			} : def();
 		}
 		MiniTypeInfer(ids): {
+			// OK, what types do we have for these ids now?
+			lids = set2array(ids);
+			origTypes : [Maybe<MiniType2>]= map(lids, \id -> {
+				lookupTree(db.program.types, id);
+			});
+
+			// OK, run type inference on these ids, and update them
 			tenv = typecheckMiniTypes(db.program, ids);
 
-			// Then we should set the (resolved) type in the overall type environment
+			// Then we set the (resolved) type in the overall type environment
 			// and check if there is a change, and if so, request re-typecheck
 			// of dependent ids
-			foldTree(tenv.types, db, \id, type, acc -> {
-				updateMiniType(acc, ids, id, resolveMiniType(tenv, type))
+			foldi(lids, db, \i, acc, id -> {
+				update = \ -> { updateMiniType(acc, ids, id) };
+
+				origType = origTypes[i];
+				origType ?? {
+					newType = lookupTreeDef(acc.program.types, id, origType);
+					if (origType == newType) acc
+					else update()
+				} : update();
 			})
 		}
 	}
 }
 
-// OK, we have a new type for the "id".
+// OK, this id has a new type.
 // The "types" is the set of types we are updating in this round
 // and we do not need to propagate any changes to those
-updateMiniType(db : MiniDb, updating : Set<string>, id : string, type : MiniType2) -> MiniDb {
+updateMiniType(db : MiniDb, updating : Set<string>, id : string) -> MiniDb {
 	program = db.program;
-	mexist = lookupTree(program.types, id);
-	def = \ -> {
-		deps = lookupMultimap(db.program.idDependents.dependents, id);
-		newDeps = differenceSets(deps, updating);
-		ndb = if (isEmptySet(newDeps)) db else pushMiniCommand(db, MiniTypeInfer(newDeps));
-		MiniDb(ndb with program = MiniAst(program with types = setTree(program.types, id, type)));
-	}
-	mexist ?? {
-		if (mexist == type) {
-			db;
-		} else def();
-	} : def();
+	deps = lookupMultimap(db.program.idDependents.dependents, id);
+	newDeps = differenceSets(deps, updating);
+	if (isEmptySet(newDeps)) db else pushMiniCommand(db, MiniTypeInfer(newDeps));
 }

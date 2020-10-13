@@ -5,10 +5,10 @@ export {
 
 	BDeclaration ::= BFunction, BGlobalVar, BComment;
 
-	BFunction(name : string, args : [BFunArg], body : BStatement);
+	BFunction(name : string, args : [BFunArg], body : BStatement, type : MiniType2);
 		BFunArg(name : string);
 
-	BGlobalVar(name : string, body : BExp);
+	BGlobalVar(name : string, body : BExp, type : MiniType2);
 
 	BComment(comment : string);
 

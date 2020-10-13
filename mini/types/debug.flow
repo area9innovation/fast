@@ -1,0 +1,23 @@
+import mini/exp/pretty_typed;
+
+export {
+	debugMiniTypeEnv(env : MiniTypeEnv) -> void;
+}
+
+debugMiniTypeEnv(env : MiniTypeEnv) -> void {
+	println("Ids:");
+	traverseInOrder(env.types, \name, type -> {
+		switch (type) {
+			MiniType2Var(id): {	
+				println(name + " : " + miniPrettyTypeVar(env, id));
+			}
+			default: println(name + " : " + mtype2string(type));
+		}
+	});
+
+	println("Type vars:");
+	generate(1, env.tyvarId, \id -> {
+		println(miniPrettyTypeVar(env, id));
+	});
+	{}
+}

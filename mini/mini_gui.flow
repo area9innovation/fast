@@ -24,7 +24,7 @@ viewMiniDb(m : MiniDb) -> Material {
 				arrayPush(acc, MText("  " + miniPretty(st), []))
 			}),
 			[MFixedY(8.0)],
-/*			foldTree(m.program.declarations, [MText("Ids:", [MSubtitle1()])], \st, val, acc -> {
+			foldTree(m.program.declarations, [MText("Ids:", [MSubtitle1()])], \st, val, acc -> {
 				deps = getMiniDependencies(m.program.idDependents, st, false);
 				mtype = lookupTree(m.program.types, st);
 				typeString = mtype ?? {
@@ -32,7 +32,7 @@ viewMiniDb(m : MiniDb) -> Material {
 				} : "";
 				text = st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", ");
 				arrayPush(acc, MText(text, []))
-			}),*/
+			}),
 		])
 	);
 }

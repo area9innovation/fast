@@ -18,7 +18,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		makeTree(),
 		makeTree(),
 		1,
-		makeTree(),
+		ref makeTree(),
 	);
 }
 

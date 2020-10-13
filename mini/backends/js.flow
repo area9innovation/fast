@@ -12,7 +12,7 @@ bprogram2js(b : BProgram) -> string {
 
 bdeclaration2js(b : BDeclaration) -> string {
 	switch (b) {
-		BFunction(name, args, body): {
+		BFunction(name, args, body, __): {
 			blueprint("
 				function %name%(%args%) {
 					%body%
@@ -22,7 +22,7 @@ bdeclaration2js(b : BDeclaration) -> string {
 				"body", bstatement2js(body, true)
 			]);
 		}
-		BGlobalVar(name, body): "var " + name + " = " + bexp2js(body) + ";";
+		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(body) + ";";
 		BComment(comment): comment;
 	}
 }

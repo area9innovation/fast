@@ -1,4 +1,5 @@
 import mini/types/typeenv;
+import mini/types/pretty;
 
 import mini/types/coalescing;
 import mini/types/simplify;
@@ -11,16 +12,20 @@ export {
 }
 
 resolveMiniType2Var(env : MiniTypeEnv, tyvarId : int) -> MiniType2 {
-	mtype : Maybe<MiniType2> = lookupTree(env.tyvars, tyvarId);
+	mtype : Maybe<MiniType2> = lookupTree(^(env.tyvars), tyvarId);
 
-	resolved = resolveMiniType(env, (mtype ?? {
+	resolved = mtype ?? {
 		resolveMiniType(env, mtype) 
 	} : {
 		restype = coalesceMiniType2(env, MiniType2Var(tyvarId));
-		simplifyResType(restype);
-	}));
+		rt = resolveMiniType(env, simplifyResType(restype));
 
-	env.tyvars ::= setTree(env.tyvars, tyvarId, resolved);
+		println("Coalescing " + i2s(tyvarId) + " to " + mtype2string(rt));
+
+		rt;
+	};
+
+	env.tyvars := setTree(^(env.tyvars), tyvarId, resolved);
 	resolved;
 }
 

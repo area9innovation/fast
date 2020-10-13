@@ -1,0 +1,78 @@
+import mini/exp/exp;
+import mini/types/typeenv;
+import mini/types/pretty;
+import text/blueprint;
+
+export {
+	miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string;
+
+	miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string;
+}
+
+miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
+	type = \tv -> miniPrettyTypeVar(env, tv);
+	switch (m) {
+		MiniInt(value, tv): i2s(value) + type(tv);
+		MiniDouble(value): d2s(value);
+		MiniString(value): toString(value);
+		MiniVar(name, tv): name  + type(tv);
+		MiniLet(name, value, body, tv): blueprint("
+			%name%%type% = %value%;
+			%body%",
+			[ "name", name,
+			  "type", type(tv),
+			  "value", miniPrettyTyped(env, value),
+			  "body", miniPrettyTyped(env, body)]
+		);
+		MiniLambda(args, body, tv): blueprint("
+			\\%args% -> {
+				%body%
+			}%type%",
+			[ "args", strGlue(args, ", "),
+			  "body", miniPrettyTyped(env, body),
+			  "type", type(tv),
+		   ]
+		);
+		MiniCall(fn, args, tv): {
+			def = \ -> miniPrettyTyped(env, fn) + "(" + superglue(args, \a -> miniPrettyTyped(env, a), ", ") + ")" + type(tv);
+			switch (fn) {
+				MiniVar(fname, __): {
+					if (fname == "__ifte") {
+						def();
+					} else if (fname == "__ift") {
+						def();
+					} else if (fname == ";") {
+						superglue(args, \a -> miniPrettyTyped(env, a), ";\n")
+					} else {
+						def();
+					}
+				}
+				default: def();
+			}
+		}
+		MiniTypeInt(bits): "i" + i2s(bits);
+		MiniTypeFunction(args, returnType): "type (" + superglue(args, \a -> miniPrettyTyped(env, a), ", ") + ") -> " + miniPrettyTyped(env, returnType);
+		MiniTypeCall(id, typars): "type " + id + "<" + superglue(typars, \t -> miniPrettyTyped(env, t), ", ") + ">";
+	}
+}
+
+miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
+	if (tv == 0) {
+		""
+	} else {
+		mtype = lookupTree(^(env.tyvars), tv);
+		mtype ?? {
+			" : " + mtype2string(mtype)
+		} : {
+			lower = lookupMultimap(env.tyvarLowerBounds, tv);
+			upper = lookupMultimap(env.tyvarUpperBounds, tv);
+			b = \s : Set<MiniType2> -> {
+				if (isEmptySet(s)) ""
+				else superglue(set2array(s), mtype2string, ", ")
+			}
+			" : α" + i2s(tv) 
+				+ (if (equalSet(lower, upper)) "≔" + b(lower) 
+				else { "∊{" + b(lower) + "}..{" + b(upper) + "}"});
+		}
+	}
+}

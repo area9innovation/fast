@@ -37,18 +37,23 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 	error = \ -> {
 		BComment("// Can not convert " + miniPretty(e) + " for " + declid);
 	}
-	var = \ -> {
-		BGlobalVar(declid, miniExp2BExp(env, e));
+	var = \tv -> {
+		BGlobalVar(declid, miniExp2BExp(env, e), resolveMiniType2Var(env, tv));
 	}
 	switch (e) {
-		MiniValue(): var();
-		MiniVar(name, tv): var();
-		MiniLet(name, value, body, tv): var();
+		MiniInt(value, tv): var(tv);
+		MiniDouble(value): BGlobalVar(declid, miniExp2BExp(env, e), MiniType2Call("double", []));
+		MiniString(value): BGlobalVar(declid, miniExp2BExp(env, e), MiniType2Call("string", []));
+		MiniVar(name, tv): var(tv);
+		MiniLet(name, value, body, tv): var(tv);
 		MiniLambda(args, body, tv): {
 			bbody = miniExp2BReturn(env, body);
-			BFunction(declid, map(args, \a -> BFunArg(a)), bbody);
+			BFunction(
+				declid, map(args, \a -> BFunArg(a)), bbody,
+				resolveMiniType2Var(env, tv)
+			);
 		}
-		MiniCall(fn, args, tv): var();
+		MiniCall(fn, args, tv): var(tv);
 		MiniTypeInt(bits): error();
 		MiniTypeFunction(args, returnType): error();
 		MiniTypeCall(id, typars): error();
@@ -91,7 +96,12 @@ miniExp2BReturn(env : MiniTypeEnv, e : MiniExp) -> BStatement {
 				default: BReturn(miniExp2BExp(env, e))
 			}
 		}
-		default: BComment("// Can not convert " + miniPretty(e) + " to statement yet");
+		MiniLet(name, value, body, tyvar): {
+			BLetStatement(name, miniExp2BExp(env, value), miniExp2BReturn(env, body));
+		}
+		MiniTypeInt(bits): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
+		MiniTypeFunction(args, returnType): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
+		MiniTypeCall(id, typars): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 	}
 }
 

@@ -4,6 +4,8 @@ import text/blueprint;
 
 export {
 	bprogram2flow(b : BProgram) -> string;
+
+	bdeclaration2flow(b : BDeclaration) -> string;
 }
 
 bprogram2flow(b : BProgram) -> string {
@@ -12,7 +14,7 @@ bprogram2flow(b : BProgram) -> string {
 
 bdeclaration2flow(b : BDeclaration) -> string {
 	switch (b) {
-		BFunction(name, args, body): {
+		BFunction(name, args, body, __): {
 			blueprint("
 				%name%(%args%) {
 					%body%
@@ -22,7 +24,7 @@ bdeclaration2flow(b : BDeclaration) -> string {
 				"body", bstatement2flow(body)
 			]);
 		}
-		BGlobalVar(name, body): name + " = " + bexp2flow(body) + ";";
+		BGlobalVar(name, body, __): name + " = " + bexp2flow(body) + ";";
 		BComment(comment): comment;
 	}
 }
