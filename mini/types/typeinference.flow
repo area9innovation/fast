@@ -28,7 +28,7 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, ex : MiniExp) -> Mi
 	rt = typeInferenceMini(nenv, ex);
 
 	// OK, we constrain the type
-	constrainMiniType(nenv, type, rt);
+	constrainMiniType(nenv, rt, type);
 
 	nenv;
 }
