@@ -21,7 +21,9 @@ export {
 		tyvars : ref Tree<int, MiniType2>,
 
 		// Map to handle polymorphism
-		typars : ref MiniTypeParMap
+		typars : ref MiniTypeParMap,
+
+		constraintCache : ref Set<Pair<MiniType2, MiniType2>>,
 	);
 
 	MiniTypeParMap(

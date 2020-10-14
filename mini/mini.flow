@@ -7,8 +7,8 @@ main() {
 
 	db = pushMiniCommand(db0, MiniProcessFile("", "mini/tests/test.mini", "evallines"));
 
-	fdb = miniCompile(db);
-	iterList(fdb.forth.stack, println);
-
-	quit(0);
+	miniCompile(db, make(""), \fdb -> {
+		iterList(fdb.forth.stack, println);
+		quit(0);
+	});
 }
