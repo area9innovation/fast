@@ -1,5 +1,6 @@
 import mini/types/typeenv;
 import mini/types/pretty;
+import mini/types/polymorphism;
 import ds/treeutils;
 
 export {
@@ -17,10 +18,16 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ref makeTree(),
 		ref 1,
 		ref makeTree(),
+		ref MiniTypeParMap(makeTree(), makeTree())
 	);
 }
 
 typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
+	// Reset polymorphism for this id
+	initTyparMap(env);
+
+	// TODO: Traverse the body and extract polymorphism and instantiate it
+
 	if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
 		type = makeMiniType2Var(env);
@@ -30,11 +37,18 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 		// OK, we constrain the type
 		constrainMiniType(nenv, rt, type);
 
-		setMiniType2Declaration(nenv, id, rt);
+		// Back-substitute polymorphism
+		ptype = typeVars2TypePars(nenv, rt);
+
+		setMiniType2Declaration(nenv, id, ptype);
 	} else {
-		type = typeInferenceMini(env, ex);
-		setMiniType2Declaration(env, id, type);
-	}
+		rt = typeInferenceMini(env, ex);
+
+		// Back-substitute polymorphism
+		ptype = typeVars2TypePars(env, rt);
+
+		setMiniType2Declaration(env, id, ptype);
+	};
 }
 
 setMiniType2Declaration(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {
@@ -57,7 +71,8 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 		MiniString(value): MiniType2Call("string", []);
 		MiniVar(name, __): {
 			mlocal = lookupTree(env.localTypes, name);
-			setMiniType2Var(env, ex, mlocal ?? mlocal : {
+
+			type = mlocal ?? mlocal : {
 				mglobal = lookupTree(env.ast.types, name);
 				switch (mglobal) {
 					None(): {
@@ -66,7 +81,12 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 					}
 					Some(t): t;
 				}
-			});
+			};
+
+			// OK, we should instantiate this polymorphism
+			itype = localTypePars2TypeVars(env, type);
+
+			setMiniType2Var(env, ex, itype);
 		}
 		MiniLet(name, value, body, tv): {
 			vtype = typeInferenceMini(env, value);
@@ -196,12 +216,6 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType2, rhs : MiniType2) -> void {
 			todo();
 		}
 	}
-}
-
-makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var {
-	id = ^(env.tyvarId);
-	env.tyvarId := id + 1;
-	MiniType2Var(id);
 }
 
 setMiniLocalType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {

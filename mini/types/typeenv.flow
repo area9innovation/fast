@@ -19,5 +19,15 @@ export {
 
 		// What are the tyvars bound to in terms of resolved types?
 		tyvars : ref Tree<int, MiniType2>,
+
+		// Map to handle polymorphism
+		typars : ref MiniTypeParMap
 	);
+
+	MiniTypeParMap(
+		// Map from type par to type var id
+		typars : Tree<string, int>,
+		// From type var id to type par
+		tyvars : Tree<int, string>
+	);	
 }
