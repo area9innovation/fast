@@ -9,10 +9,10 @@ export {
 	// Run a type inference and check on these ids
 	// and return the resulting environment
 	// This also updates the typed backend representation
-	typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv;
+	typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst;
 }
 
-typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
+typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	// Find a topological order of these ids
 	order = topologicalMiniOrder(ast.idDependents, ids);
 
@@ -26,8 +26,9 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 	tenv2 = fold(order, tenv, \acc, id -> {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
+			recursive = containsSet(lookupMultimap(ast.idDependents.dependencies, id), id);
 			// OK, find the type of this
-			typeInferenceMiniDeclaration(acc, id, mfn);
+			typeInferenceMiniDeclaration(acc, id, recursive, mfn);
 		} : {
 			println("Unknown name " + id);
 			acc;
@@ -55,11 +56,12 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 
 	println("\nAfter resolution:");
 	// OK, now lower these ids to the backend representation
-	nast = fold(order, ast, \acc, id -> {
-		mfn = lookupTree(ast.declarations, id);
+	nast = fold(order, tenv2.ast, \acc, id -> {
+		mfn = lookupTree(acc.declarations, id);
 		mfn ?? {
 			bdecl = miniExp2BDeclaration(tenv2, id, mfn);
 			println(id + " = " + miniPrettyTyped(tenv2, mfn));
+			println(bdecl);
 			MiniAst(acc with typedDeclarations = setTree(acc.typedDeclarations, id, bdecl));
 		} : {
 			acc;
@@ -68,5 +70,5 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 
 	debugMiniTypeEnv(tenv2);
 
-	tenv2;
+	nast;
 }

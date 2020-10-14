@@ -5,8 +5,8 @@ import ds/treeutils;
 export {
 	makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv;
 
-	// Do type inference on this declaration
-	typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv;
+	// Do type inference on this declaration. If it is recursive, send in a bool
+	typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv;
 }
 
 makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
@@ -20,17 +20,27 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 	);
 }
 
-typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniTypeEnv {
-	type = makeMiniType2Var(env);
+typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
+	if (recursive) {
+		// OK, we have to add a local variable of this name and constrain it
+		type = makeMiniType2Var(env);
+		nenv = setMiniLocalType2(env, id, type);
+		rt = typeInferenceMini(nenv, ex);
 
-	nenv = setMiniLocalType2(env, id, type);
+		// OK, we constrain the type
+		constrainMiniType(nenv, rt, type);
 
-	rt = typeInferenceMini(nenv, ex);
+		setMiniType2Declaration(nenv, id, rt);
+	} else {
+		type = typeInferenceMini(env, ex);
+		setMiniType2Declaration(env, id, type);
+	}
+}
 
-	// OK, we constrain the type
-	constrainMiniType(nenv, rt, type);
-
-	nenv;
+setMiniType2Declaration(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {
+	MiniTypeEnv(
+		env with ast = MiniAst(env.ast with types = setTree(env.ast.types, id, type))
+	)
 }
 
 /*
@@ -68,7 +78,9 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 			nenv = foldi(args, env, \i, acc, arg -> {
 				setMiniLocalType2(acc, arg, argTypes[i])
 			});
-			setMiniType2Var(nenv, ex, typeInferenceMini(nenv, body));
+			retType = typeInferenceMini(nenv, body);
+			fnType = MiniType2Function(argTypes, retType);
+			setMiniType2Var(nenv, ex, fnType);
 		}
 		MiniCall(fn, args, __): {
 			resType = makeMiniType2Var(env);
