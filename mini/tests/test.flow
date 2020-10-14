@@ -1,16 +1,8 @@
-a = 1;
-
-foo() {
-	a;
-}
-
 fact(i : int) -> int {
 	if (i <= 1) i
 	else i * fact(i - 1)
 }
 
 main() {
-	c = foo;
-	b = foo();
-	b;
+	fact(5);
 }

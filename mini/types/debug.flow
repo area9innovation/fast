@@ -4,6 +4,8 @@ export {
 	debugMiniTypeEnv(env : MiniTypeEnv) -> void;
 
 	debugMiniType(env : MiniTypeEnv, type : MiniType2) -> string;
+
+	resType2string(r : ResType) -> string;
 }
 
 debugMiniTypeEnv(env : MiniTypeEnv) -> void {
@@ -25,5 +27,25 @@ debugMiniType(env : MiniTypeEnv, type : MiniType2) -> string {
 			miniPrettyTypeVar(env, id);
 		}
 		default: " : " + mtype2string(type);
+	}
+}
+
+resType2string(r : ResType) -> string {
+	switch (r) {
+		ResUnion(types): {
+			if (isEmptySet(types)) "⊥"
+			else "(" + superglue(set2array(types), resType2string, " ⋃ ") + ")";
+		}
+		ResIntersection(types): {
+			if (isEmptySet(types)) "⊤"
+			else "(" + superglue(set2array(types), resType2string, " ⋂ ") + ")";
+		}
+		ResRecursiveType(id, type): "rec " + i2s(id) + ": " + resType2string(type);
+		ResFunctionType(args, rhs): "(" + superglue(args, resType2string, ", ") + ") -> " + resType2string(rhs);
+		ResTypeRecord(fields): "{" + superglue(fields, \f -> f.first + ":" + resType2string(f.second), ", ") + "}";
+		ResTypeVar(id): "α" + i2s(id);
+		ResIntType(bits): "i" + i2s(bits);
+		ResTypeCall(id, typars): id + if (typars != []) "<" + superglue(typars, resType2string, ", ") + ">" else "";
+		ResTypePar(id): id;
 	}
 }

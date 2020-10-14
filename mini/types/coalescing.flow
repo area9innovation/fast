@@ -12,13 +12,13 @@ PolarVariable(id : int, polar : bool);
 
 CoalesceAcc(
 	env : MiniTypeEnv,
-	mutable recursive : Tree<PolarVariable, ResTypeVar>,
+	recursive : ref Tree<PolarVariable, ResTypeVar>,
 	inProcess : Set<PolarVariable>
 );
 
 coalesceMiniType2(env : MiniTypeEnv, type : MiniType2) -> ResType {
 	goCoalesce(
-		CoalesceAcc(env, makeTree(), makeSet()), 
+		CoalesceAcc(env, ref makeTree(), makeSet()), 
 		type,
 		true
 	);
@@ -43,24 +43,39 @@ goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
 		MiniType2Var(id): {
 			vspol = PolarVariable(id, polar);
 			if (containsSet(env.inProcess, vspol)) {
-				tyvar = makeResTypeVar(env.env);
-				env.recursive ::= setTree(env.recursive, vspol, tyvar);
-				tyvar;
+				mtyvar = lookupTree(^(env.recursive), vspol);
+				mtyvar ?? {
+					mtyvar
+				} : {
+					tyvar = makeResTypeVar(env.env);
+					env.recursive := setTree(^(env.recursive), vspol, tyvar);
+					tyvar;
+				}
 			} else {
 				bounds = lookupMultimap(^(if (polar) env.env.tyvarLowerBounds else env.env.tyvarUpperBounds), id);
+				nenv = CoalesceAcc(env with inProcess = insertSet(env.inProcess, vspol));
 				boundTypes = mapSet(bounds, \b -> {
-					nenv = CoalesceAcc(env with inProcess = insertSet(env.inProcess, vspol));
 					goCoalesce(nenv, b, polar)
 				});
-				res = if (polar) {
-					ResUnion(boundTypes)
-				} else {
-					ResIntersection(boundTypes);
+
+				mbounds = popMinSet(boundTypes);
+				res = mbounds ?? {
+					if (isEmptySet(mbounds.rest)) {
+						mbounds.value
+					} else if (polar) {
+						ResUnion(boundTypes)
+					} else {
+						ResIntersection(boundTypes);
+					}
+				} : {
+					makeResTypeVar(env.env);
 				};
+
 				// If this exist in the recursive map, return a recursive type
-				mrecid = lookupTree(env.recursive, vspol);
+				mrecid = lookupTree(^(env.recursive), vspol);
 				mrecid ?? {
-					ResRecursiveType(mrecid.id, res)
+					//ResRecursiveType(mrecid.id, res)
+					res;
 				} : res;
 			}
 		}

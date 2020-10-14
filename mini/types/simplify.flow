@@ -1,4 +1,5 @@
 import mini/types/restype;
+import mini/types/debug;
 import mini/types/type2;
 
 export {
@@ -7,7 +8,7 @@ export {
 
 simplifyResType(r : ResType) -> MiniType2 {
 	todo = \ -> {
-		println("Can not convert " + toString(r));
+		println("Can not convert " + resType2string(r));
 		MiniType2Call("flow", []);
 	}
 	switch (r) {
@@ -20,7 +21,7 @@ simplifyResType(r : ResType) -> MiniType2 {
 					todo();
 				}
 			} : {
-				MiniType2Call("topOrBottom", []);
+				MiniType2Call("⊥", []);
 			}
 		}
 		ResIntersection(types): {
@@ -32,7 +33,7 @@ simplifyResType(r : ResType) -> MiniType2 {
 					todo();
 				}
 			} : {
-				MiniType2Call("topOrBottom", []);
+				MiniType2Call("⊤", []);
 			}
 		}
 		ResRecursiveType(id, type): simplifyResType(type);

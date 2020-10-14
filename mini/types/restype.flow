@@ -1,6 +1,7 @@
 import ds/set;
 
 export {
+	// This is a representation of the types, where bounds are determined
 	ResType ::= 
 		ResUnion, ResIntersection, ResRecursiveType, 
 		ResFunctionType, ResTypeRecord, ResTypeVar, ResIntType,
