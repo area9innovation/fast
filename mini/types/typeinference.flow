@@ -13,9 +13,9 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 	MiniTypeEnv(
 		ast,
 		makeTree(),
-		makeTree(),
-		makeTree(),
-		1,
+		ref makeTree(),
+		ref makeTree(),
+		ref 1,
 		ref makeTree(),
 	);
 }
@@ -187,8 +187,8 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType2, rhs : MiniType2) -> void {
 }
 
 makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var {
-	id = env.tyvarId;
-	env.tyvarId ::= id + 1;
+	id = ^(env.tyvarId);
+	env.tyvarId := id + 1;
 	MiniType2Var(id);
 }
 
@@ -236,22 +236,22 @@ setMiniType2Var(env : MiniTypeEnv, ex : MiniExp, type : MiniType2) -> MiniType2 
 }
 
 addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniType2) -> void {
-	env.tyvarLowerBounds ::= insertMultimap(env.tyvarLowerBounds, tyvar, type);
+	env.tyvarLowerBounds := insertMultimap(^(env.tyvarLowerBounds), tyvar, type);
 }
 
 addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniType2) -> void {
-	env.tyvarUpperBounds ::= insertMultimap(env.tyvarUpperBounds, tyvar, type);
+	env.tyvarUpperBounds := insertMultimap(^(env.tyvarUpperBounds), tyvar, type);
 }
 
 constrainLowerBounds(env : MiniTypeEnv, tyvar : int, type : MiniType2) -> void {
-	types = lookupMultimap(env.tyvarLowerBounds, tyvar);
+	types = lookupMultimap(^(env.tyvarLowerBounds), tyvar);
 	iterSet(types, \ltype -> {
 		constrainMiniType(env, ltype, type)
 	})
 }
 
 constrainUpperBounds(env : MiniTypeEnv, tyvar : int, type : MiniType2) -> void {
-	types = lookupMultimap(env.tyvarUpperBounds, tyvar);
+	types = lookupMultimap(^(env.tyvarUpperBounds), tyvar);
 	iterSet(types, \utype -> {
 		constrainMiniType(env, type, utype)
 	})

@@ -13,7 +13,7 @@ debugMiniTypeEnv(env : MiniTypeEnv) -> void {
 	});
 
 	println("Type vars:");
-	generate(1, env.tyvarId, \id -> {
+	generate(1, ^(env.tyvarId), \id -> {
 		println(miniPrettyTypeVar(env, id));
 	});
 	{}

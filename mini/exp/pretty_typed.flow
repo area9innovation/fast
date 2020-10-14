@@ -15,7 +15,7 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 		MiniInt(value, tv): i2s(value) + type(tv);
 		MiniDouble(value): d2s(value);
 		MiniString(value): toString(value);
-		MiniVar(name, tv): name  + type(tv);
+		MiniVar(name, tv): name + type(tv);
 		MiniLet(name, value, body, tv): blueprint("
 			%name%%type% = %value%;
 			%body%",
@@ -42,7 +42,7 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 					} else if (fname == "__ift") {
 						def();
 					} else if (fname == ";") {
-						superglue(args, \a -> miniPrettyTyped(env, a), ";\n")
+						superglue(args, \a -> miniPrettyTyped(env, a), ";\n") + type(tv);
 					} else {
 						def();
 					}
@@ -62,17 +62,17 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 	} else {
 		mtype = lookupTree(^(env.tyvars), tv);
 		mtype ?? {
-			" : " + mtype2string(mtype)
+			" :  α" + i2s(tv) + "≔ " + mtype2string(mtype)
 		} : {
-			lower = lookupMultimap(env.tyvarLowerBounds, tv);
-			upper = lookupMultimap(env.tyvarUpperBounds, tv);
-			b = \s : Set<MiniType2> -> {
+			lower = lookupMultimap(^(env.tyvarLowerBounds), tv);
+			upper = lookupMultimap(^(env.tyvarUpperBounds), tv);
+			b = \s : Set<MiniType2>, sep -> {
 				if (isEmptySet(s)) ""
-				else superglue(set2array(s), mtype2string, ", ")
+				else superglue(set2array(s), mtype2string, sep)
 			}
 			" : α" + i2s(tv) 
-				+ (if (equalSet(lower, upper)) "≔" + b(lower) 
-				else { "∊{" + b(lower) + "}..{" + b(upper) + "}"});
+				+ (if (equalSet(lower, upper)) "≔" + b(lower, ",") 
+				else { "∊{" + b(lower, "|") + "}..{" + b(upper,"&") + "}"});
 		}
 	}
 }

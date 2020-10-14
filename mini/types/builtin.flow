@@ -22,7 +22,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 		Pair("__ifte", MiniType2Function([b, ta, ta], ta)),
 		Pair("__ift", MiniType2Function([b, v, v], v)),
 
-		// TODO: This is not binary in the grammar.
 		Pair(";", MiniType2Function([ta, tb], tb)),
 
 		Pair("||", MiniType2Function([b, b], b)),
@@ -61,5 +60,9 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 
 		Pair("__ref", MiniType2Function([ta], reftype(ta))),
 		Pair("__deref", MiniType2Function([reftype(ta)], ta)),
+
+		Pair("__void", MiniType2Function([], v)),
+
+		// __void
 	])
 }

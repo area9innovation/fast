@@ -131,11 +131,8 @@ exp =
 	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")* | $"nil";
 		fieldassign = id ws '=' ws exp $$"__fieldassign" $"binop";
 
-// TODO: Maybe this should be binops instead of an array? We could have a "unroll" Forth that turns lists into binops
-brace = "{" ws expsemis "}" ws $$";" $"var" $"swap" $"call";
-
-	// listof(exp, ";")
-	expsemis = $"nil" exp $"cons" (";" ws exp $"cons")* (";" ws)? | $"nil";
+brace = "{" ws exp (";" ws exp $$";" $"binop")* (";" ws)? "}" ws 
+	| "{" ws "}" ws $$"__void" $"unop";
 
 switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws $"nil" (defaultOrNamedCase  $"cons")* '}' ws $$"__switch" $"binop";
 

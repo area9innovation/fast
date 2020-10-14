@@ -47,7 +47,7 @@ goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
 				env.recursive ::= setTree(env.recursive, vspol, tyvar);
 				tyvar;
 			} else {
-				bounds = lookupMultimap(if (polar) env.env.tyvarLowerBounds else env.env.tyvarUpperBounds, id);
+				bounds = lookupMultimap(^(if (polar) env.env.tyvarLowerBounds else env.env.tyvarUpperBounds), id);
 				boundTypes = mapSet(bounds, \b -> {
 					nenv = CoalesceAcc(env with inProcess = insertSet(env.inProcess, vspol));
 					goCoalesce(nenv, b, polar)
@@ -74,7 +74,7 @@ goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
 }
 
 makeResTypeVar(env : MiniTypeEnv) -> ResTypeVar {
-	id = env.tyvarId;
-	env.tyvarId ::= id + 1;
+	id = ^(env.tyvarId);
+	env.tyvarId := id + 1;
 	ResTypeVar(id);
 }

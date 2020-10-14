@@ -11,11 +11,11 @@ export {
 		localTypes : Tree<string, MiniType2>,
 
 		// For the MLSub algorithm, we keep track of bounds:
-		mutable tyvarLowerBounds : Tree<int, Set<MiniType2>>,
-		mutable tyvarUpperBounds : Tree<int, Set<MiniType2>>,
+		tyvarLowerBounds : ref Tree<int, Set<MiniType2>>,
+		tyvarUpperBounds : ref Tree<int, Set<MiniType2>>,
 
 		// What is the next tyvar id?
-		mutable tyvarId : int,
+		tyvarId : ref int,
 
 		// What are the tyvars bound to in terms of resolved types?
 		tyvars : ref Tree<int, MiniType2>,

@@ -17,12 +17,12 @@ resolveMiniType2Var(env : MiniTypeEnv, tyvarId : int) -> MiniType2 {
 	resolved = mtype ?? {
 		resolveMiniType(env, mtype) 
 	} : {
-		println("Coalescing " + i2s(tyvarId));
+		// println("Coalescing " + i2s(tyvarId));
 		restype = coalesceMiniType2(env, MiniType2Var(tyvarId));
-		println(restype);
+		// println(restype);
 		rt = resolveMiniType(env, simplifyResType(restype));
 
-		println("Coalesced " + i2s(tyvarId) + " to " + mtype2string(rt));
+		// println("Coalesced " + i2s(tyvarId) + " to " + mtype2string(rt));
 
 		rt;
 	};

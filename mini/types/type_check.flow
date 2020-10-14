@@ -40,7 +40,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniTypeEnv {
 	iter(order, \id -> {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
-			println(miniPrettyTyped(tenv2, mfn));
+			println(id + " = " + miniPrettyTyped(tenv2, mfn));
 		} : {}
 	});
 
