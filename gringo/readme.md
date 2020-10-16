@@ -76,6 +76,8 @@ operations are produced verbatim.
 	$"operation"	-> will call addVerbatim with "operation", but match epsilon
 	$$"fakematch"	-> will call addMatched with "fakematch", but match epsilon
 	$term			-> will call addMatched with the string matched by term
+	$$pos			-> will call addVerbatim with a string representation of the position
+					   in the input
 
 ## TODO
 
@@ -92,8 +94,6 @@ operations are produced verbatim.
 
 - Introduce pegcode or direct flow generation for faster parsing
 	http://www.inf.puc-rio.br/~roberto/docs/peg.pdf
-
-- Figure out how to fix if else, which does not work in the exp grammar
 
 - We want to introduce a prefix + and prefix * to be used for
   right-associate semantic matching.

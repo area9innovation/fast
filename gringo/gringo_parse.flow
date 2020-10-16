@@ -153,12 +153,27 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 }
 
 unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
+	def = \ -> {
+		starti = env.i;
+		rec = gringoParse(env, term);
+		if (rec.fail) {
+			rec;
+		} else {
+			matched = substring(env.input, starti, rec.i - starti);
+			GringoEnv(rec with output = env.action.addMatched(rec.output, matched))
+		}
+	}
 	switch (term) {
 		GString(text): GringoEnv(env with output = env.action.addVerbatim(env.output, text));
 		GUnquote(nt): {
 			switch (nt) {
 				GString(text): {
 					GringoEnv(env with output = env.action.addMatched(env.output, text));
+				}
+				GVar(id): {
+					if (id == "pos") {
+						GringoEnv(env with output = env.action.addVerbatim(env.output, i2s(env.i)));
+					} else def();
 				}
 				default: {
 					println("Does not support double unquote of anything but strings");
@@ -167,14 +182,7 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 			}
 		}
 		default: {
-			starti = env.i;
-			rec = gringoParse(env, term);
-			if (rec.fail) {
-				rec;
-			} else {
-				matched = substring(env.input, starti, rec.i - starti);
-				GringoEnv(rec with output = env.action.addMatched(rec.output, matched))
-			}
+			def();
 		}
 	}
 }
