@@ -77,7 +77,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 				mglobal = lookupTree(env.ast.types, name);
 				switch (mglobal) {
 					None(): {
-						println("Unknown name " + name);
+						println("Does not know var " + name);
 						makeMiniType2Var(env);
 					}
 					Some(t): t;

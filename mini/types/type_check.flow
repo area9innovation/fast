@@ -45,7 +45,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 			// OK, find the type of this
 			typeInferenceMiniDeclaration(acc, id, recursive, mfn);
 		} : {
-			println("Unknown name " + id);
+			println("Unknown name when type checking " + id);
 			acc;
 		}
 	});

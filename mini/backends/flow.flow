@@ -26,6 +26,8 @@ bdeclaration2flow(b : BDeclaration) -> string {
 			]);
 		}
 		BGlobalVar(name, body, __): name + " = " + bexp2flow(flowBackend(), body) + ";";
+		BNative(name, isIo, type, nativeName): "native " + name + " : " 
+			+ (if (isIo) "io" else "") + mtype2flow(type) + " = " + nativeName + ";";
 		BComment(comment): comment;
 	}
 }
@@ -110,7 +112,15 @@ mtype2flow(f : MiniType2) -> string {
 }
 
 flowBackend() -> Backend {
-	makeBackend("flow", [], 
+	makeBackend("flow", 
+		// Keywords
+		[
+			"import", "export", "require", "forbid", "native", "io",
+			"mutable", "bool", "int", "double", "string", "flow",
+			"void", "ref", "if", "else", "with", "cast", "unsafe",
+			"switch", "default",
+		], 
+		// Inlined operators
 		map([
 			Pair("||", 10),
 

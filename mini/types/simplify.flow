@@ -44,11 +44,18 @@ simplifyResType(tyvars : Tree<int, ResType>, r : ResType) -> MiniType2 {
 		ResTypeRecord(fields): todo();
 		ResTypeVar(id): {
 			mrestype = lookupTree(tyvars, id);
-			mrestype ?? {
-				// TODO: We could probably cache the results
-				simplifyResType(tyvars, mrestype);
-			} : {
-				todo();
+			switch (mrestype) {
+				None(): todo();
+				Some(rt): {
+					// TODO: We could probably cache the results
+					switch (rt) {
+						ResTypeVar(tv): {
+							// What are you going to do?
+							MiniType2Var(id);
+						}
+						default: simplifyResType(tyvars, rt);
+					}
+				}
 			}
 		}
 		ResIntType(bits): MiniType2Int(bits);

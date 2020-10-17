@@ -76,6 +76,9 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 
 		Pair("__void", MiniType2Function([], v)),
 
+		Pair("__native", MiniType2Function([i, ta, s], ta)),
+
 		// __void
 	])
 }
+

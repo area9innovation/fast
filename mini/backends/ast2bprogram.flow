@@ -4,6 +4,7 @@ import mini/exp/topological;
 import mini/exp/pretty;
 import mini/types/typeenv;
 import mini/types/resolve;
+import mini/types/builtin;
 
 export {
 	// TODO: This should not need the environment, since this should only do the ordering
@@ -53,7 +54,27 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 				resolveMiniType2Var(env, tv)
 			);
 		}
-		MiniCall(fn, args, tv): var(tv);
+		MiniCall(fn, args, tv): {
+			switch (fn) {
+				MiniVar(name, __): {
+					if (name == "__native") {
+						bisIo = miniExp2BExp(env, args[0]);
+						bnativeName = miniExp2BExp(env, args[2]);
+						nativeName = switch (bnativeName) {
+							BString(s): s;
+							default: "";
+						};
+						type = miniExp2MiniType2(args[1]);
+						println(bisIo);
+						BNative(declid, bisIo == BInt(1, MiniType2Int(32)),
+							type,
+							nativeName	
+						);
+					} else var(tv);
+				}
+				default: var(tv);
+			}
+		}
 		MiniTypeInt(bits): error();
 		MiniTypeFunction(args, returnType): error();
 		MiniTypeCall(id, typars): error();
@@ -141,5 +162,20 @@ miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 		MiniTypeInt(bits): error();
 		MiniTypeFunction(args, returnType): error();
 		MiniTypeCall(id, typars): error();
+	}
+}
+
+miniExp2MiniType2(e : MiniExp) -> MiniType2 {
+	switch (e) {
+		MiniInt(value, tyvar): MiniType2Var(tyvar);
+		MiniDouble(value): miniTypeDouble;
+		MiniString(value): miniTypeString;
+		MiniVar(name, tyvar): MiniType2Var(tyvar);
+		MiniLet(name, value, body, tyvar): MiniType2Var(tyvar);
+		MiniLambda(args, body, tyvar): MiniType2Var(tyvar);
+		MiniCall(fn, args, tyvar): MiniType2Var(tyvar);
+		MiniTypeInt(bits): MiniType2Int(bits);
+		MiniTypeFunction(args, returnType): MiniType2Function(map(args, miniExp2MiniType2), miniExp2MiniType2(returnType));
+		MiniTypeCall(id, typars): MiniType2Call(id, map(typars, miniExp2MiniType2));
 	}
 }

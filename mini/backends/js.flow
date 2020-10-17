@@ -25,6 +25,10 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 			]);
 		}
 		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(backend, body) + ";";
+		BNative(name, isIo, type, nativeName): {
+			generated = produceBackendNative(backend, nativeName);
+			"var " + name + " = " + (if (generated == "")  nativeName else generated) + ";"
+		}
 		BComment(comment): comment;
 	}
 }
@@ -56,7 +60,7 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 		BReturn(val): (if (withReturn) "return " else "") + bexp2js(backend, val) + ";";
 		BSequenceStatement(statements): {
 			"{" + supergluei(statements, \i, stat -> {
-				bstatement2js(backend, stat, i == length(statements) - 1)
+				bstatement2js(backend, stat, withReturn && i == length(statements) - 1)
 			}, "\n") + "}";
 		}
 		BComment(comment): comment;
@@ -118,17 +122,40 @@ jsBackend() -> Backend {
 	}
 
 	makeBackend("js", [
-		// keywords
-	], concatA([
+			// Keywords
+			"abstract", "arguments",  "await",        "boolean",
+			"break",    "byte",       "case",         "catch",
+			"char",     "class",      "const",        "continue",
+			"debugger", "default",    "delete",       "do",
+			"double",   "else",       "enum",         "eval",
+			"export",   "extends",    "false",        "final",
+			"finally",  "float",      "for",          "function",
+			"goto",     "if",         "implements",   "import",
+			"in",       "instanceof", "int",          "interface",
+			"let",      "long",       "native",       "new",
+			"null",     "package",    "private",      "protected",
+			"public",   "return",     "short",        "static",
+			"super",    "switch",     "synchronized", "this",
+			"throw",    "throws",     "transient",    "true",
+			"try",      "typeof",     "var",          "void",
+			"volatile", "while",      "with",         "yield"
+		], 
+
+		//
+		// Inlined operators
+		//
+		concatA([
+
 		// In JS, there is ? here for if
+
 		[
 			BackGen("||", miniTypeBool, BackBinOp("||", 10, BackArg(0), BackArg(1))),
 			BackGen("&&", miniTypeBool, BackBinOp("&&", 20, BackArg(0), BackArg(1))),
 		],
 
-//		BackGen("|", miniTypeInt, BackBinOp("|", 25, BackArg(0), BackArg(1))),
-//		BackGen("^", miniTypeInt, BackBinOp("^", 26, BackArg(0), BackArg(1))),
-//		BackGen("&", miniTypeInt, BackBinOp("^", 27, BackArg(0), BackArg(1))),
+		//	BackBinOp("|", 25, BackArg(0), BackArg(1)),
+		//	BackBinOp("^", 26, BackArg(0), BackArg(1)),
+		// 	BackBinOp("^", 27, BackArg(0), BackArg(1)),
 
 		comparison("==", "===", 30),
 		comparison("!=", "!==", 30),
@@ -138,7 +165,7 @@ jsBackend() -> Backend {
 		comparison(">=", ">=", 35),
 		comparison(">", ">", 35),
 
-	// In JS, we have bitshifts here <<, >>, >>>
+		// In JS, we have bitshifts here <<, >>, >>>
 
 		[
 			BackGen("+", miniTypeInt, BackBinOp("|", 25, BackBinOp("+", 40, BackArg(0), BackArg(1)), BackText("0"))),
@@ -159,7 +186,7 @@ jsBackend() -> Backend {
 
 	// In JS, there is ** for exponentiation here
 
-/*
+		/*
 				"__neg", miniType2Int, (-arg)|0
 				"__neg", miniType2Double, -arg
 				"__not", miniType2Bool, !arg
@@ -172,8 +199,11 @@ jsBackend() -> Backend {
 
 				"__ref" -> "{ref:arg]"  "new CR_(" + args[0] + ")";
 				"__deref" -> 	args[0] + ".__v";
-				"__asign" -> args[0] + ".__v=" + args[1];
-*/
+				"__assign" -> args[0] + ".__v=" + args[1];
+		*/
+			// Inlined natives
+			BackGen("Native.println", miniTypeVoid, BackText("console.log")),
 		]
-	]));
+		]),
+	);
 }

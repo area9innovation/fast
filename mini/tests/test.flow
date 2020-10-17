@@ -1,3 +1,5 @@
+native println : io (flow) -> void = Native.println;
+
 fact(i : int) -> int {
 	/*
 	if (i <= 1) i
@@ -5,12 +7,14 @@ fact(i : int) -> int {
 	*/ i + 1;
 }
 
-
 prec() -> int {
 	1 + 2 * 3 + 4 % 6 + 2 * (3 + 4);
 }
 
+
+
 main() {
 	prec();
 	fact(0xffffffff);
+	println("Hello world");
 }

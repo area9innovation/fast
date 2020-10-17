@@ -8,6 +8,9 @@ import mini/types/builtin;
 export {
 	// Produce code for this call operator, respecting precedence
 	produceBackendCall(backend : Backend, call : BCall, rec : (backend : Backend, BExp) -> string) -> string;
+
+	// See if we can produce code for this native
+	produceBackendNative(backend : Backend, nativeName : string) -> string;
 }
 
 produceBackendCall(backend : Backend, call : BCall, rec : (backend : Backend, BExp) -> string) -> string {
@@ -39,6 +42,14 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (backend : Backend, BExp)
 	}
 }
 
+produceBackendNative(backend : Backend, nativeName : string) -> string {
+	gens = getTreeArrayValue(backend.generators, nativeName);
+	if (length(gens) == 1) {
+		gen = gens[0];
+		evalBackExp(backend, [], \__, __ -> "", gen.product).first;
+	} else "";
+}
+
 evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) -> string, e : BackExp) -> Pair<string, int> {
 	switch (e) {
 		BackText(text): Pair(text, 1000);
@@ -48,7 +59,7 @@ evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) ->
 
 			wrap = \pair -> if (pair.second < precedence) "(" + pair.first + ")" else pair.first;
 
-			Pair(wrap(left) + " " + name + " " + wrap(right), precedence);
+			Pair(wrap(left) + name + wrap(right), precedence);
 		}
 		BackArg(n): {
 			arg = elementAt(args, n, BInt(0, miniTypeVoid));

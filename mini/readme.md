@@ -232,7 +232,7 @@ Both of these are async, so only use them in the interactive context, or with ca
 
 ## Milestones
 
-- Get hello-world to compile to JS: Figure out types & natives/linking
+- Get hello-world to compile to JS: Figure out natives from runtime & linking
 
 - Parse flow syntax. Missing:
 
