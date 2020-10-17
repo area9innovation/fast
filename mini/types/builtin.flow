@@ -2,15 +2,28 @@ import ds/tree;
 import mini/types/type2;
 
 export {
+	// Some common types
+	miniTypeVoid : MiniType2;
+	miniTypeBool : MiniType2;
+	miniTypeInt : MiniType2;
+	miniTypeDouble : MiniType2;
+	miniTypeString : MiniType2;
+
 	getBuiltinMiniTypes() -> Tree<string, MiniType2>;
 }
 
+miniTypeVoid : MiniType2 = MiniType2Int(0);
+miniTypeBool : MiniType2 = MiniType2Call("bool", []);
+miniTypeInt : MiniType2 = MiniType2Int(32);
+miniTypeDouble : MiniType2 = MiniType2Call("double", []);
+miniTypeString : MiniType2 = MiniType2Call("string", []);
+
 getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 
-	v = MiniType2Int(0);
-	b = MiniType2Call("bool", []);
+	v = miniTypeVoid;
+	b = miniTypeBool;
 	i = MiniType2Int(32);
-	s = MiniType2Call("string", []);
+	s = miniTypeString;
 
 	at = \t -> MiniType2Call("array", [t]);
 	reftype = \t -> MiniType2Call("ref", [t]);

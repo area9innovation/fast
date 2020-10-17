@@ -25,9 +25,9 @@ miniAst2BProgram(env : MiniTypeEnv, ast : MiniAst) -> BProgram {
 
 	BProgram(
 		map(order, \id -> {
-			mdecl = lookupTree(ast.declarations, id);
+			mdecl = lookupTree(ast.typedDeclarations, id);
 			mdecl ?? {
-				miniExp2BDeclaration(env, id, mdecl)
+				mdecl
 			} : BComment("// ERROR: Unknown id " + id)
 		})
 	);

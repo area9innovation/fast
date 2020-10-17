@@ -114,12 +114,12 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			});
 
 			// OK, run type inference on these ids, and update them
-			tenv = typecheckMiniTypes(db.program, ids);
+			nast = typecheckMiniTypes(db.program, ids);
 
 			// Then we set the (resolved) type in the overall type environment
 			// and check if there is a change, and if so, request re-typecheck
 			// of dependent ids
-			foldi(lids, db, \i, acc, id -> {
+			foldi(lids, MiniDb(db with program = nast), \i, acc, id -> {
 				update = \ -> { updateMiniType(acc, ids, id) };
 
 				origType = origTypes[i];

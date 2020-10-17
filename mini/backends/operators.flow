@@ -1,10 +1,11 @@
 import ds/tree;
 import mini/backends/bprogram;
 import text/blueprint;
+import mini/backends/backend;
 
 export {
 	// Produce code for this binary operator, with the given precedence
-	produceCallOrBinOp(call : BCall, rec : (BExp) -> string) -> string;
+	produceBackendCall(backend : Backend, call : BCall, rec : (backend : Backend, BExp) -> string) -> string;
 }
 
 binOps = pairs2tree([
@@ -14,6 +15,7 @@ binOps = pairs2tree([
 
 	Pair("==", 30),
 	Pair("!=", 30),
+
 	Pair("<=", 30),
 	Pair("<", 30),
 	Pair(">=", 30),
@@ -27,17 +29,17 @@ binOps = pairs2tree([
 	Pair("%", 50),
 ]);
 
-produceCallOrBinOp(call : BCall, rec : (BExp) -> string) -> string {
+produceBackendCall(backend : Backend, call : BCall, rec : (backend : Backend, BExp) -> string) -> string {
 	prec = getBPrecedence(call);
 	def = \ -> {
-		rec(call.fn) + "(" + superglue(call.args, rec, ", ") + ")"
+		rec(backend, call.fn) + "(" + superglue(call.args, \a -> rec(backend, a), ", ") + ")"
 	}
-	if (prec != 100) {
+	if (prec != 1000) {
 		op = getBBinOp(call);
 		leftPrec = getBPrecedence(call.args[0]);
 		rightPrec = getBPrecedence(call.args[1]);
-		left = rec(call.args[0]);
-		right = rec(call.args[1]);
+		left = rec(backend, call.args[0]);
+		right = rec(backend, call.args[1]);
 		wrap = \p, t -> if (p < prec) "(" + t + ")" else t;
 		wrap(leftPrec, left) + " " + op + " " + wrap(rightPrec, right);
 	} else {
@@ -62,5 +64,5 @@ getBBinOp(b : BExp) -> string {
 
 getBPrecedence(b : BExp) -> int {
 	op = getBBinOp(b);
-	lookupTreeDef(binOps, op, 100);
+	lookupTreeDef(binOps, op, 1000);
 }

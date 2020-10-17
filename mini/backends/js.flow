@@ -1,5 +1,6 @@
 import mini/backends/bprogram;
 import mini/backends/operators;
+import mini/types/builtin;
 import text/blueprint;
 
 export {
@@ -7,10 +8,11 @@ export {
 }
 
 bprogram2js(b : BProgram) -> string {
-	superglue(b.declarations, bdeclaration2js, "\n");
+	backend = jsBackend();
+	superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");
 }
 
-bdeclaration2js(b : BDeclaration) -> string {
+bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 	switch (b) {
 		BFunction(name, args, body, __): {
 			blueprint("
@@ -19,15 +21,15 @@ bdeclaration2js(b : BDeclaration) -> string {
 				}", [
 				"name", name,
 				"args", superglue(args, \fa -> fa.name, ", "),
-				"body", bstatement2js(body, true)
+				"body", bstatement2js(backend, body, true)
 			]);
 		}
-		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(body) + ";";
+		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(backend, body) + ";";
 		BComment(comment): comment;
 	}
 }
 
-bstatement2js(b : BStatement, withReturn : bool) -> string {
+bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 	switch (b) {
 		BIfStatement(cond, then, else_): {
 			blueprint("
@@ -36,9 +38,9 @@ bstatement2js(b : BStatement, withReturn : bool) -> string {
 				} else {
 					%else%
 				}", [
-				"cond", bexp2js(cond),
-				"then", bstatement2js(then, withReturn),
-				"else", bstatement2js(else_, withReturn),
+				"cond", bexp2js(backend, cond),
+				"then", bstatement2js(backend, then, withReturn),
+				"else", bstatement2js(backend, else_, withReturn),
 			])
 		}
 		BLetStatement(name, value, body): {
@@ -46,22 +48,26 @@ bstatement2js(b : BStatement, withReturn : bool) -> string {
 				var %name% = %value%;
 				%body%", [
 					"name", name,
-					"value", bexp2js(value),
-					"body", bstatement2js(body, withReturn),
+					"value", bexp2js(backend, value),
+					"body", bstatement2js(backend, body, withReturn),
 			])
 		}
 		BReturnVoid(): if (withReturn) "return;" else "";
-		BReturn(val): (if (withReturn) "return " else "") + bexp2js(val) + ";";
+		BReturn(val): (if (withReturn) "return " else "") + bexp2js(backend, val) + ";";
 		BSequenceStatement(statements): {
 			"{" + supergluei(statements, \i, stat -> {
-				bstatement2js(stat, i == length(statements) - 1)
+				bstatement2js(backend, stat, i == length(statements) - 1)
 			}, "\n") + "}";
 		}
 		BComment(comment): comment;
 	}
 }
 
-bexp2js(b : BExp) -> string {
+bexp2js(backend : Backend, b : BExp) -> string {
+	onError = \ -> {
+		// TODO: Send this up the chain
+		"ERROR " + toString(b);
+	}
 	switch (b) {
 		BValue(): bvalue2js(b);
 		BVar(name, __): name;
@@ -72,19 +78,21 @@ bexp2js(b : BExp) -> string {
 				%body%
 				}()", [
 					"name", name,
-					"value", bexp2js(value),
-					"body", bexp2js(body),
+					"value", bexp2js(backend, value),
+					"body", bexp2js(backend, body),
 			])
 		}
 		BLambda(args, body, __): "function(" 
 			+ superglue(args, \fa -> fa.name, ", ") + ") {" 
-			+ bstatement2js(BReturn(body), true)
+			+ bstatement2js(backend, BReturn(body), true)
 			+ "}"
 		;
-		BCall(fn, args, __): produceCallOrBinOp(b, bexp2js);
-		BIf(cond, then, else_, __): "(" + bexp2js(cond) + " ? " + bexp2js(then) + " : " + bexp2js(else_) + ")";
+		BCall(fn, args, restype): {
+			produceBackendCall(backend, b, bexp2js);
+		}
+		BIf(cond, then, else_, __): "(" + bexp2js(backend, cond) + " ? " + bexp2js(backend, then) + " : " + bexp2js(backend, else_) + ")";
 		BSequence(statements, __): {
-			"(" + superglue(statements, bexp2js, ", ") + ")";
+			"(" + superglue(statements, \s -> bexp2js(backend, s), ", ") + ")";
 		}
 		BComment(comment): comment + "\n";
 	}
@@ -96,4 +104,76 @@ bvalue2js(b : BValue) -> string {
 		BDouble(value): d2s(value);
 		BString(value): toString(value);
 	}
+}
+
+jsBackend() -> Backend {
+	comparison = \name, target, prec -> {
+		[
+			BackGen(name, MiniType2Function([miniTypeBool, miniTypeBool], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
+			BackGen(name, MiniType2Function([miniTypeInt, miniTypeInt], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
+			BackGen(name, MiniType2Function([miniTypeDouble, miniTypeDouble], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
+			BackGen(name, MiniType2Function([miniTypeString, miniTypeString], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
+			// TODO: We need something fancy for other types here
+		]
+	}
+
+	makeBackend([
+		// keywords
+	], concatA([
+		// In JS, there is ? here for if
+		[
+			BackGen("||", miniTypeBool, BackBinOp("||", 10, BackArg0(), BackArg1())),
+			BackGen("&&", miniTypeBool, BackBinOp("&&", 20, BackArg0(), BackArg1())),
+		],
+
+//		BackGen("|", miniTypeInt, BackBinOp("|", 25, BackArg0(), BackArg1())),
+//		BackGen("^", miniTypeInt, BackBinOp("^", 26, BackArg0(), BackArg1())),
+//		BackGen("&", miniTypeInt, BackBinOp("^", 27, BackArg0(), BackArg1())),
+
+		comparison("==", "===", 30),
+		comparison("!=", "!==", 30),
+
+		comparison("<=", "<=", 35),
+		comparison("<", "<", 35),
+		comparison(">=", ">=", 35),
+		comparison(">", ">", 35),
+
+	// In JS, we have bitshifts here <<, >>, >>>
+
+		[
+			BackGen("+", miniTypeInt, BackBinOp("|", 25, BackBinOp("+", 40, BackArg0(), BackArg1()), BackText("0"))),
+			BackGen("+", miniTypeDouble, BackBinOp("+", 40, BackArg0(), BackArg1())),
+			BackGen("+", miniTypeString, BackBinOp("+", 40, BackArg0(), BackArg1())),
+
+			BackGen("-", miniTypeInt, BackBinOp("|", 25, BackBinOp("-", 40, BackArg0(), BackArg1()), BackText("0"))),
+			BackGen("-", miniTypeDouble, BackBinOp("-", 40, BackArg0(), BackArg1())),
+
+			BackGen("*", miniTypeInt, BackBinOp("|", 25, BackBinOp("*", 50, BackArg0(), BackArg1()), BackText("0"))),
+			BackGen("*", miniTypeDouble, BackBinOp("*", 50, BackArg0(), BackArg1())),
+
+			BackGen("/", miniTypeInt, BackBinOp("|", 25, BackBinOp("/", 50, BackArg0(), BackArg1()), BackText("0"))),
+			BackGen("/", miniTypeDouble, BackBinOp("/", 50, BackArg0(), BackArg1())),
+
+			BackGen("%", miniTypeInt, BackBinOp("|", 25, BackBinOp("%", 50, BackArg0(), BackArg1()), BackText("0"))),
+			BackGen("%", miniTypeDouble, BackBinOp("%", 50, BackArg0(), BackArg1())),
+
+	// In JS, there is ** for exponentiation here
+
+/*
+				"__neg", miniType2Int, (-arg)|0
+				"__neg", miniType2Double, -arg
+				"__not", miniType2Bool, !arg
+				
+				".", (row type) -> arg1.arg0
+
+				"__index", ? -> arg0[arg1]
+
+				"[", ? -> "[" args "]"
+
+				"__ref" -> "{ref:arg]"  "new CR_(" + args[0] + ")";
+				"__deref" -> 	args[0] + ".__v";
+				"__asign" -> args[0] + ".__v=" + args[1];
+*/
+		]
+	]));
 }

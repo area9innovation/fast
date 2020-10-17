@@ -1,0 +1,29 @@
+import mini/backends/back_ast;
+
+export {
+	// Initializes a backend structure
+	makeBackend(
+		keywords : [string],
+		generators : [BackGen]
+	) -> Backend;
+}
+
+makeBackend(
+		keywords : [string],
+		generators : [BackGen]
+) -> Backend {
+	Backend(
+		buildSet(keywords),
+		fold(generators, makeTree(), \acc, gen : BackGen -> {
+			// We expand short form for types
+			fntype = switch (gen.type) {
+				MiniType2Function(args, returnType): gen.type;
+				default: {
+					MiniType2Function([gen.type, gen.type], gen.type)
+				}
+			};
+			ngen = BackGen(gen with type = fntype);
+			treePushToArrayValue(acc, gen.name, ngen)
+		})
+	)
+}

@@ -6,5 +6,5 @@ fact(i : int) -> int {
 }
 
 main() {
-	fact(5);
+	fact(0xffffffff);
 }

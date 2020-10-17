@@ -1,0 +1,33 @@
+import ds/set;
+import mini/types/type2;
+
+export {
+	// A DSL for producing output for our backends
+	Backend(
+		keywords : Set<string>,
+		generators : Tree<string, [BackGen]>
+	);
+
+	// Definition of a operator in a backend
+	BackGen(
+		// What is the name of the function?
+		name : string, 
+		// Type requirement for the call fn (if this is not a fn, then consider it the result type)
+		type : MiniType2,
+		// What should we produce as output?
+		product : BackExp
+	);
+
+	// How to produce the output? A minimal expression language
+	BackExp ::= BackText, BackBinOp, BackArg0, BackArg1, BackArg2;
+		BackText(text : string);
+		BackBinOp(name : string, 
+			// What precedence does this have?
+			precedence : int,
+			arg0 : BackExp, 
+			arg1 : BackExp
+		);
+		BackArg0();
+		BackArg1();
+		BackArg2();
+}
