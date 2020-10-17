@@ -3,20 +3,22 @@ import mini/types/debug;
 import mini/types/type2;
 
 export {
-	simplifyResType(r : ResType) -> MiniType2;
+	// Convert from the restype to the MiniType2. Requires a full map of all resolved tyvars
+	simplifyResType(tyvars : Tree<int, ResType>, r : ResType) -> MiniType2;
 }
 
-simplifyResType(r : ResType) -> MiniType2 {
+simplifyResType(tyvars : Tree<int, ResType>, r : ResType) -> MiniType2 {
 	todo = \ -> {
 		println("Can not convert " + resType2string(r));
 		MiniType2Call("flow", []);
 	}
 	switch (r) {
 		ResUnion(types): {
-			mpop = popMinSet(types);
+			stypes = mapSet(types, \t -> simplifyResType(tyvars, t));
+			mpop = popMinSet(stypes);
 			mpop ?? {
 				if (isEmptySet(mpop.rest)) {
-					simplifyResType(mpop.value);
+					mpop.value;
 				} else {
 					todo();
 				}
@@ -25,10 +27,11 @@ simplifyResType(r : ResType) -> MiniType2 {
 			}
 		}
 		ResIntersection(types): {
-			mpop : Maybe<PopSetResult<ResType>> = popMinSet(types);
+			stypes = mapSet(types, \t -> simplifyResType(tyvars, t));
+			mpop : Maybe<PopSetResult<MiniType2>> = popMinSet(stypes);
 			mpop ?? {
 				if (isEmptySet(mpop.rest)) {
-					simplifyResType(mpop.value);
+					mpop.value;
 				} else {
 					todo();
 				}
@@ -36,12 +39,20 @@ simplifyResType(r : ResType) -> MiniType2 {
 				MiniType2Call("⊤", []);
 			}
 		}
-		ResRecursiveType(id, type): simplifyResType(type);
-		ResFunctionType(args, rhs): MiniType2Function(map(args, simplifyResType), simplifyResType(rhs));
+		ResRecursiveType(id, type): simplifyResType(tyvars, type);
+		ResFunctionType(args, rhs): MiniType2Function(map(args, \a -> simplifyResType(tyvars, a)), simplifyResType(tyvars, rhs));
 		ResTypeRecord(fields): todo();
-		ResTypeVar(id): todo();
+		ResTypeVar(id): {
+			mrestype = lookupTree(tyvars, id);
+			mrestype ?? {
+				// TODO: We could probably cache the results
+				simplifyResType(tyvars, mrestype);
+			} : {
+				todo();
+			}
+		}
 		ResIntType(bits): MiniType2Int(bits);
-		ResTypeCall(id, typars): MiniType2Call(id, map(typars, simplifyResType));
+		ResTypeCall(id, typars): MiniType2Call(id, map(typars, \t -> simplifyResType(tyvars, t)));
 		ResTypePar(id): MiniType2Call(id, []);
 	}
 }

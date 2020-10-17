@@ -1,51 +1,17 @@
 import mini/types/typeenv;
-import mini/types/pretty;
-
-import mini/types/coalescing;
-import mini/types/simplify;
 
 export {
+	// Lookup the type
 	resolveMiniType2Var(env : MiniTypeEnv, tyvarId : int) -> MiniType2;
-
-	// Convert type vars to real vars
-	resolveMiniType(env : MiniTypeEnv, type : MiniType2) -> MiniType2;
 }
 
 resolveMiniType2Var(env : MiniTypeEnv, tyvarId : int) -> MiniType2 {
 	mtype : Maybe<MiniType2> = lookupTree(^(env.tyvars), tyvarId);
 
-	resolved = mtype ?? {
-		resolveMiniType(env, mtype) 
+	mtype ?? {
+		mtype
 	} : {
-		// println("Coalescing " + i2s(tyvarId));
-		restype = coalesceMiniType2(env, MiniType2Var(tyvarId));
-		// println(restype);
-		rt = resolveMiniType(env, simplifyResType(restype));
-
-		// println("Coalesced " + i2s(tyvarId) + " to " + mtype2string(rt));
-
-		rt;
+		println("Could not resolve tyvar " + i2s(tyvarId));
+		MiniType2Var(tyvarId);
 	};
-
-	env.tyvars := setTree(^(env.tyvars), tyvarId, resolved);
-	resolved;
-}
-
-resolveMiniType(env : MiniTypeEnv, type : MiniType2) -> MiniType2 {
-	switch (type) {
-		MiniType2Int(bits): type;
-		MiniType2Function(args, returnType): MiniType2Function(resolveMiniTypes(env, args), resolveMiniType(env, returnType));
-		MiniType2Call(id, typars): MiniType2Call(id, resolveMiniTypes(env, typars));
-		MiniType2Var(id): resolveMiniType2Var(env, id);
-		MiniType2Par(id): type;
-		MiniType2Record(fields): {
-			MiniType2Record(map(fields, \field -> {
-				MiniType2Field(field.name, resolveMiniType(env, field.type));
-			}))
-		}
-	}
-}
-
-resolveMiniTypes(env : MiniTypeEnv, types : [MiniType2]) -> [MiniType2] {
-	map(types, \t -> resolveMiniType(env, t))
 }

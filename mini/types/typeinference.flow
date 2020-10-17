@@ -177,7 +177,6 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType2, rhs : MiniType2) -> void {
 			MiniType2Call(lid, ltypars): {
 				switch (rhs) {
 					MiniType2Call(rid, rtypars): {
-						// TODO: Maybe we should instantiate these types?
 						if (lid != rid || length(ltypars) != length(rtypars)) {
 							error();
 						} else {
@@ -191,13 +190,22 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType2, rhs : MiniType2) -> void {
 				}
 			}
 			MiniType2Var(lid): {
-				addMiniUpperBound(env, lid, rhs);
-				constrainLowerBounds(env, lid, rhs);
+				def = \ -> {
+					addMiniUpperBound(env, lid, rhs);
+					constrainLowerBounds(env, lid, rhs);
+				}
+
+				switch (rhs) {
+					MiniType2Var(rid): if (lid != rid) {
+//						rightTyVar(rid);
+						def();
+					};
+					default: def();
+				}
 			}
 			MiniType2Par(lid): {
 				switch (rhs) {
 					MiniType2Par(rid): {
-						// OK, maybe we should instantiate these types
 						if (lid != rid) {
 							error();
 						}
@@ -221,8 +229,6 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType2, rhs : MiniType2) -> void {
 			}
 		}
 	}
-
-
 }
 
 setMiniLocalType2(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {

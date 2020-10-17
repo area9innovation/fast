@@ -18,11 +18,13 @@ export {
 		tyvarId : ref int,
 
 		// What are the tyvars bound to in terms of resolved types?
+		// This is set by the resolution
 		tyvars : ref Tree<int, MiniType2>,
 
-		// Map to handle polymorphism
+		// Map to handle top-level polymorphism (does not work yet)
 		typars : ref MiniTypeParMap,
 
+		// We keep a cache of constraints to avoid infinite loops
 		constraintCache : ref Set<Pair<MiniType2, MiniType2>>,
 	);
 

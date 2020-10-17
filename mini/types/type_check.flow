@@ -1,4 +1,6 @@
 import mini/types/typeinference;
+import mini/types/coalescing;
+import mini/types/simplify;
 import mini/exp/topological;
 import mini/exp/pretty_typed;
 import mini/backends/ast2bprogram;
@@ -8,9 +10,22 @@ import mini/types/debug;
 export {
 	// Run a type inference and check on these ids
 	// and return the resulting environment
-	// This also updates the typed backend representation
+	// This also updates the typed backend AST representation
 	typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst;
 }
+
+/*
+Type checking runs like this on a batch of ids:
+- Determine a suitable topological order to type infer from the leaves of dependencies
+- Recursively infer MiniType2 types of each AST node in these ids, 
+  collecting lower/upper-bound constraints on tyvars as MiniType2
+- Coalesce these MiniType2 bounds into ResTypes for each tyvar, and then convert these
+  back into MiniType2 as the final types
+- Then lower the AST to the typed backend representation
+
+TODO:
+- Figure out how to simplify unions of type vars, as seen in recursion as an example.
+*/
 
 typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	// Find a topological order of these ids
@@ -35,40 +50,40 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		}
 	});
 
-	println("\nBefore resolution:");
-	debugMiniTypeEnv(tenv2);
-	println("\nDeclarations before:");
-	iter(order, \id -> {
-		mfn = lookupTree(ast.declarations, id);
-		mfn ?? {
-			println(id + " = " + miniPrettyTyped(tenv2, mfn));
-		} : {}
+	if (false) {
+		println("\nBefore resolution:");
+		debugMiniTypeEnv(tenv2);
+
+		println("\nDeclarations before:");
+		iter(order, \id -> {
+			mfn = lookupTree(ast.declarations, id);
+			mfn ?? {
+				println(id + " = " + miniPrettyTyped(tenv2, mfn));
+			} : {}
+		});
+	}
+
+	// OK, resolve the constraints
+	resTypes = coalesceMiniType2Vars(tenv2);
+//	println("Resolutions");
+	traverseInOrder(resTypes, \tv, restype -> {
+		resolved = simplifyResType(resTypes, restype);
+		tenv2.tyvars := setTree(^(tenv2.tyvars), tv, resolved);
+//		println("a"  + i2s(tv) + " = " + mtype2string(resolved));
 	});
 
-	// Next, set the type in the overall environment from the local environment
-	println("\nResolving locals:");
-	foldTree(tenv2.localTypes, ast, \local, type, acc -> {
-
-		res = resolveMiniType(tenv2, type);
-		println(local + " : " + debugMiniType(tenv2, res));
-		acc;
-	});
-
-	println("\nAfter resolution:");
+//	println("\nAfter resolution:");
 	// OK, now lower these ids to the backend representation
 	nast = fold(order, tenv2.ast, \acc, id -> {
 		mfn = lookupTree(acc.declarations, id);
 		mfn ?? {
 			bdecl = miniExp2BDeclaration(tenv2, id, mfn);
-			println(id + " = " + miniPrettyTyped(tenv2, mfn));
-			println(bdeclaration2flow(bdecl));
+//			println(bdeclaration2flow(bdecl));
 			MiniAst(acc with typedDeclarations = setTree(acc.typedDeclarations, id, bdecl));
 		} : {
 			acc;
 		}
 	});
-
-	debugMiniTypeEnv(tenv2);
 
 	nast;
 }

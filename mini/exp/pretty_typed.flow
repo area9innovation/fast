@@ -62,7 +62,7 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 	} else {
 		mtype = lookupTree(^(env.tyvars), tv);
 		mtype ?? {
-			if (false) {
+			if (true) {
 				" :  α" + i2s(tv) + "≔ " + mtype2string(mtype)
 			} else {
 				" : " + mtype2string(mtype)
