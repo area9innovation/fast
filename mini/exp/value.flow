@@ -34,7 +34,7 @@ getMiniString(m : MiniExp) -> string {
 }
 
 getMiniArray(m : MiniExp) -> [MiniExp] {
-	list2array(miniArray2list(makeList(), m))
+	list2array(reverseList(miniArray2list(makeList(), m)))
 }
 
 miniArray2list(acc : List<MiniExp>, m : MiniExp) -> List<MiniExp> {
@@ -53,7 +53,6 @@ miniArray2list(acc : List<MiniExp>, m : MiniExp) -> List<MiniExp> {
 		default: acc;
 	}
 }
-
 
 isMiniInt(m : MiniExp) -> bool {
 	switch (m) {
