@@ -15,7 +15,7 @@
 		- [Forth Evaluation](#forth-evaluation)
 		- [Compile server commands](#compile-server-commands)
 		- [Gringo grammars](#gringo-grammars)
-		- [Interactives and the Forth standard library](#interactives-and-the-forth-standard-library)
+		- [Async and the Forth standard library](#async-and-the-forth-standard-library)
 		- [TODO Forth primitives](#todo-forth-primitives)
 	- [Milestones](#milestones)
 	- [Known syntaxs differences](#known-syntaxs-differences)
@@ -108,10 +108,10 @@ TODO:
 
 ## Mini Forth
 
-The interface to the compiler is exposed as a Forth interpreter. The Forth interpreter
-has a stack at runtime, which is used to construct the desugared AST.
+Mini Forth is primarily used to construct the AST. The semantic actions in Gringo grammar
+files are written in Mini Forth.
 
-The values in this Forth correspond to the values in the expression language.
+The values in this Forth correspond to the values in the Mini expression language.
 Besides providing the stack, macros and Forth definitions, this Forth also serves 
 as the interface to the compile server itself through special commands.
 
@@ -214,7 +214,7 @@ TODO:
 - Consider adding other syntaxes, just to demonstrate the multi-headed nature of Mini. Maybe a
   subset of JS or Java?
 
-### Interactives and the Forth standard library
+### Async and the Forth standard library
 
 We have a simple standard library of useful Forth definitions defined in forth/lib/lib.forth.
 
@@ -246,7 +246,6 @@ Both of these are async, so only use them in the interactive context, or with ca
 - Get type inference to work: 
   - Fix polymorphism recovery
   - Improve type inference
-
 
 - Rig up file reading and dependency tracking
    - Update declarations per file when file changes (size/timestamps/md5)
@@ -307,17 +306,17 @@ We do not support multi-strings:'
 
 	"Hello " "World"	// "Hello World"
 
-
 ## Backends
 
 The backends are based on the BProgram representation, which makes them very minimal.
 
+Besides working on a suitably, fully-typed AST, we also provide a mini-DSL called
+Back, which can be used to implement the basic operators and simple natives.
+
 TODO:
-- Figure out how to implement natives? println -> inlined console.log and similar.
-  Do an embedded DSL in the compiler itself.
 - Prefix operators with precedence and limited overloading
 - Types
-- Keyword renaming
+- Keyword renaming, namespace for languages that need that
 - Constant prop
 - Dead-code elimination
 - Lift first-order functions to top-level?
@@ -325,7 +324,7 @@ TODO:
 - Inlining
 - Mangling of overloading?
 - Specialization of polymorphism
-- Unfolding of expressions into statements
+- Unfolding of expressions into statements (let inside conditions of if)
 - Linking
 - Running the output
 - Cross-calls
