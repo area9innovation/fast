@@ -1,14 +1,17 @@
 import mini/backends/back_ast;
+import mini/types/builtin;
 
 export {
 	// Initializes a backend structure
 	makeBackend(
+		name : string,
 		keywords : [string],
-		generators : [BackGen]
+		generators : [BackGen],
 	) -> Backend;
 }
 
 makeBackend(
+		name : string,
 		keywords : [string],
 		generators : [BackGen]
 ) -> Backend {
@@ -19,11 +22,16 @@ makeBackend(
 			fntype = switch (gen.type) {
 				MiniType2Function(args, returnType): gen.type;
 				default: {
-					MiniType2Function([gen.type, gen.type], gen.type)
+					if (gen.type == miniTypeVoid) miniTypeVoid
+					else MiniType2Function([gen.type, gen.type], gen.type)
 				}
 			};
 			ngen = BackGen(gen with type = fntype);
 			treePushToArrayValue(acc, gen.name, ngen)
-		})
+		}),
+		\pos, error -> {
+			// TODO: Include position
+			println(name + ": " + i2s(pos) + ": " + error);
+		}
 	)
 }

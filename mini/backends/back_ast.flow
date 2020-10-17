@@ -5,7 +5,8 @@ export {
 	// A DSL for producing output for our backends
 	Backend(
 		keywords : Set<string>,
-		generators : Tree<string, [BackGen]>
+		generators : Tree<string, [BackGen]>,
+		onError : (int, string) -> void,
 	);
 
 	// Definition of a operator in a backend
@@ -19,7 +20,7 @@ export {
 	);
 
 	// How to produce the output? A minimal expression language
-	BackExp ::= BackText, BackBinOp, BackArg0, BackArg1, BackArg2;
+	BackExp ::= BackText, BackBinOp, BackArg;
 		BackText(text : string);
 		BackBinOp(name : string, 
 			// What precedence does this have?
@@ -27,7 +28,6 @@ export {
 			arg0 : BackExp, 
 			arg1 : BackExp
 		);
-		BackArg0();
-		BackArg1();
-		BackArg2();
+		// A given argument number in the original call. 0 indexed
+		BackArg(n : int);
 }

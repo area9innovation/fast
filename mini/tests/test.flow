@@ -5,6 +5,12 @@ fact(i : int) -> int {
 	*/ i + 1;
 }
 
+
+prec() -> int {
+	1 + 2 * 3 + 4 % 6 + 2 * (3 + 4);
+}
+
 main() {
+	prec();
 	fact(0xffffffff);
 }

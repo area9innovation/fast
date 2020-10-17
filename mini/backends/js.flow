@@ -109,26 +109,26 @@ bvalue2js(b : BValue) -> string {
 jsBackend() -> Backend {
 	comparison = \name, target, prec -> {
 		[
-			BackGen(name, MiniType2Function([miniTypeBool, miniTypeBool], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
-			BackGen(name, MiniType2Function([miniTypeInt, miniTypeInt], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
-			BackGen(name, MiniType2Function([miniTypeDouble, miniTypeDouble], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
-			BackGen(name, MiniType2Function([miniTypeString, miniTypeString], miniTypeBool), BackBinOp(target, prec, BackArg0(), BackArg1())),
+			BackGen(name, MiniType2Function([miniTypeBool, miniTypeBool], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniType2Function([miniTypeInt, miniTypeInt], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniType2Function([miniTypeDouble, miniTypeDouble], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniType2Function([miniTypeString, miniTypeString], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
 			// TODO: We need something fancy for other types here
 		]
 	}
 
-	makeBackend([
+	makeBackend("js", [
 		// keywords
 	], concatA([
 		// In JS, there is ? here for if
 		[
-			BackGen("||", miniTypeBool, BackBinOp("||", 10, BackArg0(), BackArg1())),
-			BackGen("&&", miniTypeBool, BackBinOp("&&", 20, BackArg0(), BackArg1())),
+			BackGen("||", miniTypeBool, BackBinOp("||", 10, BackArg(0), BackArg(1))),
+			BackGen("&&", miniTypeBool, BackBinOp("&&", 20, BackArg(0), BackArg(1))),
 		],
 
-//		BackGen("|", miniTypeInt, BackBinOp("|", 25, BackArg0(), BackArg1())),
-//		BackGen("^", miniTypeInt, BackBinOp("^", 26, BackArg0(), BackArg1())),
-//		BackGen("&", miniTypeInt, BackBinOp("^", 27, BackArg0(), BackArg1())),
+//		BackGen("|", miniTypeInt, BackBinOp("|", 25, BackArg(0), BackArg(1))),
+//		BackGen("^", miniTypeInt, BackBinOp("^", 26, BackArg(0), BackArg(1))),
+//		BackGen("&", miniTypeInt, BackBinOp("^", 27, BackArg(0), BackArg(1))),
 
 		comparison("==", "===", 30),
 		comparison("!=", "!==", 30),
@@ -141,21 +141,21 @@ jsBackend() -> Backend {
 	// In JS, we have bitshifts here <<, >>, >>>
 
 		[
-			BackGen("+", miniTypeInt, BackBinOp("|", 25, BackBinOp("+", 40, BackArg0(), BackArg1()), BackText("0"))),
-			BackGen("+", miniTypeDouble, BackBinOp("+", 40, BackArg0(), BackArg1())),
-			BackGen("+", miniTypeString, BackBinOp("+", 40, BackArg0(), BackArg1())),
+			BackGen("+", miniTypeInt, BackBinOp("|", 25, BackBinOp("+", 40, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("+", miniTypeDouble, BackBinOp("+", 40, BackArg(0), BackArg(1))),
+			BackGen("+", miniTypeString, BackBinOp("+", 40, BackArg(0), BackArg(1))),
 
-			BackGen("-", miniTypeInt, BackBinOp("|", 25, BackBinOp("-", 40, BackArg0(), BackArg1()), BackText("0"))),
-			BackGen("-", miniTypeDouble, BackBinOp("-", 40, BackArg0(), BackArg1())),
+			BackGen("-", miniTypeInt, BackBinOp("|", 25, BackBinOp("-", 40, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("-", miniTypeDouble, BackBinOp("-", 40, BackArg(0), BackArg(1))),
 
-			BackGen("*", miniTypeInt, BackBinOp("|", 25, BackBinOp("*", 50, BackArg0(), BackArg1()), BackText("0"))),
-			BackGen("*", miniTypeDouble, BackBinOp("*", 50, BackArg0(), BackArg1())),
+			BackGen("*", miniTypeInt, BackBinOp("|", 25, BackBinOp("*", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("*", miniTypeDouble, BackBinOp("*", 50, BackArg(0), BackArg(1))),
 
-			BackGen("/", miniTypeInt, BackBinOp("|", 25, BackBinOp("/", 50, BackArg0(), BackArg1()), BackText("0"))),
-			BackGen("/", miniTypeDouble, BackBinOp("/", 50, BackArg0(), BackArg1())),
+			BackGen("/", miniTypeInt, BackBinOp("|", 25, BackBinOp("/", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("/", miniTypeDouble, BackBinOp("/", 50, BackArg(0), BackArg(1))),
 
-			BackGen("%", miniTypeInt, BackBinOp("|", 25, BackBinOp("%", 50, BackArg0(), BackArg1()), BackText("0"))),
-			BackGen("%", miniTypeDouble, BackBinOp("%", 50, BackArg0(), BackArg1())),
+			BackGen("%", miniTypeInt, BackBinOp("|", 25, BackBinOp("%", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("%", miniTypeDouble, BackBinOp("%", 50, BackArg(0), BackArg(1))),
 
 	// In JS, there is ** for exponentiation here
 

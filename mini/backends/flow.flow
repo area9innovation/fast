@@ -21,16 +21,16 @@ bdeclaration2flow(b : BDeclaration) -> string {
 				} // %type%", [
 				"name", name,
 				"args", superglue(args, \fa -> fa.name, ", "),
-				"body", bstatement2flow(body),
+				"body", bstatement2flow(flowBackend(), body),
 				"type", mtype2flow(type)
 			]);
 		}
-		BGlobalVar(name, body, __): name + " = " + bexp2flow(body) + ";";
+		BGlobalVar(name, body, __): name + " = " + bexp2flow(flowBackend(), body) + ";";
 		BComment(comment): comment;
 	}
 }
 
-bstatement2flow(b : BStatement) -> string {
+bstatement2flow(backend : Backend, b : BStatement) -> string {
 	switch (b) {
 		BIfStatement(cond, then, else_): {
 			blueprint("
@@ -39,9 +39,9 @@ bstatement2flow(b : BStatement) -> string {
 				} else {
 					%else%
 				}", [
-				"cond", bexp2flow(cond),
-				"then", bstatement2flow(then),
-				"else", bstatement2flow(else_),
+				"cond", bexp2flow(backend, cond),
+				"then", bstatement2flow(backend, then),
+				"else", bstatement2flow(backend, else_),
 			])
 		}
 		BLetStatement(name, value, body): {
@@ -49,20 +49,20 @@ bstatement2flow(b : BStatement) -> string {
 				%name% = %value%;
 				%body%", [
 					"name", name,
-					"value", bexp2flow(value),
-					"body", bstatement2flow(body),
+					"value", bexp2flow(backend, value),
+					"body", bstatement2flow(backend, body),
 			])
 		}
 		BReturnVoid(): "{}";
-		BReturn(val): bexp2flow(val);
+		BReturn(val): bexp2flow(backend, val);
 		BSequenceStatement(statements): {
-			"{" + superglue(statements, bstatement2flow, ";\n") + "}";
+			"{" + superglue(statements, \s -> bstatement2flow(backend, s), ";\n") + "}";
 		}
 		BComment(comment): comment;
 	}
 }
 
-bexp2flow(b : BExp) -> string {
+bexp2flow(backend : Backend, b : BExp) -> string {
 	switch (b) {
 		BValue(): bvalue2flow(b);
 		BVar(name, type): name + " /* " + mtype2flow(type) + " */";
@@ -72,15 +72,16 @@ bexp2flow(b : BExp) -> string {
 				%body%", [
 					"name", name,
 					"type", mtype2flow(type),
-					"value", bexp2flow(value),
-					"body", bexp2flow(body),
+					"value", bexp2flow(backend, value),
+					"body", bexp2flow(backend, body),
 			])
 		}
-		BLambda(args, body, type): "\\" + superglue(args, \fa -> fa.name, ", ") + " /* " + mtype2flow(type) + " */ -> " + bexp2flow(body);
-		BCall(fn, args, type): produceCallOrBinOp(b, bexp2flow) + " /* " + mtype2flow(type) + "*/";
-		BIf(cond, then, else_, type): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}" + " /* " + mtype2flow(type) + "*/";
+		BLambda(args, body, type): "\\" + superglue(args, \fa -> fa.name, ", ") + " /* " + mtype2flow(type) + " */ -> " + bexp2flow(backend, body);
+		// TODO: Do not construct the backend again and again
+		BCall(fn, args, type): produceBackendCall(backend, b, bexp2flow) + " /* " + mtype2flow(type) + "*/";
+		BIf(cond, then, else_, type): "if (" + bexp2flow(backend, cond) + ") {" + bexp2flow(backend, then) + "} else {" + bexp2flow(backend, else_) + "}" + " /* " + mtype2flow(type) + "*/";
 		BSequence(statements, type): {
-			"{" + superglue(statements, bexp2flow, "; ") + "}" + " /* " + mtype2flow(type) + "*/";
+			"{" + superglue(statements, \s -> bexp2flow(backend, s), "; ") + "}" + " /* " + mtype2flow(type) + "*/";
 		}
 		BComment(comment): comment + "\n";
 	}
@@ -106,4 +107,31 @@ mtype2flow(f : MiniType2) -> string {
 		MiniType2Par(id):  id;
 		MiniType2Record(fields): "{" + superglue(fields, \fl -> fl.name + ":" + mtype2flow(fl.type), ", ") + "}";
 	}
+}
+
+flowBackend() -> Backend {
+	makeBackend("flow", [], 
+		map([
+			Pair("||", 10),
+
+			Pair("&&", 20),
+
+			Pair("==", 30),
+			Pair("!=", 30),
+
+			Pair("<=", 30),
+			Pair("<", 30),
+			Pair(">=", 30),
+			Pair(">", 30),
+
+			Pair("+", 40),
+			Pair("-", 40),
+
+			Pair("*", 50),
+			Pair("/", 50),
+			Pair("%", 50),
+		], \p -> {
+			BackGen(p.first, miniTypeVoid, BackBinOp(p.first, p.second, BackArg(0), BackArg(1)))
+		})
+	);
 }
