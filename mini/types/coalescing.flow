@@ -68,7 +68,7 @@ goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
 						ResIntersection(boundTypes);
 					}
 				} : {
-					makeResTypeVar(env.env);
+					ResTypeVar(id);
 				};
 
 				// If this exist in the recursive map, return a recursive type
