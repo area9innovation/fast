@@ -325,6 +325,8 @@ TODO:
 - Erlang - great at distributed
 - Python? Special challenge with indentation-based syntax
   - Pytov could be a workaround https://github.com/Yuvix25/pytov
+  - Python cabn do unions in a relatively nice way:
+  - http://blog.ezyang.com/2020/10/idiomatic-algebraic-data-types-in-python-with-dataclasses-and-union/
 - Haskell
 - PHP - easy way to get client/server
 - WebGL
@@ -1287,3 +1289,6 @@ We would like to have a way to produce this family with arbitray combinations of
      
 Another idea is to consider these as graph structures, and implement graph algorithms for these.
 
+Combine this with CRDTs, and maybe we can get to a place where we have fundamental support for offline-first, 
+collaborative data exchange. See https://github.com/turtle-DB/turtleDB where they have a offline library which 
+provides CRUD operations with conflict resolution.
