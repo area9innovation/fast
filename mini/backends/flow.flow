@@ -14,14 +14,15 @@ bprogram2flow(b : BProgram) -> string {
 
 bdeclaration2flow(b : BDeclaration) -> string {
 	switch (b) {
-		BFunction(name, args, body, __): {
+		BFunction(name, args, body, type): {
 			blueprint("
 				%name%(%args%) {
 					%body%
-				}", [
+				} // %type%", [
 				"name", name,
 				"args", superglue(args, \fa -> fa.name, ", "),
-				"body", bstatement2flow(body)
+				"body", bstatement2flow(body),
+				"type", mtype2flow(type)
 			]);
 		}
 		BGlobalVar(name, body, __): name + " = " + bexp2flow(body) + ";";
@@ -64,21 +65,22 @@ bstatement2flow(b : BStatement) -> string {
 bexp2flow(b : BExp) -> string {
 	switch (b) {
 		BValue(): bvalue2flow(b);
-		BVar(name, __): name;
-		BLet(name, value, body, __): {
+		BVar(name, type): name + " /* " + mtype2flow(type) + " */";
+		BLet(name, value, body, type): {
 			blueprint("
-				%name% = %value%;
+				%name% : %type% = %value%;
 				%body%", [
 					"name", name,
+					"type", mtype2flow(type),
 					"value", bexp2flow(value),
 					"body", bexp2flow(body),
 			])
 		}
-		BLambda(args, body, __): "\\" + superglue(args, \fa -> fa.name, ", ") + " -> " + bexp2flow(body);
-		BCall(fn, args, __): produceCallOrBinOp(b, bexp2flow);
-		BIf(cond, then, else_, __): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}";
-		BSequence(statements, __): {
-			"{" + superglue(statements, bexp2flow, "; ") + "}";
+		BLambda(args, body, type): "\\" + superglue(args, \fa -> fa.name, ", ") + " /* " + mtype2flow(type) + " */ -> " + bexp2flow(body);
+		BCall(fn, args, type): produceCallOrBinOp(b, bexp2flow) + " /* " + mtype2flow(type) + "*/";
+		BIf(cond, then, else_, type): "if (" + bexp2flow(cond) + ") {" + bexp2flow(then) + "} else {" + bexp2flow(else_) + "}" + " /* " + mtype2flow(type) + "*/";
+		BSequence(statements, type): {
+			"{" + superglue(statements, bexp2flow, "; ") + "}" + " /* " + mtype2flow(type) + "*/";
 		}
 		BComment(comment): comment + "\n";
 	}
@@ -89,5 +91,19 @@ bvalue2flow(b : BValue) -> string {
 		BInt(value, type): if (type == MiniType2Int(1)) b2s(i2b(value)) else i2s(value);
 		BDouble(value): d2s(value);
 		BString(value): toString(value);
+	}
+}
+
+mtype2flow(f : MiniType2) -> string {
+	switch (f) {
+		MiniType2Int(bits): if (bits == 0) "void" else if (bits == 1) "bool" else "int";
+		MiniType2Function(args, returnType): "(" + superglue(args, mtype2flow, ", ") + ")->" + mtype2flow(returnType);
+		MiniType2Call(id, typars): {
+			if (id == "__ref") "ref " + mtype2flow(typars[0]) 
+			else id + if (typars != []) "<" + superglue(typars, mtype2flow, ", ") + ">" else "";
+		}
+		MiniType2Var(id): "α" + i2s(id);
+		MiniType2Par(id):  id;
+		MiniType2Record(fields): "{" + superglue(fields, \fl -> fl.name + ":" + mtype2flow(fl.type), ", ") + "}";
 	}
 }

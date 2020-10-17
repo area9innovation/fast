@@ -34,19 +34,23 @@ getMiniString(m : MiniExp) -> string {
 }
 
 getMiniArray(m : MiniExp) -> [MiniExp] {
+	list2array(miniArray2list(makeList(), m))
+}
+
+miniArray2list(acc : List<MiniExp>, m : MiniExp) -> List<MiniExp> {
 	switch (m) {
 		MiniCall(fn, args, __): {
 			switch (fn) {
 				MiniVar(id, __): {
-					if (id == "nil") []
+					if (id == "nil") acc
 					else if (id == "cons") {
-						concat(getMiniArray(args[1]), [args[0]])
-					} else [];
+						miniArray2list(Cons(args[0], acc), args[1])
+					} else acc;
 				}
-				default: [];
+				default: acc;
 			}
 		}
-		default: [];
+		default: acc;
 	}
 }
 

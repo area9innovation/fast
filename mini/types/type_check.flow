@@ -61,7 +61,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		mfn ?? {
 			bdecl = miniExp2BDeclaration(tenv2, id, mfn);
 			println(id + " = " + miniPrettyTyped(tenv2, mfn));
-			println(bdecl);
+			println(bdeclaration2flow(bdecl));
 			MiniAst(acc with typedDeclarations = setTree(acc.typedDeclarations, id, bdecl));
 		} : {
 			acc;

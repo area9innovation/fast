@@ -12,7 +12,7 @@
 		- [String](#string)
 		- [List](#list)
 		- [AST](#ast)
-		- [Evaluation](#evaluation)
+		- [Forth Evaluation](#forth-evaluation)
 		- [Compile server commands](#compile-server-commands)
 		- [Gringo grammars](#gringo-grammars)
 		- [Interactives and the Forth standard library](#interactives-and-the-forth-standard-library)
@@ -100,7 +100,8 @@ read and parsed.
 
 TODO:
 - Consider a forward-type declaration command to allow "stitching" types declarations
-  and definitions together without propagation too much
+  and definitions together without propagation too much. We can use the type declarations
+  map for this.
 - Add "desugaring"/"export" checking phase, which might also do the stitching type thing?
 - Command to define what files to compile to what, with what options
 - Command to run executables we have constructed
@@ -184,7 +185,7 @@ value, and then use "define" to commit the definition to the compile server.
 
 	<e1> <e2> <op> binop    - push call(var(op), cons(e2, cons(e1, nil))
 
-### Evaluation
+### Forth Evaluation
 
 	<string> evallines  	- evaluates each line in this string as a separate command
 	def <id> <commands>		- defines a new word as this sequence of commands separated by space
@@ -227,10 +228,11 @@ Both of these are async, so only use them in the interactive context, or with ca
 ### TODO Forth primitives
 
 - uncons, comparisons, and, or, not
-- ifte, while, def, eval, map, quoting
-- optimize getMArray to use list2array
+- ifte, while, eval, map, quoting
 
 ## Milestones
+
+- Get hello-world to compile to JS: Figure out types & natives/linking
 
 - Parse flow syntax. Missing:
 
@@ -242,11 +244,9 @@ Both of these are async, so only use them in the interactive context, or with ca
 	string-escapes in AST
 
 - Get type inference to work: 
-  - Fix polymorphism
-  - Plug the coalescing in
-  - Add canonicalize
+  - Fix polymorphism recovery
+  - Improve type inference
 
-- Get hello-world to compile to JS: Figure out natives/linking
 
 - Rig up file reading and dependency tracking
    - Update declarations per file when file changes (size/timestamps/md5)
