@@ -1,5 +1,5 @@
 import mini/backends/bprogram;
-import mini/backends/operators;
+import mini/backends/back_eval;
 import mini/types/builtin;
 import text/blueprint;
 
@@ -186,13 +186,14 @@ jsBackend() -> Backend {
 
 	// In JS, there is ** for exponentiation here
 
-		/*
-				"__neg", miniType2Int, (-arg)|0
-				"__neg", miniType2Double, -arg
-				"__not", miniType2Bool, !arg
-				
-				".", (row type) -> arg1.arg0
+			BackGen("__neg", miniTypeInt, BackBinOp("|", 25, BackPreOp("-", 60, BackArg(0)), BackText("0"))),
+			BackGen("__neg", miniTypeDouble, BackPreOp("-", 60, BackArg(0))),
 
+			BackGen("__not", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
+
+			BackGen(".", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackArg(1))),
+
+		/*
 				"__index", ? -> arg0[arg1]
 
 				"[", ? -> "[" args "]"

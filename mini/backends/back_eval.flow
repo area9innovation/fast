@@ -61,9 +61,20 @@ evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) ->
 
 			Pair(wrap(left) + name + wrap(right), precedence);
 		}
+		BackPreOp(name, precedence, arg): {
+			left = evalBackExp(backend, args, rec, arg);
+
+			wrap = \pair -> if (pair.second < precedence) "(" + pair.first + ")" else pair.first;
+			Pair(name + wrap(left), precedence);
+		}
 		BackArg(n): {
 			arg = elementAt(args, n, BInt(0, miniTypeVoid));
 			produceCodeWithPrec(backend, arg, rec)
+		}
+		BackConcat(f, s): {
+			fp = evalBackExp(backend, args, rec, f);
+			sp = evalBackExp(backend, args, rec, s);
+			Pair(fp.first + sp.first, min(fp.second, sp.second));
 		}
 	}
 }

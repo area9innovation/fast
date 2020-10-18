@@ -1,5 +1,5 @@
 import mini/backends/bprogram;
-import mini/backends/operators;
+import mini/backends/back_eval;
 import text/blueprint;
 
 export {

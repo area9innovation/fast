@@ -65,7 +65,6 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 							default: "";
 						};
 						type = miniExp2MiniType2(args[1]);
-						println(bisIo);
 						BNative(declid, bisIo == BInt(1, MiniType2Int(32)),
 							type,
 							nativeName	

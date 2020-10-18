@@ -20,14 +20,24 @@ export {
 	);
 
 	// How to produce the output? A minimal expression language
-	BackExp ::= BackText, BackBinOp, BackArg;
+	BackExp ::= BackText, BackBinOp, BackPreOp, BackArg, BackConcat;
+		// Concrete, specific text
 		BackText(text : string);
+		// A binary operator
 		BackBinOp(name : string, 
 			// What precedence does this have?
 			precedence : int,
 			arg0 : BackExp, 
 			arg1 : BackExp
 		);
+		// A prefix operator
+		BackPreOp(
+			name : string,
+			precedence : int,
+			arg : BackExp
+		);
 		// A given argument number in the original call. 0 indexed
 		BackArg(n : int);
+		// Append these
+		BackConcat(f : BackExp, s : BackExp);
 }

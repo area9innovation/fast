@@ -113,7 +113,7 @@ exp =
 		| "false" !letterOrDigit ws $"0" $"1" $"inttype" $$":" $"binop"
 		| "ref" !letterOrDigit ws exp $$"__ref" $"unop"
 		| switch
-		| "cast" !letterOrDigit ws $$"__cast" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
+		| "cast" !letterOrDigit ws $$"__cast" $"var" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
 		| "if" !letterOrDigit ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
 		| "if" !letterOrDigit ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
 		| id ws $"var"
@@ -132,7 +132,7 @@ exp =
 		fieldassign = id ws '=' ws exp $$"__fieldassign" $"binop";
 
 brace = "{" ws exp (";" ws exp $$";" $"binop")* (";" ws)? "}" ws 
-	| "{" ws "}" ws $$"__void" $"unop";
+	| "{" ws "}" ws $$"__void" $"var" $"nil" $"call";
 
 switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws $"nil" (defaultOrNamedCase  $"cons")* '}' ws $$"__switch" $"binop";
 

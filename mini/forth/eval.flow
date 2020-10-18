@@ -31,7 +31,8 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		name = popMiniValue(value.second);
 		names = getMiniString(name.first);
 		if (names == "") {
-			println("Expected string for name for define, got " + miniPretty(name.first) + " "  + toString(name.first));
+			println(file + ":  Expected string for name for define, got " + miniPretty(name.first) + " "  + toString(name.first));
+			println(value.first);
 		} else {
 			// println("Defined " + names);
 		}
@@ -51,7 +52,7 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		ndb = name.second;
 
-		fn = prepareGringoParser(gringoForthAction(), getMiniString(grammar.first));
+		fn = prepareGringoParser(gringoForthAction(file), getMiniString(grammar.first));
 		thename = getMiniString(name.first);
 
 		// println("Grammar " + thename + " = " + strLeft(getMiniString(grammar.first), 100));
@@ -133,10 +134,10 @@ miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
 
 
 
-gringoForthAction() -> GringoAction<MiniDb> {
+gringoForthAction(file : string) -> GringoAction<MiniDb> {
 	GringoAction(
 		\db : MiniDb, command -> {
-			miniEvalForth("", db, command);
+			miniEvalForth(file, db, command);
 		},
 		\acc : MiniDb, token -> {
 			pushMiniValue(acc, MiniString(token));

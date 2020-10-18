@@ -3,6 +3,8 @@
 - [Mini](#mini)
 	- [Mini Server](#mini-server)
 	- [Pipeline](#pipeline)
+	- [Milestones](#milestones)
+	- [Known syntaxs differences](#known-syntaxs-differences)
 	- [Mini Commands](#mini-commands)
 	- [Mini Forth](#mini-forth)
 		- [Values](#values)
@@ -17,8 +19,6 @@
 		- [Gringo grammars](#gringo-grammars)
 		- [Async and the Forth standard library](#async-and-the-forth-standard-library)
 		- [TODO Forth primitives](#todo-forth-primitives)
-	- [Milestones](#milestones)
-	- [Known syntaxs differences](#known-syntaxs-differences)
 	- [Backends](#backends)
 		- [JS](#js)
 		- [Flow](#flow)
@@ -43,22 +43,28 @@ efficiently update only the parts that need it.
 
 The compile server is based on these different languages:
 
-- commands: These provide the interface to the compiler itself to support compiles,
+- Commands: These provide the interface to the compiler itself to support compiles,
   reading files, and such. This exposes the low-level compilation and dependency handling engine.
-- forth: This is a Forth interpreter used by the server to construct and manipulate ASTs.
-  Since Gringo is based on a Forth-language, this is a good fit to allow interfacing the
-  parser with the compile server.
+- Forth: This is a Forth interpreter used by the server to construct and manipulate ASTs.
+  Since the grammar DSL Gringo is based on a Forth-language, this is a good fit to allow 
+  interfacing the parser with the compile server.
   Think of this as the Language Server Protocol language to interface with the compiler.
-- exp: This is the AST for the program we are compiling. This is an extremely minimal
+- Exp: This is the AST for the program we are compiling. This is an extremely minimal
   AST, in order to keep the compiler as simple as possible. This expresses the programs
   we compile.
-- types: The language comes with type inference for a Flow-like type system.
-- bprogram: This is the fully-typed statement-based backend AST suitable for lots of backends.
-- gringo: This is used to define the syntax of languages we compile
+- Types: The language comes with type inference for a Flow-like type system.
+- BProgram: This is the fully-typed statement-based backend AST suitable for lots of backends.
+- Back: A mini-DSL used by the backends to produce tight object code
+- Gringo: This is used to define the syntax of languages we compile
+
+At the moment, the Mini server is a GUI program found in `mini/mini_gui.flow`.
+
+TODO:
+- Add a more traditional Mini server, with a web-based interface.
 
 ## Pipeline
 
-This diagram illustrates the intended processing pipeline:
+This diagram illustrates the processing pipeline:
 
 	Source file in flow or other high level language
 	-> This file is read by Mini if changed
@@ -76,9 +82,115 @@ The key point is that we are incremental at the id level, so if there is no
 change in an id, even if we parse the file again, we do not have to redo all
 dependents on that id. This should hopefully speed things up.
 
+## Milestones
+
+The compiler is still in development, and a lot of work remains. To help guide
+the development, we have defined some milestones.
+
+- Get hello-world to compile and run in JS using "import runtime"
+  - __cast, :
+  - __ref, __deref
+  - array constructor
+  - fields: Figure out what to do with the field name. 
+    - Is that a string or var? It is probably a construct in Exp
+  - struct constructor
+  - Figure out natives from runtime & linking
+    - fold, isSameStructType
+  - Introduce "prerequisite" in Back for 
+
+	public static function fold<T, U>(values : Array<T>, init : U, fn : U -> T -> U) : U {
+		for (v in values) {
+			init = fn(init, v);
+		}
+		return init;
+	}
+
+	public static inline function isSameStructType(o1 : Dynamic, o2 : Dynamic) : Bool {
+		#if (js && readable)
+			return !isArray(o1) && !isArray(o2) &&
+				Reflect.hasField(o1, "_name") &&
+				Reflect.hasField(o2, "_name") &&
+				o1._name == o2._name;
+		#else
+			return !isArray(o1) && !isArray(o2) &&
+				Reflect.hasField(o1, "_id") &&
+				Reflect.hasField(o2, "_id") &&
+				o1._id == o2._id;
+		#end
+	}
+
+
+
+- Get euler examples to compile and run in JS.
+
+- Parse all of flow syntax. Missing:
+
+  - maybe ?? exp : exp, string-include, quoting, string-escapes in AST, forbid
+  - require, forbid
+
+- Get type inference to work: 
+  - Type declarations are ignored
+  - Fix polymorphism recovery
+  - Fields, struct and unions
+  - Improve type inference
+
+- Rig up file reading and dependency tracking
+   - Track declarations per file when file changes
+   - Track imports/exports
+   - Check imports/exports, undefined names
+
+- Get error messages with locations to work
+
+- Add jupyter-style notebook feature and "resident" icon for the compiler
+
+## Known syntaxs differences
+
+The grammar used in Mini is a bit different from the flow grammar. In particular,
+the ";" symbol is now a binary operator, and that means it is required in more places.
+
+Here, we need a semi-colon after the `if` in the sequence:
+
+	if (true) 1 else { 1 + 2}	// ; required here
+	c;
+
+	if (true) { 1 }	// ; required here
+	c;
+
+Also need it after switch:
+
+	a = switch (b) { ... }		// ; required here
+	c
+
+And after local lambdas:
+
+	a = \ -> { ... }			// ; required here
+	c
+
+Parenthesis around types are not supported:
+
+	a : (int); 	// a : int;
+
+Functions with only some args named is not supported. 
+We want all args to have names:
+
+	f(int, b : int) -> {		// f(a : int, b : int)
+		...
+	}
+
+Trailing top-level semi-colon after brace is not allowed:
+
+	foo() {
+		...
+	};				// foo() { }
+
+We do not support multi-strings:'
+
+	"Hello " "World"	// "Hello World"
+
 ## Mini Commands
 
-The compiler supports a range of commands (see `commands/command.flow`):
+The compiler internally supports a range of commands (see `commands/command.flow`)
+which are processed in a queue:
 
 	// Read a file and push it on the stack and run this Forth command on it
 	ReadFile(name : string, command : string);
@@ -105,6 +217,7 @@ TODO:
 - Add "desugaring"/"export" checking phase, which might also do the stitching type thing?
 - Command to define what files to compile to what, with what options
 - Command to run executables we have constructed
+- Run the commands in the queue in parallel
 
 ## Mini Forth
 
@@ -211,6 +324,7 @@ value, and then use "define" to commit the definition to the compile server.
 
 TODO: 
 - Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
+- Document how to write a Gringo grammar with semantic actions, maybe implement Basic?
 - Consider adding other syntaxes, just to demonstrate the multi-headed nature of Mini. Maybe a
   subset of JS or Java?
 
@@ -230,85 +344,9 @@ Both of these are async, so only use them in the interactive context, or with ca
 - uncons, comparisons, and, or, not
 - ifte, while, eval, map, quoting
 
-## Milestones
-
-- Get hello-world to compile to JS: Figure out natives from runtime & linking
-
-- Parse flow syntax. Missing:
-
-  - require, forbid
-  - exp: id=v (no val)
-	maybe ?? exp : exp
-	require unsafe
-	string-include $
-	string-escapes in AST
-
-- Get type inference to work: 
-  - Fix polymorphism recovery
-  - Improve type inference
-
-- Rig up file reading and dependency tracking
-   - Update declarations per file when file changes (size/timestamps/md5)
-   - Track imports/exports
-   - Check imports/exports, undefined names
-
-- Get error messages with locations to work
-
-- Add jupyter-style notebook feature and "resident" icon for the compiler
-
-## Known syntaxs differences
-
-Here, we need a semi-colon after the if in the sequence:
-
-	{
-		a = 1;
-		if (true) 1 else { 1 + 2}	// ; required here
-		c;
-	}
-
-	{
-		a = 1;
-		if (true) { 1 }	// ; required here
-		c;
-	}
-
-Also need it after switch:
-
-	{
-		a = switch (b) { ... }		// ; required here
-		c
-	}
-
-And after local lambdas:
-
-	{ 
-		a = \ -> { ... }			// ; required here
-		c
-	}
-
-Parenthesis around types are not supported:
-
-	a : (int); // a : int;
-
-Functions with only some args named: We want all args to have names:
-
-	f(int, b : int) -> {		// f(a : int, b : int)
-		...
-	}
-
-Trailing top-level semi-colon after brace is not allowed:
-
-	foo() {
-		...
-	};				// foo() { }
-
-We do not support multi-strings:'
-
-	"Hello " "World"	// "Hello World"
-
 ## Backends
 
-The backends are based on the BProgram representation, which makes them very minimal.
+The backends are based on the BProgram representation, which makes them minimal.
 
 Besides working on a suitably, fully-typed AST, we also provide a mini-DSL called
 Back, which can be used to implement the basic operators and simple natives.
@@ -317,7 +355,7 @@ TODO:
 - Prefix operators with precedence and limited overloading
 - Types
 - Keyword renaming, namespace for languages that need that
-- Constant prop
+- Constant propagation
 - Dead-code elimination
 - Lift first-order functions to top-level?
 - Have first-order representation ready for C, Java, Wasm where they are needed
@@ -340,7 +378,8 @@ Languages to add:
 
 We have a minimal JS backend.
 
-Fix : to write bools, and ignore in other cases
+- Fix : to write bools, and ignore in other cases
+- Constant lifting (JSON-like values for JS in particular to help reduce memory and startup)
 
 ### Flow
 
