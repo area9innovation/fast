@@ -123,7 +123,8 @@ exp =
 		| int ws $"s2i"
 		| brace
 		| string
-		| "[" ws exps "]" ws $$"[" $"unop"	// Consider to unroll this?
+		| "[" ws expcommas "]" ws $$"[" $"unop"
+		| "[" ws "]" ws $$"__emptyarray" $"var" $"nil" $"call"
 		| '^' ws exp $$"__deref" $"unop"
 	);
 
@@ -133,6 +134,8 @@ exp =
 
 brace = "{" ws exp (";" ws exp $$";" $"binop")* (";" ws)? "}" ws 
 	| "{" ws "}" ws $$"__void" $"var" $"nil" $"call";
+
+expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 
 switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws $"nil" (defaultOrNamedCase  $"cons")* '}' ws $$"__switch" $"binop";
 

@@ -141,7 +141,8 @@ jsBackend() -> Backend {
 			"super",    "switch",     "synchronized", "this",
 			"throw",    "throws",     "transient",    "true",
 			"try",      "typeof",     "var",          "void",
-			"volatile", "while",      "with",         "yield"
+			"volatile", "while",      "with",         "yield",
+			"R_" // Used by runtime for references
 		], 
 
 		//
@@ -219,6 +220,10 @@ jsBackend() -> Backend {
 			),
 			BackGen("__deref", miniTypeVoid, BackPostOp(".__v", 60, BackArg(0))),
 			BackGen("__assign", miniTypeVoid, BackBinOp(".__v=", 70, BackArg(0), BackArg(1))),
+
+			BackGen("__emptyarray", miniTypeVoid, BackText("[]")),
+			BackGen("[", miniTypeVoid, BackConcat([BackText("["), BackArg(0), BackText("]")])),
+			BackGen(",", miniTypeVoid, BackBinOp(",", 80, BackArg(0), BackArg(1))),
 
 		/*
 				"__index", ? -> arg0[arg1]

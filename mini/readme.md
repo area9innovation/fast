@@ -88,7 +88,6 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get hello-world to compile and run in JS using "import runtime"
-  - array constructor: I guess we need a "," operator for this
   - fields: Figure out what to do with the field name. 
     - Is that a string or var? It is probably a construct in Exp
   - struct constructor
@@ -116,7 +115,6 @@ the development, we have defined some milestones.
 			return false;
 		}
 	};
-
 
 - Get euler examples to compile and run in JS.
 

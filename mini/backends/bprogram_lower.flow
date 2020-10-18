@@ -101,14 +101,8 @@ miniExp2BReturn(env : MiniTypeEnv, e : MiniExp) -> BStatement {
 					} else if (fname == "__ift") {
 						BIfStatement(miniExp2BExp(env, args[0]), miniExp2BReturn(env, args[1]), BReturnVoid());
 					} else if (fname == ";") {
-						n = length(args);
-						if (n == 0) {
-							BReturnVoid();
-						} else if (n == 1) {
-							miniExp2BReturn(env, args[0]);
-						} else {
-							BSequenceStatement(map(args, \a -> miniExp2BReturn(env, a)));
-						}
+						seq = flattenSequence(map(args, \a -> miniExp2BReturn(env, a)));
+						BSequenceStatement(seq);
 					} else {
 						BReturn(miniExp2BExp(env, e))
 					}
@@ -123,6 +117,15 @@ miniExp2BReturn(env : MiniTypeEnv, e : MiniExp) -> BStatement {
 		MiniTypeFunction(args, returnType): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 		MiniTypeCall(id, typars): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 	}
+}
+
+flattenSequence(seq : [BStatement]) -> [BStatement] {
+	fold(seq, [], \acc, s -> {
+		switch (s) {
+			BSequenceStatement(ss): concat(acc, flattenSequence(ss));
+			default: arrayPush(acc, s);
+		}
+	})
 }
 
 miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {

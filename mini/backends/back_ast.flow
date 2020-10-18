@@ -46,7 +46,7 @@ export {
 		// A given argument number in the original call. 0 indexed
 		BackArg(n : int);
 		// Append these
-		BackConcat(f : BackExp, s : BackExp);
+		BackConcat(es : [BackExp]);
 		// Call to a named function
 		BackCall(name : string, args : [BackExp]);
 
