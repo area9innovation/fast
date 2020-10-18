@@ -88,20 +88,12 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get hello-world to compile and run in JS using "import runtime"
-  - array constructor
+  - array constructor: I guess we need a "," operator for this
   - fields: Figure out what to do with the field name. 
     - Is that a string or var? It is probably a construct in Exp
-  - int mul is wrong
   - struct constructor
   - Figure out natives from runtime & linking
-    - fold, isSameStructType
-
-	public static function fold<T, U>(values : Array<T>, init : U, fn : U -> T -> U) : U {
-		for (v in values) {
-			init = fn(init, v);
-		}
-		return init;
-	}
+    - isSameStructType
 
 	public static inline function isSameStructType(o1 : Dynamic, o2 : Dynamic) : Bool {
 		#if (js && readable)
@@ -116,6 +108,15 @@ the development, we have defined some milestones.
 				o1._id == o2._id;
 		#end
 	}
+
+	HaxeRuntime.isSameStructType = function(o1,o2) {
+		if(!Array.isArray(o1) && !Array.isArray(o2) && Object.prototype.hasOwnProperty.call(o1,"_id") && Object.prototype.hasOwnProperty.call(o2,"_id")) {
+			return o1._id == o2._id;
+		} else {
+			return false;
+		}
+	};
+
 
 - Get euler examples to compile and run in JS.
 

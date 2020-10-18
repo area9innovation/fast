@@ -178,15 +178,13 @@ jsBackend() -> Backend {
 			BackGen("-", miniTypeInt, BackBinOp("|", 25, BackBinOp("-", 40, BackArg(0), BackArg(1)), BackText("0"))),
 			BackGen("-", miniTypeDouble, BackBinOp("-", 40, BackArg(0), BackArg(1))),
 
-			/*
-			TODO: This is wrong, we have to do this:
-				if (!Math.imul) Math.imul = function(opA, opB) {
-				var result = (opA & 0x003fffff) * opB;
-				if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB |0;
-				return result |0;
-				};
-			*/
-			BackGen("*", miniTypeInt, BackBinOp("|", 25, BackBinOp("*", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("*", miniTypeInt, 
+				BackRequire(
+					// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul
+					BackText("if (!Math.imul) Math.imul = function(opA, opB) {var result = (opA & 0x003fffff) * opB;if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB |0;return result |0;};"),
+					BackCall("Math.imul", [BackArg(0), BackArg(1)])
+				)
+			),
 			BackGen("*", miniTypeDouble, BackBinOp("*", 50, BackArg(0), BackArg(1))),
 
 			BackGen("/", miniTypeInt, BackBinOp("|", 25, BackBinOp("/", 50, BackArg(0), BackArg(1)), BackText("0"))),
@@ -211,28 +209,24 @@ jsBackend() -> Backend {
 			BackGen("__ref", miniTypeVoid, 
 				BackRequire(
 					/*
-					class CR_ {
+					class R_ {
 						constructor(v) { this.__v = v; }
 					}
 					*/
-					BackText("function CR_(v){this.__v=v}"),
-					BackConcat(
-						BackPreOp("new CR_(", 60, BackArg(0)),
-						BackText(")"),
-					)
+					BackText("function R_(v){this.__v=v}"),
+					BackCall("new R_", [BackArg(0)])
 				)
 			),
 			BackGen("__deref", miniTypeVoid, BackPostOp(".__v", 60, BackArg(0))),
+			BackGen("__assign", miniTypeVoid, BackBinOp(".__v=", 70, BackArg(0), BackArg(1))),
 
 		/*
 				"__index", ? -> arg0[arg1]
-
 				"[", ? -> "[" args "]"
-
-				"__assign" -> args[0] + ".__v=" + args[1];
 		*/
 			// Inlined natives
 			BackGen("Native.println", miniTypeVoid, BackText("console.log")),
+			BackGen("Native.fold", miniTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
 		]
 		]),
 	);
