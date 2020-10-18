@@ -62,13 +62,14 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 		Pair("__index", MiniType2Function([at(ta), i], ta)),
 
 		// : is special and should probably be grabbed by the type inference?
+		Pair(":", MiniType2Function([ta, ta], ta)),
 
-		Pair("[", MiniType2Function([ta], at(ta))),
+		// Array constructs
 		Pair("__emptyarray", MiniType2Function([], at(ta))),
+		Pair("[", MiniType2Function([ta], at(ta))),
 		Pair(",", MiniType2Function([ta, ta], ta)),
 
 	//__switch __case __pattern  __default  __native  __struct __structarg  __with  __mutassign   __fieldassign
-	// :
 
 		Pair("__cast", MiniType2Function([ta, ta, tb], tb)),
 

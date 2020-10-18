@@ -1,14 +1,28 @@
 import mini/commands/init;
 import mini/commands/compiler;
 
+import mini/backends/flow;
+import mini/backends/js;
 
 main() {
-	db0 = makeMiniDb(["."], println);
+	db0 = makeMiniDb([".","c:\\flow9\\lib\\"], println);
 
-	db = pushMiniCommand(db0, MiniProcessFile("", "mini/tests/test.mini", "evallines"));
+	db = miniEvalForths("", db0, ["prepflow"]);
 
 	miniCompile(db, make(""), \fdb -> {
-		iterList(fdb.forth.stack, println);
-		quit(0);
+		file = "mini/tests/test.flow";
+		cdb = miniEvalForths(file, fdb, [toString(file), "parsefile"]);
+
+		miniCompile(cdb, make(""), \tdb -> {
+
+			program = miniAst2BProgram(makeMiniTypeEnv(tdb.program), tdb.program);
+			flowprogram = bprogram2flow(program);
+			jsprogram = bprogram2js(program);
+			setFileContent("output.flow", flowprogram);
+			setFileContent("output.js", jsprogram);
+
+			quit(0);
+		});
+
 	});
 }
