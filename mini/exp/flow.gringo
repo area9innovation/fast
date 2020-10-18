@@ -48,7 +48,7 @@ functionOrStruct =
 	| id ws ':' ws '(' ws funargs ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
 	| id ws ':' ws '(' ws types ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
 	// Struct
-	| id ws ':' ws '(' ws structargs ')' ws ';' ws $$"__struct"  $"swap" $"typecall"  $"define"
+	| id ws ':' ws '(' ws structargs ')' ws ';' ws $$"__struct" $"swap" $"typecall"  $"define"
 	;
 
 	// listof(funarg, ",")
@@ -59,7 +59,7 @@ functionOrStruct =
 
 	// listof(funarg, ",")
 	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
-	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ws ':' ws type $"cons" $$"__structarg" $"swap" $"call";
+	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ws ':' ws type $"cons" $$"__structarg" $"var" $"swap" $"call";
 
 	returnType = ws "->" ws type;
 

@@ -4,7 +4,7 @@ export {
 	// This is the typed AST we send to the backends when they need to compile
 	BProgram(declarations : [BDeclaration]);
 
-	BDeclaration ::= BFunction, BGlobalVar, BNative, BComment;
+	BDeclaration ::= BFunction, BGlobalVar, BNative, BStruct, BComment;
 
 	BFunction(name : string, args : [BFunArg], body : BStatement, type : MiniType2);
 		BFunArg(name : string);
@@ -12,6 +12,8 @@ export {
 	BGlobalVar(name : string, body : BExp, type : MiniType2);
 
 	BNative(name : string, isio : bool, type : MiniType2, nativeName : string);
+
+	BStruct(name : string, type : MiniType2);
 
 	BComment(comment : string);
 

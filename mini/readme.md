@@ -172,6 +172,10 @@ We want all args to have names:
 		...
 	}
 
+Let-bindings without a body is not supported:
+
+	foo() { a = b; }		// expect something after: a=b;a
+
 Trailing top-level semi-colon after brace is not allowed:
 
 	foo() {

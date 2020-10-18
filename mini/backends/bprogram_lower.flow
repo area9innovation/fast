@@ -76,7 +76,17 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 		}
 		MiniTypeInt(bits): error();
 		MiniTypeFunction(args, returnType): error();
-		MiniTypeCall(id, typars): error();
+		MiniTypeCall(id, typars): {
+			if (id == "__struct") {
+				BStruct(declid, MiniType2Record(map(typars, \tp -> {
+					// TODO. Extract the name
+					MiniType2Field(
+						"",
+						miniExp2MiniType2(tp)
+					)
+				})))
+			} else error();
+		}
 	}
 }
 

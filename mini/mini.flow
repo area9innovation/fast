@@ -5,21 +5,46 @@ import mini/backends/flow;
 import mini/backends/js;
 
 main() {
+	file = getUrlParameterDef("file", "mini/tests/test.flow");
+	output = getUrlParameterDef("output", "output");
+
+	verbose = s2i(getUrlParameterDef("verbose", "0"));
+
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\"], println);
 
 	db = miniEvalForths("", db0, ["prepflow"]);
 
 	miniCompile(db, make(""), \fdb -> {
-		file = "mini/tests/test.flow";
 		cdb = miniEvalForths(file, fdb, [toString(file), "parsefile"]);
 
 		miniCompile(cdb, make(""), \tdb -> {
-
 			program = miniAst2BProgram(makeMiniTypeEnv(tdb.program), tdb.program);
+
+			if (verbose > 1) {
+				println("Declarations:");
+				traverseInOrder(tdb.program.declarations, \st, val -> {
+
+					deps = getMiniDependencies(tdb.program.idDependents, st, false);
+
+					mtype = lookupTree(tdb.program.types, st);
+
+					typeString = mtype ?? {
+						" : " + mtype2string(mtype)
+					} : "";
+					println(st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", "));
+				});
+			}
+
 			flowprogram = bprogram2flow(program);
 			jsprogram = bprogram2js(program);
-			setFileContent("output.flow", flowprogram);
-			setFileContent("output.js", jsprogram);
+			setFileContent(changeFileExt(output, ".flow"), flowprogram);
+			setFileContent(changeFileExt(output, ".js"), jsprogram);
+
+
+			if (verbose > 0) {
+				println("Flow output:");
+				println(flowprogram);
+			}
 
 			quit(0);
 		});

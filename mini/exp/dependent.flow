@@ -46,7 +46,7 @@ removeMiniDeps(pr : MiniDependent, id : string) -> MiniDependent {
 
 getMiniDependencies(dep : MiniDependent, id : string, transitive : bool) -> Set<string> {
 	if (transitive) {
-		collectMiniDependencies(dep, makeSet1(id), id)
+		insertSet(collectMiniDependencies(dep, makeSet(), id), id)
 	} else {
 		lookupMultimap(dep.dependencies, id);
 	}
@@ -57,7 +57,7 @@ collectMiniDependencies(dep : MiniDependent, acc : Set<string>, id : string) -> 
 	foldSet(deps, acc, \acc2, id2 -> {
 		if (containsSet(acc2, id2)) acc2
 		else {
-			collectMiniDependencies(dep, insertSet(acc2, id), id2)
+			collectMiniDependencies(dep, insertSet(acc2, id2), id2)
 		}
 	})
 }
