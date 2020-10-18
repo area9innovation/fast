@@ -9,7 +9,10 @@ export {
 
 bprogram2js(b : BProgram) -> string {
 	backend = jsBackend();
-	superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");
+	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");
+
+	getBackendRequirements(backend)
+	+ body;
 }
 
 bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
@@ -175,6 +178,14 @@ jsBackend() -> Backend {
 			BackGen("-", miniTypeInt, BackBinOp("|", 25, BackBinOp("-", 40, BackArg(0), BackArg(1)), BackText("0"))),
 			BackGen("-", miniTypeDouble, BackBinOp("-", 40, BackArg(0), BackArg(1))),
 
+			/*
+			TODO: This is wrong, we have to do this:
+				if (!Math.imul) Math.imul = function(opA, opB) {
+				var result = (opA & 0x003fffff) * opB;
+				if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB |0;
+				return result |0;
+				};
+			*/
 			BackGen("*", miniTypeInt, BackBinOp("|", 25, BackBinOp("*", 50, BackArg(0), BackArg(1)), BackText("0"))),
 			BackGen("*", miniTypeDouble, BackBinOp("*", 50, BackArg(0), BackArg(1))),
 
@@ -197,13 +208,27 @@ jsBackend() -> Backend {
 			BackGen("__cast", miniTypeVoid, BackArg(0)),
 			BackGen(":", miniTypeVoid, BackArg(0)),
 
+			BackGen("__ref", miniTypeVoid, 
+				BackRequire(
+					/*
+					class CR_ {
+						constructor(v) { this.__v = v; }
+					}
+					*/
+					BackText("function CR_(v){this.__v=v}"),
+					BackConcat(
+						BackPreOp("new CR_(", 60, BackArg(0)),
+						BackText(")"),
+					)
+				)
+			),
+			BackGen("__deref", miniTypeVoid, BackPostOp(".__v", 60, BackArg(0))),
+
 		/*
 				"__index", ? -> arg0[arg1]
 
 				"[", ? -> "[" args "]"
 
-				"__ref" -> "{ref:arg]"  "new CR_(" + args[0] + ")";
-				"__deref" -> 	args[0] + ".__v";
 				"__assign" -> args[0] + ".__v=" + args[1];
 		*/
 			// Inlined natives

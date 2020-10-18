@@ -7,6 +7,7 @@ export {
 		keywords : Set<string>,
 		generators : Tree<string, [BackGen]>,
 		onError : (int, string) -> void,
+		requirements : ref Set<string>,
 	);
 
 	// Definition of a operator in a backend
@@ -20,7 +21,7 @@ export {
 	);
 
 	// How to produce the output? A minimal expression language
-	BackExp ::= BackText, BackBinOp, BackPreOp, BackArg, BackConcat;
+	BackExp ::= BackText, BackBinOp, BackPreOp, BackPostOp, BackArg, BackConcat, BackRequire;
 		// Concrete, specific text
 		BackText(text : string);
 		// A binary operator
@@ -36,8 +37,17 @@ export {
 			precedence : int,
 			arg : BackExp
 		);
+		// A postfix operator
+		BackPostOp(
+			name : string,
+			precedence : int,
+			arg : BackExp
+		);
 		// A given argument number in the original call. 0 indexed
 		BackArg(n : int);
 		// Append these
 		BackConcat(f : BackExp, s : BackExp);
+
+		// This prelude should go at the top
+		BackRequire(prelude : BackExp, in : BackExp);
 }

@@ -32,6 +32,7 @@ makeBackend(
 		\pos, error -> {
 			// TODO: Include position
 			println(name + ": " + i2s(pos) + ": " + error);
-		}
+		},
+		ref makeSet()
 	)
 }

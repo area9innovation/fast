@@ -88,15 +88,13 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get hello-world to compile and run in JS using "import runtime"
-  - __cast, :
-  - __ref, __deref
   - array constructor
   - fields: Figure out what to do with the field name. 
     - Is that a string or var? It is probably a construct in Exp
+  - int mul is wrong
   - struct constructor
   - Figure out natives from runtime & linking
     - fold, isSameStructType
-  - Introduce "prerequisite" in Back for 
 
 	public static function fold<T, U>(values : Array<T>, init : U, fn : U -> T -> U) : U {
 		for (v in values) {
@@ -118,8 +116,6 @@ the development, we have defined some milestones.
 				o1._id == o2._id;
 		#end
 	}
-
-
 
 - Get euler examples to compile and run in JS.
 

@@ -11,6 +11,9 @@ export {
 
 	// See if we can produce code for this native
 	produceBackendNative(backend : Backend, nativeName : string) -> string;
+
+	// What stuff is required at the top?
+	getBackendRequirements(backend : Backend) -> string;
 }
 
 produceBackendCall(backend : Backend, call : BCall, rec : (backend : Backend, BExp) -> string) -> string {
@@ -67,6 +70,12 @@ evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) ->
 			wrap = \pair -> if (pair.second < precedence) "(" + pair.first + ")" else pair.first;
 			Pair(name + wrap(left), precedence);
 		}
+		BackPostOp(name, precedence, arg): {
+			left = evalBackExp(backend, args, rec, arg);
+
+			wrap = \pair -> if (pair.second < precedence) "(" + pair.first + ")" else pair.first;
+			Pair(wrap(left) + name, precedence);
+		}
 		BackArg(n): {
 			arg = elementAt(args, n, BInt(0, miniTypeVoid));
 			produceCodeWithPrec(backend, arg, rec)
@@ -76,5 +85,16 @@ evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) ->
 			sp = evalBackExp(backend, args, rec, s);
 			Pair(fp.first + sp.first, min(fp.second, sp.second));
 		}
+		BackRequire(code, in): {
+			fp = evalBackExp(backend, args, rec, code);
+			// Add this to the backend requirements
+			backend.requirements := insertSet(^(backend.requirements), fp.first);
+			evalBackExp(backend, args, rec, in);
+		}
 	}
+}
+
+getBackendRequirements(backend : Backend) -> string {
+	t = strGlue(set2array(^(backend.requirements)), "\n");
+	if (t != "") t + "\n" else t;
 }
