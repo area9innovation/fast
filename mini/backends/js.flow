@@ -83,7 +83,7 @@ bexp2js(backend : Backend, b : BExp) -> string {
 				}()", [
 					"name", name,
 					"value", bexp2js(backend, value),
-					"body", bexp2js(backend, body),
+					"body", bstatement2js(backend, BReturn(body), true),
 			])
 		}
 		BLambda(args, body, __): "function(" 
@@ -192,6 +192,10 @@ jsBackend() -> Backend {
 			BackGen("__not", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
 
 			BackGen(".", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackArg(1))),
+
+			// Cast and type is ignored
+			BackGen("__cast", miniTypeVoid, BackArg(0)),
+			BackGen(":", miniTypeVoid, BackArg(0)),
 
 		/*
 				"__index", ? -> arg0[arg1]

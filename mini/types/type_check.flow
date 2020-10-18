@@ -3,7 +3,7 @@ import mini/types/coalescing;
 import mini/types/simplify;
 import mini/exp/topological;
 import mini/exp/pretty_typed;
-import mini/backends/ast2bprogram;
+import mini/backends/bprogram_lower;
 import mini/backends/flow;
 import mini/types/debug;
 
@@ -71,6 +71,11 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		tenv2.tyvars := setTree(^(tenv2.tyvars), tv, resolved);
 //		println("a"  + i2s(tv) + " = " + mtype2string(resolved));
 	});
+
+
+	// Here, we can run backend-independent optimizations
+
+	// "a : type = e; a"   -> "e : type"
 
 //	println("\nAfter resolution:");
 	// OK, now lower these ids to the backend representation
