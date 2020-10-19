@@ -27,8 +27,7 @@ native = "native" s id ws ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" w
 
 assign = id ws '=' ws exp ';'? ws $"define";
 
-// TODO: AST for typars
-union = id ws (typars $"drop")? ws "::=" ws typenames ';' ws $$"union" $"swap" $"typecall" $"define";
+union = id ws typars "::=" ws typenames ';' ws $"uniontype" $"define";
 
 	// listof(typename, ",")
 	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
@@ -161,13 +160,13 @@ type =
 
 		| "[" ws type "]" ws $$"array" $"type1"
 
-		| $("?"+) ws $"nil" $"typecall"
+		| $("?"+) ws $"type0"
 	;
 
-typename = id ws typars $"typecall"
-		| id ws $"nil" $"typecall";
+typename = id ws typars $"typename";
 
-typars = "<" ws types ">" ws;
+typars = "<" ws types ">" ws
+	| $"nil";
 
 // listof(type, ",")
 types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)? | $"nil";

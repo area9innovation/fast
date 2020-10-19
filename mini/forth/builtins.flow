@@ -265,13 +265,37 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(args.second, MiniTypeFunction(targs, rt.first));
 		}),
 
-		Pair("typecall", \stack -> {
-			//	MiniTypeCall(id : string, typars : [MiniType]);
+		Pair("typename", \stack -> {
+			// OK: We should make a __typenameX(id, typars) call
+			// Can this be written in the Forth lib?
 			typars = popMStack(stack);
 			id = popMStack(typars.second);
 			ttypars = getMiniArray(typars.first);
-			pushMStack(id.second, MiniTypeCall(getMiniString(id.first), ttypars));
+			cardinality = length(ttypars);
+			pushMStack(id.second, MiniCall(MiniVar("__typename" + i2s(cardinality), 0), concat([MiniVar(getMiniString(id.first), 0)], ttypars), 0));
 		}),
+
+		Pair("uniontype", \stack -> {
+			typenames = popMStack(stack);
+			typepars = popMStack(typenames.second);
+			id = popMStack(typepars.second);
+			ttypenames = getMiniArray(typenames.first);
+			ttypars = getMiniArray(typepars.first);
+			// TODO: We should probably have cardinality for the typars
+			// and typenames?
+			pushMStack(typepars.second, 
+				MiniCall(MiniVar("__union", 0), concat(
+					[
+						MiniCall(
+							MiniVar(getMiniString(id.first), 0),
+							ttypars,
+							0
+						)
+					], ttypenames
+				), 0)
+			);
+		}),
+
 
 		//
 		// List
