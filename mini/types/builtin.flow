@@ -82,7 +82,12 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 
 		Pair("__struct", MiniType2Function([], ta)),
 		Pair("__structarg", MiniType2Function([s, i, ta], ta)),
-	
+
+		// Temporary:
+		Pair("__type0", MiniType2Function([s], ta)),
+		Pair("__type1", MiniType2Function([s, ta], tb)),
+
+
 		// __void
 	])
 }

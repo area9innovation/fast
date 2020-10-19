@@ -26,3 +26,7 @@ def unop var swap list1 call
 
 // <exp> <exp> <string>  -> <call>(var(string), [exp, exp])
 def binop var rot rot list2 call
+
+def type0 "__type0" var swap list1 call
+
+def type1 "__type1" var rot rot swap list2 call

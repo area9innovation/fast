@@ -11,9 +11,7 @@ export {
 		MiniLambda(args : [string], body : MiniExp, mutable tyvar : int);
 		MiniCall(fn : MiniExp, args : [MiniExp], mutable tyvar : int);
 
-	MiniType ::= MiniTypeInt, MiniTypeFunction, MiniTypeCall;
-		// 0 bits is void, 1 is bool, 32 is normal.
-		MiniTypeInt(bits : int);
+	MiniType ::= MiniTypeFunction, MiniTypeCall;
 		MiniTypeFunction(args : [MiniExp], returnType : MiniExp);
 		MiniTypeCall(id : string, typars : [MiniExp]);
 }

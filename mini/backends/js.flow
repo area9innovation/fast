@@ -79,10 +79,6 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 }
 
 bexp2js(backend : Backend, b : BExp) -> string {
-	onError = \ -> {
-		// TODO: Send this up the chain
-		"ERROR " + toString(b);
-	}
 	switch (b) {
 		BValue(): bvalue2js(b);
 		BVar(name, __): name;

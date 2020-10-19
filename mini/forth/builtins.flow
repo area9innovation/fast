@@ -257,12 +257,6 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(fn.second, MiniCall(fn.first, cargs, 0));
 		}),
 
-		Pair("inttype", \stack -> {
-			//	MiniTypeInt(bits : int);
-			val = popMStack(stack);
-			pushMStack(val.second, MiniTypeInt(getMiniInt(val.first)));
-		}),
-
 		Pair("fntype", \stack -> {
 			//	MiniTypeFunction(args : [MiniType], returnType : MiniType);
 			rt = popMStack(stack);

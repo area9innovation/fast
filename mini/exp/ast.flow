@@ -7,7 +7,7 @@ import ds/set;
 export {
 	// A consistent set of declarations
 	MiniAst(
-		// The names defined in this program
+		// The names defined in this program - before type checking
 		declarations : Tree<string, MiniExp>,
 
 		// Where is each name defined? From name to file
@@ -19,10 +19,10 @@ export {
 		// What names are declared in this file?
 		// fileDeclarations : Tree<string, [string]>,
 
-		// The types of ids
+		// The types of ids. The result of type checking ends up here
 		types : Tree<string, MiniType2>,
 
-		// Typed versions of our declarations
+		// Typed versions of our declarations.
 		typedDeclarations : Tree<string, BDeclaration>,
 	);
 }

@@ -23,7 +23,6 @@ extractMiniDeps(m : MiniExp, acc : Set<string>, locals : Set<string>) -> Set<str
 				extractMiniDeps(arg, acc1, locals)
 			});
 		}
-		MiniTypeInt(bits): acc;
 		MiniTypeFunction(args, returnType): {
 			nacc = fold(args, acc, \acc1, arg -> {
 				extractMiniDeps(arg, acc1, locals)

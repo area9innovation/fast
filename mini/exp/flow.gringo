@@ -109,8 +109,8 @@ exp =
 	)
 	|> (
 		"(" ws exp ")" ws 
-		| "true" !letterOrDigit ws $"1" $"1" $"inttype" $$":" $"binop"
-		| "false" !letterOrDigit ws $"0" $"1" $"inttype" $$":" $"binop"
+		| "true" !letterOrDigit ws $"1" $$"bool" $"type0" $$":" $"binop"
+		| "false" !letterOrDigit ws $"0" $$"bool" $"type0" $$":" $"binop"
 		| "ref" !letterOrDigit ws exp $$"__ref" $"unop"
 		| switch
 		| "cast" !letterOrDigit ws $$"__cast" $"var" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
@@ -146,18 +146,21 @@ defaultOrNamedCase = "default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defau
 names = $"nil" id $"cons" ws (',' ws id $"cons")* | $"nil";
 
 type = 	
-		"bool" !letterOrDigit ws $"1" $"inttype"
-		| "int" !letterOrDigit ws $"32" $"inttype"
-		| "double" !letterOrDigit ws $$"double" $"nil" $"typecall"
-		| "string" !letterOrDigit ws $$"string" $"nil" $"typecall"
-		| "flow" !letterOrDigit ws $$"flow" $"nil" $"typecall"
-		| "void" !letterOrDigit ws $$"void" $"nil" $"typecall"
-		| "native" !letterOrDigit ws $$"native" $"nil" $"typecall"
-		| "ref" !letterOrDigit ws type $"list1" $$"ref" $"swap" $"typecall"
+		"bool" !letterOrDigit ws $$"bool" $"type0"
+		| "int" !letterOrDigit ws $$"int" $"type0"
+		| "double" !letterOrDigit ws $$"double" $"type0"
+		| "string" !letterOrDigit ws $$"string" $"type0"
+		| "flow" !letterOrDigit ws $$"flow" $"type0"
+		| "void" !letterOrDigit ws $$"void" $"type0"
+		| "native" !letterOrDigit ws $$"native" $"type0"
+		| "ref" !letterOrDigit ws type $$"ref" $"type1"
+
 		| "(" ws namedargs ")" ws "->" ws type $"fntype"
 		| "(" ws types ")" ws "->" ws type $"fntype"
 		| typename
-		| "[" ws type "]" ws $"list1" $$"array" $"swap" $"typecall"
+
+		| "[" ws type "]" ws $$"array" $"type1"
+
 		| $("?"+) ws $"nil" $"typecall"
 	;
 

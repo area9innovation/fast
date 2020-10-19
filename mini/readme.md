@@ -29,6 +29,7 @@
 		- [Query based compilers](#query-based-compilers)
 		- [Datalog for typechecking](#datalog-for-typechecking)
 		- [Salsa](#salsa)
+- [Speculation](#speculation)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -291,7 +292,8 @@ value, and then use "define" to commit the definition to the compile server.
 	<args> <body> lambda	- push a lambda on the stack
 	<fn> <args>	call		- push a call on the stack
 
-	<int> inttype			- push an int-type on the stack
+	<id> type0				- push an named type on the stack
+	<type> <id> type1		- push an named type with one arg on the stack
 	<types> <return> fntype	- push a function type on the stack
 	<id> <types> typecall	- push a type call on the stack
 
@@ -490,3 +492,39 @@ Query:
 
 Database:
 - All the internal state
+
+# Speculation
+
+Big decision:
+
+- Keep type in exp or not.
+
+If not:
+- They do not exist in bprogram anyways. It uses MiniType2
+- Our typechecker does not know about them yet
+
+The use in the grammar is isolated to a few areas:
+- The ":" operator	-> :(exp, __type())
+- Forward declarations of globals and functions -> Add to types in AST
+- Lambda arguments   -> a ":" on the lambda
+- Cast				 -> a call and ":" on the right hand side. Some calls can be conversions
+- Structs and unions -> Structs can be considered a constructor function declaration.
+					 -> Unions are not constructors, but maybe we could pretend they are?
+
+All of these cases, except maybe for cast & structs & unions, can be expressed as a : operator.
+
+Forwards declarations can be stored in the MiniAst.types field.
+
+Compromise:
+It seems that MiniTypeInt is not required?
+
+Seems that we can have a "__type" function, which converts calls and what not to a type.
+That one is not a "builtin", but a special thing, but then it seems, it could work out just
+fine?
+
+Conclusion: Worth a try to get rid of types in exp.
+
+Plan:
+- Change flow.gringo to express types as calls and such
+- Remove types in exp
+- Get the type-checker to understand the type declarations

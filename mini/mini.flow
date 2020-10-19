@@ -5,10 +5,10 @@ import mini/backends/flow;
 import mini/backends/js;
 
 main() {
-	file = getUrlParameterDef("file", "mini/tests/test.flow");
+	file = getUrlParameterDef("file", "mini/tests/types.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "0"));
+	verbose = s2i(getUrlParameterDef("verbose", "2"));
 
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\"], println);
 
@@ -21,7 +21,7 @@ main() {
 			program = miniAst2BProgram(makeMiniTypeEnv(tdb.program), tdb.program);
 
 			if (verbose > 1) {
-				println("Declarations:");
+				println("\nDeclarations after type checking:");
 				traverseInOrder(tdb.program.declarations, \st, val -> {
 
 					deps = getMiniDependencies(tdb.program.idDependents, st, false);
@@ -35,15 +35,23 @@ main() {
 				});
 			}
 
+			if (verbose > 1) {
+				// TODO: Print the typed backend representation here
+			}
+
 			flowprogram = bprogram2flow(program);
 			jsprogram = bprogram2js(program);
 			setFileContent(changeFileExt(output, ".flow"), flowprogram);
 			setFileContent(changeFileExt(output, ".js"), jsprogram);
 
+			if (verbose > 0) {
+				println("\nFlow output:");
+				println(flowprogram);
+			}
 
 			if (verbose > 0) {
-				println("Flow output:");
-				println(flowprogram);
+				println("\nJS output:");
+				println(jsprogram);
 			}
 
 			quit(0);

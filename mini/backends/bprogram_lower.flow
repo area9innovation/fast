@@ -74,7 +74,6 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 				default: var(tv);
 			}
 		}
-		MiniTypeInt(bits): error();
 		MiniTypeFunction(args, returnType): error();
 		MiniTypeCall(id, typars): {
 			if (id == "__struct") {
@@ -123,7 +122,6 @@ miniExp2BReturn(env : MiniTypeEnv, e : MiniExp) -> BStatement {
 		MiniLet(name, value, body, tyvar): {
 			BLetStatement(name, miniExp2BExp(env, value), miniExp2BReturn(env, body));
 		}
-		MiniTypeInt(bits): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 		MiniTypeFunction(args, returnType): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 		MiniTypeCall(id, typars): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 	}
@@ -171,7 +169,6 @@ miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 				default: BCall(miniExp2BExp(env, fn), map(args, \a -> miniExp2BExp(env, a)), resolveMiniType2Var(env, tv));
 			}
 		}
-		MiniTypeInt(bits): error();
 		MiniTypeFunction(args, returnType): error();
 		MiniTypeCall(id, typars): error();
 	}
@@ -186,7 +183,6 @@ miniExp2MiniType2(e : MiniExp) -> MiniType2 {
 		MiniLet(name, value, body, tyvar): MiniType2Var(tyvar);
 		MiniLambda(args, body, tyvar): MiniType2Var(tyvar);
 		MiniCall(fn, args, tyvar): MiniType2Var(tyvar);
-		MiniTypeInt(bits): MiniType2Int(bits);
 		MiniTypeFunction(args, returnType): MiniType2Function(map(args, miniExp2MiniType2), miniExp2MiniType2(returnType));
 		MiniTypeCall(id, typars): MiniType2Call(id, map(typars, miniExp2MiniType2));
 	}

@@ -27,7 +27,9 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 	// Reset polymorphism for this id
 	initTyparMap(env);
 
-	// TODO: Traverse the body and extract polymorphism and instantiate it
+	// TODO: Traverse the body and extract polymorphism and instantiate it from the forward declarations
+	mforward = lookupTree(env.ast.types, id);
+
 
 	if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
@@ -53,6 +55,13 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 }
 
 setMiniType2Declaration(env : MiniTypeEnv, id : string, type : MiniType2) -> MiniTypeEnv {
+	// See if we already have a forward declaration. 
+	// If so, that should serve as a constraint.
+	mtype = lookupTree(env.ast.types, id);
+	mtype ?? {
+		constrainMiniType(env, type, mtype);
+	} : {}
+
 	MiniTypeEnv(
 		env with ast = MiniAst(env.ast with types = setTree(env.ast.types, id, type))
 	)
@@ -113,7 +122,6 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 			constrainMiniType(env, fnType, callType);
 			setMiniType2Var(env, ex, resType);
 		}
-		MiniTypeInt(bits): MiniType2Int(bits);
 		MiniTypeFunction(args, returnType): {
 			argTypes = map(args, \a -> {
 				typeInferenceMini(env, a)
@@ -122,6 +130,11 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 			MiniType2Function(argTypes, retType);
 		}
 		MiniTypeCall(id, typars): {
+			// TODO: Here, if this is a polymorphic var, we shouild probably look it
+			// up in the typar-map
+			if (typars == [] && trim2(id, "?") == "") {
+				println("TODO: We should probably instantiate this type to the tyvar: " + id);
+			}
 			MiniType2Call(id, map(typars, \tp -> typeInferenceMini(env, tp)));
 		}
 	}
@@ -247,7 +260,6 @@ setMiniType2Var(env : MiniTypeEnv, ex : MiniExp, type : MiniType2) -> MiniType2 
 				MiniLambda(args, body, tyvar): ex.tyvar ::= ttv.id;
 				MiniCall(fn, args, tyvar): ex.tyvar ::= ttv.id;
 
-				MiniTypeInt(bits): {};
 				MiniTypeFunction(args, returnType): {};
 				MiniTypeCall(id, typars): {};
 				MiniDouble(value): {};
@@ -266,7 +278,6 @@ setMiniType2Var(env : MiniTypeEnv, ex : MiniExp, type : MiniType2) -> MiniType2 
 		MiniLambda(args, body, tyvar): def(tyvar);
 		MiniCall(fn, args, tyvar): def(tyvar);
 
-		MiniTypeInt(bits): type;
 		MiniTypeFunction(args, returnType): type;
 		MiniTypeCall(id, typars): type;
 		MiniDouble(value): type;
