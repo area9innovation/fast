@@ -5,7 +5,7 @@ import mini/backends/flow;
 import mini/backends/js;
 
 import mini/commands/init;
-import mini/commands/compiler;
+import mini/commands/process;
 import mini/exp/pretty;
 import mini/types/pretty;
 
@@ -51,7 +51,7 @@ makeEvalLine(db : DynamicBehaviour<MiniDb>, remaining : DynamicBehaviour<string>
 				commands = if (startsWith(theline, "def ")) [theline] else strSplit(theline, " ");
 				next(db, miniEvalForths("", getValue(db), commands));
 			};
-			miniCompile(getValue(db), remaining, \done -> {
+			miniProcessCommand(getValue(db), remaining, \done -> {
 				next(db, done)
 			});
 			next(lineFocus, true);
@@ -83,7 +83,7 @@ main() {
 					if (thefile != "") {
 						next(db, pushMiniCommand(getValue(db), MiniProcessFile("", thefile, "evallines")));
 					}
-					miniCompile(getValue(db), remaining, \done -> {
+					miniProcessCommand(getValue(db), remaining, \done -> {
 						next(db, done)
 					});
 				}, [], []),

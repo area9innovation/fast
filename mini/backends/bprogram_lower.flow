@@ -75,7 +75,6 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 							nativeName	
 						);
 					} else var(tv);
-					// TODO: If it is __type, we should convert it
 				}
 				default: var(tv);
 			}

@@ -22,9 +22,6 @@ prettyBDeclaration(b : BDeclaration) -> string {
 		BNative(name, isio, type, nativeName): {
 			"native " + name + " : " + (if (isio) "io" else "") + mtype2string(type) + " = " + nativeName;
 		}
-		BStruct(name, type): {
-			name + mtype2string(type);
-		}
 		BComment(comment): {
 			"// " + comment;
 		}

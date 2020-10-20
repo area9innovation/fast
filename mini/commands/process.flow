@@ -18,10 +18,10 @@ export {
 	// Run the commands requested.
 	// Keep progress updated in the remaining behaviour.
 	// When all is done, we call onDone with the resulting db
-	miniCompile(db : MiniDb, remaining : DynamicBehaviour<string>, onDone : (MiniDb) -> void) -> void;
+	miniProcessCommand(db : MiniDb, remaining : DynamicBehaviour<string>, onDone : (MiniDb) -> void) -> void;
 }
 
-miniCompile(db : MiniDb, remaining : DynamicBehaviour<string>, onDone : (MiniDb) -> void) -> void {
+miniProcessCommand(db : MiniDb, remaining : DynamicBehaviour<string>, onDone : (MiniDb) -> void) -> void {
 	mcom = popMiniCommand(db);
 	ndb = mcom.first;
 	switch (mcom.second) {
@@ -51,11 +51,11 @@ miniCompile(db : MiniDb, remaining : DynamicBehaviour<string>, onDone : (MiniDb)
 				next(remaining, status);
 				deferUntilRender(
 					\ -> {
-						miniCompile(res, remaining, onDone)
+						miniProcessCommand(res, remaining, onDone)
 					}					
 				)
 			} else {
-				miniCompile(res, remaining, onDone)
+				miniProcessCommand(res, remaining, onDone)
 			}
 		}
 	}

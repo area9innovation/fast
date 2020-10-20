@@ -49,13 +49,6 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 				nativeName
 			} else generated) + ";"
 		}
-		BStruct(name, type): {
-			blueprint("
-				class %name% {
-					%type%
-				}", ["name", name, "type", mtype2string(type)]
-			)
-		}
 		BComment(comment): comment;
 	}
 }

@@ -1,5 +1,5 @@
 import mini/commands/init;
-import mini/commands/compiler;
+import mini/commands/process;
 
 import mini/backends/flow;
 import mini/backends/js;
@@ -16,10 +16,10 @@ main() {
 
 	db = miniEvalForths("", db0, ["prepflow"]);
 
-	miniCompile(db, make(""), \fdb -> {
+	miniProcessCommand(db, make(""), \fdb -> {
 		cdb = miniEvalForths(file, fdb, [toString(file), "parsefile"]);
 
-		miniCompile(cdb, make(""), \tdb -> {
+		miniProcessCommand(cdb, make(""), \tdb -> {
 			program = miniAst2BProgram(makeMiniTypeEnv(tdb.program), tdb.program);
 
 			if (verbose > 2) {
