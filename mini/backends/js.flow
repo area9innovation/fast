@@ -208,6 +208,8 @@ jsBackend() -> Backend {
 
 			BackGen("!", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
 
+			BackGen("__void", miniTypeVoid, BackText("null")),
+
 
 			// Cast and type is ignored
 //			BackGen("__cast", miniTypeVoid, BackArg(0)),
@@ -253,6 +255,7 @@ jsBackend() -> Backend {
 
 			BackGen("Native.fold", miniTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
 			BackGen("Native.map", miniTypeVoid, BackText("function(a,fn){return a.map(fn);}")),
+			BackGen("Native.filter", miniTypeVoid, BackText("function(a,fn){return a.filter(fn);}")),
 			BackGen("Native.enumFromTo", miniTypeVoid, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
 
 			BackGen("Native.isSameStructType", miniTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),

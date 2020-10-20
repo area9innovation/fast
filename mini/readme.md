@@ -94,6 +94,23 @@ the development, we have defined some milestones.
   - euler4: __i2s not defined: Move cast lowering into Forth so dep tracking works
   - euler6: __i2d not defined
   - euler7: exp->statement lowering
+  - euler9: "1000 - b - a;" is not producing (1000-b)-a, but 1000-(b-a)
+  - euler10: tail call "fori"
+
+	function fori(start,end,fn) {
+		T:  while(true) {
+			if (start<=end) {
+				fn(start);
+				var $a_=((start+1)|0);
+				start=$a_;
+				continue T
+			} else {
+				return null;
+			}
+		}
+	}
+
+
 
   - Figure out natives from runtime & linking
 
