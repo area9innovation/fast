@@ -1,5 +1,6 @@
 import mini/exp/ast;
 import mini/backends/bprogram;
+import mini/backends/unfold;
 import mini/exp/topological;
 import mini/exp/pretty;
 import mini/types/typeenv;
@@ -9,7 +10,16 @@ import mini/types/builtin;
 export {
 	miniAst2BProgram(ast : MiniAst) -> BProgram;
 
+	// This lowers a declaration to typed, statement-based BDeclaration
 	miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclaration;
+
+	// TODO. We could use these instead, so we can do optimizations on BExp:
+
+	// This lowers our program to BExp with types
+	miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp;
+
+	// And then lower to statement-based
+	bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration;
 }
 
 miniAst2BProgram(ast : MiniAst) -> BProgram {
@@ -33,97 +43,87 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 	);
 }
 
-miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclaration {
-	error = \ -> {
-		BComment("// Can not convert " + miniPretty(e) + " for " + declid);
+bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
+	var = \ -> {
+		BGlobalVar(declid, b, bexpType(b));
 	}
-	var = \tv -> {
-		BGlobalVar(declid, miniExp2BExp(env, e), resolveMiniTypeVar(env, tv));
-	}
-	switch (e) {
-		MiniInt(value, tv): var(tv);
-		MiniDouble(value): BGlobalVar(declid, miniExp2BExp(env, e), MiniTypeCall("double", []));
-		MiniString(value): BGlobalVar(declid, miniExp2BExp(env, e), MiniTypeCall("string", []));
-		MiniVar(name, tv): var(tv);
-		MiniLet(name, value, body, tv): var(tv);
-		MiniLambda(args, body, tv): {
-			bbody = miniExp2BReturn(env, body);
+	switch (b) {
+		BValue(): var();
+		BVar(__, __): var();
+		BLet(__, __, __, __): var();
+		BLambda(args, body, type): {
 
-			// TODO: figure out if we have tail call or not
+			// TODO: Figure out if we have tail call or not
+			bbody = bexp2BStatement(declid, true, body);
+
 			tailCall = false;
 
 			BFunction(
-				declid, map(args, \a -> BFunArg(a)), bbody,
+				declid, args, bbody,
 				tailCall,
-				resolveMiniTypeVar(env, tv)
+				type
 			);
 		}
-		MiniCall(fn, args, tv): {
+		BCall(fn, args, type): {
 			switch (fn) {
-				MiniVar(name, __): {
+				BVar(name, __): {
 					if (name == "__native") {
-						bisIo = miniExp2BExp(env, args[0]);
-						bnativeName = miniExp2BExp(env, args[2]);
+						bisIo = args[0];
+						bnativeName = args[2];
 						nativeName = switch (bnativeName) {
 							BString(s): s;
 							default: "";
 						};
-						type = miniExp2MiniType(args[1]);
-						BNative(declid, bisIo == BInt(1, MiniTypeInt(32)),
-							type,
+						ntype = bexpType(args[1]);
+						BNative(declid, bisIo == BInt(1, miniTypeInt),
+							ntype,
 							nativeName	
 						);
-					} else var(tv);
+					} else var();
 				}
-				default: var(tv);
+				default: var();
 			}
 		}
+		BIf(cond, then, else_, type): var();
+		BSequence(exps, type): var();
+		BComment(comment): var();
 	}
 }
 
-miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
-	switch (v) {
-		MiniInt(value, tv): BInt(value, resolveMiniTypeVar(env, tv));
-		MiniDouble(value): BDouble(value);
-		MiniString(value): BString(value);
-	}
-}
-
-miniExp2BReturn(env : MiniTypeEnv, e : MiniExp) -> BStatement {
-	switch (e) {
-		MiniValue(): BReturn(miniValue2BValue(env, e));
-		MiniVar(name, tv): BReturn(miniExp2BExp(env, e));
-		MiniLambda(args, body, tv): BReturn(miniExp2BExp(env, e));
-		MiniCall(fn, args, tv): {
-			switch (fn) {
-				MiniVar(fname, __): {
-					if (fname == "__ifte") {
-						BIfStatement(miniExp2BExp(env, args[0]), miniExp2BReturn(env, args[1]), miniExp2BReturn(env, args[2]));
-					} else if (fname == "__ift") {
-						BIfStatement(miniExp2BExp(env, args[0]), miniExp2BReturn(env, args[1]), BReturnVoid());
-					} else if (fname == ";") {
-						seq = flattenSequence(map(args, \a -> miniExp2BReturn(env, a)));
-						BSequenceStatement(seq);
-					} else {
-						BReturn(miniExp2BExp(env, e))
+bexp2BStatement(decl : string, tailcall : bool, tb : BExp) -> BStatement {
+	b = unfoldBExp(tb);
+	switch (b : BExp) {
+		BValue(): BReturn(b);
+		BVar(name, type): BReturn(b);
+		BLet(name, value, body, type): {
+			BLetStatement(name, value, bexp2BStatement(decl, tailcall, body));
+		}
+		BLambda(args, body, type): BReturn(b);
+		BCall(fn, args, type): {
+			if (tailcall) {
+				switch (fn) {
+					BVar(fname, __): if (fname == decl) {
+						// Tail call
+						println("We found a tail call for " + decl);
 					}
+					default: {}
 				}
-				default: BReturn(miniExp2BExp(env, e))
 			}
+			BReturn(b);
 		}
-		MiniLet(name, value, body, tyvar): {
-			BLetStatement(name, miniExp2BExp(env, value), miniExp2BReturn(env, body));
-		}
+		BIf(cond, then, else_, type): BIfStatement(cond, bexp2BStatement(decl, tailcall, then), bexp2BStatement(decl, tailcall, else_));
+		BSequence(exps, type): {
+			if (exps == []) BReturnVoid()
+			else BSequenceStatement(mapi(exps, \i, e -> {
+				bexp2BStatement(decl, tailcall && i == length(exps) - 1, e)
+			}));
+		} 
+		BComment(comment): b;
 	}
 }
 
-flattenSequence(seq : [BStatement]) -> [BStatement] {
-	fold(seq, [], \acc, s -> {
-		switch (s) {
-			BSequenceStatement(ss): concat(acc, flattenSequence(ss));
-			default: arrayPush(acc, s);
-		}
-	})
+miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclaration {
+	bexp2BDeclaration(declid, miniExp2BExp(env, e));
 }
 
 miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
@@ -189,15 +189,11 @@ miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 	}
 }
 
-miniExp2MiniType(e : MiniExp) -> MiniType {
-	switch (e) {
-		MiniInt(value, tyvar): MiniTypeVar(tyvar);
-		MiniDouble(value): miniTypeDouble;
-		MiniString(value): miniTypeString;
-		MiniVar(name, tyvar): MiniTypeVar(tyvar);
-		MiniLet(name, value, body, tyvar): MiniTypeVar(tyvar);
-		MiniLambda(args, body, tyvar): MiniTypeVar(tyvar);
-		MiniCall(fn, args, tyvar): MiniTypeVar(tyvar);
+miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
+	switch (v) {
+		MiniInt(value, tv): BInt(value, resolveMiniTypeVar(env, tv));
+		MiniDouble(value): BDouble(value);
+		MiniString(value): BString(value);
 	}
 }
 

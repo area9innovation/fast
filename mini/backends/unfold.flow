@@ -1,0 +1,122 @@
+import mini/backends/bprogram;
+import ds/tuples;
+import ds/array;
+import runtime;
+
+export {
+	// Lift statements in expression contexts up
+	// if (seq;tail) a else b       ->   seq;if(tail) a else b;
+	// let a = {seq:tail} in body   ->   seq;let a = tail in body
+	// fn({seq;tail})				->   seq;fn(tail)
+	unfoldBExp(b : BExp) -> BExp;
+}
+
+unfoldBExp(b : BExp) -> BExp {
+	switch (b) {
+		BValue(): b;
+		BVar(name, type): b;
+		BLet(name, value, body, type): {
+			// let a = {seq:tail} in body   ->   seq;let a = tail in body
+			uv = unfoldBExp(value);
+			splitVal = splitBSequence(uv);
+			l = BLet(name, splitVal.second, unfoldBExp(body), type);
+			if (splitVal.first != []) {
+				BSequence(arrayPush(splitVal.first, l), type);
+			} else l
+		}
+		BLambda(args, body, type): {
+			BLambda(args, unfoldBExp(body), type);
+		}
+		BCall(fn, args, type): {
+			// Extract seqs from args
+			ufn = unfoldBExp(fn);
+			fnsplit = splitBSequence(ufn);
+			uargs : Pair<[BExp], [BExp]> = unfoldBExps(args);
+			ucall = BCall(fnsplit.second, uargs.second, type);
+
+			prefix = concat(fnsplit.first, uargs.first);
+			if (prefix != []) {
+				BSequence(arrayPush(prefix, ucall), type);
+			} else ucall;
+		}
+		BIf(cond, then, else_, type): {
+			uc = unfoldBExp(cond);
+			splitVal = splitBSequence(uc);
+			ui = BIf(splitVal.second, unfoldBExp(then), unfoldBExp(else_), type);
+			if (splitVal.first != []) {
+				BSequence(arrayPush(splitVal.first, ui), type);
+			} else ui;
+		}
+		BSequence(exps, type): {
+			uexprs = map(exps, unfoldBExp);
+			unfoldBSeq([], uexprs, type)
+		}
+		BComment(comment): b;
+	}
+}
+
+
+// If this is a sequence, split into the head and the tail
+splitBSequence(f : BExp) -> Pair<[BExp], BExp> {
+	switch (f) {
+		BSequence(exprs, info): {
+			n = length(exprs);
+			if (n == 0) Pair([], f)
+			else Pair(subrange(exprs, 0, n - 1), exprs[n-1]);
+		}
+		default: Pair([], f);
+	}
+}
+
+// Grab the initial parts of each seq, and combine into one part
+// at the start, and then the tails
+unfoldBExps(es : [BExp]) -> Pair<[BExp], [BExp]> {
+	fold(es, Pair([], []), \acc, e -> {
+		ue = unfoldBExp(e);
+		sp = splitBSequence(ue);
+		Pair(concat(acc.first, sp.first), arrayPush(acc.second, sp.second))
+	})
+}
+
+
+// Given a sequence, expand nested sequences into one long one
+// If there is a FLet inside, rewrite and "inline" the rest
+
+// {a,{b,c},d}
+// -> {a,b,c,d}
+
+// {a, (b=1;c), d} -> {a, (b=1;c;d)}
+
+unfoldBSeq(acc : [BExp], seq : [BExp], type : MiniType) -> BExp {
+	if (seq == []) {
+		n = length(acc);
+		if (n == 0) {
+			// This is void. TODO: Is there a better way?
+			BSequence(acc, type)
+		} else if (n == 1) {
+			acc[0]
+		} else BSequence(acc, type)
+	} else {
+		head = seq[0];
+		rest = tail(seq);
+		switch (head) {
+			BLet(id, value, body, ltype): {
+				nacc = arrayPush(acc,
+					BLet(id, value, 
+						unfoldBSeq([], 
+							concat([body], rest), type
+						),
+						// The type of the final sequence
+						type
+					)
+				);
+				// And lift the entire thing to whatever
+				unfoldBSeq(nacc, [], type);
+			}
+			BSequence(rseq, stype): {
+				unfoldBSeq(acc, concat(rseq, rest), type);
+			}
+			default: unfoldBSeq(arrayPush(acc, head), rest, type);
+		}
+	}
+}

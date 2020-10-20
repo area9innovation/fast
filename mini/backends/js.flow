@@ -134,7 +134,11 @@ bexp2js(backend : Backend, b : BExp) -> string {
 		}
 		BIf(cond, then, else_, __): "(" + bexp2js(backend, cond) + " ? " + bexp2js(backend, then) + " : " + bexp2js(backend, else_) + ")";
 		BSequence(statements, __): {
-			"(" + superglue(statements, \s -> bexp2js(backend, s), ", ") + ")";
+			if (statements == []) {
+				"null"
+			} else {
+				"(" + superglue(statements, \s -> bexp2js(backend, s), ", ") + ")";
+			}
 		}
 		BComment(comment): comment + "\n";
 	}

@@ -93,7 +93,7 @@ the development, we have defined some milestones.
   - euler3: Tail call
   - euler4: __i2s not defined: Move cast lowering into Forth so dep tracking works
   - euler6: __i2d not defined
-  - euler7: exp->statement lowering
+  - euler7: __i2s, __d2i and tail calls
   - euler9: "1000 - b - a;" is not producing (1000-b)-a, but 1000-(b-a)
   - euler10: tail call "fori"
 
@@ -179,6 +179,10 @@ We want all args to have names:
 Let-bindings without a body is not supported:
 
 	foo() { a = b; }		// expect something after: a=b;a
+
+Parenthesis required for assignment lambdas:
+
+	fn := \ -> foo;		// fn := (\ -> foo);
 
 Trailing top-level semi-colon after brace is not allowed:
 
