@@ -7,13 +7,12 @@ import mini/types/resolve;
 import mini/types/builtin;
 
 export {
-	// TODO: This should not need the environment, since this should only do the ordering
-	miniAst2BProgram(env : MiniTypeEnv, ast : MiniAst) -> BProgram;
+	miniAst2BProgram(ast : MiniAst) -> BProgram;
 
 	miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclaration;
 }
 
-miniAst2BProgram(env : MiniTypeEnv, ast : MiniAst) -> BProgram {
+miniAst2BProgram(ast : MiniAst) -> BProgram {
 	// Here we effectively do DCE:
 	// TODO: Also include all top-level vars with side-effects
 	ids0 : Set<string> = getMiniDependencies(ast.idDependents, "main", true);

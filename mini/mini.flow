@@ -20,7 +20,7 @@ main() {
 		cdb = miniEvalForths(file, fdb, [toString(file), "parsefile"]);
 
 		miniProcessCommand(cdb, make(""), \tdb -> {
-			program = miniAst2BProgram(makeMiniTypeEnv(tdb.program), tdb.program);
+			program = miniAst2BProgram(tdb.program);
 
 			if (verbose > 2) {
 				println("\nDeclarations after type checking:");
