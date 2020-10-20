@@ -93,7 +93,7 @@ exp =
 	// maybe ?? exp : exp
 
 	|> (
-		'!' ws exp $$"__not" $"unop"
+		'!' ws exp $$"!" $"unop"
 		| '-' ws exp $$"__neg" $"unop"
 		| backslash lambdaargs ws "->" ws exp $"lambda"
 		| exp 

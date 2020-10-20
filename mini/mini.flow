@@ -5,12 +5,12 @@ import mini/backends/flow;
 import mini/backends/js;
 
 main() {
-	file = getUrlParameterDef("file", "mini/tests/hello.flow");
+	file = getUrlParameterDef("file", "demos/euler/euler1.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "2"));
+	verbose = s2i(getUrlParameterDef("verbose", "0"));
 
-	db0 = makeMiniDb([".","c:\\flow9\\lib\\"], println);
+	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 
 	db = miniEvalForths("", db0, ["prepflow"]);
 

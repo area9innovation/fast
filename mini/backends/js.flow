@@ -31,7 +31,10 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(backend, body) + ";";
 		BNative(name, isIo, type, nativeName): {
 			generated = produceBackendNative(backend, nativeName);
-			"var " + name + " = " + (if (generated == "")  nativeName else generated) + ";"
+			"var " + name + " = " + (if (generated == "") {
+				backend.onError(0, "native " + nativeName + " not implemented");
+				nativeName
+			} else generated) + ";"
 		}
 		BStruct(name, type): {
 			blueprint("
@@ -248,6 +251,13 @@ jsBackend() -> Backend {
 			BackGen("Native.println", miniTypeVoid, BackText("console.log")),
 			BackGen("Native.fold", miniTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
 			BackGen("Native.isSameStructType", miniTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),
+
+			BackGen("Native.quit", miniTypeVoid, 
+				BackIfDef("browser",
+					BackText("function(c) {window.open('','_top').close();}"),
+					BackText("function(c) {}")
+				)
+			),
 		]
 		]),
 	);

@@ -21,7 +21,8 @@ export {
 	);
 
 	// How to produce the output? A minimal expression language
-	BackExp ::= BackText, BackBinOp, BackPreOp, BackPostOp, BackArg, BackConcat, BackCall, BackUnquote, BackRequire;
+	BackExp ::= BackText, BackBinOp, BackPreOp, BackPostOp, BackArg, BackConcat, BackCall, BackUnquote, 
+				BackIfDef, BackRequire;
 		// Concrete, specific text
 		BackText(text : string);
 		// A binary operator
@@ -52,6 +53,9 @@ export {
 
 		// Convert a string to raw text
 		BackUnquote(e : BackExp);
+
+		// Conditional
+		BackIfDef(flag : string, then : BackExp, else_ : BackExp);
 
 		// This prelude should go at the top
 		BackRequire(prelude : BackExp, in : BackExp);

@@ -36,7 +36,9 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (backend : Backend, BExp)
 						evalBackExp(backend, args, rec, gen.product);
 					} else if (gens != []) {
 						backend.onError(0 /*call.pos*/, "Can not generate " + name + " for type " + mtype2string(fn.type));
-						def();
+
+						gen = gens[0];
+						evalBackExp(backend, args, rec, gen.product);
 					} else def();
 				}
 				default: def();
@@ -92,6 +94,11 @@ evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) ->
 		BackUnquote(ex): {
 			left = evalBackExp(backend, args, rec, ex);
 			Pair(deserializeString(left.first).first, left.second);
+		}
+		BackIfDef(flag, then, else_): {
+			evalBackExp(backend, args, rec, 
+				if (false /*TODO: Figure out where to place flags isUrlParameterTrue(flag)*/) then else else_
+			);
 		}
 		BackRequire(code, in): {
 			fp = evalBackExp(backend, args, rec, code);
