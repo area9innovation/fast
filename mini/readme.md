@@ -97,6 +97,13 @@ the development, we have defined some milestones.
   - euler9: "1000 - b - a;" is not producing (1000-b)-a, but 1000-(b-a)
   - euler10: tail call "fori"
 
+	fori(start, end, fn) {
+		if (start <= end) {
+			fn(start);
+			fori(start + 1, end, fn);
+		}
+	}
+
 	function fori(start,end,fn) {
 		T:  while(true) {
 			if (start<=end) {
@@ -109,6 +116,7 @@ the development, we have defined some milestones.
 			}
 		}
 	}
+
 
 
 

@@ -14,7 +14,7 @@ bprogram2flow(b : BProgram) -> string {
 
 bdeclaration2flow(b : BDeclaration) -> string {
 	switch (b) {
-		BFunction(name, args, body, type): {
+		BFunction(name, args, body, tailcall, type): {
 			blueprint("
 				%name%(%args%) {
 					%body%
@@ -60,6 +60,7 @@ bstatement2flow(backend : Backend, b : BStatement) -> string {
 		}
 		BReturnVoid(): "{}";
 		BReturn(val): bexp2flow(backend, val);
+		BTailCall(fn, args, values): fn + "(" + superglue(values, \val -> bexp2flow(backend, val), ", ") + ")";
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> bstatement2flow(backend, s), ";\n") + "}";
 		}

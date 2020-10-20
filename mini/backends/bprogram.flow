@@ -6,7 +6,7 @@ export {
 
 	BDeclaration ::= BFunction, BGlobalVar, BNative, BStruct, BComment;
 
-	BFunction(name : string, args : [BFunArg], body : BStatement, type : MiniType);
+	BFunction(name : string, args : [BFunArg], body : BStatement, tailCall : bool, type : MiniType);
 		BFunArg(name : string);
 
 	BGlobalVar(name : string, body : BExp, type : MiniType);
@@ -18,7 +18,7 @@ export {
 	BComment(comment : string);
 
 	// Statement-based languages can get this format:
-	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BSequenceStatement, BComment;
+	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BTailCall, BSequenceStatement, BComment;
 		BIfStatement(cond : BExp, then : BStatement, else_ : BStatement);
 		BLetStatement(name : string, value : BExp, body : BStatement);
 		BSequenceStatement(statements : [BStatement]);
@@ -27,6 +27,10 @@ export {
 		BReturnVoid();
 		// Return a value
 		BReturn(val : BExp);
+
+		// Do a tail call to ourselves with these bindings
+		BTailCall(fn : string, args : [string], values : [BExp]);
+
 		// TODO: We need a construct for expressions that are void at the statement level
 
 	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BComment;

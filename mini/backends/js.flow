@@ -18,15 +18,28 @@ bprogram2js(b : BProgram) -> string {
 
 bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 	switch (b) {
-		BFunction(name, args, body, __): {
-			blueprint("
-				function %name%(%args%) {
-					%body%
-				}", [
-				"name", name,
-				"args", superglue(args, \fa -> fa.name, ", "),
-				"body", bstatement2js(backend, body, true)
-			]);
+		BFunction(name, args, body, tailcall, __): {
+			if (tailcall) {
+				blueprint("
+					function %name%(%args%) {
+						T:  while(true) {
+							%body%
+						}
+					}", [
+					"name", name,
+					"args", superglue(args, \fa -> fa.name, ", "),
+					"body", bstatement2js(backend, body, true)
+				]);
+			} else {
+				blueprint("
+					function %name%(%args%) {
+						%body%
+					}", [
+					"name", name,
+					"args", superglue(args, \fa -> fa.name, ", "),
+					"body", bstatement2js(backend, body, true)
+				]);
+			}
 		}
 		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(backend, body) + ";";
 		BNative(name, isIo, type, nativeName): {
@@ -72,6 +85,28 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 		}
 		BReturnVoid(): if (withReturn) "return;" else "";
 		BReturn(val): (if (withReturn) "return " else "") + bexp2js(backend, val) + ";";
+		BTailCall(fn, args, values): {
+			/*
+				var $a_=((start+1)|0);
+				start=$a_;
+				continue T*/
+			if (length(args) == 1) {
+				blueprint("
+					%arg% = %value%;
+					continue T;
+				", ["arg", args[0],
+					"value", bexp2js(backend, values[0])])
+			} else {
+				// Define tmps
+				supergluei(values, \i, value -> {
+					"var $a" + i2s(i) + "=" + bexp2js(backend, value)
+				}, ";")
+				+ supergluei(args, \i, arg -> {
+					arg + "=" + "$a" + i2s(i);
+				}, ";")
+				+ "continue T";
+			}
+		}
 		BSequenceStatement(statements): {
 			"{" + supergluei(statements, \i, stat -> {
 				bstatement2js(backend, stat, withReturn && i == length(statements) - 1)

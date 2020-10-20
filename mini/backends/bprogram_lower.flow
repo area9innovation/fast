@@ -49,8 +49,13 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 		MiniLet(name, value, body, tv): var(tv);
 		MiniLambda(args, body, tv): {
 			bbody = miniExp2BReturn(env, body);
+
+			// TODO: figure out if we have tail call or not
+			tailCall = false;
+
 			BFunction(
 				declid, map(args, \a -> BFunArg(a)), bbody,
+				tailCall,
 				resolveMiniTypeVar(env, tv)
 			);
 		}

@@ -11,8 +11,8 @@ prettyBProgram(p : BProgram) -> string {
 
 prettyBDeclaration(b : BDeclaration) -> string {
 	switch (b) {
-		BFunction(name, args, body, type): {
-			name + "(" + superglue(args, \a -> a.name , ", ") + ") {\n"
+		BFunction(name, args, body, tc, type): {
+			(if (tc) "tailcall " else "") + name + "(" + superglue(args, \a -> a.name , ", ") + ") {\n"
 			+ prettyBStatement(body)
 			+ "\n}" + ":" + mtype2string(type)
 		}
@@ -56,6 +56,7 @@ prettyBStatement(b : BStatement) -> string {
 		}
 		BReturnVoid(): "{}";
 		BReturn(val): prettyBExp(val);
+		BTailCall(fn, args, values): "tailcall " + fn + "(" + supergluei(args, \i, arg -> arg + ":" + prettyBExp(values[i]), ", ") + ")";
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> prettyBStatement(s), ";\n") + "}";
 		}
