@@ -153,19 +153,25 @@ miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 						// Some specific conversions are converted to native calls
 						cargs = map(args, \a -> miniExp2BExp(env, a));
 
+						// TODO: Move this to Forth?
+
 						from = bexpType(cargs[0]);
 						to = bexpType(cargs[1]);
 						if (from == miniTypeInt && to == miniTypeString) {
 							// i2s
+							// TODO: We have to add a dependency!
 							BCall(BVar("__i2s", from), [cargs[0]], to)
 						} else if (from == miniTypeInt && to == miniTypeDouble) {
 							// i2d
+							// TODO: We have to add a dependency!
 							BCall(BVar("__i2d", from), [cargs[0]], to)
 						} else if (from == miniTypeDouble && to == miniTypeString) {
 							// d2s
+							// TODO: We have to add a dependency!
 							BCall(BVar("__d2s", from), [cargs[0]], to)
 						} else if (from == miniTypeDouble && to == miniTypeInt) {
 							// d2i
+							// TODO: We have to add a dependency!
 							BCall(BVar("__d2i", from), [cargs[0]], to)
 						} else {
 							BCall(miniExp2BExp(env, fn), cargs, resolveMiniTypeVar(env, tv));

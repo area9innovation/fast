@@ -1,0 +1,109 @@
+import mini/backends/bprogram;
+import mini/types/pretty;
+
+export {
+	prettyBProgram(p : BProgram) -> string;
+}
+
+prettyBProgram(p : BProgram) -> string {
+	superglue(p.declarations, prettyBDeclaration, "\n");
+}
+
+prettyBDeclaration(b : BDeclaration) -> string {
+	switch (b) {
+		BFunction(name, args, body, type): {
+			name + "(" + superglue(args, \a -> a.name , ", ") + "{\n"
+			+ prettyBStatement(body)
+			+ "\n}" + ":" + mtype2string(type)
+		}
+		BGlobalVar(name, body, type): {
+			name + "=" + prettyBExp(body) + ":" + mtype2string(type);
+		}
+		BNative(name, isio, type, nativeName): {
+			"native " + name + " : " + (if (isio) "io" else "") + mtype2string(type) + " = " + nativeName;
+		}
+		BStruct(name, type): {
+			name + mtype2string(type);
+		}
+		BComment(comment): {
+			"// " + comment;
+		}
+	}
+}
+
+
+prettyBStatement(b : BStatement) -> string {
+	switch (b) {
+		BIfStatement(cond, then, else_): {
+			blueprint("
+				if (%cond%) {
+					%then%
+				} else {
+					%else%
+				}", [
+				"cond", prettyBExp(cond),
+				"then", prettyBStatement(then),
+				"else", prettyBStatement(else_),
+			])
+		}
+		BLetStatement(name, value, body): {
+			blueprint("
+				%name% = %value%;
+				%body%", [
+					"name", name,
+					"value", prettyBExp(value),
+					"body", prettyBStatement(body),
+			])
+		}
+		BReturnVoid(): "{}";
+		BReturn(val): prettyBExp(val);
+		BSequenceStatement(statements): {
+			"{" + superglue(statements, \s -> prettyBStatement(s), ";\n") + "}";
+		}
+		BComment(comment): comment;
+	}
+}
+
+prettyBExp(b : BExp) -> string {
+	switch (b) {
+		BValue(): prettyBValue(b);
+		BVar(name, type): name + " : " + mtype2string(type);
+		BLet(name, value, body, type): {
+			blueprint("
+				%name% : %type% = %value%;
+				%body%", [
+					"name", name,
+					"type", mtype2string(type),
+					"value", prettyBExp(value),
+					"body", prettyBExp(body),
+			])
+		}
+		BLambda(args, body, type): "\\" + superglue(args, \fa -> fa.name, ", ") + " : " + mtype2string(type) + " -> " + prettyBExp(body);
+		BCall(fn, args, type): {
+			def = \ -> {
+				prettyBExp(fn) + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);
+			}
+			switch (fn) {
+				BVar(fname, ftype): {
+					fname + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);
+				}
+				default: def();
+			}
+		}
+		BIf(cond, then, else_, type): {
+			"if (" + prettyBExp(cond) + ") {" + prettyBExp(then) + "} else {" + prettyBExp(else_) + "}" + " : " + mtype2string(type);
+		}
+		BSequence(statements, type): {
+			"{" + superglue(statements, \s -> prettyBExp(s), "; ") + "}" + " /* " + mtype2string(type) + "*/";
+		}
+		BComment(comment): "// " + comment + "\n";
+	}
+}
+
+prettyBValue(b : BValue) -> string {
+	switch (b) {
+		BInt(value, type): if (type == MiniTypeInt(1)) b2s(i2b(value)) else i2s(value);
+		BDouble(value): d2s(value);
+		BString(value): toString(value);
+	}
+}

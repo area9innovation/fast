@@ -3,6 +3,7 @@ import mini/commands/compiler;
 
 import mini/backends/flow;
 import mini/backends/js;
+import mini/backends/pretty;
 
 main() {
 	file = getUrlParameterDef("file", "mini/tests/test.flow");
@@ -21,7 +22,7 @@ main() {
 		miniCompile(cdb, make(""), \tdb -> {
 			program = miniAst2BProgram(makeMiniTypeEnv(tdb.program), tdb.program);
 
-			if (verbose > 1) {
+			if (verbose > 2) {
 				println("\nDeclarations after type checking:");
 				traverseInOrder(tdb.program.declarations, \st, val -> {
 
@@ -37,7 +38,9 @@ main() {
 			};
 
 			if (verbose > 1) {
-				// TODO: Print the typed backend representation here
+				// Print the typed backend representation here
+				println("\nBackend after type checking:");
+				println(prettyBProgram(program));
 			};
 
 			flowprogram = bprogram2flow(program);
