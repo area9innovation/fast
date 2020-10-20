@@ -1,5 +1,6 @@
 None();
 Some(v : int);
+Maybe ::= None, Some;
 
 main() {
 	None();

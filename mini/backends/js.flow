@@ -205,7 +205,6 @@ jsBackend() -> Backend {
 
 			BackGen("__not", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
 
-			BackGen(".", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackUnquote(BackArg(1)))),
 
 			// Cast and type is ignored
 			BackGen("__cast", miniTypeVoid, BackArg(0)),
@@ -213,37 +212,43 @@ jsBackend() -> Backend {
 
 			BackGen("__ref", miniTypeVoid, 
 				BackRequire(
-					/*
-					class R_ {
-						constructor(v) { this.__v = v; }
-					}
-					*/
-					BackText("function R_(v){this.__v=v}"),
+					// Alternative: class R_ {constructor(v) { this.__v = v; } }
+					BackText("function R_(v){this.v=v}"),
 					BackCall("new R_", [BackArg(0)])
 				)
 			),
-			BackGen("__deref", miniTypeVoid, BackPostOp(".__v", 60, BackArg(0))),
-			BackGen("__assign", miniTypeVoid, BackBinOp(".__v=", 70, BackArg(0), BackArg(1))),
+			BackGen("__deref", miniTypeVoid, BackPostOp(".v", 60, BackArg(0))),
+			BackGen("__assign", miniTypeVoid, BackBinOp(".v=", 70, BackArg(0), BackArg(1))),
 
 			BackGen("__emptyarray", miniTypeVoid, BackText("[]")),
 			BackGen("[", miniTypeVoid, BackConcat([BackText("["), BackArg(0), BackText("]")])),
 			BackGen(",", miniTypeVoid, BackBinOp(",", 80, BackArg(0), BackArg(1))),
 			BackGen("__index", miniTypeVoid, BackConcat([BackBinOp("[", 80, BackArg(0), BackArg(1)), BackText("]")])),
 
+			BackGen(".", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackUnquote(BackArg(1)))),
+
 			BackGen("__construct0", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), BackText("}")])),
-			BackGen("__construct1", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), BackText(","), 
-				BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
-			BackText("}")])),
+			BackGen("__construct1", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), 
+					BackText(","), BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
+				BackText("}")])),
+			BackGen("__construct2", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), 
+					BackText(","), BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
+					BackText(","), BackArg(2), BackText(":"), BackUnquote(BackArg(2)), 
+				BackText("}")])),
+			BackGen("__construct3", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), 
+					BackText(","), BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
+					BackText(","), BackArg(2), BackText(":"), BackUnquote(BackArg(2)), 
+					BackText(","), BackArg(3), BackText(":"), BackUnquote(BackArg(3)), 
+				BackText("}")])),
+
+			// Used in th union
+			BackGen("__structname", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackText("_id"))),
 
 			// Inlined natives
 			BackGen("Native.println", miniTypeVoid, BackText("console.log")),
 			BackGen("Native.fold", miniTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
 			BackGen("Native.isSameStructType", miniTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),
-
 		]
 		]),
 	);
 }
-
-// Structs:
-// {return {_id:'+string+',' + args + '};

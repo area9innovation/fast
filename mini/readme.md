@@ -88,11 +88,8 @@ dependents on that id. This should hopefully speed things up.
 The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
-- Get hello-world to compile and run in JS using "import runtime"
-  - Figure out union
-  - Figure out natives from runtime & linking
-
 - Get euler examples to compile and run in JS.
+  - Figure out natives from runtime & linking
 
 - Parse all of flow syntax. Missing:
 

@@ -293,15 +293,24 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			// TODO: We should probably have cardinality for the typars?
 
 			pushMStack(typepars.second, 
-				MiniCall(MiniVar("__union" + i2s(cardinality), 0), concat(
+				MiniCall(MiniVar(":", 0),
 					[
-						MiniCall(
-							MiniVar(getMiniString(id.first), 0),
-							ttypars,
+						MiniLambda(["u"], 
+							MiniCall(MiniVar("__structname", 0), [MiniVar("u", 0)], 0),
 							0
-						)
-					], ttypenames
-				), 0)
+						),
+						MiniCall(MiniVar("__union" + i2s(cardinality), 0), concat(
+							[
+								MiniCall(
+									MiniVar(getMiniString(id.first), 0),
+									ttypars,
+									0
+								)
+							], ttypenames
+						), 0)
+					]
+					, 0
+				)
 			);
 		}),
 
