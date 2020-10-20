@@ -7,6 +7,8 @@ import mini/types/typeenv;
 import mini/types/resolve;
 import mini/types/builtin;
 
+import ds/arrayutils;
+
 export {
 	miniAst2BProgram(ast : MiniAst) -> BProgram;
 
@@ -52,15 +54,11 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 		BVar(__, __): var();
 		BLet(__, __, __, __): var();
 		BLambda(args, body, type): {
-
-			// TODO: Figure out if we have tail call or not
-			bbody = bexp2BStatement(declid, true, body);
-
-			tailCall = false;
-
+			hasTailcall = ref false;
+			bbody = bexp2BStatement(declid, map(args, \a -> a.name), hasTailcall, true, body);
 			BFunction(
 				declid, args, bbody,
-				tailCall,
+				^hasTailcall,
 				type
 			);
 		}
@@ -90,13 +88,13 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 	}
 }
 
-bexp2BStatement(decl : string, tailcall : bool, tb : BExp) -> BStatement {
+bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailcall : bool, tb : BExp) -> BStatement {
 	b = unfoldBExp(tb);
 	switch (b : BExp) {
 		BValue(): BReturn(b);
 		BVar(name, type): BReturn(b);
 		BLet(name, value, body, type): {
-			BLetStatement(name, value, bexp2BStatement(decl, tailcall, body));
+			BLetStatement(name, value, bexp2BStatement(decl, fnargs, hasTailcall, tailcall, body));
 		}
 		BLambda(args, body, type): BReturn(b);
 		BCall(fn, args, type): {
@@ -104,18 +102,41 @@ bexp2BStatement(decl : string, tailcall : bool, tb : BExp) -> BStatement {
 				switch (fn) {
 					BVar(fname, __): if (fname == decl) {
 						// Tail call
-						println("We found a tail call for " + decl);
-					}
-					default: {}
+						// Filter out trivial arguments
+						newArgs = foldi2(fnargs, [], [], \i, accnames, accvals, fnarg -> {
+							val = args[i];
+							def = \ -> {
+								Pair(arrayPush(accnames, fnarg), arrayPush(accvals, val));
+							}
+							switch (val) {
+								BVar(aname, __): {
+									if (aname == fnarg) {
+										// OK, no need for it
+										Pair(accnames, accvals)
+									} else {
+										def();
+									}
+								}
+								default: def();
+							}
+						});
+						hasTailcall := true;
+						BTailCall(decl, newArgs.first, newArgs.second);
+					} else BReturn(b);
+					default: BReturn(b);
 				}
-			}
-			BReturn(b);
+			} else BReturn(b);
 		}
-		BIf(cond, then, else_, type): BIfStatement(cond, bexp2BStatement(decl, tailcall, then), bexp2BStatement(decl, tailcall, else_));
+		BIf(cond, then, else_, type): {
+			BIfStatement(cond, 
+				bexp2BStatement(decl, fnargs, hasTailcall, tailcall, then), 
+				bexp2BStatement(decl, fnargs, hasTailcall, tailcall, else_)
+			);
+		}
 		BSequence(exps, type): {
 			if (exps == []) BReturnVoid()
 			else BSequenceStatement(mapi(exps, \i, e -> {
-				bexp2BStatement(decl, tailcall && i == length(exps) - 1, e)
+				bexp2BStatement(decl, fnargs, hasTailcall, tailcall && i == length(exps) - 1, e)
 			}));
 		} 
 		BComment(comment): b;
