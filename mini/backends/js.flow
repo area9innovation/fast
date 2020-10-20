@@ -230,14 +230,16 @@ jsBackend() -> Backend {
 			BackGen(",", miniTypeVoid, BackBinOp(",", 80, BackArg(0), BackArg(1))),
 			BackGen("__index", miniTypeVoid, BackConcat([BackBinOp("[", 80, BackArg(0), BackArg(1)), BackText("]")])),
 
-			BackGen("__construct0", miniTypeVoid, BackConcat([BackText("{id:"), BackArg(0), BackText("}")])),
-			BackGen("__construct1", miniTypeVoid, BackConcat([BackText("{id:"), BackArg(0), BackText(","), 
+			BackGen("__construct0", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), BackText("}")])),
+			BackGen("__construct1", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), BackText(","), 
 				BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
 			BackText("}")])),
 
 			// Inlined natives
 			BackGen("Native.println", miniTypeVoid, BackText("console.log")),
 			BackGen("Native.fold", miniTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
+			BackGen("Native.isSameStructType", miniTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),
+
 		]
 		]),
 	);

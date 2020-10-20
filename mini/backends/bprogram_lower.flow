@@ -25,11 +25,11 @@ miniAst2BProgram(env : MiniTypeEnv, ast : MiniAst) -> BProgram {
 	order = topologicalMiniOrder(ast.idDependents, ids);
 
 	BProgram(
-		map(order, \id -> {
+		filtermap(order, \id -> {
 			mdecl = lookupTree(ast.typedDeclarations, id);
 			mdecl ?? {
-				mdecl
-			} : BComment("// ERROR: Unknown id " + id)
+				Some(mdecl)
+			} : None(); // We will let backends complain: Some(BComment("// ERROR: Unknown id " + id))
 		})
 	);
 }

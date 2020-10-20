@@ -89,33 +89,8 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get hello-world to compile and run in JS using "import runtime"
-  - fields: Figure out what to do with the field name. 
-    - Is that a string or var? It is probably a construct in Exp
-  - struct constructor
+  - Figure out union
   - Figure out natives from runtime & linking
-    - isSameStructType
-
-	public static inline function isSameStructType(o1 : Dynamic, o2 : Dynamic) : Bool {
-		#if (js && readable)
-			return !isArray(o1) && !isArray(o2) &&
-				Reflect.hasField(o1, "_name") &&
-				Reflect.hasField(o2, "_name") &&
-				o1._name == o2._name;
-		#else
-			return !isArray(o1) && !isArray(o2) &&
-				Reflect.hasField(o1, "_id") &&
-				Reflect.hasField(o2, "_id") &&
-				o1._id == o2._id;
-		#end
-	}
-
-	HaxeRuntime.isSameStructType = function(o1,o2) {
-		if(!Array.isArray(o1) && !Array.isArray(o2) && Object.prototype.hasOwnProperty.call(o1,"_id") && Object.prototype.hasOwnProperty.call(o2,"_id")) {
-			return o1._id == o2._id;
-		} else {
-			return false;
-		}
-	};
 
 - Get euler examples to compile and run in JS.
 

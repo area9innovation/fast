@@ -5,7 +5,7 @@ import mini/backends/flow;
 import mini/backends/js;
 
 main() {
-	file = getUrlParameterDef("file", "mini/tests/struct.flow");
+	file = getUrlParameterDef("file", "mini/tests/hello.flow");
 	output = getUrlParameterDef("output", "output");
 
 	verbose = s2i(getUrlParameterDef("verbose", "2"));
