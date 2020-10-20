@@ -10,7 +10,7 @@ main() {
 	//file = getUrlParameterDef("file", "demos/euler/euler3.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "2"));
+	verbose = s2i(getUrlParameterDef("verbose", "1"));
 
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 
@@ -37,7 +37,7 @@ main() {
 				});
 			};
 
-			if (verbose > 1) {
+			if (verbose > 0) {
 				// Print the typed backend representation here
 				println("\nBackend after type checking:");
 				println(prettyBProgram(program));
@@ -48,12 +48,12 @@ main() {
 			setFileContent(changeFileExt(output, ".flow"), flowprogram);
 			setFileContent(changeFileExt(output, ".js"), jsprogram);
 
-			if (verbose > 0) {
+			if (verbose > 1) {
 				println("\nFlow output:");
 				println(flowprogram);
 			};
 
-			if (verbose > 0) {
+			if (verbose >10) {
 				println("\nJS output:");
 				println(jsprogram);
 			};

@@ -12,8 +12,8 @@ prettyBProgram(p : BProgram) -> string {
 prettyBDeclaration(b : BDeclaration) -> string {
 	switch (b) {
 		BFunction(name, args, body, type): {
-			name + "(" + superglue(args, \a -> a.name , ", ") + "{\n"
-			+ prettyBStatement(body)
+			name + "(" + superglue(args, \a -> a.name , ", ") + ") {\n"
+			prettyBStatement(body)
 			+ "\n}" + ":" + mtype2string(type)
 		}
 		BGlobalVar(name, body, type): {
@@ -30,7 +30,6 @@ prettyBDeclaration(b : BDeclaration) -> string {
 		}
 	}
 }
-
 
 prettyBStatement(b : BStatement) -> string {
 	switch (b) {
