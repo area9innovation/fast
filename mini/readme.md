@@ -19,6 +19,7 @@
 		- [Gringo grammars](#gringo-grammars)
 		- [Async and the Forth standard library](#async-and-the-forth-standard-library)
 		- [TODO Forth primitives](#todo-forth-primitives)
+	- [AST representation of various constructs](#ast-representation-of-various-constructs)
 	- [Backends](#backends)
 		- [JS](#js)
 		- [Flow](#flow)
@@ -320,6 +321,57 @@ Both of these are async, so only use them in the interactive context, or with ca
 
 - uncons, comparisons, and, or, not
 - ifte, while, eval, map, quoting
+
+## AST representation of various constructs
+
+We use calls to special functions to represent various semantic constructs in Mini. The benefit of this
+approach is that the MiniExp is minimal, and type inference does not need to know anything special about 
+these. That makes the compiler infrastructure easier and smaller.
+
+See `types/builtins.flow` for the list.
+
+The following are converted to more natural constructs by the lowering phase, so backends do not have to know 
+about them:
+
+	__ifte & __ift are used for if-else and if
+	; is used for sequence
+	: is used for type annotations, with the type encoded as a string of calls to __type like functions
+
+	__native is used for defining native functions
+
+	__cast is used for casts. To be converted to explicit natives and/or type checks.
+
+	__void is the empty value. TODO: Maybe this should disappear in the lowering?
+
+These have to be implemented in the backends to do the right thing:
+
+	__neg  is used for prefix negation of int/double
+
+	__emptyarray is used for the empty array
+	[ is used for array constructs, where the arguments are separated by the "," operator
+	__index is used for array indexing
+
+	__ref constructs a reference
+	__deref dereferences a reference value
+	:= is used to update references
+
+	__construct0, ... N for constructing struct values with N arguments
+	. is used for field access with the field name as a string
+	__structname to extract the id of a struct to be able to "switch" from
+
+TODO:
+	__switch 
+	__case 
+	__pattern  
+	__default  
+	__with  
+	__fieldassign
+
+Struct definitions are represented by constructing a constructor function by the Forth
+builtin structdef, that uses __construct0, ... to construct the value.
+
+Union defintions are represented by a function, which extract the id field to switch from.
+This is done by the uniondef Forth builtin.
 
 ## Backends
 

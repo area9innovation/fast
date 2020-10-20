@@ -203,7 +203,7 @@ jsBackend() -> Backend {
 			BackGen("__neg", miniTypeInt, BackBinOp("|", 25, BackPreOp("-", 60, BackArg(0)), BackText("0"))),
 			BackGen("__neg", miniTypeDouble, BackPreOp("-", 60, BackArg(0))),
 
-			BackGen("__not", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
+			BackGen("!", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
 
 
 			// Cast and type is ignored
@@ -218,7 +218,7 @@ jsBackend() -> Backend {
 				)
 			),
 			BackGen("__deref", miniTypeVoid, BackPostOp(".v", 60, BackArg(0))),
-			BackGen("__assign", miniTypeVoid, BackBinOp(".v=", 70, BackArg(0), BackArg(1))),
+			BackGen(":=", miniTypeVoid, BackBinOp(".v=", 70, BackArg(0), BackArg(1))),
 
 			BackGen("__emptyarray", miniTypeVoid, BackText("[]")),
 			BackGen("[", miniTypeVoid, BackConcat([BackText("["), BackArg(0), BackText("]")])),

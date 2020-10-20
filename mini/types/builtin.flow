@@ -56,10 +56,8 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 		Pair("/", MiniType2Function([ta, ta], ta)),
 		Pair("%", MiniType2Function([ta, ta], ta)),
 
-		Pair("__not", MiniType2Function([b], b)),
+		Pair("!", MiniType2Function([b], b)),
 		Pair("__neg", MiniType2Function([ta], ta)),
-
-		Pair(".", MiniType2Function([ta, s], tb)),
 
 		// : is special and should probably be grabbed by the type inference?
 		Pair(":", MiniType2Function([ta, ta], ta)),
@@ -71,19 +69,27 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 
 		Pair("__index", MiniType2Function([at(ta), i], ta)),
 
-	//__switch __case __pattern  __default  __native  __struct __structarg  __with  __mutassign   __fieldassign
+	//__switch __case __pattern  __default  __with  __mutassign   __fieldassign
 
 		Pair("__cast", MiniType2Function([ta, ta, tb], tb)),
 
+		// References
 		Pair("__ref", MiniType2Function([ta], reftype(ta))),
 		Pair("__deref", MiniType2Function([reftype(ta)], ta)),
+		Pair(":=", MiniType2Function([ta, tb], v)),
 
 		Pair("__void", MiniType2Function([], v)),
 
 		Pair("__native", MiniType2Function([i, ta, s], ta)),
 
-		Pair("__struct", MiniType2Function([], ta)),
-		Pair("__structarg", MiniType2Function([s, i, ta], ta)),
+		// Structs & unions:
+		Pair("__construct0", MiniType2Function([s], ta)),
+		Pair("__construct1", MiniType2Function([s, ta], tb)),
+		Pair("__construct2", MiniType2Function([s, ta, tb], tc)),
+
+		Pair(".", MiniType2Function([ta, s], tb)),
+		// Used by union to find the value to dispatch from
+		Pair("__structname", MiniType2Function([ta], tb)),
 
 		// Temporary:
 		Pair("__type0", MiniType2Function([s], ta)),
@@ -96,13 +102,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 		Pair("__typename0", MiniType2Function([s], ta)),	// TODO: It is not names, but functions we get here
 		Pair("__typename1", MiniType2Function([s, ta], tb)),
 		Pair("__typename2", MiniType2Function([s, ta, tb], tc)),
-
-		Pair("__construct0", MiniType2Function([s], ta)),
-		Pair("__construct1", MiniType2Function([s, ta], tb)),
-		Pair("__construct2", MiniType2Function([s, ta, tb], tc)),
-
-
-		// __void
 	])
 }
 
