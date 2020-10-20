@@ -91,9 +91,9 @@ the development, we have defined some milestones.
 
 - Get euler examples to compile and run in JS.
   - euler3: Tail call
-  - euler4: string type in i2s cast
-  - euler6:   \acc, n -> acc + i2d(n * n)    is parsed wrong
- 
+  - euler4: __i2s not defined: Move cast lowering into Forth so dep tracking works
+  - euler6: __i2d not defined
+  - euler7: exp->statement lowering
 
   - Figure out natives from runtime & linking
 
@@ -415,8 +415,9 @@ Languages to add:
 
 We have a minimal JS backend.
 
-- Fix : to write bools, and ignore in other cases
 - Constant lifting (JSON-like values for JS in particular to help reduce memory and startup)
+- Move natives to a .js file with comments, or something, which is the processed to define
+  the backends - stripping newlines and stuff?
 
 ### Flow
 

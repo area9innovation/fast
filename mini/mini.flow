@@ -10,7 +10,7 @@ main() {
 	//file = getUrlParameterDef("file", "demos/euler/euler3.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "1"));
+	verbose = s2i(getUrlParameterDef("verbose", "0"));
 
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 

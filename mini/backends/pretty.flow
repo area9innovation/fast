@@ -13,7 +13,7 @@ prettyBDeclaration(b : BDeclaration) -> string {
 	switch (b) {
 		BFunction(name, args, body, type): {
 			name + "(" + superglue(args, \a -> a.name , ", ") + ") {\n"
-			prettyBStatement(body)
+			+ prettyBStatement(body)
 			+ "\n}" + ":" + mtype2string(type)
 		}
 		BGlobalVar(name, body, type): {

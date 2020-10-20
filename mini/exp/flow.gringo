@@ -67,7 +67,8 @@ vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 	| id ws ':' ws type ';'? ws $"drop" $"drop";
 
 exp = 
-	(
+	backslash lambdaargs ws "->" ws exp $"lambda"
+	|> (
 		id ws "=" ws exp ";" ws exp $"let"
 	 	| id ws ":" ws type "=" ws  exp ";" $"swap" $$":" $"binop" ws exp $"let"
 	)
@@ -95,7 +96,6 @@ exp =
 	|> (
 		'!' ws exp $$"!" $"unop"
 		| '-' ws exp $$"__neg" $"unop"
-		| backslash lambdaargs ws "->" ws exp $"lambda"
 		| exp 
 			(
 			"(" ws exps ")" ws $"call"
