@@ -1,0 +1,8 @@
+None();
+Some(v : int);
+
+main() {
+	None();
+	s = Some(1);
+	s.v;
+}

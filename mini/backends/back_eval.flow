@@ -1,6 +1,7 @@
 import ds/tree;
 import mini/backends/bprogram;
 import text/blueprint;
+import text/serialize;
 import mini/backends/backend;
 import mini/types/pretty;
 import mini/types/builtin;
@@ -87,6 +88,10 @@ evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) ->
 		BackConcat(es): {
 			eargs = map(es, \arg ->  evalBackExp(backend, args, rec, arg));
 			Pair(superglue(eargs, \ap -> ap.first, ""), fold(eargs, 1000, \acc, ep -> min(ep.second, acc)));
+		}
+		BackUnquote(ex): {
+			left = evalBackExp(backend, args, rec, ex);
+			Pair(deserializeString(left.first).first, left.second);
 		}
 		BackRequire(code, in): {
 			fp = evalBackExp(backend, args, rec, code);

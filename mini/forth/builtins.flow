@@ -312,15 +312,20 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 
 			cardinality = length(ttypeargs);
 
-			// TODO: We should make a lambda
-
-			pushMStack(typeargs.second, 
-				MiniCall(MiniVar("__struct" + i2s(cardinality), 0), concat(
+			args : [Triple<string, bool, MiniExp>] = map(ttypeargs, unwrapStructArg);
+	
+			// TODO: Figure out what to do with the mutable
+			// TODO: Add return type with :
+			lambda = MiniLambda(
+				map(args, \a -> a.first),
+				MiniCall(MiniVar("__construct" + i2s(cardinality), 0), concat(
 					[
-						MiniVar(getMiniString(id.first), 0),
-					], ttypeargs
-				), 0)
+						id.first,
+					], map(args, \a -> MiniString(a.first))
+				), 0), 0
 			);
+
+			pushMStack(typeargs.second, lambda);
 		}),
 
 		//
@@ -392,3 +397,16 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 	])
 }
 
+
+// __structarg(string, 0/1, type)
+unwrapStructArg(arg : MiniExp) -> Triple<string, bool, MiniExp> {
+	switch (arg) {
+		MiniCall(fn, args, __): {
+			name = getMiniString(args[0]);
+			notmutable = i2b(getMiniInt(args[1]));
+			type = args[2];
+			Triple(name, !notmutable, type);
+		}
+		default: Triple("", false, arg);
+	}
+}

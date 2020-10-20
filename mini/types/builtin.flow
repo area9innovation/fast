@@ -30,6 +30,8 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 
 	ta = MiniType2Par("?");
 	tb = MiniType2Par("??");
+	tc = MiniType2Par("???");
+	td = MiniType2Par("????");
 
 	pairs2tree([
 		Pair("__ifte", MiniType2Function([b, ta, ta], ta)),
@@ -86,6 +88,18 @@ getBuiltinMiniTypes() -> Tree<string, MiniType2> {
 		// Temporary:
 		Pair("__type0", MiniType2Function([s], ta)),
 		Pair("__type1", MiniType2Function([s, ta], tb)),
+
+		Pair("__union0", MiniType2Function([ta], tb)),
+		Pair("__union1", MiniType2Function([ta, tb], tc)),
+		Pair("__union2", MiniType2Function([ta, tb, tc], td)),
+
+		Pair("__typename0", MiniType2Function([s], ta)),	// TODO: It is not names, but functions we get here
+		Pair("__typename1", MiniType2Function([s, ta], tb)),
+		Pair("__typename2", MiniType2Function([s, ta, tb], tc)),
+
+		Pair("__construct0", MiniType2Function([s], ta)),
+		Pair("__construct1", MiniType2Function([s, ta], tb)),
+		Pair("__construct2", MiniType2Function([s, ta, tb], tc)),
 
 
 		// __void
