@@ -20,10 +20,10 @@ makeBackend(
 		fold(generators, makeTree(), \acc, gen : BackGen -> {
 			// We expand short form for types
 			fntype = switch (gen.type) {
-				MiniType2Function(args, returnType): gen.type;
+				MiniTypeFunction(args, returnType): gen.type;
 				default: {
 					if (gen.type == miniTypeVoid) miniTypeVoid
-					else MiniType2Function([gen.type, gen.type], gen.type)
+					else MiniTypeFunction([gen.type, gen.type], gen.type)
 				}
 			};
 			ngen = BackGen(gen with type = fntype);

@@ -5,7 +5,7 @@ import ds/treeutils;
 
 export {
 	// Construct a map of how each tyvar is coalescated to a ResType
-	coalesceMiniType2Vars(env : MiniTypeEnv) -> Tree<int, ResType>;
+	coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType>;
 }
 
 PolarVariable(id : int, polar : bool);
@@ -16,15 +16,15 @@ CoalesceAcc(
 	inProcess : Set<PolarVariable>
 );
 
-coalesceMiniType2Vars(env : MiniTypeEnv) -> Tree<int, ResType> {
+coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType> {
 	cenv = CoalesceAcc(env, ref makeTree(), makeSet());
 	foldRange(1, ^(env.tyvarId) - 1, makeTree(), \acc, tv -> {
-		restype = goCoalesce(cenv, MiniType2Var(tv), true);
+		restype = goCoalesce(cenv, MiniTypeVar(tv), true);
 		setTree(acc, tv, restype);
 	});
 }
 
-coalesceMiniType2(env : MiniTypeEnv, type : MiniType2) -> ResType {
+coalesceMiniType(env : MiniTypeEnv, type : MiniType) -> ResType {
 	goCoalesce(
 		CoalesceAcc(env, ref makeTree(), makeSet()), 
 		type,
@@ -32,10 +32,10 @@ coalesceMiniType2(env : MiniTypeEnv, type : MiniType2) -> ResType {
 	);
 }
 
-goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
+goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 	switch (type) {
-		MiniType2Int(bits): ResIntType(bits);
-		MiniType2Function(args, returnType): {
+		MiniTypeInt(bits): ResIntType(bits);
+		MiniTypeFunction(args, returnType): {
 			ResFunctionType(
 				map(args, \a -> {
 					goCoalesce(env, a, !polar)
@@ -43,12 +43,12 @@ goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
 				goCoalesce(env, returnType, polar)
 			)
 		}
-		MiniType2Call(id, typars): {
+		MiniTypeCall(id, typars): {
 			ResTypeCall(id, map(typars, \tp -> {
 				goCoalesce(env, tp, polar)
 			}));
 		}
-		MiniType2Var(id): {
+		MiniTypeVar(id): {
 			vspol = PolarVariable(id, polar);
 			if (containsSet(env.inProcess, vspol)) {
 				mtyvar = lookupTree(^(env.recursive), vspol);
@@ -88,9 +88,9 @@ goCoalesce(env : CoalesceAcc, type : MiniType2, polar : bool) -> ResType {
 				} : res;
 			}
 		}
-		MiniType2Par(id): ResTypePar(id);
-		MiniType2Record(fields): {
-			ResTypeRecord(map(fields, \f : MiniType2Field -> {
+		MiniTypePar(id): ResTypePar(id);
+		MiniTypeRecord(fields): {
+			ResTypeRecord(map(fields, \f : MiniTypeField -> {
 				Pair(f.name, goCoalesce(env, f.type, polar))
 			}))
 		}

@@ -1,5 +1,5 @@
 import ds/set;
-import mini/types/type2;
+import mini/types/type;
 
 export {
 	// A DSL for producing output for our backends
@@ -15,7 +15,7 @@ export {
 		// What is the name of the function?
 		name : string, 
 		// Type requirement for the call fn (if this is not a fn, then consider it the result type)
-		type : MiniType2,
+		type : MiniType,
 		// What should we produce as output?
 		product : BackExp
 	);

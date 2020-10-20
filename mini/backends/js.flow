@@ -114,7 +114,7 @@ bexp2js(backend : Backend, b : BExp) -> string {
 
 bvalue2js(b : BValue) -> string {
 	switch (b) {
-		BInt(value, type): if (type == MiniType2Int(1)) b2s(i2b(value)) else i2s(value);
+		BInt(value, type): if (type == MiniTypeInt(1)) b2s(i2b(value)) else i2s(value);
 		BDouble(value): d2s(value);
 		BString(value): toString(value);
 	}
@@ -123,13 +123,13 @@ bvalue2js(b : BValue) -> string {
 jsBackend() -> Backend {
 	comparison = \name, target, prec -> {
 		[
-			BackGen(name, MiniType2Function([miniTypeBool, miniTypeBool], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
-			BackGen(name, MiniType2Function([miniTypeInt, miniTypeInt], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
-			BackGen(name, MiniType2Function([miniTypeDouble, miniTypeDouble], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
-			BackGen(name, MiniType2Function([miniTypeString, miniTypeString], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniTypeFunction([miniTypeBool, miniTypeBool], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniTypeFunction([miniTypeInt, miniTypeInt], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniTypeFunction([miniTypeDouble, miniTypeDouble], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniTypeFunction([miniTypeString, miniTypeString], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
 			// TODO: We need something fancy for other types here
 		]
-	}
+	};
 
 	makeBackend("js", [
 			// Keywords
@@ -203,13 +203,14 @@ jsBackend() -> Backend {
 
 	// In JS, there is ** for exponentiation here
 
-			BackGen("__neg", miniTypeInt, BackBinOp("|", 25, BackPreOp("-", 60, BackArg(0)), BackText("0"))),
-			BackGen("__neg", miniTypeDouble, BackPreOp("-", 60, BackArg(0))),
+			BackGen("__neg", MiniTypeFunction([miniTypeInt], miniTypeInt), BackBinOp("|", 25, BackPreOp("-", 60, BackArg(0)), BackText("0"))),
+			BackGen("__neg", MiniTypeFunction([miniTypeDouble], miniTypeDouble), BackPreOp("-", 60, BackArg(0))),
 
 			BackGen("!", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
 
 
 			// Cast and type is ignored
+//			BackGen("__cast", miniTypeVoid, BackArg(0)),
 			BackGen("__cast", miniTypeVoid, BackArg(0)),
 			BackGen(":", miniTypeVoid, BackArg(0)),
 
@@ -249,7 +250,11 @@ jsBackend() -> Backend {
 
 			// Inlined natives
 			BackGen("Native.println", miniTypeVoid, BackText("console.log")),
+
 			BackGen("Native.fold", miniTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
+			BackGen("Native.map", miniTypeVoid, BackText("function(a,fn){return a.map(fn);}")),
+			BackGen("Native.enumFromTo", miniTypeVoid, BackText("function(init,n){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
+
 			BackGen("Native.isSameStructType", miniTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),
 
 			BackGen("Native.quit", miniTypeVoid, 
@@ -258,6 +263,77 @@ jsBackend() -> Backend {
 					BackText("function(c) {}")
 				)
 			),
+			BackGen("Native.sin", miniTypeVoid, BackText("Math.sin")),
+			BackGen("Native.asin", miniTypeVoid, BackText("Math.asin")),
+			BackGen("Native.cos", miniTypeVoid, BackText("Math.cos")),
+			BackGen("Native.acos", miniTypeVoid, BackText("Math.acos")),
+			BackGen("Native.atan", miniTypeVoid, BackText("Math.atan")),
+			BackGen("Native.atan2", miniTypeVoid, BackText("Math.atan2")),
+			BackGen("Native.exp", miniTypeVoid, BackText("Math.exp")),
+			BackGen("Native.log", miniTypeVoid, BackText("Math.log")),
+
+			BackGen("Native.bitXor", miniTypeVoid, BackText("function(a,b){return a^b;}")),
+			BackGen("Native.bitAnd", miniTypeVoid, BackText("function(a,b){return a&b;}")),
+			BackGen("Native.bitOr", miniTypeVoid, BackText("function(a,b){return a|b;}")),
+			BackGen("Native.bitUshr", miniTypeVoid, BackText("function(a,b){return a>>>b;}")),
+			BackGen("Native.bitShl", miniTypeVoid, BackText("function(a,b){return a<<b;}")),
+			BackGen("Native.bitNot", miniTypeVoid, BackText("function(a){return ~a;}")),
+
+			BackGen("Native.strlen", miniTypeVoid, BackText("function(s){return s.length;}")),
+			BackGen("Native.strIndexOf", miniTypeVoid, BackText("function(str,substr) {return str.indexOf(substr,0);}")),
+
+			BackGen("Native.substring", miniTypeVoid, 
+				// It turns out that Chrome does NOT copy strings out when doing substring,
+				// and thus we never free the original string
+				BackText("function(str,start,len){
+					var s = str.slice(start,start+len);
+					if (2 * s.length < str.length){return (' '+s).slice(1);} else return s;
+				}")
+			),
+			BackGen("Native.cloneString", miniTypeVoid, BackText("function(s){return (' '+s).slice(1);}")),
+
+
+
+/*
+Native.toLowerCase = function(str) {
+	return str.toLowerCase();
+};
+Native.toUpperCase = function(str) {
+	return str.toUpperCase();
+};
+Native.strReplace = function(str,find,replace) {
+	return StringTools.replace(str,find,replace);
+};
+
+Native.concat = function(arr1,arr2) {
+	return arr1.concat(arr2);
+};
+
+Native.enumFromTo = function(from,to) {
+	var n = to - from + 1;
+	if(n <= 0) {
+		return Array(0);
+	}
+	var result = Array(n);
+	var _g = 0;
+	var _g1 = n;
+	while(_g < _g1) {
+		var i = _g++;
+		result[i] = i + from;
+	}
+	return result;
+};
+
+Native.iter = function(values,clos) {
+	var _g = 0;
+	while(_g < values.length) {
+		var v = values[_g];
+		++_g;
+		clos(v);
+	}
+};
+*/
+
 		]
 		]),
 	);

@@ -8,7 +8,7 @@ import mini/types/builtin;
 
 export {
 	// Produce code for this call operator, respecting precedence
-	produceBackendCall(backend : Backend, call : BCall, rec : (backend : Backend, BExp) -> string) -> string;
+	produceBackendCall(backend : Backend, call : BCall, rec : (Backend, BExp) -> string) -> string;
 
 	// See if we can produce code for this native
 	produceBackendNative(backend : Backend, nativeName : string) -> string;
@@ -17,11 +17,11 @@ export {
 	getBackendRequirements(backend : Backend) -> string;
 }
 
-produceBackendCall(backend : Backend, call : BCall, rec : (backend : Backend, BExp) -> string) -> string {
+produceBackendCall(backend : Backend, call : BCall, rec : (Backend, BExp) -> string) -> string {
 	produceCodeWithPrec(backend, call, rec).first;
 }
 
-produceCodeWithPrec(backend : Backend, e : BExp, rec : (backend : Backend, BExp) -> string) -> Pair<string, int> {
+produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string) -> Pair<string, int> {
 	switch (e) {
 		BCall(fn, args, type): {
 			def = \ -> Pair(rec(backend, fn) + "(" + superglue(args, \a -> rec(backend, a), ", ") + ")", 1000);
@@ -56,7 +56,7 @@ produceBackendNative(backend : Backend, nativeName : string) -> string {
 	} else "";
 }
 
-evalBackExp(backend : Backend, args : [BExp], rec : (backend : Backend, BExp) -> string, e : BackExp) -> Pair<string, int> {
+evalBackExp(backend : Backend, args : [BExp], rec : (Backend, BExp) -> string, e : BackExp) -> Pair<string, int> {
 	switch (e) {
 		BackText(text): Pair(text, 1000);
 		BackBinOp(name, precedence, arg0, arg1): {

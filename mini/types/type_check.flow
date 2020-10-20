@@ -17,10 +17,10 @@ export {
 /*
 Type checking runs like this on a batch of ids:
 - Determine a suitable topological order to type infer from the leaves of dependencies
-- Recursively infer MiniType2 types of each AST node in these ids, 
-  collecting lower/upper-bound constraints on tyvars as MiniType2
-- Coalesce these MiniType2 bounds into ResTypes for each tyvar, and then convert these
-  back into MiniType2 as the final types
+- Recursively infer MiniType types of each AST node in these ids, 
+  collecting lower/upper-bound constraints on tyvars as MiniType
+- Coalesce these MiniType bounds into ResTypes for each tyvar, and then convert these
+  back into MiniType as the final types
 - Then lower the AST to the typed backend representation
 
 TODO:
@@ -34,7 +34,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	if (false) {
 		println("Typing in this order:");
 		println(order);
-	}
+	};
 	
 	tenv = makeMiniTypeEnv(ast);
 	// Do type inference and constraining of all ids
@@ -61,10 +61,10 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 				println(id + " = " + miniPrettyTyped(tenv2, mfn));
 			} : {}
 		});
-	}
+	};
 
 	// OK, resolve the constraints
-	resTypes = coalesceMiniType2Vars(tenv2);
+	resTypes = coalesceMiniTypeVars(tenv2);
 //	println("Resolutions");
 	traverseInOrder(resTypes, \tv, restype -> {
 		resolved = simplifyResType(resTypes, restype);
@@ -72,8 +72,9 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 //		println("a"  + i2s(tv) + " = " + mtype2string(resolved));
 	});
 
-
 	// Here, we can run backend-independent optimizations
+	// Maybe we should have a BExp based representation before we do a bstatement
+	// one, since that will be easier to optimize.
 
 	// "a : type = e; a"   -> "e : type"
 

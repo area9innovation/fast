@@ -35,7 +35,7 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 			println(value.first);
 		} else {
 			// println("Defined " + names);
-		}
+		};
 		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
 	} else if (command == "evallines") {
 		// Splits each line in the string, and evaluates it
@@ -127,7 +127,7 @@ miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
 		// Check if we have an async command elsewhere than the end
 		if (i != n - 1 && command == "processfile") {
 			println("Commands after processfile will not work correctly");
-		}
+		};
 		miniEvalForth(file, acc, command);
 	})
 }

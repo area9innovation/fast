@@ -1,0 +1,22 @@
+export {
+	// The type languages used by the type inference
+	MiniType ::= MiniTypeInt, MiniTypeFunction, MiniTypeCall, MiniTypeVar, MiniTypePar, MiniTypeRecord;
+
+		// Corresponds to MiniType's
+		MiniTypeInt(bits : int);
+
+		MiniTypeFunction(args : [MiniType], returnType : MiniType);
+
+		// double, string, array, ref, structs, unions are all calls
+		MiniTypeCall(id : string, typars : [MiniType]);
+
+		// Used internally in the inference
+		MiniTypeVar(id : int);
+
+		// Polymorphism
+		MiniTypePar(id : string);
+
+		// An (anonymous) record type
+		MiniTypeRecord(fields : [MiniTypeField]);
+			MiniTypeField(name : string, type : MiniType);
+}

@@ -90,6 +90,11 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get euler examples to compile and run in JS.
+  - euler3: Tail call
+  - euler4: string type in i2s cast
+  - euler6:   \acc, n -> acc + i2d(n * n)    is parsed wrong
+ 
+
   - Figure out natives from runtime & linking
 
 - Parse all of flow syntax. Missing:
@@ -335,11 +340,12 @@ about them:
 
 	__ifte & __ift are used for if-else and if
 	; is used for sequence
-	: is used for type annotations, with the type encoded as a string of calls to __type like functions
+	:(e,type) is used for type annotations, with the type encoded as a string of calls to __type like functions
 
 	__native is used for defining native functions
 
-	__cast is used for casts. To be converted to explicit natives and/or type checks.
+	__cast(:(e, from-type),to-type) is used for casts. These are converted to __i2s, __i2d, __d2s & __d2i for
+	those casts. The rest remain as "__cast" for the backends.
 
 	__void is the empty value. TODO: Maybe this should disappear in the lowering?
 
@@ -370,8 +376,10 @@ TODO:
 Struct definitions are represented by constructing a constructor function by the Forth
 builtin structdef, that uses __construct0, ... to construct the value.
 
-Union defintions are represented by a function, which extract the id field to switch from.
+Union definitions are represented by a function, which extract the id field to switch from.
 This is done by the uniondef Forth builtin.
+
+The __type function is handled by the type inference explicitly to extract the type.
 
 ## Backends
 

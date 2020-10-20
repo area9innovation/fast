@@ -1,4 +1,4 @@
-import mini/types/type2;
+import mini/types/type;
 import mini/backends/bprogram;
 import mini/exp/exp;
 import mini/exp/dependent;
@@ -19,8 +19,9 @@ export {
 		// What names are declared in this file?
 		// fileDeclarations : Tree<string, [string]>,
 
-		// The types of ids. The result of type checking ends up here
-		types : Tree<string, MiniType2>,
+		// The types of ids. The result of type checking ends up here. 
+		// We also keep the builtins here
+		types : Tree<string, MiniType>,
 
 		// Typed versions of our declarations.
 		typedDeclarations : Tree<string, BDeclaration>,

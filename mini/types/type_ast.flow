@@ -1,0 +1,40 @@
+import mini/types/type;
+import mini/types/builtin;
+import mini/exp/exp;
+import mini/exp/value;
+
+export {
+	convertMiniExp2Type(e : MiniExp) -> MiniType;
+}
+
+convertMiniExp2Type(e : MiniExp) -> MiniType {
+	error = \ -> {
+		println("This is not a type: " + toString(e));
+		miniTypeVoid;
+	}
+	switch (e) {
+		MiniCall(fn, args, tv): {
+			switch (fn) {
+				MiniVar(fname, __): {
+					if (fname == "__type") {
+						name = getMiniString(args[0]);
+						if (name == "void") {
+							miniTypeVoid
+						} else if (name == "bool") {
+							miniTypeBool
+						} else if (name == "int") {
+							miniTypeInt
+						} else {
+							targs = map(tail(args), convertMiniExp2Type);
+							MiniTypeCall(name, targs);
+						}
+					} else {
+						error();
+					}
+				}
+				default: error();
+			}
+		}
+		default: error();
+	}
+}

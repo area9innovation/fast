@@ -2,16 +2,16 @@ import mini/types/typeenv;
 
 export {
 	// Lookup the type
-	resolveMiniType2Var(env : MiniTypeEnv, tyvarId : int) -> MiniType2;
+	resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType;
 }
 
-resolveMiniType2Var(env : MiniTypeEnv, tyvarId : int) -> MiniType2 {
-	mtype : Maybe<MiniType2> = lookupTree(^(env.tyvars), tyvarId);
+resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType {
+	mtype : Maybe<MiniType> = lookupTree(^(env.tyvars), tyvarId);
 
 	mtype ?? {
 		mtype
 	} : {
 		println("Could not resolve tyvar " + i2s(tyvarId));
-		MiniType2Var(tyvarId);
+		MiniTypeVar(tyvarId);
 	};
 }

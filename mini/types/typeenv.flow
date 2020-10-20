@@ -1,5 +1,5 @@
 import mini/exp/ast;
-import mini/types/type2;
+import mini/types/type;
 import mini/types/restype;
 
 export {
@@ -8,24 +8,24 @@ export {
 		// The program we are typing
 		ast : MiniAst,
 		// The types of local ids so far
-		localTypes : Tree<string, MiniType2>,
+		localTypes : Tree<string, MiniType>,
 
 		// For the MLSub algorithm, we keep track of bounds:
-		tyvarLowerBounds : ref Tree<int, Set<MiniType2>>,
-		tyvarUpperBounds : ref Tree<int, Set<MiniType2>>,
+		tyvarLowerBounds : ref Tree<int, Set<MiniType>>,
+		tyvarUpperBounds : ref Tree<int, Set<MiniType>>,
 
 		// What is the next tyvar id?
 		tyvarId : ref int,
 
 		// What are the tyvars bound to in terms of resolved types?
 		// This is set by the resolution
-		tyvars : ref Tree<int, MiniType2>,
+		tyvars : ref Tree<int, MiniType>,
 
 		// Map to handle top-level polymorphism (does not work yet)
 		typars : ref MiniTypeParMap,
 
 		// We keep a cache of constraints to avoid infinite loops
-		constraintCache : ref Set<Pair<MiniType2, MiniType2>>,
+		constraintCache : ref Set<Pair<MiniType, MiniType>>,
 	);
 
 	MiniTypeParMap(

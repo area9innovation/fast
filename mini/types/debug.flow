@@ -3,7 +3,7 @@ import mini/exp/pretty_typed;
 export {
 	debugMiniTypeEnv(env : MiniTypeEnv) -> void;
 
-	debugMiniType(env : MiniTypeEnv, type : MiniType2) -> string;
+	debugMiniType(env : MiniTypeEnv, type : MiniType) -> string;
 
 	resType2string(r : ResType) -> string;
 }
@@ -21,9 +21,9 @@ debugMiniTypeEnv(env : MiniTypeEnv) -> void {
 	{}
 }
 
-debugMiniType(env : MiniTypeEnv, type : MiniType2) -> string {
+debugMiniType(env : MiniTypeEnv, type : MiniType) -> string {
 	switch (type) {
-		MiniType2Var(id): {	
+		MiniTypeVar(id): {	
 			miniPrettyTypeVar(env, id);
 		}
 		default: " : " + mtype2string(type);

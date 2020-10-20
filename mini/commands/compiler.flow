@@ -94,7 +94,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				);
 
 				MiniDb(db2 with program = ndecl);
-			}
+			};
 
 			mexisting ?? {
 				if (mexisting == body) {
@@ -109,7 +109,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		MiniTypeInfer(ids): {
 			// OK, what types do we have for these ids now?
 			lids = set2array(ids);
-			origTypes : [Maybe<MiniType2>]= map(lids, \id -> {
+			origTypes : [Maybe<MiniType>]= map(lids, \id -> {
 				lookupTree(db.program.types, id);
 			});
 

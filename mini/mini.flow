@@ -5,10 +5,11 @@ import mini/backends/flow;
 import mini/backends/js;
 
 main() {
-	file = getUrlParameterDef("file", "demos/euler/euler1.flow");
+	file = getUrlParameterDef("file", "mini/tests/test.flow");
+	//file = getUrlParameterDef("file", "demos/euler/euler3.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "0"));
+	verbose = s2i(getUrlParameterDef("verbose", "2"));
 
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 
@@ -33,11 +34,11 @@ main() {
 					} : "";
 					println(st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", "));
 				});
-			}
+			};
 
 			if (verbose > 1) {
 				// TODO: Print the typed backend representation here
-			}
+			};
 
 			flowprogram = bprogram2flow(program);
 			jsprogram = bprogram2js(program);
@@ -47,12 +48,12 @@ main() {
 			if (verbose > 0) {
 				println("\nFlow output:");
 				println(flowprogram);
-			}
+			};
 
 			if (verbose > 0) {
 				println("\nJS output:");
 				println(jsprogram);
-			}
+			};
 
 			quit(0);
 		});

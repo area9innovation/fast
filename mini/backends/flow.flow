@@ -94,23 +94,23 @@ bexp2flow(backend : Backend, b : BExp) -> string {
 
 bvalue2flow(b : BValue) -> string {
 	switch (b) {
-		BInt(value, type): if (type == MiniType2Int(1)) b2s(i2b(value)) else i2s(value);
+		BInt(value, type): if (type == MiniTypeInt(1)) b2s(i2b(value)) else i2s(value);
 		BDouble(value): d2s(value);
 		BString(value): toString(value);
 	}
 }
 
-mtype2flow(f : MiniType2) -> string {
+mtype2flow(f : MiniType) -> string {
 	switch (f) {
-		MiniType2Int(bits): if (bits == 0) "void" else if (bits == 1) "bool" else "int";
-		MiniType2Function(args, returnType): "(" + superglue(args, mtype2flow, ", ") + ")->" + mtype2flow(returnType);
-		MiniType2Call(id, typars): {
+		MiniTypeInt(bits): if (bits == 0) "void" else if (bits == 1) "bool" else "int";
+		MiniTypeFunction(args, returnType): "(" + superglue(args, mtype2flow, ", ") + ")->" + mtype2flow(returnType);
+		MiniTypeCall(id, typars): {
 			if (id == "__ref") "ref " + mtype2flow(typars[0]) 
 			else id + if (typars != []) "<" + superglue(typars, mtype2flow, ", ") + ">" else "";
 		}
-		MiniType2Var(id): "α" + i2s(id);
-		MiniType2Par(id):  id;
-		MiniType2Record(fields): "{" + superglue(fields, \fl -> fl.name + ":" + mtype2flow(fl.type), ", ") + "}";
+		MiniTypeVar(id): "α" + i2s(id);
+		MiniTypePar(id):  id;
+		MiniTypeRecord(fields): "{" + superglue(fields, \fl -> fl.name + ":" + mtype2flow(fl.type), ", ") + "}";
 	}
 }
 

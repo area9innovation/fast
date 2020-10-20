@@ -67,7 +67,7 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 		} : {
 			lower = lookupMultimap(^(env.tyvarLowerBounds), tv);
 			upper = lookupMultimap(^(env.tyvarUpperBounds), tv);
-			b = \s : Set<MiniType2>, sep -> {
+			b = \s : Set<MiniType>, sep -> {
 				if (isEmptySet(s)) ""
 				else superglue(set2array(s), mtype2string, sep)
 			}

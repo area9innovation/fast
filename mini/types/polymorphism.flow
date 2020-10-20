@@ -1,78 +1,78 @@
-import mini/types/type2;
+import mini/types/type;
 import mini/types/typeenv;
 
 export {
 	initTyparMap(env : MiniTypeEnv) -> void;
 
-	typePars2TypeVars(env : MiniTypeEnv, e : MiniType2) -> MiniType2;
+	typePars2TypeVars(env : MiniTypeEnv, e : MiniType) -> MiniType;
 
-	localTypePars2TypeVars(env : MiniTypeEnv, e : MiniType2) -> MiniType2;
+	localTypePars2TypeVars(env : MiniTypeEnv, e : MiniType) -> MiniType;
 
 
-	typeVars2TypePars(env : MiniTypeEnv, e : MiniType2) -> MiniType2;
+	typeVars2TypePars(env : MiniTypeEnv, e : MiniType) -> MiniType;
 
-	makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var;
+	makeMiniTypeVar(env : MiniTypeEnv) -> MiniTypeVar;
 }
 
 initTyparMap(env : MiniTypeEnv) -> void {
 	env.typars := MiniTypeParMap(makeTree(), makeTree());
 }
 
-localTypePars2TypeVars(env : MiniTypeEnv, e : MiniType2) -> MiniType2 {
+localTypePars2TypeVars(env : MiniTypeEnv, e : MiniType) -> MiniType {
 	nenv = MiniTypeEnv(
 		env with typars = ref MiniTypeParMap(makeTree(), makeTree())
 	);
 	typePars2TypeVars(nenv, e);
 }
 
-typePars2TypeVars(env : MiniTypeEnv, e : MiniType2) -> MiniType2 {
+typePars2TypeVars(env : MiniTypeEnv, e : MiniType) -> MiniType {
 	switch (e) {
-		MiniType2Int(bits): e;
-		MiniType2Function(args, returnType): {
-			MiniType2Function(map(args, \a -> typePars2TypeVars(env, a)), typePars2TypeVars(env, returnType));
+		MiniTypeInt(bits): e;
+		MiniTypeFunction(args, returnType): {
+			MiniTypeFunction(map(args, \a -> typePars2TypeVars(env, a)), typePars2TypeVars(env, returnType));
 		}
-		MiniType2Call(id, typars): {
-			MiniType2Call(id, map(typars, \a -> typePars2TypeVars(env, a)));
+		MiniTypeCall(id, typars): {
+			MiniTypeCall(id, map(typars, \a -> typePars2TypeVars(env, a)));
 		}
-		MiniType2Var(id): e;
-		MiniType2Par(id): {
+		MiniTypeVar(id): e;
+		MiniTypePar(id): {
 			mtyvarid = lookupTree(^(env.typars).typars, id);
-			mtyvarid ?? { MiniType2Var(mtyvarid) } : {
-				tv = makeMiniType2Var(env);
+			mtyvarid ?? { MiniTypeVar(mtyvarid) } : {
+				tv = makeMiniTypeVar(env);
 				addTypeParBinding(env, id, tv.id);
 				tv;
 			}
 		}
-		MiniType2Record(fields): {
-			MiniType2Record(map(fields, \f -> {
-				MiniType2Field(f.name, typePars2TypeVars(env, f.type))
+		MiniTypeRecord(fields): {
+			MiniTypeRecord(map(fields, \f -> {
+				MiniTypeField(f.name, typePars2TypeVars(env, f.type))
 			}))
 		}
 	}
 }
 
-typeVars2TypePars(env : MiniTypeEnv, e : MiniType2) -> MiniType2 {
+typeVars2TypePars(env : MiniTypeEnv, e : MiniType) -> MiniType {
 	switch (e) {
-		MiniType2Int(bits): e;
-		MiniType2Function(args, returnType): {
-			MiniType2Function(map(args, \a -> typeVars2TypePars(env, a)), typeVars2TypePars(env, returnType));
+		MiniTypeInt(bits): e;
+		MiniTypeFunction(args, returnType): {
+			MiniTypeFunction(map(args, \a -> typeVars2TypePars(env, a)), typeVars2TypePars(env, returnType));
 		}
-		MiniType2Call(id, typars): {
-			MiniType2Call(id, map(typars, \a -> typeVars2TypePars(env, a)));
+		MiniTypeCall(id, typars): {
+			MiniTypeCall(id, map(typars, \a -> typeVars2TypePars(env, a)));
 		}
-		MiniType2Var(id): {
+		MiniTypeVar(id): {
 			mtypar = lookupTree(^(env.typars).tyvars, id);
 			mtypar ?? {
-				MiniType2Par(mtypar)
+				MiniTypePar(mtypar)
 			} : e;
 		}
-		MiniType2Par(id): {
+		MiniTypePar(id): {
 			println("Did not expect type par here");
 			e;
 		}
-		MiniType2Record(fields): {
-			MiniType2Record(map(fields, \f -> {
-				MiniType2Field(f.name, typeVars2TypePars(env, f.type))
+		MiniTypeRecord(fields): {
+			MiniTypeRecord(map(fields, \f -> {
+				MiniTypeField(f.name, typeVars2TypePars(env, f.type))
 			}))
 		}
 	}
@@ -89,8 +89,8 @@ addTypeParBinding(env : MiniTypeEnv, id : string, tyvar : int) -> void {
 
 
 
-makeMiniType2Var(env : MiniTypeEnv) -> MiniType2Var {
+makeMiniTypeVar(env : MiniTypeEnv) -> MiniTypeVar {
 	id = ^(env.tyvarId);
 	env.tyvarId := id + 1;
-	MiniType2Var(id);
+	MiniTypeVar(id);
 }
