@@ -258,11 +258,17 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		}),
 
 		Pair("fntype", \stack -> {
-			//	MiniTypeFunction(args : [MiniType], returnType : MiniType);
+			//	__fntypeN(returnType, arg0, arg1, arg...);
 			rt = popMStack(stack);
 			args = popMStack(rt.second);
 			targs = getMiniArray(args.first);
-			pushMStack(args.second, MiniTypeFunction(targs, rt.first));
+			cardinality = length(targs);
+
+			pushMStack(args.second, 
+				MiniCall(MiniVar("__fntype" + i2s(cardinality), 0), concat(
+					[rt.first], targs
+				), 0)
+			);
 		}),
 
 		Pair("typename", \stack -> {
@@ -275,16 +281,19 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(id.second, MiniCall(MiniVar("__typename" + i2s(cardinality), 0), concat([MiniVar(getMiniString(id.first), 0)], ttypars), 0));
 		}),
 
-		Pair("uniontype", \stack -> {
+		Pair("uniondef", \stack -> {
 			typenames = popMStack(stack);
 			typepars = popMStack(typenames.second);
 			id = popMStack(typepars.second);
 			ttypenames = getMiniArray(typenames.first);
 			ttypars = getMiniArray(typepars.first);
-			// TODO: We should probably have cardinality for the typars
-			// and typenames?
+
+			cardinality = length(ttypenames);
+
+			// TODO: We should probably have cardinality for the typars?
+
 			pushMStack(typepars.second, 
-				MiniCall(MiniVar("__union", 0), concat(
+				MiniCall(MiniVar("__union" + i2s(cardinality), 0), concat(
 					[
 						MiniCall(
 							MiniVar(getMiniString(id.first), 0),
@@ -296,6 +305,23 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			);
 		}),
 
+		Pair("structdef", \stack -> {
+			typeargs = popMStack(stack);
+			id = popMStack(typeargs.second);
+			ttypeargs = getMiniArray(typeargs.first);
+
+			cardinality = length(ttypeargs);
+
+			// TODO: We should make a lambda
+
+			pushMStack(typeargs.second, 
+				MiniCall(MiniVar("__struct" + i2s(cardinality), 0), concat(
+					[
+						MiniVar(getMiniString(id.first), 0),
+					], ttypeargs
+				), 0)
+			);
+		}),
 
 		//
 		// List

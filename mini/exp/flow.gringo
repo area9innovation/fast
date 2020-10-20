@@ -27,7 +27,7 @@ native = "native" s id ws ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" w
 
 assign = id ws '=' ws exp ';'? ws $"define";
 
-union = id ws typars "::=" ws typenames ';' ws $"uniontype" $"define";
+union = id ws typars "::=" ws typenames ';' ws $"uniondef" $"define";
 
 	// listof(typename, ",")
 	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
@@ -38,7 +38,7 @@ functionOrStruct =
 	// Forward declaration - we drop for now
 	  id ws '(' ws funargs ')' ws returnType $"drop" ';' ws $"drop" $"drop"
 	//  id ws '(' ws funargs ')' ws returnType $"drop" ';' ws $"nil" $$";" $"var" $"call" $"lambda" $"define"	// We leave the body nil
-	| id ws '(' ws structargs ')' ws ';' ws $$"__struct" $"swap" $"typecall" $"define" // This is a struct!
+	| id ws '(' ws structargs ')' ws ';' ws $"structdef" $"define" // This is a struct!
 	| id ws '(' ws funargs ')' ws returnType $"drop" brace $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws brace $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
@@ -47,7 +47,7 @@ functionOrStruct =
 	| id ws ':' ws '(' ws funargs ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
 	| id ws ':' ws '(' ws types ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
 	// Struct
-	| id ws ':' ws '(' ws structargs ')' ws ';' ws $$"__struct" $"swap" $"typecall"  $"define"
+	| id ws ':' ws '(' ws structargs ')' ws ';' ws $$"structdef" $"define"
 	;
 
 	// listof(funarg, ",")

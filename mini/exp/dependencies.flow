@@ -23,16 +23,5 @@ extractMiniDeps(m : MiniExp, acc : Set<string>, locals : Set<string>) -> Set<str
 				extractMiniDeps(arg, acc1, locals)
 			});
 		}
-		MiniTypeFunction(args, returnType): {
-			nacc = fold(args, acc, \acc1, arg -> {
-				extractMiniDeps(arg, acc1, locals)
-			});
-			extractMiniDeps(returnType, nacc, locals);
-		}
-		MiniTypeCall(id, typars): {
-			fold(typars, acc, \acc1, arg -> {
-				extractMiniDeps(arg, acc1, locals)
-			});
-		}
 	}
 }

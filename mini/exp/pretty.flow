@@ -26,7 +26,5 @@ miniPretty(m : MiniExp) -> string {
 			  "body", miniPretty(body)]
 		);
 		MiniCall(fn, args, __): miniPretty(fn) + "(" + superglue(args, miniPretty, ", ") + ")";
-		MiniTypeFunction(args, returnType): "type (" + superglue(args, miniPretty, ", ") + ") -> " + miniPretty(returnType);
-		MiniTypeCall(id, typars): "type " + id + "<" + superglue(typars, miniPretty, ", ") + ">";
 	}
 }

@@ -4,14 +4,10 @@ export {
 		MiniDouble(value : double);
 		MiniString(value : string);
 
-	MiniExp ::= MiniValue, MiniVar, MiniLet, MiniLambda, MiniCall, MiniType;
+	MiniExp ::= MiniValue, MiniVar, MiniLet, MiniLambda, MiniCall;
 		MiniVar(name : string, mutable tyvar : int);
 		MiniLet(name : string, value : MiniExp, body : MiniExp, mutable tyvar : int);
 		// OK, what to do about types on the args?
 		MiniLambda(args : [string], body : MiniExp, mutable tyvar : int);
 		MiniCall(fn : MiniExp, args : [MiniExp], mutable tyvar : int);
-
-	MiniType ::= MiniTypeFunction, MiniTypeCall;
-		MiniTypeFunction(args : [MiniExp], returnType : MiniExp);
-		MiniTypeCall(id : string, typars : [MiniExp]);
 }

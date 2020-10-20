@@ -113,6 +113,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 			setMiniType2Var(nenv, ex, fnType);
 		}
 		MiniCall(fn, args, __): {
+			// TODO: If this is __type with ??, we should instantiate it according to the typarmap
 			resType = makeMiniType2Var(env);
 			fnType = typeInferenceMini(env, fn);
 			callType = MiniType2Function(
@@ -121,21 +122,6 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType2 {
 			);
 			constrainMiniType(env, fnType, callType);
 			setMiniType2Var(env, ex, resType);
-		}
-		MiniTypeFunction(args, returnType): {
-			argTypes = map(args, \a -> {
-				typeInferenceMini(env, a)
-			});
-			retType = typeInferenceMini(env, returnType);
-			MiniType2Function(argTypes, retType);
-		}
-		MiniTypeCall(id, typars): {
-			// TODO: Here, if this is a polymorphic var, we shouild probably look it
-			// up in the typar-map
-			if (typars == [] && trim2(id, "?") == "") {
-				println("TODO: We should probably instantiate this type to the tyvar: " + id);
-			}
-			MiniType2Call(id, map(typars, \tp -> typeInferenceMini(env, tp)));
 		}
 	}
 }
@@ -260,8 +246,6 @@ setMiniType2Var(env : MiniTypeEnv, ex : MiniExp, type : MiniType2) -> MiniType2 
 				MiniLambda(args, body, tyvar): ex.tyvar ::= ttv.id;
 				MiniCall(fn, args, tyvar): ex.tyvar ::= ttv.id;
 
-				MiniTypeFunction(args, returnType): {};
-				MiniTypeCall(id, typars): {};
 				MiniDouble(value): {};
 				MiniString(value): {};
 			};
@@ -278,8 +262,6 @@ setMiniType2Var(env : MiniTypeEnv, ex : MiniExp, type : MiniType2) -> MiniType2 
 		MiniLambda(args, body, tyvar): def(tyvar);
 		MiniCall(fn, args, tyvar): def(tyvar);
 
-		MiniTypeFunction(args, returnType): type;
-		MiniTypeCall(id, typars): type;
 		MiniDouble(value): type;
 		MiniString(value): type;
 	}

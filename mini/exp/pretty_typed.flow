@@ -50,8 +50,6 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 				default: def();
 			}
 		}
-		MiniTypeFunction(args, returnType): "type (" + superglue(args, \a -> miniPrettyTyped(env, a), ", ") + ") -> " + miniPrettyTyped(env, returnType);
-		MiniTypeCall(id, typars): "type " + id + "<" + superglue(typars, \t -> miniPrettyTyped(env, t), ", ") + ">";
 	}
 }
 

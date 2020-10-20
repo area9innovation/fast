@@ -70,21 +70,10 @@ miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclar
 							nativeName	
 						);
 					} else var(tv);
+					// TODO: If it is __type, we should convert it
 				}
 				default: var(tv);
 			}
-		}
-		MiniTypeFunction(args, returnType): error();
-		MiniTypeCall(id, typars): {
-			if (id == "__struct") {
-				BStruct(declid, MiniType2Record(map(typars, \tp -> {
-					// TODO. Extract the name
-					MiniType2Field(
-						"",
-						miniExp2MiniType2(tp)
-					)
-				})))
-			} else error();
 		}
 	}
 }
@@ -122,8 +111,6 @@ miniExp2BReturn(env : MiniTypeEnv, e : MiniExp) -> BStatement {
 		MiniLet(name, value, body, tyvar): {
 			BLetStatement(name, miniExp2BExp(env, value), miniExp2BReturn(env, body));
 		}
-		MiniTypeFunction(args, returnType): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
-		MiniTypeCall(id, typars): BComment("// Can not convert " + miniPretty(e) + " to statement yet");
 	}
 }
 
@@ -169,8 +156,6 @@ miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 				default: BCall(miniExp2BExp(env, fn), map(args, \a -> miniExp2BExp(env, a)), resolveMiniType2Var(env, tv));
 			}
 		}
-		MiniTypeFunction(args, returnType): error();
-		MiniTypeCall(id, typars): error();
 	}
 }
 
@@ -183,7 +168,5 @@ miniExp2MiniType2(e : MiniExp) -> MiniType2 {
 		MiniLet(name, value, body, tyvar): MiniType2Var(tyvar);
 		MiniLambda(args, body, tyvar): MiniType2Var(tyvar);
 		MiniCall(fn, args, tyvar): MiniType2Var(tyvar);
-		MiniTypeFunction(args, returnType): MiniType2Function(map(args, miniExp2MiniType2), miniExp2MiniType2(returnType));
-		MiniTypeCall(id, typars): MiniType2Call(id, map(typars, miniExp2MiniType2));
 	}
 }
