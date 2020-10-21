@@ -582,3 +582,7 @@ How to handle this?
 
 -> Change the grammar so that fallbacks have to immediately follow the native, so we can catch it 
    in the grammar.
+
+-> Have a "scope" concept in the Forth engine, for namespaces. Model filenames, export sections, natives,
+   forwards this way. Maybe these are annotations on definitions?
+
