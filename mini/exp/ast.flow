@@ -10,6 +10,9 @@ export {
 		// The names defined in this program - before type checking
 		declarations : Tree<string, MiniExp>,
 
+		// Annotations for each each scope (i.e. id) are collected here
+		annotations : Tree<string, [MiniAnnotation]>,
+
 		// Where is each name defined? From name to file
 		declarationFile : Tree<string, string>,
 
@@ -25,5 +28,14 @@ export {
 
 		// Typed versions of our declarations.
 		typedDeclarations : Tree<string, BDeclaration>,
+	);
+
+	MiniAnnotation(
+		// What is the scope of this annotation? if empty, all ids. Otherwise, the given id
+		scope : string,
+		// What is the name of this annotation? file, export, forward, native-def
+		annotation : string,
+		// What is the value of the annotation
+		value : MiniExp
 	);
 }

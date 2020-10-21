@@ -3,7 +3,7 @@ import fs/filesystem;
 export {
 	makeMiniFileCache() -> MiniFileCache;
 
-	// Should we read this file again?
+	// Should we read this file again? Keeps the cache updated
 	shouldReadFile(cache : MiniFileCache, file : string) -> bool;
 
 	MiniFileCache(

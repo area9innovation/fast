@@ -1,10 +1,8 @@
 import runtime;
 
 fact(i : int) -> int {
-	/*
 	if (i <= 1) i
 	else i * fact(i - 1)
-	*/ i + 1;
 }
 
 prec() -> int {

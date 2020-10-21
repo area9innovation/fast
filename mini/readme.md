@@ -586,3 +586,20 @@ How to handle this?
 -> Have a "scope" concept in the Forth engine, for namespaces. Model filenames, export sections, natives,
    forwards this way. Maybe these are annotations on definitions?
 
+Yes, annotations of definitions is the way to go.
+
+annotations : Tree<annotation, value>
+
+Tree<id, Tree<annotation-kind, exp>>
+
+Hm, how can we pick the "file" and "export" attributes?
+
+set-attribute file * = filename
+set-attribute export * = true
+remove-attribute export * = true
+set-attribute native id = native-def
+set-attribute forward id = true
+
+OK, the assumption is that "define" comes last, and thus, it will pick up all annotations
+for that id, as well as general ones.
+
