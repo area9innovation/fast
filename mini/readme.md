@@ -31,6 +31,7 @@
 		- [Datalog for typechecking](#datalog-for-typechecking)
 		- [Salsa](#salsa)
 - [How to handle types in the AST](#how-to-handle-types-in-the-ast)
+- [Native fallbacks](#native-fallbacks)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -539,20 +540,45 @@ Database:
 
 The use in the grammar is isolated to a few areas:
 - The ":" operator	-> :(exp, __type())
-- Forward declarations of globals and functions -> Add to types in AST
+- Forward declarations of globals and functions -> Forward declarations to types in AST
 - Lambda arguments   -> a ":" on the lambda
-- Cast				 -> a call and ":" on the right hand side. Some calls can be conversions
-- Structs and unions -> Structs can be considered a constructor function declaration.
-					 -> Unions are not constructors, but maybe we could pretend they are?
-					    Model them as a function which takes a union and returns the id?
-
-All of these cases, except maybe for cast & structs & unions, can be expressed as a : operator.
+- Cast				 -> a call and ":" on the right hand side.
+- Structs            -> Structs are considered as constructor function declaration.
+- Unions			 -> Unions to be modelled as forward type declarations. 
+					    Consider to have a function which takes a union and returns the id?
 
 Forwards declarations can be stored in the MiniAst.types field.
 
-Seems that we can have a "__type" function, which converts calls and what not to a type.
+We have a function, which converts an MiniExp to a type in the types/type_ast.flow file.
+This encodes the convention for how to represent types as values.
 
 Plan:
-- Get the type-checker to understand the type declarations
+- Use "forward" in the grammar and check that it works
 - Find a suitable way to implement struct constructors and field functions
-  
+- Finish exp types
+
+# Native fallbacks
+
+Right now, natives are modelled as special calls to "__native".
+
+However, when we have fallback implementations, there is not way to keep both at the moment:
+
+	native i2s : (int) -> string = Native.i2s;
+	i2s(i) { cast(i : int -> string); }
+
+How to handle this?
+
+-> Keep native in declarations, and when the second one comes, notice that existing def is a native,
+   and then "merge" them? That requires "define" to be smart, which is maybe unfair?
+
+-> Add Forth primitives to check whether a function is already a native, and if so, merge it.
+   That might not be correct in incremental situations
+
+-> Have a separate map for natives in the AST
+
+-> Introduce name-spaces in the AST, so "define", "forward" and "natives" can all be handled with the 
+   same command?
+   We would prefer to have an order to these, so forward & natives are done before defines.
+
+-> Change the grammar so that fallbacks have to immediately follow the native, so we can catch it 
+   in the grammar.
