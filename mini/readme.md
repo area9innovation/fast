@@ -92,6 +92,7 @@ the development, we have defined some milestones.
 - Get euler examples to compile and run in JS.
   - euler3: Tail call
   - euler4: __i2s not defined: Move cast lowering into Forth so dep tracking works
+     - Fix natives with fallbacks
   - euler6: __i2d not defined
   - euler7: __i2s, __d2i and tail calls
   - euler9: "1000 - b - a;" is not producing (1000-b)-a, but 1000-(b-a)
@@ -404,7 +405,6 @@ TODO:
 - Inlining
 - Mangling of overloading?
 - Specialization of polymorphism
-- Unfolding of expressions into statements (let inside conditions of if)
 - Linking
 - Running the output
 - Cross-calls

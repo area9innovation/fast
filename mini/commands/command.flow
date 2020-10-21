@@ -4,10 +4,13 @@ import algorithms;
 
 export {
 	// These are the commands that the underlying compiler understands
-	MiniCommand ::= MiniProcessFile, MiniDefine, MiniTypeInfer;
+	MiniCommand ::= MiniProcessFile, MiniForwardDefine, MiniDefine, MiniTypeInfer;
 
 		// Read a file and if changed, run this Forth command on it. Notice this is async
 		MiniProcessFile(usedByFile : string, name : string, asyncCommand : string);
+
+		// Forward define this id to this type from this file
+		MiniForwardDefine(file : string, name : string, value : MiniExp);
 
 		// Define this id to this expression from this file
 		MiniDefine(file : string, name : string, value : MiniExp);
@@ -29,18 +32,20 @@ export {
 getMiniCommandPriority(c : MiniCommand) -> int {
 	switch (c) {
 		MiniProcessFile(__, name, command): 0;
-		MiniDefine(file, name, value): 1;
-		MiniTypeInfer(ids): 2;
+		MiniForwardDefine(file, name, value): 1;
+		MiniDefine(file, name, value): 2;
+		MiniTypeInfer(ids): 3;
 	}
 }
 
 getMiniCommandFromPriority(p : int) -> string {
-	["Files", "Defines", "Typechecks"][p]
+	["Files", "Forwards", "Defines", "Typechecks"][p]
 }
 
 miniCommand2string(c : MiniCommand) -> string {
 	switch (c) {
 		MiniProcessFile(__, name, command): "Process file '" + name + "' with '" + command + "'";
+		MiniForwardDefine(file, name, value): "Forward define " + name;
 		MiniDefine(file, name, value): "Define " + name;
 		MiniTypeInfer(ids): "Infer type " + strGlue(set2array(ids), ", ");
 	}
@@ -52,6 +57,7 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 		first = ms[0];
 		switch (first) {
 			MiniProcessFile(__, __, command): uniq(ms);
+			MiniForwardDefine(__, __, __): ms;
 			MiniDefine(__, __, __): ms;
 			MiniTypeInfer(__): {
 				[MiniTypeInfer(fold(ms, makeSet(), \acc, tc -> {
