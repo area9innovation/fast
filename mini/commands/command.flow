@@ -10,13 +10,16 @@ export {
 		MiniProcessFile(usedByFile : string, name : string, asyncCommand : string);
 
 		// Set an annotation for a given scope (id). If scope is "", then it is all ids.
+		// Annotations include: "native" for native declarations
+		// "forward" for forward declarations (not done yet)
+		// "export" for the export section (not done yet)
 		MiniSetAnnotation(scope : string, annotation : string, value : MiniExp);
 
 		// Define this id to this expression from this file
 		MiniDefine(file : string, name : string, value : MiniExp);
 
 		// Finish processing the current file.
-		MiniPopFile();
+		MiniPopFile(file : string);
 
 		// Infer the type of these ids, since they are new
 		MiniTypeInfer(ids : Set<string>);
@@ -37,7 +40,7 @@ getMiniCommandPriority(c : MiniCommand) -> int {
 		MiniProcessFile(__, name, command): 0;
 		MiniSetAnnotation(annotation, scope, value): 1;
 		MiniDefine(file, name, value): 2;
-		MiniPopFile(): 3;
+		MiniPopFile(file): 3;
 		MiniTypeInfer(ids): 4;
 	}
 }
@@ -51,7 +54,7 @@ miniCommand2string(c : MiniCommand) -> string {
 		MiniProcessFile(__, name, command): "Process file '" + name + "' with '" + command + "'";
 		MiniSetAnnotation(annotation, scope, value): "Set annotation " + annotation + " with scope " + scope;
 		MiniDefine(file, name, value): "Define " + name;
-		MiniPopFile(): "Pop file";
+		MiniPopFile(file): "Pop file " + file;
 		MiniTypeInfer(ids): "Infer type " + strGlue(set2array(ids), ", ");
 	}
 }
@@ -64,7 +67,7 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 			MiniProcessFile(__, __, command): uniq(ms);
 			MiniSetAnnotation(__, __, __): ms;
 			MiniDefine(__, __, __): ms;
-			MiniPopFile(): ms;
+			MiniPopFile(__): ms;
 			MiniTypeInfer(__): {
 				[MiniTypeInfer(fold(ms, makeSet(), \acc, tc -> {
 					switch (tc) {

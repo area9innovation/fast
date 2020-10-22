@@ -604,6 +604,11 @@ set-attribute forward id = true
 OK, the assumption is that "define" comes last, and thus, it will pick up all annotations
 for that id, as well as general ones.
 
+How to handle natives and fallbacks?
+
+- native without fallback: We could probably just check in post, and add there, without fallback
+- native with fallback: Extend the "native" construct with a fallback field.
+
 # Deleted ids
 
 How to handle deleted ids and updated annotations?
@@ -614,3 +619,4 @@ annotations.
 
 TODO: How to keep track of the annotations on an id, when we need to compare?
 Should we have a "final" map of annotations on an id when we define it? Yeah, probably we should.
+

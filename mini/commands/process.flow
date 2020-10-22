@@ -68,7 +68,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			path = fastPath2path(db.includes, name);
 			if (shouldReadFile(db.fileCache, path)) {
 				// TODO: Push some token about this file, so we can keep track of when we start a new one
-				// and get rid of old ids
+				// and get rid of old ids and annotations
 
 				content = getFileContent(path);
 				// TODO: Update deps: We have to collect all of them from each file
@@ -95,7 +95,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			);
 		}
 		MiniDefine(file, id, body): {
-			// OK, extract annotations
+			// OK, extract annotations - TODO: Decide whether this is the time to do it or not
 			generalAnnotation = getTreeArrayValue(db.program.unprocessedAnnotations, "");
 			specificAnnotations = getTreeArrayValue(db.program.unprocessedAnnotations, id);
 			newAnnotations = setTree(db.program.annotations, id, concat(generalAnnotation, specificAnnotations));
@@ -108,20 +108,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			mexisting = lookupTree(ast.declarations, id);
 
 			def = \ -> {
-				// OK, we have either a new or changed definition
-
-				// Update the dependencies
-				deps = extractMiniDeps(body, makeSet(), makeSet());
-				npr = MiniAst(ast with idDependents = updateMiniDependent(db.program.idDependents, id, deps));
-				db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
-
-				// OK, this is a new definition
-				ndecl = MiniAst(npr with 
-					declarations = setTree(npr.declarations, id, body),
-					declarationFile = setTree(npr.declarationFile, id, file),
-				);
-
-				MiniDb(db2 with program = ndecl);
+				defineMiniDeclaration(db, file, id, body);
 			};
 
 			mexisting ?? {
@@ -135,19 +122,19 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				}
 			} : def();
 		}
-		MiniPopFile(): {
+		MiniPopFile(file): {
 			// OK, we have finished parsing the file.
 			// Now it is time to handle these things:
 
 			// natives without fallbacks.
-			traverseInOrder(db.program.unprocessedAnnotations, \a, anns -> {
-				iter(anns, \ann -> {
-					println("TODO: Handle " + ann.scope + " with " + ann.annotation + " = " + miniPretty(ann.value));
-				});
+			ndb = foldTree(db.program.unprocessedAnnotations, db, \a, anns, acc -> {
+				fold(anns, acc, \acc2, ann -> {
+					processMiniAnnotation(acc2, file, ann)
+				})
 			});
 			// Clear out the annotations
-			nast = MiniAst(db.program with unprocessedAnnotations = makeTree());
-			MiniDb(db with program = nast);
+			fast = MiniAst(ndb.program with unprocessedAnnotations = makeTree());
+			MiniDb(ndb with program = fast);
 		}
 		MiniTypeInfer(ids): {
 			// OK, what types do we have for these ids now?
@@ -184,4 +171,36 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string) -> MiniDb {
 	deps = lookupMultimap(db.program.idDependents.dependents, id);
 	newDeps = differenceSets(deps, updating);
 	if (isEmptySet(newDeps)) db else pushMiniCommand(db, MiniTypeInfer(newDeps));
+}
+
+
+
+defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -> MiniDb {
+	ast = db.program;
+	// Update the dependencies
+	deps = extractMiniDeps(body, makeSet(), makeSet());
+	npr = MiniAst(ast with idDependents = updateMiniDependent(ast.idDependents, id, deps));
+	db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
+
+	// OK, this is a new definition
+	nast = MiniAst(npr with 
+		declarations = setTree(npr.declarations, id, body),
+		declarationFile = setTree(npr.declarationFile, id, file),
+	);
+	MiniDb(db2 with program = nast);
+};
+
+processMiniAnnotation(db : MiniDb, file : string, annotation : MiniAnnotation) -> MiniDb {
+	if (annotation.annotation == "native") {
+		mfallback = lookupTree(db.program.declarations, annotation.scope);
+		mfallback ?? {
+			println("Merge with a top-level, and then merge that into the native");
+			db;
+		} : {
+			defineMiniDeclaration(db, file, annotation.scope, annotation.value);
+		}
+	} else {
+		println(annotation);
+		db;
+	}
 }

@@ -26,7 +26,7 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		evalcommand = popMiniValue(filename.second);
 		pushMiniCommand(evalcommand.second, MiniProcessFile(file, getMiniString(filename.first), getMiniString(evalcommand.first)));
 	} else if (command == "popfile") {
-		pushMiniCommand(db, MiniPopFile());
+		pushMiniCommand(db, MiniPopFile(file));
 	} else if (command == "setannotation") {
 		// MiniSetAnnotation(annotation : string, scope : string, value : MiniExp);
 		value = popMiniValue(db);
