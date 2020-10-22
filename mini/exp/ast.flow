@@ -11,6 +11,10 @@ export {
 		declarations : Tree<string, MiniExp>,
 
 		// Annotations for each each scope (i.e. id) are collected here
+		// while processing
+		unprocessedAnnotations : Tree<string, [MiniAnnotation]>,
+
+		// The definitive annotations
 		annotations : Tree<string, [MiniAnnotation]>,
 
 		// Where is each name defined? From name to file

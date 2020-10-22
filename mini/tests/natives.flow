@@ -1,0 +1,2 @@
+native println : io (flow) -> void = Native.println;
+

@@ -1,4 +1,4 @@
-flow = '\uFEFF'? ws importExport* toplevelDeclaration*;
+flow = '\uFEFF'? ws importExport* toplevelDeclaration* $"popfile";
 
 importExport = import
 	| dynamicImport
@@ -22,7 +22,7 @@ toplevelDeclaration =
 	| functionOrStruct
 	| vardecl;
 
-native = "native" s id ws ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" ws $$"io" $"cons")? $"isnil" $"-" type $"list2" '=' ws $name $"cons" ws ';' ws $"call" $"define";
+native = "native" s id ws ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" ws $$"io" $"cons")? $"isnil" $"-" type $"list2" '=' ws $name $"cons" ws ';' ws $"call" $$"native" $"swap" $"setannotation";
 	name = bid ('.' bid)*;
 
 assign = id ws '=' ws exp ';'? ws $"define";

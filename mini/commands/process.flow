@@ -82,28 +82,37 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		MiniSetAnnotation(annotation, scope, value): {
 			ann = MiniAnnotation(annotation, scope, value);
 
-			annotations = getTreeArrayValue(db.program.annotations, scope);
+			annotations = getTreeArrayValue(db.program.unprocessedAnnotations, scope);
 			keep = filter(annotations, \a -> {
 				a.annotation != annotation
 			});
 			withnew = arrayPush(keep, ann);
-			newAnnotations = setTree(db.program.annotations, scope, withnew);
+			newAnnotations = setTree(db.program.unprocessedAnnotations, scope, withnew);
 
 			MiniDb(
 				db with
-				program = MiniAst(db.program with annotations = newAnnotations)
+				program = MiniAst(db.program with unprocessedAnnotations = newAnnotations)
 			);
 		}
 		MiniDefine(file, id, body): {
+			// OK, extract annotations
+			generalAnnotation = getTreeArrayValue(db.program.unprocessedAnnotations, "");
+			specificAnnotations = getTreeArrayValue(db.program.unprocessedAnnotations, id);
+			newAnnotations = setTree(db.program.annotations, id, concat(generalAnnotation, specificAnnotations));
+			ast = MiniAst(db.program with 
+				annotations = newAnnotations, 
+				unprocessedAnnotations = removeFromTree(db.program.unprocessedAnnotations, id)
+			);
+
 			// Define or redefine this id to this body
-			mexisting = lookupTree(db.program.declarations, id);
+			mexisting = lookupTree(ast.declarations, id);
 
 			def = \ -> {
 				// OK, we have either a new or changed definition
 
 				// Update the dependencies
 				deps = extractMiniDeps(body, makeSet(), makeSet());
-				npr = MiniAst(db.program with idDependents = updateMiniDependent(db.program.idDependents, id, deps));
+				npr = MiniAst(ast with idDependents = updateMiniDependent(db.program.idDependents, id, deps));
 				db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
 
 				// OK, this is a new definition
@@ -118,12 +127,27 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			mexisting ?? {
 				if (isSameMiniExp(mexisting, body)) {
 					// It is the same. Nothing to do.
+					// We ignore new attibutes at the moment!
 					db;
 				} else {
 					// OK, it is new. We should put it in and process it
 					def();
 				}
 			} : def();
+		}
+		MiniPopFile(): {
+			// OK, we have finished parsing the file.
+			// Now it is time to handle these things:
+
+			// natives without fallbacks.
+			traverseInOrder(db.program.unprocessedAnnotations, \a, anns -> {
+				iter(anns, \ann -> {
+					println("TODO: Handle " + ann.scope + " with " + ann.annotation + " = " + miniPretty(ann.value));
+				});
+			});
+			// Clear out the annotations
+			nast = MiniAst(db.program with unprocessedAnnotations = makeTree());
+			MiniDb(db with program = nast);
 		}
 		MiniTypeInfer(ids): {
 			// OK, what types do we have for these ids now?

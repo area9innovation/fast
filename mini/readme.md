@@ -32,6 +32,7 @@
 		- [Salsa](#salsa)
 - [How to handle types in the AST](#how-to-handle-types-in-the-ast)
 - [Native fallbacks](#native-fallbacks)
+- [Deleted ids](#deleted-ids)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -603,3 +604,13 @@ set-attribute forward id = true
 OK, the assumption is that "define" comes last, and thus, it will pick up all annotations
 for that id, as well as general ones.
 
+# Deleted ids
+
+How to handle deleted ids and updated annotations?
+
+We probably need a stack of files being processed, and some way to notice that a file has finished,
+and then we can clean up old ids. Also, when we start processing a file, we should clear out the
+annotations.
+
+TODO: How to keep track of the annotations on an id, when we need to compare?
+Should we have a "final" map of annotations on an id when we define it? Yeah, probably we should.

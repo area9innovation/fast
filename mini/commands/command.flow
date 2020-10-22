@@ -4,16 +4,19 @@ import algorithms;
 
 export {
 	// These are the commands that the underlying compiler understands
-	MiniCommand ::= MiniProcessFile, MiniSetAnnotation, MiniDefine, MiniTypeInfer;
+	MiniCommand ::= MiniProcessFile, MiniSetAnnotation, MiniDefine, MiniPopFile, MiniTypeInfer;
 
 		// Read a file and if changed, run this Forth command on it. Notice this is async
 		MiniProcessFile(usedByFile : string, name : string, asyncCommand : string);
 
 		// Set an annotation for a given scope (id). If scope is "", then it is all ids.
-		MiniSetAnnotation(annotation : string, scope : string, value : MiniExp);
+		MiniSetAnnotation(scope : string, annotation : string, value : MiniExp);
 
 		// Define this id to this expression from this file
 		MiniDefine(file : string, name : string, value : MiniExp);
+
+		// Finish processing the current file.
+		MiniPopFile();
 
 		// Infer the type of these ids, since they are new
 		MiniTypeInfer(ids : Set<string>);
@@ -34,12 +37,13 @@ getMiniCommandPriority(c : MiniCommand) -> int {
 		MiniProcessFile(__, name, command): 0;
 		MiniSetAnnotation(annotation, scope, value): 1;
 		MiniDefine(file, name, value): 2;
-		MiniTypeInfer(ids): 3;
+		MiniPopFile(): 3;
+		MiniTypeInfer(ids): 4;
 	}
 }
 
 getMiniCommandFromPriority(p : int) -> string {
-	["Files", "Set annotation", "Defines", "Typechecks"][p]
+	["Files", "Set annotation", "Defines", "Finish file", "Typechecks"][p]
 }
 
 miniCommand2string(c : MiniCommand) -> string {
@@ -47,6 +51,7 @@ miniCommand2string(c : MiniCommand) -> string {
 		MiniProcessFile(__, name, command): "Process file '" + name + "' with '" + command + "'";
 		MiniSetAnnotation(annotation, scope, value): "Set annotation " + annotation + " with scope " + scope;
 		MiniDefine(file, name, value): "Define " + name;
+		MiniPopFile(): "Pop file";
 		MiniTypeInfer(ids): "Infer type " + strGlue(set2array(ids), ", ");
 	}
 }
@@ -59,6 +64,7 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 			MiniProcessFile(__, __, command): uniq(ms);
 			MiniSetAnnotation(__, __, __): ms;
 			MiniDefine(__, __, __): ms;
+			MiniPopFile(): ms;
 			MiniTypeInfer(__): {
 				[MiniTypeInfer(fold(ms, makeSet(), \acc, tc -> {
 					switch (tc) {
