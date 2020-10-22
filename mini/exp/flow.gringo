@@ -136,13 +136,16 @@ brace = "{" ws exp (";" ws exp $$";" $"binop")* (";" ws)? "}" ws
 
 expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 
-switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws $"nil" (defaultOrNamedCase  $"cons")* '}' ws $$"__switch" $"binop";
+switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws cases '}' ws $$"__switch" $"binop";
 
-defaultOrNamedCase = "default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__default" $"unop"
-	| id ws '(' ws names ')' $$"__pattern" $"binop" ws ':' ws exp (';' ws)? $$"__case" $"binop";
+cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")+ | $$"__void" $"var" $"nil" $"call";
 
-// listof(id, ",")
-names = $"nil" id $"cons" ws (',' ws id $"cons")* | $"nil";
+defaultOrNamedCase = 
+	"default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
+	| id ws '(' ws names ')' $$"__pattern1" $"binop" ws ':' ws exp (';' ws)? $$"__case" $"binop"
+	| id ws '(' ws ')' $$"__pattern0" $"unop" ws ':' ws exp (';' ws)? $$"__case" $"binop";
+
+names = id ws (',' ws id $$"," $"binop")*;
 
 type = 	
 		"bool" !letterOrDigit ws $$"bool" $"type0"

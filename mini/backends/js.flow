@@ -107,9 +107,9 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 			}
 		}
 		BSequenceStatement(statements): {
-			"{" + supergluei(statements, \i, stat -> {
+			supergluei(statements, \i, stat -> {
 				bstatement2js(backend, stat, withReturn && i == length(statements) - 1)
-			}, "\n") + "}";
+			}, "\n");
 		}
 		BComment(comment): comment;
 	}

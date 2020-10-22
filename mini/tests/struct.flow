@@ -6,4 +6,10 @@ main() {
 	None();
 	s = Some(1);
 	s.v;
+	switch (s) {
+		None(): 0;
+		Some(v): v;
+		default: 2;
+		Maybe(): 4;
+	}
 }
