@@ -19,8 +19,9 @@ prettyBDeclaration(b : BDeclaration) -> string {
 		BGlobalVar(name, body, type): {
 			name + "=" + prettyBExp(body) + ":" + mtype2string(type);
 		}
-		BNative(name, isio, type, nativeName): {
-			"native " + name + " : " + (if (isio) "io" else "") + mtype2string(type) + " = " + nativeName;
+		BNative(name, isio, type, nativeName, mfallback): {
+			"native " + name + " : " + (if (isio) "io" else "") + mtype2string(type) + " = " + nativeName
+			+ (mfallback ?? " with fallback" : "");
 		}
 		BComment(comment): {
 			"// " + comment;

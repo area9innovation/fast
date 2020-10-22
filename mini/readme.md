@@ -92,12 +92,9 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get euler examples to compile and run in JS.
-  - euler3: Tail call
-  - euler4: __i2s not defined: Move cast lowering into Forth so dep tracking works
-     - Fix natives with fallbacks
-  - euler6: __i2d not defined
-  - euler7: __i2s, __d2i and tail calls
+  - euler7: switch
   - euler9: "1000 - b - a;" is not producing (1000-b)-a, but 1000-(b-a)
+  - euler10: switch
 
   - Figure out natives from runtime & linking
 
@@ -560,54 +557,15 @@ Plan:
 
 # Native fallbacks
 
-Right now, natives are modelled as special calls to "__native".
-
-However, when we have fallback implementations, there is not way to keep both at the moment:
+Natives are registered as annotations while parsing. At post-file processing, we check
+if the natives have a fallback. If so, we wrap the native definition with the fallback.
+If not, we just keep the native definition.
 
 	native i2s : (int) -> string = Native.i2s;
 	i2s(i) { cast(i : int -> string); }
 
-How to handle this?
-
--> Keep native in declarations, and when the second one comes, notice that existing def is a native,
-   and then "merge" them? That requires "define" to be smart, which is maybe unfair?
-
--> Add Forth primitives to check whether a function is already a native, and if so, merge it.
-   That might not be correct in incremental situations
-
--> Have a separate map for natives in the AST
-
--> Introduce name-spaces in the AST, so "define", "forward" and "natives" can all be handled with the 
-   same command?
-   We would prefer to have an order to these, so forward & natives are done before defines.
-
--> Change the grammar so that fallbacks have to immediately follow the native, so we can catch it 
-   in the grammar.
-
--> Have a "scope" concept in the Forth engine, for namespaces. Model filenames, export sections, natives,
-   forwards this way. Maybe these are annotations on definitions?
-
-Yes, annotations of definitions is the way to go.
-
-annotations : Tree<annotation, value>
-
-Tree<id, Tree<annotation-kind, exp>>
-
-Hm, how can we pick the "file" and "export" attributes?
-
-set-attribute file * = filename
-set-attribute export * = true
-remove-attribute export * = true
-set-attribute native id = native-def
-set-attribute forward id = true
-
-OK, the assumption is that "define" comes last, and thus, it will pick up all annotations
-for that id, as well as general ones.
-
-How to handle natives and fallbacks?
-
-- native without fallback: We could probably just check in post, and add there, without fallback
-- native with fallback: Extend the "native" construct with a fallback field.
+The backends can then provide a native implementation, and automatically pick whether to
+use one of the other.
 
 # Deleted ids
 
@@ -619,4 +577,3 @@ annotations.
 
 TODO: How to keep track of the annotations on an id, when we need to compare?
 Should we have a "final" map of annotations on an id when we define it? Yeah, probably we should.
-

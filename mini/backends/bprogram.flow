@@ -1,4 +1,5 @@
 import mini/types/type;
+import maybe;
 
 export {
 	// This is the typed AST we send to the backends when they need to compile
@@ -13,7 +14,7 @@ export {
 
 		BFunction(name : string, args : [BFunArg], body : BStatement, tailCall : bool, type : MiniType);
 
-		BNative(name : string, isio : bool, type : MiniType, nativeName : string);
+		BNative(name : string, isio : bool, type : MiniType, nativeName : string, fallback : Maybe<BDeclaration>);
 
 	// Statement-based languages can get this format:
 	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BTailCall, BSequenceStatement, BComment;

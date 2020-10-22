@@ -194,9 +194,16 @@ processMiniAnnotation(db : MiniDb, file : string, annotation : MiniAnnotation) -
 	if (annotation.annotation == "native") {
 		mfallback = lookupTree(db.program.declarations, annotation.scope);
 		mfallback ?? {
-			println("Merge with a top-level, and then merge that into the native");
-			db;
+			// OK, we have a fallback, so merge that into
+			combined = switch (annotation.value) {
+				MiniCall(fn, args, type): {
+					MiniCall(fn, arrayPush(args, mfallback), type);
+				}
+				default: annotation.value;
+			}
+			defineMiniDeclaration(db, file, annotation.scope, combined);
 		} : {
+			// OK, we just use this as the definition of the native
 			defineMiniDeclaration(db, file, annotation.scope, annotation.value);
 		}
 	} else {

@@ -10,7 +10,7 @@ main() {
 	//file = getUrlParameterDef("file", "demos/euler/euler3.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "2"));
+	verbose = s2i(getUrlParameterDef("verbose", "0"));
 
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 
@@ -53,7 +53,7 @@ main() {
 				println(flowprogram);
 			};
 
-			if (verbose >10) {
+			if (verbose > 0) {
 				println("\nJS output:");
 				println(jsprogram);
 			};

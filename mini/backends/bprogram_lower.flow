@@ -83,9 +83,13 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 							default: "";
 						};
 						ntype = bexpType(args[1]);
+						fallback = if (length(args) > 3) {
+							Some(bexp2BDeclaration(declid, args[3]))
+						} else None();
 						BNative(declid, bisIo == BInt(1, miniTypeInt),
 							ntype,
-							nativeName	
+							nativeName,
+							fallback
 						);
 					} else var();
 				}

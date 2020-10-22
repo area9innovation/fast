@@ -42,12 +42,18 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 			}
 		}
 		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(backend, body) + ";";
-		BNative(name, isIo, type, nativeName): {
+		BNative(name, isIo, type, nativeName, mfallback): {
 			generated = produceBackendNative(backend, nativeName);
-			"var " + name + " = " + (if (generated == "") {
-				backend.onError(0, "native " + nativeName + " not implemented");
-				nativeName
-			} else generated) + ";"
+			if (generated == "") {
+				mfallback ?? {
+					bdeclaration2js(backend, mfallback);
+				}: {
+					backend.onError(0, "native " + nativeName + " not implemented");
+					nativeName
+				}
+			} else {
+				"var " + name + " = " + generated + ";"
+			}
 		}
 		BComment(comment): comment;
 	}
@@ -94,10 +100,10 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 				supergluei(values, \i, value -> {
 					"var $a" + i2s(i) + "=" + bexp2js(backend, value)
 				}, ";")
-				+ supergluei(args, \i, arg -> {
+				+ ";" + supergluei(args, \i, arg -> {
 					arg + "=" + "$a" + i2s(i);
 				}, ";")
-				+ "continue T";
+				+ ";continue T";
 			}
 		}
 		BSequenceStatement(statements): {
@@ -306,7 +312,11 @@ jsBackend() -> Backend {
 			BackGen("Native.atan2", miniTypeVoid, BackText("Math.atan2")),
 			BackGen("Native.exp", miniTypeVoid, BackText("Math.exp")),
 			BackGen("Native.log", miniTypeVoid, BackText("Math.log")),
-
+			// d->i
+			BackGen("Native.trunc", miniTypeVoid, BackText("function(d){return (d)|0;}")),
+			BackGen("Native.i2d", miniTypeVoid, BackText("function(i){return i;}")),
+			BackGen("Native.i2s", miniTypeVoid, BackText("function(i){return String(i);}")),
+			BackGen("Native.d2s", miniTypeVoid, BackText("function(d){return String(d);}")),
 			BackGen("Native.bitXor", miniTypeVoid, BackText("function(a,b){return a^b;}")),
 			BackGen("Native.bitAnd", miniTypeVoid, BackText("function(a,b){return a&b;}")),
 			BackGen("Native.bitOr", miniTypeVoid, BackText("function(a,b){return a|b;}")),
@@ -328,6 +338,8 @@ jsBackend() -> Backend {
 			BackGen("Native.cloneString", miniTypeVoid, BackText("function(s){return (' '+s).slice(1);}")),
 
 			BackGen("Native.getCharCodeAt", miniTypeVoid, BackText("function(s,i){return s.charCodeAt(i);}")),
+			BackGen("Native.getCharAt", miniTypeVoid, BackText("function(s,i){return s.charAt(i);}")),
+
 
 /*
 Native.toLowerCase = function(str) {

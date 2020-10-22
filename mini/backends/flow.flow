@@ -26,8 +26,11 @@ bdeclaration2flow(b : BDeclaration) -> string {
 			]);
 		}
 		BGlobalVar(name, body, __): name + " = " + bexp2flow(flowBackend(), body) + ";";
-		BNative(name, isIo, type, nativeName): "native " + name + " : " 
-			+ (if (isIo) "io" else "") + mtype2flow(type) + " = " + nativeName + ";";
+		BNative(name, isIo, type, nativeName, mfallback): "native " + name + " : " 
+			+ (if (isIo) "io" else "") + mtype2flow(type) + " = " + nativeName + ";"
+			+ (mfallback ?? {
+				bdeclaration2flow(mfallback)
+			} : "");
 		/*BStruct(name, type): {
 			blueprint("%name% : %type%", ["name", name, "type", mtype2flow(type)])
 		}*/
