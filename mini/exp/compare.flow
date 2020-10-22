@@ -1,0 +1,55 @@
+import mini/exp/exp;
+import ds/array;
+
+export {
+	// Compare the non-type part of these expressions
+	isSameMiniExp(a : MiniExp, b : MiniExp) -> bool;
+}
+
+isSameMiniExp(a : MiniExp, b : MiniExp) -> bool {
+	switch (a) {
+		MiniInt(avalue, __): {
+			switch (b) {
+				MiniInt(bvalue, __): avalue == bvalue;
+				default: false;
+			}
+		}
+		MiniDouble(value): a == b;
+		MiniString(value): a == b;
+		MiniVar(aname, __): {
+			switch (b) {
+				MiniVar(bname, __): aname == bname;
+				default: false;
+			}
+		}
+		MiniLet(aname, avalue, abody, __): {
+			switch (b) {
+				MiniLet(bname, bvalue, bbody, __): {
+					aname == bname 
+					&& isSameMiniExp(avalue, bvalue)
+					&& isSameMiniExp(abody, bbody)
+				}
+				default: false;
+			}
+		}
+		MiniLambda(aargs, abody, __): {
+			switch (b) {
+				MiniLambda(bargs, bbody, __): {
+					aargs == bargs
+					&& isSameMiniExp(abody, bbody)
+				}
+				default: false;
+			}
+		}
+		MiniCall(afn, aargs, __): {
+			switch (b) {
+				MiniCall(bfn, bargs, __): {
+					isSameMiniExp(afn, bfn)
+					&& length(aargs) == length(bargs) 
+					&& forall(mapi(aargs, \i, arg -> isSameMiniExp(arg, bargs[i])), \i->i)
+				}
+				default: false;
+			}
+		}
+	}
+}

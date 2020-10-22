@@ -31,10 +31,10 @@ export {
 	);
 
 	MiniAnnotation(
-		// What is the scope of this annotation? if empty, all ids. Otherwise, the given id
-		scope : string,
 		// What is the name of this annotation? file, export, forward, native-def
 		annotation : string,
+		// What is the scope of this annotation? if empty, all ids. Otherwise, the given id
+		scope : string,
 		// What is the value of the annotation
 		value : MiniExp
 	);

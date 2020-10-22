@@ -4,6 +4,7 @@ import mini/commands/db;
 
 import mini/exp/dependencies;
 import mini/exp/topological;
+import mini/exp/compare;
 
 import mini/forth/eval;
 import mini/forth/stack;
@@ -66,6 +67,9 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		MiniProcessFile(usedByFile, name, evalcommand): {
 			path = fastPath2path(db.includes, name);
 			if (shouldReadFile(db.fileCache, path)) {
+				// TODO: Push some token about this file, so we can keep track of when we start a new one
+				// and get rid of old ids
+
 				content = getFileContent(path);
 				// TODO: Update deps: We have to collect all of them from each file
 				ndb = pushMiniValue(db, MiniString(content));
@@ -75,33 +79,20 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				db;
 			}
 		}
-		MiniForwardDefine(file, id, value): {
-			type = convertMiniExp2Type(value);
+		MiniSetAnnotation(annotation, scope, value): {
+			ann = MiniAnnotation(annotation, scope, value);
 
-			// Define or redefine this id to this body
-			mexisting = lookupTree(db.program.types, id);
+			annotations = getTreeArrayValue(db.program.annotations, scope);
+			keep = filter(annotations, \a -> {
+				a.annotation != annotation
+			});
+			withnew = arrayPush(keep, ann);
+			newAnnotations = setTree(db.program.annotations, scope, withnew);
 
-			def = \ -> {
-				// OK, we have either a new or changed forward definition
-				db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
-
-				// OK, this is a new definition
-				ndecl = MiniAst(db.program with 
-					types = setTree(db.program.types, id, type),
-				);
-
-				MiniDb(db2 with program = ndecl);
-			};
-
-			mexisting ?? {
-				if (mexisting == type) {
-					// It is the same. Nothing to do.
-					db;
-				} else {
-					// OK, it is new. We should put it in and process it
-					def();
-				}
-			} : def();
+			MiniDb(
+				db with
+				program = MiniAst(db.program with annotations = newAnnotations)
+			);
 		}
 		MiniDefine(file, id, body): {
 			// Define or redefine this id to this body
@@ -125,7 +116,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			};
 
 			mexisting ?? {
-				if (mexisting == body) {
+				if (isSameMiniExp(mexisting, body)) {
 					// It is the same. Nothing to do.
 					db;
 				} else {

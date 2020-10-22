@@ -25,18 +25,20 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 		filename = popMiniValue(db);
 		evalcommand = popMiniValue(filename.second);
 		pushMiniCommand(evalcommand.second, MiniProcessFile(file, getMiniString(filename.first), getMiniString(evalcommand.first)));
-	} else if (command == "forward") {
-		// MiniForwardDefine(name : string, value : MiniExp);
+	} else if (command == "setattribute") {
+		// MiniSetAnnotation(attribute : string, scope : string, value : MiniExp);
 		value = popMiniValue(db);
-		name = popMiniValue(value.second);
-		names = getMiniString(name.first);
-		if (names == "") {
-			println(file + ":  Expected string for name for forward define, got " + miniPretty(name.first) + " "  + toString(name.first));
-			println(value.first);
+		scope = popMiniValue(value.second);
+		attribute = popMiniValue(scope.second);
+		scopes = getMiniString(scope.first);
+		attributes = getMiniString(attribute.first);
+
+		if (attributes == "") {
+			println(file + ":  Expected string for attribute, got " + miniPretty(attribute.first));
 		} else {
 			// println("Defined " + names);
 		};
-		pushMiniCommand(name.second, MiniForwardDefine(file, names, value.first));
+		pushMiniCommand(attribute.second, MiniSetAnnotation(attributes, scopes, value.first));
 	} else if (command == "define") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);
