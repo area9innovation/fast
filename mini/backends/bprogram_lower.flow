@@ -1,6 +1,7 @@
 import mini/exp/ast;
 import mini/backends/bprogram;
 import mini/backends/unfold;
+import mini/backends/extract_globals;
 import mini/exp/topological;
 import mini/exp/pretty;
 import mini/types/typeenv;
@@ -36,14 +37,20 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 	order = topologicalMiniOrder(ast.idDependents, ids);
 
 	// TODO: The extractBExpGlobals call can be done here for JS
-	// ast.typedDeclarations is Tree<string, BExp>
-
-	BProgram(
+	bexp = BExpProgram(
 		filtermap(order, \id -> {
 			mdecl = lookupTree(ast.typedDeclarations, id);
 			mdecl ?? {
-				Some(bexp2BDeclaration(id, mdecl))
+				Some(BGlobalVar(id, mdecl, bexpType(mdecl)))
 			} : None(); // We will let backends complain: Some(BComment("// ERROR: Unknown id " + id))
+		})
+	);
+
+	opt = extractBExpGlobals(bexp);
+
+	BProgram(
+		map(opt.declarations, \gv : BGlobalVar -> {
+			bexp2BDeclaration(gv.name, gv.body)
 		})
 	);
 }

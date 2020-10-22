@@ -1,14 +1,13 @@
 import mini/backends/bprogram;
-import ds/tree;
 
-extractBExpGlobals(decls : Tree<string, BExp>) -> Tree<string, BExp> {
+export {
+	extractBExpGlobals(program : BExpProgram) -> BExpProgram;
+}
+
+extractBExpGlobals(program : BExpProgram) -> BExpProgram {
 	// Find all sub-expressions which are "jsonable constants" in these expressions, and pull
 	// them out to one, new top-level decl with a big array of these values, and 
 	// replace references to the constants with an index into this array.
 
-	decls;
-}
-
-main() {
-
+	program;
 }

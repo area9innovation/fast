@@ -4,16 +4,16 @@ export {
 	// This is the typed AST we send to the backends when they need to compile
 	BProgram(declarations : [BDeclaration]);
 
-	BDeclaration ::= BFunction, BGlobalVar, BNative, BComment;
+	// Intermediate representation with code in topological order, but not in statements yet
+	BExpProgram(declarations : [BGlobalVar]);
 
-	BFunction(name : string, args : [BFunArg], body : BStatement, tailCall : bool, type : MiniType);
-		BFunArg(name : string);
+	BDeclaration ::= BGlobalVar, BFunction, BNative, BComment;
 
-	BGlobalVar(name : string, body : BExp, type : MiniType);
+		BGlobalVar(name : string, body : BExp, type : MiniType);
 
-	BNative(name : string, isio : bool, type : MiniType, nativeName : string);
+		BFunction(name : string, args : [BFunArg], body : BStatement, tailCall : bool, type : MiniType);
 
-	BComment(comment : string);
+		BNative(name : string, isio : bool, type : MiniType, nativeName : string);
 
 	// Statement-based languages can get this format:
 	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BTailCall, BSequenceStatement, BComment;
@@ -29,23 +29,23 @@ export {
 		// Do a tail call to ourselves with these bindings
 		BTailCall(fn : string, args : [string], values : [BExp]);
 
-		// TODO: We need a construct for expressions that are void at the statement level
-
 	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BComment;
 		BVar(name : string, type : MiniType);
 		// The type is the type of the body
 		BLet(name : string, value : BExp, body : BExp, type : MiniType);
 
 		BLambda(args : [BFunArg], body : BExp, type : MiniType);
+			BFunArg(name : string);
 
 		BCall(fn : BExp, args : [BExp], type : MiniType);
 		BIf(cond : BExp, then : BExp, else_ : BExp, type : MiniType);
 		BSequence(exps : [BExp], type : MiniType);
+
+		BComment(comment : string);
 
 	// The backends get this language
 	BValue ::= BInt, BDouble, BString;
 		BInt(value : int, type : MiniType);
 		BDouble(value : double);
 		BString(value : string);
-
 }
