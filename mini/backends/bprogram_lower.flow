@@ -36,12 +36,13 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 	order = topologicalMiniOrder(ast.idDependents, ids);
 
 	// TODO: The extractBExpGlobals call can be done here for JS
+	// ast.typedDeclarations is Tree<string, BExp>
 
 	BProgram(
 		filtermap(order, \id -> {
 			mdecl = lookupTree(ast.typedDeclarations, id);
 			mdecl ?? {
-				Some(mdecl)
+				Some(bexp2BDeclaration(id, mdecl))
 			} : None(); // We will let backends complain: Some(BComment("// ERROR: Unknown id " + id))
 		})
 	);

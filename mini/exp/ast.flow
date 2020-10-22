@@ -27,7 +27,7 @@ export {
 		types : Tree<string, MiniType>,
 
 		// Typed versions of our declarations.
-		typedDeclarations : Tree<string, BDeclaration>,
+		typedDeclarations : Tree<string, BExp>,
 	);
 
 	MiniAnnotation(
