@@ -69,7 +69,17 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 		Pair("__index", MiniTypeFunction([at(ta), i], ta)),
 
-	//__switch __case __pattern  __default  __with  __mutassign   __fieldassign
+		// switch
+		Pair("__switch", MiniTypeFunction([ta, tb], tb)),
+		Pair("__case", MiniTypeFunction([ta, tb], tb)),
+		Pair("__defaultcase", MiniTypeFunction([ta], ta)),
+			Pair("__or", MiniTypeFunction([ta, ta], ta)),
+
+		Pair("__pattern0", MiniTypeFunction([s], ta)),
+		Pair("__pattern1", MiniTypeFunction([s,ta], tb)),
+
+
+		//  __with  __mutassign   __withassign
 
 		Pair("__cast", MiniTypeFunction([ta, tb], tb)),
 

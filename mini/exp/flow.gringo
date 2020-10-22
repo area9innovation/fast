@@ -129,7 +129,7 @@ exp =
 
 	// listof(fieldassign, ",")
 	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")* | $"nil";
-		fieldassign = id ws '=' ws exp $$"__fieldassign" $"binop";
+		fieldassign = id ws '=' ws exp $$"__withassign" $"binop";
 
 brace = "{" ws exp (";" ws exp $$";" $"binop")* (";" ws)? "}" ws 
 	| "{" ws "}" ws $$"__void" $"var" $"nil" $"call";
