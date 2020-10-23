@@ -69,8 +69,8 @@ vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 exp = 
 	backslash lambdaargs ws "->" ws exp $"lambda"
 	|> (
-		id ws "=" ws exp ";" ws exp $"let"
-	 	| id ws ":" ws type "=" ws  exp ";" $"swap" $$":" $"binop" ws exp $"let"
+		id ws "=" ws exp ";" ws semiexps $"let"
+	 	| id ws ":" ws type "=" ws  exp ";" $"swap" $$":" $"binop" ws semiexps $"let"
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
 	|> exp "|>" ws exp $$"|>" $"binop"
@@ -136,6 +136,8 @@ brace = "{" ws exp (";" ws exp $$";" $"binop")* (";" ws)? "}" ws
 	| "{" ws "}" ws $$"__void" $"var" $"nil" $"call";
 
 expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
+
+semiexps = exp (";" ws exp $$";" $"binop")*;
 
 switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws cases '}' ws $$"__switch" $"binop";
 

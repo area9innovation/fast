@@ -83,7 +83,11 @@ prettyBExp(b : BExp) -> string {
 			};
 			switch (fn) {
 				BVar(fname, ftype): {
-					fname + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);
+					if (fname == ";") {
+						prettyBExp(args[0]) + ";" + prettyBExp(args[1]) + " : " + mtype2string(type);
+					} else {
+						fname + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);
+					}
 				}
 				default: def();
 			}
