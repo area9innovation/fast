@@ -51,7 +51,6 @@ unfoldBExp(b : BExp) -> BExp {
 			uexprs = map(exps, unfoldBExp);
 			unfoldBSeq([], uexprs, type)
 		}
-		BComment(comment): b;
 	}
 }
 

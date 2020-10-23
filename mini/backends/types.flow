@@ -16,6 +16,5 @@ bexpType(b : BExp) -> MiniType {
 		BCall(fn, args, type): type;
 		BIf(cond, then, else_, type): type;
 		BSequence(exps, type): type;
-		BComment(comment): miniTypeVoid;
 	}
 }

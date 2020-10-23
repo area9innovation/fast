@@ -1,3 +1,5 @@
+native println : io (flow) -> void = Native.println;
+
 None();
 Some(v : int);
 Maybe ::= None, Some;
@@ -5,14 +7,14 @@ Maybe ::= None, Some;
 main() {
 	None();
 	s = Some(1);
-	s.v;
-	switch (s) {
+	prinln(s.v);
+	println(switch (s) {
 		None(): 0;
-		default: 1;
-	};
-	s ?? {
+		Some(v): v;
+	});
+	println(s ?? {
 		1;
-	} : 0;
+	} : 0);
 
 	Some(s with value = 2);
 }

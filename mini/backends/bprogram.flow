@@ -8,7 +8,7 @@ export {
 	// Intermediate representation with code in topological order, but not in statements yet
 	BExpProgram(declarations : [BGlobalVar]);
 
-	BDeclaration ::= BGlobalVar, BFunction, BNative, BComment;
+	BDeclaration ::= BGlobalVar, BFunction, BNative;
 
 		BGlobalVar(name : string, body : BExp, type : MiniType);
 
@@ -17,7 +17,7 @@ export {
 		BNative(name : string, isio : bool, type : MiniType, nativeName : string, fallback : Maybe<BDeclaration>);
 
 	// Statement-based languages can get this format:
-	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BTailCall, BSequenceStatement, BComment;
+	BStatement ::= BIfStatement, BLetStatement, BReturnVoid, BReturn, BTailCall, BSequenceStatement;
 		BIfStatement(cond : BExp, then : BStatement, else_ : BStatement);
 		BLetStatement(name : string, value : BExp, body : BStatement);
 		BSequenceStatement(statements : [BStatement]);
@@ -30,7 +30,7 @@ export {
 		// Do a tail call to ourselves with these bindings
 		BTailCall(fn : string, args : [string], values : [BExp]);
 
-	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BComment;
+	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence;
 		BVar(name : string, type : MiniType);
 		// The type is the type of the body
 		BLet(name : string, value : BExp, body : BExp, type : MiniType);
@@ -41,8 +41,6 @@ export {
 		BCall(fn : BExp, args : [BExp], type : MiniType);
 		BIf(cond : BExp, then : BExp, else_ : BExp, type : MiniType);
 		BSequence(exps : [BExp], type : MiniType);
-
-		BComment(comment : string);
 
 	// The backends get this language
 	BValue ::= BInt, BDouble, BString;

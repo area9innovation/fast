@@ -29,7 +29,6 @@ replaceBExp(replacements : Tree<BExp, BExp>, b : BExp) -> BExp {
 			BSequence(exps, type): {
 				BSequence(map(exps, rec), type);
 			}
-			BComment(comment): b;
 		}
 	}
 }

@@ -95,7 +95,6 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 		}
 		BIf(cond, then, else_, type): var();
 		BSequence(exps, type): var();
-		BComment(comment): var();
 	}
 }
 
@@ -149,14 +148,10 @@ bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailca
 				bexp2BStatement(decl, fnargs, hasTailcall, tailcall && i == length(exps) - 1, e)
 			}));
 		} 
-		BComment(comment): b;
 	}
 }
 
 miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
-	error = \ -> {
-		BComment("// Can not convert " + miniPretty(e) + " to exp");
-	}
 	switch (e) {
 		MiniValue(): miniValue2BValue(env, e);
 		MiniVar(name, tv): BVar(name, resolveMiniTypeVar(env, tv));
@@ -208,6 +203,5 @@ bexp2BReturn(b : BExp) -> BStatement {
 		BCall(fn, args, type): BReturn(b);
 		BIf(cond, then, else_, type): BIfStatement(cond, bexp2BReturn(then), bexp2BReturn(else_));
 		BSequence(exps, type): BSequenceStatement(map(exps, bexp2BReturn));
-		BComment(comment): BReturn(b);
 	}
 }

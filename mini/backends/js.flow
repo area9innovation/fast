@@ -56,7 +56,6 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 				"var " + name + " = " + generated + ";"
 			}
 		}
-		BComment(comment): comment;
 	}
 }
 
@@ -114,7 +113,6 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 				bstatement2js(backend, stat, withReturn && i == length(statements) - 1)
 			}, "\n");
 		}
-		BComment(comment): comment;
 	}
 }
 
@@ -150,7 +148,6 @@ bexp2js(backend : Backend, b : BExp) -> string {
 				"(" + superglue(statements, \s -> bexp2js(backend, s), ", ") + ")";
 			}
 		}
-		BComment(comment): comment + "\n";
 	}
 }
 

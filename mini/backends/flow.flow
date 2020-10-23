@@ -34,7 +34,6 @@ bdeclaration2flow(b : BDeclaration) -> string {
 		/*BStruct(name, type): {
 			blueprint("%name% : %type%", ["name", name, "type", mtype2flow(type)])
 		}*/
-		BComment(comment): comment;
 	}
 }
 
@@ -67,7 +66,6 @@ bstatement2flow(backend : Backend, b : BStatement) -> string {
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> bstatement2flow(backend, s), ";\n") + "}";
 		}
-		BComment(comment): comment;
 	}
 }
 
@@ -92,7 +90,6 @@ bexp2flow(backend : Backend, b : BExp) -> string {
 		BSequence(statements, type): {
 			"{" + superglue(statements, \s -> bexp2flow(backend, s), "; ") + "}" + " /* " + mtype2flow(type) + "*/";
 		}
-		BComment(comment): comment + "\n";
 	}
 }
 

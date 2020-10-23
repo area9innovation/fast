@@ -23,9 +23,6 @@ prettyBDeclaration(b : BDeclaration) -> string {
 			"native " + name + " : " + (if (isio) "io" else "") + mtype2string(type) + " = " + nativeName
 			+ (mfallback ?? (" with " + prettyBDeclaration(mfallback)) : "");
 		}
-		BComment(comment): {
-			"// " + comment;
-		}
 	}
 }
 
@@ -58,7 +55,6 @@ prettyBStatement(b : BStatement) -> string {
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> prettyBStatement(s), ";\n") + "}";
 		}
-		BComment(comment): comment;
 	}
 }
 
@@ -98,7 +94,6 @@ prettyBExp(b : BExp) -> string {
 		BSequence(statements, type): {
 			"{" + superglue(statements, \s -> prettyBExp(s), "; ") + "}" + " /* " + mtype2string(type) + "*/";
 		}
-		BComment(comment): "// " + comment + "\n";
 	}
 }
 

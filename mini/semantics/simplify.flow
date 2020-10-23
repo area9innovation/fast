@@ -104,7 +104,6 @@ simplifyBExp(pureIds : Set<string>, b : BExp) -> BExp {
 				sexps[0];
 			} else BSequence(sexps, type);
 		}
-		BComment(comment): b;
 	}
 }
 
@@ -130,7 +129,6 @@ countBVar(id : string, b : BExp, ) -> int {
 		BCall(fn, args, type):  fold(args, countBVar(id, fn), \acc, a -> acc + countBVar(id, a));
 		BIf(cond, then, else_, type): countBVar(id, cond) + countBVar(id, then) + countBVar(id, else_);
 		BSequence(exps, type): fold(exps, 0, \acc, a -> acc + countBVar(id, a));
-		BComment(comment): 0;
 	}
 }
 
