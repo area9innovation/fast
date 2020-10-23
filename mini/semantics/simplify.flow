@@ -131,26 +131,3 @@ countBVar(id : string, b : BExp, ) -> int {
 		BSequence(exps, type): fold(exps, 0, \acc, a -> acc + countBVar(id, a));
 	}
 }
-
-getMArgTypes(b : MiniType) -> [MiniType] {
-	switch (b) {
-		MiniTypeFunction(args, returnType): args;
-		default: [];
-	}
-}
-
-isPureMiniType(pureIds : Set<string>, t : MiniType) -> bool {
-	switch (t) {
-		MiniTypeInt(bits): true;
-		MiniTypeFunction(args, returnType): false;
-		MiniTypeCall(id, typars): {
-			idpure = containsSet(pureIds, id) || contains(["double", "string", "array"], id);
-			idpure && forall(typars, \tp -> isPureMiniType(pureIds, tp));
-		}
-		MiniTypeVar(id): false;
-		MiniTypePar(id): true;
-		MiniTypeRecord(fields): {
-			forall(fields, \f -> isPureMiniType(pureIds, f.type))
-		}
-	}
-}

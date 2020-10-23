@@ -3,6 +3,10 @@ import ds/set;
 
 export {
 	isBExpPure(pureIds : Set<string>, b : BExp) -> bool;
+
+	isPureMiniType(pureIds : Set<string>, t : MiniType) -> bool;
+
+	getMArgTypes(b : MiniType) -> [MiniType];
 }
 
 isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
@@ -10,14 +14,17 @@ isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
 		BValue(): true;
 		BVar(name, type): containsSet(pureIds, name);
 		BLet(name, value, body, type): {
-			isBExpPure(pureIds, value) 
-			&& isBExpPure(insertSet(pureIds, name), body);
+			vpure = isBExpPure(pureIds, value);
+			vpure && isBExpPure(if (vpure) insertSet(pureIds, name) else pureIds, body);
 		}
 		BLambda(args, body, type): {
-			allIds = fold(args, pureIds, \acc, arg -> {
-				insertSet(acc, arg.name)
+			argTypes = getMArgTypes(type);
+			allPure = foldi(args, pureIds, \i, acc, arg -> {
+				if (i < length(argTypes) && isPureMiniType(pureIds, argTypes[i])) {
+					insertSet(acc, arg.name)
+				} else acc;
 			});
-			isBExpPure(allIds, body);
+			isBExpPure(allPure, body);
 		}
 		BCall(fn, args, type): {
 			def = \ -> {
@@ -26,7 +33,7 @@ isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
 			switch (fn) {
 				BVar(fname, __): {
 					if (fname == "__native") {
-						// OK, a native is pure is it is not IO
+						// OK, a native is pure if it is not IO
 						args[0] == BInt(0, MiniTypeInt(32));
 					} else {
 						def();
@@ -37,5 +44,28 @@ isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
 		}
 		BIf(cond, then, else_, type): isBExpPure(pureIds, cond) && isBExpPure(pureIds, then) && isBExpPure(pureIds, else_);
 		BSequence(exps, type): forall(exps, \a -> isBExpPure(pureIds, a));
+	}
+}
+
+isPureMiniType(pureIds : Set<string>, t : MiniType) -> bool {
+	switch (t) {
+		MiniTypeInt(bits): true;
+		MiniTypeFunction(args, returnType): false;
+		MiniTypeCall(id, typars): {
+			idpure = containsSet(pureIds, id) || contains(["double", "string", "array"], id);
+			idpure && forall(typars, \tp -> isPureMiniType(pureIds, tp));
+		}
+		MiniTypeVar(id): false;
+		MiniTypePar(id): true;
+		MiniTypeRecord(fields): {
+			forall(fields, \f -> isPureMiniType(pureIds, f.type))
+		}
+	}
+}
+
+getMArgTypes(b : MiniType) -> [MiniType] {
+	switch (b) {
+		MiniTypeFunction(args, returnType): args;
+		default: [];
 	}
 }
