@@ -21,7 +21,7 @@ prettyBDeclaration(b : BDeclaration) -> string {
 		}
 		BNative(name, isio, type, nativeName, mfallback): {
 			"native " + name + " : " + (if (isio) "io" else "") + mtype2string(type) + " = " + nativeName
-			+ (mfallback ?? " with fallback" : "");
+			+ (mfallback ?? (" with " + prettyBDeclaration(mfallback)) : "");
 		}
 		BComment(comment): {
 			"// " + comment;

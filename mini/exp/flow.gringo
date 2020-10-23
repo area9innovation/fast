@@ -73,7 +73,7 @@ exp =
 	 	| id ws ":" ws type "=" ws  exp ";" $"swap" $$":" $"binop" ws semiexps $"let"
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
-	|> exp "|>" ws exp $$"|>" $"binop"
+	|> exp "|>" ws exp $$"|>" $"binop"	// TODO: Should we desugar this here?
 	|> exp "||" ws exp $$"||" $"binop"
 	|> exp "&&" ws exp $$"&&" $"binop"
 	|> (

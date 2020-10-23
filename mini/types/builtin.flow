@@ -35,6 +35,8 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 	tb = MiniTypePar("??");
 	tc = MiniTypePar("???");
 	td = MiniTypePar("????");
+	te = MiniTypePar("?????");
+	tf = MiniTypePar("??????");
 
 	pairs2tree([
 		Pair("__ifte", MiniTypeFunction([b, ta, ta], ta)),
@@ -95,12 +97,21 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 		Pair("__void", MiniTypeFunction([], v)),
 
+		// special
 		Pair("__native", MiniTypeFunction([i, ta, s], ta)),
+
+		Pair("__fntype0", MiniTypeFunction([ta], MiniTypeFunction([], ta))),
+		Pair("__fntype1", MiniTypeFunction([ta, tb], MiniTypeFunction([tb], ta))),
+		Pair("__fntype2", MiniTypeFunction([ta, tb, tc], MiniTypeFunction([tb, tc], ta))),
+		Pair("__fntype3", MiniTypeFunction([ta, tb, tc, td], MiniTypeFunction([tb, tc, td], ta))),
+		Pair("__fntype4", MiniTypeFunction([ta, tb, tc, td, te], MiniTypeFunction([tb, tc, td, te], ta))),
 
 		// Structs & unions:
 		Pair("__construct0", MiniTypeFunction([s], ta)),
 		Pair("__construct1", MiniTypeFunction([s, ta], tb)),
 		Pair("__construct2", MiniTypeFunction([s, ta, tb], tc)),
+		Pair("__construct3", MiniTypeFunction([s, ta, tb, tc], td)),
+		Pair("__construct4", MiniTypeFunction([s, ta, tb, tc, td], te)),
 
 		Pair(".", MiniTypeFunction([ta, s], tb)),
 		// Used by union to find the value to dispatch from
