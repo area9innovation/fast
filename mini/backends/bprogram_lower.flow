@@ -1,7 +1,8 @@
 import mini/exp/ast;
 import mini/backends/bprogram;
-import mini/backends/unfold;
-import mini/backends/extract_globals;
+import mini/backends/types;
+import mini/semantics/unfold;
+import mini/semantics/extract_globals;
 import mini/exp/topological;
 import mini/exp/pretty;
 import mini/types/typeenv;
@@ -204,17 +205,3 @@ miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
 	}
 }
 
-bexpType(b : BExp) -> MiniType {
-	switch (b) {
-		BInt(value, type): type;
-		BDouble(value): miniTypeDouble;
-		BString(value): miniTypeString;
-		BVar(name, type): type;
-		BLet(name, value, body, type): type;
-		BLambda(args, body, type): type;
-		BCall(fn, args, type): type;
-		BIf(cond, then, else_, type): type;
-		BSequence(exps, type): type;
-		BComment(comment): miniTypeVoid;
-	}
-}

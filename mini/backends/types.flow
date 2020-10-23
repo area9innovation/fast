@@ -1,0 +1,21 @@
+import mini/backends/bprogram;
+import mini/types/builtin;
+
+export {
+	bexpType(b : BExp) -> MiniType;
+}
+
+bexpType(b : BExp) -> MiniType {
+	switch (b) {
+		BInt(value, type): type;
+		BDouble(value): miniTypeDouble;
+		BString(value): miniTypeString;
+		BVar(name, type): type;
+		BLet(name, value, body, type): type;
+		BLambda(args, body, type): type;
+		BCall(fn, args, type): type;
+		BIf(cond, then, else_, type): type;
+		BSequence(exps, type): type;
+		BComment(comment): miniTypeVoid;
+	}
+}

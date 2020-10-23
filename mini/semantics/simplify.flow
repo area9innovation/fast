@@ -1,0 +1,40 @@
+import mini/backends/types;
+
+export {
+	simplifyBExp(b : BExp) -> BExp;
+}
+
+simplifyBExp(b : BExp) -> BExp {
+	switch (b) {
+		BValue(): b;
+		BVar(name, type): b;
+		BLet(name, value, body, type): {
+			if (body == BVar(name, bexpType(value))) {
+				// a = <value>; a   -> <vakue>
+				simplifyBExp(value);
+			} else {
+				BLet(name, simplifyBExp(value), simplifyBExp(body), type);
+			}
+		}
+		BLambda(args, body, type): {
+			BLambda(args, simplifyBExp(body), type);
+		}
+		BCall(fn, args, type): {
+			BCall(simplifyBExp(fn), map(args, simplifyBExp), type)
+		}
+		BIf(cond, then, else_, type): {
+			BIf(simplifyBExp(cond), simplifyBExp(then), simplifyBExp(else_), type)
+		}
+		BSequence(exps, type): {
+			sexps = filtermapi(exps, \i, e -> {
+				// TODO: If not last, and this is just void, we can omit
+				Some(simplifyBExp(e))
+			});
+			if (length(sexps) == 1) {
+				// { e } -> e
+				sexps[0];
+			} else BSequence(sexps, type);
+		}
+		BComment(comment): b;
+	}
+}
