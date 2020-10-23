@@ -80,7 +80,7 @@ prettyBExp(b : BExp) -> string {
 		BCall(fn, args, type): {
 			def = \ -> {
 				prettyBExp(fn) + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);
-			}
+			};
 			switch (fn) {
 				BVar(fname, ftype): {
 					fname + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);

@@ -34,7 +34,7 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 	if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
 		type = makeMiniTypeVar(env);
-		nenv = setMiniLocalType2(env, id, type);
+		nenv = setMiniLocalType(env, id, type);
 		rt = typeInferenceMini(nenv, ex);
 
 		// OK, we constrain the type
@@ -100,13 +100,13 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 		}
 		MiniLet(name, value, body, tv): {
 			vtype = typeInferenceMini(env, value);
-			nenv = setMiniLocalType2(env, name, vtype);
+			nenv = setMiniLocalType(env, name, vtype);
 			setMiniTypeVar(nenv, ex, typeInferenceMini(nenv, body));
 		}
 		MiniLambda(args, body, __): {
 			argTypes = map(args, \arg -> makeMiniTypeVar(env));
 			nenv = foldi(args, env, \i, acc, arg -> {
-				setMiniLocalType2(acc, arg, argTypes[i])
+				setMiniLocalType(acc, arg, argTypes[i])
 			});
 			retType = typeInferenceMini(nenv, body);
 			fnType = MiniTypeFunction(argTypes, retType);
@@ -248,7 +248,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 	}
 }
 
-setMiniLocalType2(env : MiniTypeEnv, id : string, type : MiniType) -> MiniTypeEnv {
+setMiniLocalType(env : MiniTypeEnv, id : string, type : MiniType) -> MiniTypeEnv {
 // 	println(id + " = " + toString(type));
 	MiniTypeEnv(env with localTypes = setTree(env.localTypes, id, type));
 }

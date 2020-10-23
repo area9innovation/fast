@@ -8,8 +8,11 @@ main() {
 	s.v;
 	switch (s) {
 		None(): 0;
-		Some(v): v;
-		default: 2;
-		Maybe(): 4;
-	}
+		default: 1;
+	};
+	s ?? {
+		1;
+	} : 0;
+
+	Some(s with value = 2);
 }

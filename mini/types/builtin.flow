@@ -76,8 +76,10 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 			Pair("__or", MiniTypeFunction([ta, ta], ta)),
 
 		Pair("__pattern0", MiniTypeFunction([s], ta)),
+		// For patterns with arguments
 		Pair("__pattern1", MiniTypeFunction([s,ta], tb)),
 
+		Pair("__maybe", MiniTypeFunction([ta,tb,tb], tb)),
 
 		//  __with  __mutassign   __withassign
 
