@@ -1,0 +1,35 @@
+import mini/backends/bprogram;
+import ds/tree;
+
+export {
+	replaceBExp(replacements : Tree<BExp, BExp>, b : BExp) -> BExp;
+}
+
+replaceBExp(replacements : Tree<BExp, BExp>, b : BExp) -> BExp {
+	mreplace = lookupTree(replacements, b);
+	mreplace ?? {
+		mreplace
+	} : {
+		rec = \e -> replaceBExp(replacements, e);
+		switch (b) {
+			BValue(): b;
+			BVar(name, type): b;
+			BLet(name, value, body, type): {
+				BLet(name, rec(value), rec(body), type);
+			}
+			BLambda(args, body, type): {
+				BLambda(args, rec(body), type);
+			}
+			BCall(fn, args, type): {
+				BCall(rec(fn), map(args, rec), type);
+			}
+			BIf(cond, then, else_, type): {
+				BIf(rec(cond), rec(then), rec(else_), type);
+			}
+			BSequence(exps, type): {
+				BSequence(map(exps, rec), type);
+			}
+			BComment(comment): b;
+		}
+	}
+}
