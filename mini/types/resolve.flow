@@ -11,7 +11,7 @@ resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType {
 	mtype ?? {
 		mtype
 	} : {
-		println("Could not resolve tyvar " + i2s(tyvarId));
+		// println("Could not resolve tyvar " + i2s(tyvarId));
 		MiniTypeVar(tyvarId);
 	};
 }

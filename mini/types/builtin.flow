@@ -13,7 +13,7 @@ export {
 }
 
 miniTypeVoid : MiniType = MiniTypeInt(0);
-miniTypeBool : MiniType = MiniTypeCall("bool", []);
+miniTypeBool : MiniType = MiniTypeInt(1);
 miniTypeInt : MiniType = MiniTypeInt(32);
 miniTypeDouble : MiniType = MiniTypeCall("double", []);
 miniTypeString : MiniType = MiniTypeCall("string", []);
@@ -60,7 +60,7 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		Pair("__neg", MiniTypeFunction([ta], ta)),
 
 		// : is special and should probably be grabbed by the type inference?
-		Pair(":", MiniTypeFunction([ta, ta], ta)),
+		Pair(":", MiniTypeFunction([ta, tb], tb)),
 
 		// Array constructs
 		Pair("__emptyarray", MiniTypeFunction([], at(ta))),

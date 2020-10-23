@@ -9,7 +9,7 @@ export {
 
 simplifyResType(tyvars : Tree<int, ResType>, r : ResType) -> MiniType {
 	todo = \ -> {
-		println("Can not convert " + resType2string(r));
+		// println("Can not convert " + resType2string(r));
 		MiniTypeCall("flow", []);
 	}
 	switch (r) {

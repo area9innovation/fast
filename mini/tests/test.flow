@@ -1,0 +1,20 @@
+main() {
+	1;
+	{};
+	3;
+	if (false) {
+		0;
+	} else {
+		1;
+	}
+}
+
+
+isPalindromic(s : string) -> bool {
+	l = strlen(s);
+    l <= 1 || {
+		first = 1;
+		last = 2;
+        first == last && isPalindromic(strsubsmart(s, 1, -1));
+    }
+}

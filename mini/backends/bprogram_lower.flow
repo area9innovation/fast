@@ -1,7 +1,6 @@
 import mini/exp/ast;
 import mini/backends/bprogram;
 import mini/backends/types;
-import mini/semantics/unfold;
 import mini/semantics/extract_globals;
 import mini/exp/topological;
 import mini/exp/pretty;
@@ -102,8 +101,7 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 	}
 }
 
-bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailcall : bool, tb : BExp) -> BStatement {
-	b = unfoldBExp(tb);
+bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailcall : bool, b : BExp) -> BStatement {
 	switch (b : BExp) {
 		BValue(): BReturn(b);
 		BVar(name, type): BReturn(b);

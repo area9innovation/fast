@@ -104,7 +104,11 @@ prettyBExp(b : BExp) -> string {
 
 prettyBValue(b : BValue) -> string {
 	switch (b) {
-		BInt(value, type): if (type == MiniTypeInt(1)) b2s(i2b(value)) else i2s(value);
+		BInt(value, type): {
+			if (type == MiniTypeInt(1)) b2s(i2b(value)) 
+			else if (type == MiniTypeInt(0)) "{}"
+			else i2s(value);
+		}
 		BDouble(value): d2s(value);
 		BString(value): toString(value);
 	}

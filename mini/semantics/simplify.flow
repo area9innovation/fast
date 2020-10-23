@@ -1,40 +1,121 @@
 import mini/backends/types;
+import mini/semantics/pure;
 
 export {
-	simplifyBExp(b : BExp) -> BExp;
+	simplifyBExp(pureIds : Set<string>, b : BExp) -> BExp;
 }
 
-simplifyBExp(b : BExp) -> BExp {
+simplifyBExp(pureIds : Set<string>, b : BExp) -> BExp {
 	switch (b) {
 		BValue(): b;
 		BVar(name, type): b;
 		BLet(name, value, body, type): {
 			if (body == BVar(name, bexpType(value))) {
 				// a = <value>; a   -> <vakue>
-				simplifyBExp(value);
+				simplifyBExp(pureIds, value);
 			} else {
-				BLet(name, simplifyBExp(value), simplifyBExp(body), type);
+				svalue = simplifyBExp(pureIds, value);
+				sbody = simplifyBExp(pureIds, body);
+				count = countBVar(name, sbody);
+				if (count == 0) {
+					if (isBExpPure(pureIds, svalue)) {
+						// If count is 0, and the value is pure,
+						// we can omit the let value.
+						sbody;
+					} else {
+						BSequence([svalue, sbody], type);
+					}
+				} else if (count == 1 && isBExpPure(pureIds, svalue)) {
+					// If the count is 1, and there are no side-effects, we can inline
+					if (false) {
+						println("TODO: Inline " + toString(svalue));
+						println(name);
+						println(count);
+					};
+					BLet(name, svalue, sbody, type);
+				} else {
+					BLet(name, svalue, sbody, type);
+				}
 			}
 		}
 		BLambda(args, body, type): {
-			BLambda(args, simplifyBExp(body), type);
+			BLambda(args, simplifyBExp(pureIds, body), type);
 		}
 		BCall(fn, args, type): {
-			BCall(simplifyBExp(fn), map(args, simplifyBExp), type)
+			sfn = simplifyBExp(pureIds, fn);
+			sargs = map(args, \a -> simplifyBExp(pureIds, a));
+			def = \ -> {
+				BCall(sfn, sargs, type)
+			};
+			switch (sfn) {
+				BVar(fname, __): {
+					if (fname == "__void") {
+						BInt(0, miniTypeVoid);
+					} else if (fname == ":") {
+						switch (sargs[0]) {
+							BInt(iv, __) : {
+								BInt(iv, type);
+							}
+							default: def();
+						}
+					} else def();
+				}
+				default: def();
+			}
 		}
 		BIf(cond, then, else_, type): {
-			BIf(simplifyBExp(cond), simplifyBExp(then), simplifyBExp(else_), type)
+			scond = simplifyBExp(pureIds, cond);
+			if (scond == BTrue()) {
+				simplifyBExp(pureIds, then);
+			} else if (scond == BFalse()) {
+				simplifyBExp(pureIds, else_);
+			} else {
+				BIf(scond, simplifyBExp(pureIds, then), simplifyBExp(pureIds, else_), type)
+			}
 		}
 		BSequence(exps, type): {
-			sexps = filtermapi(exps, \i, e -> {
-				// TODO: If not last, and this is just void, we can omit
-				Some(simplifyBExp(e))
+			sexps = filtermapi(exps, \i, be -> {
+				e = simplifyBExp(pureIds, be);
+				if (i != length(exps) - 1 && isBVoid(e)) {
+					// If not last, and this is just void, we can omit
+					None()
+				} else {
+					Some(e)
+				}
 			});
-			if (length(sexps) == 1) {
+			if (sexps == []) {
+				BInt(0, miniTypeVoid)
+			} else  if (length(sexps) == 1) {
 				// { e } -> e
 				sexps[0];
 			} else BSequence(sexps, type);
 		}
 		BComment(comment): b;
+	}
+}
+
+isBVoid(b : BExp) -> bool {
+	b == BInt(0, miniTypeVoid) || b == BSequence([], miniTypeVoid)
+}
+
+BTrue() -> BExp {
+	BInt(1, miniTypeBool);
+}
+
+BFalse() -> BExp {
+	BInt(0, miniTypeBool);
+}
+
+countBVar(id : string, b : BExp, ) -> int {
+	switch (b) {
+		BValue(): 0;
+		BVar(name, __): if (id == name) 1 else 0;
+
+		BLet(name, value, body, type): countBVar(id, value) + countBVar(id, body);
+		BLambda(args, body, type): countBVar(id, body);
+		BCall(fn, args, type):  fold(args, countBVar(id, fn), \acc, a -> acc + countBVar(id, a));
+		BIf(cond, then, else_, type): countBVar(id, cond) + countBVar(id, then) + countBVar(id, else_);
+		BSequence(exps, type): fold(exps, 0, \acc, a -> acc + countBVar(id, a));
+		BComment(comment): 0;
 	}
 }

@@ -153,7 +153,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 		// println("Constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));
 
 		error = \ -> {
-			println("Cannot constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));
+			// println("Cannot constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));
 		}
 
 		rightTyVar = \rid -> {

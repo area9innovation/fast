@@ -5,6 +5,7 @@ import mini/exp/topological;
 import mini/exp/pretty_typed;
 import mini/backends/bprogram_lower;
 import mini/backends/flow;
+import mini/semantics/unfold;
 import mini/semantics/simplify;
 import mini/types/debug;
 
@@ -85,8 +86,14 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		mfn = lookupTree(acc.declarations, id);
 		mfn ?? {
 			bdecl = miniExp2BExp(tenv2, mfn);
-			opt = simplifyBExp(bdecl);
-//			println(bdeclaration2flow(bdecl));
+
+			// This is the pipeline of optimizations:
+			un = unfoldBExp(bdecl);
+			// TODO: Keep track of what ids are pure
+			pureIds = makeSet();
+
+			opt = simplifyBExp(pureIds, un);
+
 			MiniAst(acc with typedDeclarations = setTree(acc.typedDeclarations, id, opt));
 		} : {
 			acc;

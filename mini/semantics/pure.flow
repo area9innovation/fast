@@ -1,0 +1,29 @@
+import mini/backends/bprogram;
+import ds/set;
+
+export {
+	isBExpPure(pureIds : Set<string>, b : BExp) -> bool;
+}
+
+isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
+	switch (b) {
+		BValue(): true;
+		BVar(name, type): containsSet(pureIds, name);
+		BLet(name, value, body, type): {
+			isBExpPure(pureIds, value) 
+			&& isBExpPure(insertSet(pureIds, name), body);
+		}
+		BLambda(args, body, type): {
+			allIds = fold(args, pureIds, \acc, arg -> {
+				insertSet(acc, arg.name)
+			});
+			isBExpPure(allIds, body);
+		}
+		BCall(fn, args, type): {
+			isBExpPure(pureIds, fn) && forall(args, \a -> isBExpPure(pureIds, a));
+		}
+		BIf(cond, then, else_, type): isBExpPure(pureIds, cond) && isBExpPure(pureIds, then) && isBExpPure(pureIds, else_);
+		BSequence(exps, type): forall(exps, \a -> isBExpPure(pureIds, a));
+		BComment(comment): true;
+	}
+}
