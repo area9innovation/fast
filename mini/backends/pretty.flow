@@ -55,6 +55,18 @@ prettyBStatement(b : BStatement) -> string {
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> prettyBStatement(s), ";\n") + "}";
 		}
+		BSwitchStatement(val, cases, type): {
+			blueprint("
+				switch (%val%) {
+					%cases%
+				} : %type%", [
+					"val", prettyBExp(val),
+					"cases", superglue(cases, \c -> {
+						prettyBExp(c.value) + ": " + prettyBStatement(c.body) + ";"
+					}, ""),
+					"type", mtype2string(type),
+			])
+		}
 	}
 }
 
@@ -93,6 +105,18 @@ prettyBExp(b : BExp) -> string {
 		}
 		BSequence(statements, type): {
 			"{" + superglue(statements, \s -> prettyBExp(s), "; ") + "}" + " /* " + mtype2string(type) + "*/";
+		}
+		BSwitch(val, cases, type): {
+			blueprint("
+				switch (%val%) {
+					%cases%
+				} : %type%", [
+					"val", prettyBExp(val),
+					"cases", superglue(cases, \c -> {
+						prettyBExp(c.value) + ": " + prettyBExp(c.body) + ";"
+					}, ""),
+					"type", mtype2string(type),
+			])
 		}
 	}
 }

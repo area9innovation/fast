@@ -104,6 +104,15 @@ simplifyBExp(pureIds : Set<string>, b : BExp) -> BExp {
 				sexps[0];
 			} else BSequence(sexps, type);
 		}
+		BSwitch(val, cases, type): {
+			BSwitch(
+				simplifyBExp(pureIds, val), 
+				map(cases, \c -> {
+					BCase(c.value, simplifyBExp(pureIds, c.body))
+				}),
+				type
+			);
+		}
 	}
 }
 
@@ -129,5 +138,8 @@ countBVar(id : string, b : BExp, ) -> int {
 		BCall(fn, args, type):  fold(args, countBVar(id, fn), \acc, a -> acc + countBVar(id, a));
 		BIf(cond, then, else_, type): countBVar(id, cond) + countBVar(id, then) + countBVar(id, else_);
 		BSequence(exps, type): fold(exps, 0, \acc, a -> acc + countBVar(id, a));
+		BSwitch(val, cases, type): {
+			countBVar(id, val) + fold(cases, 0, \acc, c -> acc + countBVar(id, c.body));
+		}
 	}
 }

@@ -29,6 +29,9 @@ replaceBExp(replacements : Tree<BExp, BExp>, b : BExp) -> BExp {
 			BSequence(exps, type): {
 				BSequence(map(exps, rec), type);
 			}
+			BSwitch(val, cases, type): {
+				BSwitch(rec(val), map(cases, \c -> BCase(c.value, rec(c.body))), type);
+			}
 		}
 	}
 }

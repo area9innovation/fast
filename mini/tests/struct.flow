@@ -1,20 +1,20 @@
 native println : io (flow) -> void = Native.println;
 
-None();
-Some(v : int);
 Maybe ::= None, Some;
+	None();
+	Some(value : int);
 
 main() {
 	None();
 	s = Some(1);
-	prinln(s.v);
-	println(switch (s) {
+	println(s.value);
+	m : Maybe = s;
+	println(switch (m) {
 		None(): 0;
 		Some(v): v;
 	});
-	println(s ?? {
-		1;
-	} : 0);
+//	println(s ?? { 1; } : 0);
 
-	Some(s with value = 2);
+	e = Some(s with value = 2);
+	e;
 }

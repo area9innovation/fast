@@ -44,6 +44,10 @@ isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
 		}
 		BIf(cond, then, else_, type): isBExpPure(pureIds, cond) && isBExpPure(pureIds, then) && isBExpPure(pureIds, else_);
 		BSequence(exps, type): forall(exps, \a -> isBExpPure(pureIds, a));
+		BSwitch(value, cases, type): {
+			isBExpPure(pureIds, value)
+			&& forall(cases, \case -> isBExpPure(pureIds, case.body));
+		}
 	}
 }
 

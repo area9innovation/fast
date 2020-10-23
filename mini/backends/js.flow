@@ -113,6 +113,17 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 				bstatement2js(backend, stat, withReturn && i == length(statements) - 1)
 			}, "\n");
 		}
+		BSwitchStatement(val, cases, type): {
+			blueprint("
+				switch (%val%) {
+					%cases%
+				}", [
+					"val", bexp2js(backend, val),
+					"cases", superglue(cases, \c -> {
+						"case " + bexp2js(backend, c.value) + ": " + bstatement2js(backend, c.body, withReturn) + ";break;"
+					}, ""),
+			])
+		}
 	}
 }
 
@@ -147,6 +158,11 @@ bexp2js(backend : Backend, b : BExp) -> string {
 			} else {
 				"(" + superglue(statements, \s -> bexp2js(backend, s), ", ") + ")";
 			}
+		}
+		BSwitch(val, cases, type): {
+			"function() {" 
+			+ bstatement2js(backend, bexp2BReturn(b), true)
+			+ "}()"
 		}
 	}
 }

@@ -51,6 +51,17 @@ unfoldBExp(b : BExp) -> BExp {
 			uexprs = map(exps, unfoldBExp);
 			unfoldBSeq([], uexprs, type)
 		}
+		BSwitch(exp, cases, type): {
+			uc = unfoldBExp(exp);
+			splitVal = splitBSequence(uc);
+
+			ui = BSwitch(splitVal.second, map(cases, \case -> {
+				BCase(case.value, unfoldBExp(case.body))
+			}), type);
+			if (splitVal.first != []) {
+				BSequence(arrayPush(splitVal.first, ui), type);
+			} else ui;
+		}
 	}
 }
 

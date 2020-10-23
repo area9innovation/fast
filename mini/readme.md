@@ -33,6 +33,7 @@
 - [How to handle types in the AST](#how-to-handle-types-in-the-ast)
 - [Native fallbacks](#native-fallbacks)
 - [Deleted ids](#deleted-ids)
+- [Switch](#switch)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -577,3 +578,52 @@ annotations.
 
 TODO: How to keep track of the annotations on an id, when we need to compare?
 Should we have a "final" map of annotations on an id when we define it? Yeah, probably we should.
+
+# Switch
+
+We have the AST with 
+
+	__switch(s, __or(__case(__pattern0("None"), 0), __case(__pattern1("Some", "v"), v)))
+
+and need to introduce switch in the BExp.
+
+Special things:
+- Union-match
+- Default
+- Type cast of the value in the body.
+- Let-bindings
+
+In flow, we expand let-bindings in the desugaring.
+Also, unions are expanded in desugaring.
+
+Both of these require that we have the struct/union hierarchy.
+
+	FiSwitch(x: FiVar, switchType : FiType, cases: [FiCase], type : FiType, start : int);
+		// struct is "default" for default case
+		FiCase(struct: string, argNames : [string], body: FiExp, start : int);
+
+and it only works on ids in the switch cast.
+
+This is what is produced in JS at the moment:
+
+	function(){
+		var s$;
+		if (s._id==0){
+			s$=0
+		} else {
+			s$=(function(){
+				var v=s.value;
+				return v;
+			}())
+		}
+		return s$;
+	}()
+
+
+We could produce this:
+
+	switch(s._id) {
+		case "None": println("None"); break;
+		case "Some": println("Some"); break;
+	}
+

@@ -66,6 +66,18 @@ bstatement2flow(backend : Backend, b : BStatement) -> string {
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> bstatement2flow(backend, s), ";\n") + "}";
 		}
+		BSwitchStatement(val, cases, type): {
+			blueprint("
+				switch (%val%) {
+					%cases%
+				} /*: %type%*/", [
+					"val", bexp2flow(backend, val),
+					"cases", superglue(cases, \c -> {
+						bexp2flow(backend, c.value) + ": " + bstatement2flow(backend, c.body) + ";"
+					}, ""),
+					"type", mtype2string(type),
+			])
+		}
 	}
 }
 
@@ -89,6 +101,18 @@ bexp2flow(backend : Backend, b : BExp) -> string {
 		BIf(cond, then, else_, type): "if (" + bexp2flow(backend, cond) + ") {" + bexp2flow(backend, then) + "} else {" + bexp2flow(backend, else_) + "}" + " /* " + mtype2flow(type) + "*/";
 		BSequence(statements, type): {
 			"{" + superglue(statements, \s -> bexp2flow(backend, s), "; ") + "}" + " /* " + mtype2flow(type) + "*/";
+		}
+		BSwitch(val, cases, type): {
+			blueprint("
+				switch (%val%) {
+					%cases%
+				} /*: %type%*/", [
+					"val", bexp2flow(backend, val),
+					"cases", superglue(cases, \c -> {
+						bexp2flow(backend, c.value) + ": " + bexp2flow(backend, c.body) + ";"
+					}, ""),
+					"type", mtype2string(type),
+			])
 		}
 	}
 }
