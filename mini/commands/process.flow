@@ -174,7 +174,6 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string) -> MiniDb {
 }
 
 
-
 defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -> MiniDb {
 	ast = db.program;
 	// Update the dependencies
@@ -207,6 +206,7 @@ processMiniAnnotation(db : MiniDb, file : string, annotation : MiniAnnotation) -
 			defineMiniDeclaration(db, file, annotation.scope, annotation.value);
 		}
 	} else {
+		println("Unhandled annotation:");
 		println(annotation);
 		db;
 	}

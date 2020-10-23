@@ -20,7 +20,20 @@ isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
 			isBExpPure(allIds, body);
 		}
 		BCall(fn, args, type): {
-			isBExpPure(pureIds, fn) && forall(args, \a -> isBExpPure(pureIds, a));
+			def = \ -> {
+				isBExpPure(pureIds, fn) && forall(args, \a -> isBExpPure(pureIds, a));
+			}
+			switch (fn) {
+				BVar(fname, __): {
+					if (fname == "__native") {
+						// OK, a native is pure is it is not IO
+						args[0] == BInt(0, MiniTypeInt(32));
+					} else {
+						def();
+					}
+				}
+				default: def();
+			}
 		}
 		BIf(cond, then, else_, type): isBExpPure(pureIds, cond) && isBExpPure(pureIds, then) && isBExpPure(pureIds, else_);
 		BSequence(exps, type): forall(exps, \a -> isBExpPure(pureIds, a));

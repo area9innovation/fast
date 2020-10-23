@@ -1,5 +1,7 @@
 import ds/tree;
+import ds/set;
 import mini/types/type;
+
 
 export {
 	// Some common types
@@ -10,6 +12,8 @@ export {
 	miniTypeString : MiniType;
 
 	getBuiltinMiniTypes() -> Tree<string, MiniType>;
+
+	getBuiltinPureNames() -> Set<string>;
 }
 
 miniTypeVoid : MiniType = MiniTypeInt(0);
@@ -19,7 +23,6 @@ miniTypeDouble : MiniType = MiniTypeCall("double", []);
 miniTypeString : MiniType = MiniTypeCall("string", []);
 
 getBuiltinMiniTypes() -> Tree<string, MiniType> {
-
 	v = miniTypeVoid;
 	b = miniTypeBool;
 	i = MiniTypeInt(32);
@@ -114,3 +117,15 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 	])
 }
 
+getBuiltinPureNames() -> Set<string> {
+	names = buildSet(getTreeKeys(getBuiltinMiniTypes()));
+
+	impure = buildSet([
+		"__cast",
+		"__ref", 
+		"__deref",
+		":=", 
+	]);
+
+	differenceSets(names, impure);
+}

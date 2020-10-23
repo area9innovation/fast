@@ -1,5 +1,6 @@
 import mini/backends/types;
 import mini/semantics/pure;
+import mini/semantics/replace;
 
 export {
 	simplifyBExp(pureIds : Set<string>, b : BExp) -> BExp;
@@ -10,36 +11,40 @@ simplifyBExp(pureIds : Set<string>, b : BExp) -> BExp {
 		BValue(): b;
 		BVar(name, type): b;
 		BLet(name, value, body, type): {
-			if (body == BVar(name, bexpType(value))) {
+			vtype = bexpType(value);
+			if (body == BVar(name, vtype)) {
 				// a = <value>; a   -> <vakue>
 				simplifyBExp(pureIds, value);
 			} else {
 				svalue = simplifyBExp(pureIds, value);
-				sbody = simplifyBExp(pureIds, body);
+				valueIsPure = isBExpPure(pureIds, svalue);
+				sbody = simplifyBExp(if (valueIsPure) insertSet(pureIds, name) else pureIds, body);
 				count = countBVar(name, sbody);
+				// println(name + " is " + b2s(valueIsPure));
+				// println(svalue);
 				if (count == 0) {
-					if (isBExpPure(pureIds, svalue)) {
+					if (valueIsPure) {
 						// If count is 0, and the value is pure,
 						// we can omit the let value.
 						sbody;
 					} else {
 						BSequence([svalue, sbody], type);
 					}
-				} else if (count == 1 && isBExpPure(pureIds, svalue)) {
+				} else if (count == 1 && valueIsPure) {
 					// If the count is 1, and there are no side-effects, we can inline
-					if (false) {
-						println("TODO: Inline " + toString(svalue));
-						println(name);
-						println(count);
-					};
-					BLet(name, svalue, sbody, type);
+					replaceBExp(makeTree1(BVar(name, vtype), svalue), sbody)
 				} else {
 					BLet(name, svalue, sbody, type);
 				}
 			}
 		}
 		BLambda(args, body, type): {
-			BLambda(args, simplifyBExp(pureIds, body), type);
+			npure = fold(args, pureIds, \acc, arg -> {
+				if (isPureBFunArg(arg)) {
+					insertSet(acc, arg.name)
+				} else acc;
+			});
+			BLambda(args, simplifyBExp(npure, body), type);
 		}
 		BCall(fn, args, type): {
 			sfn = simplifyBExp(pureIds, fn);
@@ -76,9 +81,17 @@ simplifyBExp(pureIds : Set<string>, b : BExp) -> BExp {
 		BSequence(exps, type): {
 			sexps = filtermapi(exps, \i, be -> {
 				e = simplifyBExp(pureIds, be);
-				if (i != length(exps) - 1 && isBVoid(e)) {
-					// If not last, and this is just void, we can omit
-					None()
+				if (i != length(exps) - 1) {
+					if (isBVoid(e)) {
+						// If not last, and this is just void or pure, we can omit
+						None();
+					} else if (isBExpPure(pureIds, e)) {
+						// println("Ignored dead code");
+						// println(e);
+						None();
+					} else {
+						Some(e)
+					}
 				} else {
 					Some(e)
 				}
@@ -118,4 +131,8 @@ countBVar(id : string, b : BExp, ) -> int {
 		BSequence(exps, type): fold(exps, 0, \acc, a -> acc + countBVar(id, a));
 		BComment(comment): 0;
 	}
+}
+
+isPureBFunArg(b : BFunArg) -> bool {
+	false;
 }

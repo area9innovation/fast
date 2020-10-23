@@ -32,6 +32,9 @@ export {
 
 		// Typed versions of our declarations.
 		typedDeclarations : Tree<string, BExp>,
+
+		// What ids are pure?
+		pureIds : Set<string>,
 	);
 
 	MiniAnnotation(

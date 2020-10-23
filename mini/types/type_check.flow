@@ -13,6 +13,7 @@ export {
 	// Run a type inference and check on these ids
 	// and return the resulting environment
 	// This also updates the typed backend AST representation
+	// with optimizations. It also keeps track of "pure" ids
 	typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst;
 }
 
@@ -74,27 +75,30 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 //		println("a"  + i2s(tv) + " = " + mtype2string(resolved));
 	});
 
-	// Here, we can run backend-independent optimizations
-	// Maybe we should have a BExp based representation before we do a bstatement
-	// one, since that will be easier to optimize.
+	// OK, remove the current set of ids from the pure set
+	past = MiniAst(tenv2.ast with pureIds = differenceSets(tenv2.ast.pureIds, ids));
 
-	// "a : type = e; a"   -> "e : type"
-
-//	println("\nAfter resolution:");
 	// OK, now lower these ids to the backend representation
-	nast = fold(order, tenv2.ast, \acc, id -> {
+	nast = fold(order, past, \acc, id -> {
 		mfn = lookupTree(acc.declarations, id);
 		mfn ?? {
 			bdecl = miniExp2BExp(tenv2, mfn);
 
 			// This is the pipeline of optimizations:
 			un = unfoldBExp(bdecl);
-			// TODO: Keep track of what ids are pure
-			pureIds = makeSet();
+			opt = simplifyBExp(acc.pureIds, un);
 
-			opt = simplifyBExp(pureIds, un);
+			// Check if we are pure and keep that up to date
+			isPure = isBExpPure(acc.pureIds, opt);
+			acc0 = if (isPure) {
+				// println(id + " is pure");
+				MiniAst(acc with pureIds = insertSet(acc.pureIds, id));
+			} else {
+				// println(id + " is NOT pure");
+				acc;
+			}
 
-			MiniAst(acc with typedDeclarations = setTree(acc.typedDeclarations, id, opt));
+			MiniAst(acc0 with typedDeclarations = setTree(acc0.typedDeclarations, id, opt));
 		} : {
 			acc;
 		}

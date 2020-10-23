@@ -13,7 +13,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		makeTree(), 
 		MiniDependent(makeTree(), makeTree()),
 		makeMiniFileCache(),
-		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), MiniDependent(makeTree(), makeTree()), getBuiltinMiniTypes(), makeTree()),
+		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), MiniDependent(makeTree(), makeTree()), getBuiltinMiniTypes(), makeTree(), getBuiltinPureNames()),
 		makeMiniForth(),
 		makeTree(),
 		makeTree(),
