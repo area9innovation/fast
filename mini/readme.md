@@ -92,7 +92,6 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get euler examples to compile and run in JS.
-  - euler4: Improve isPalindromic, which has too many nested functions
   - euler7: switch
   - euler9: "1000 - b - a;" is not producing (1000-b)-a, but 1000-(b-a)
   - euler10: switch

@@ -13,16 +13,14 @@ import ds/arrayutils;
 export {
 	miniAst2BProgram(ast : MiniAst) -> BProgram;
 
-	// This lowers a declaration to typed, statement-based BDeclaration
-	miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclaration;
-
-	// TODO. We could use these instead, so we can do optimizations on BExp:
-
 	// This lowers our program to BExp with types
 	miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp;
 
 	// And then lower to statement-based
 	bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration;
+
+	// For use in backends, when expressions need a statement
+	bexp2BReturn(b : BExp) -> BStatement;
 }
 
 miniAst2BProgram(ast : MiniAst) -> BProgram {
@@ -155,10 +153,6 @@ bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailca
 	}
 }
 
-miniExp2BDeclaration(env : MiniTypeEnv, declid : string, e : MiniExp) -> BDeclaration {
-	bexp2BDeclaration(declid, miniExp2BExp(env, e));
-}
-
 miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 	error = \ -> {
 		BComment("// Can not convert " + miniPretty(e) + " to exp");
@@ -203,3 +197,17 @@ miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
 	}
 }
 
+bexp2BReturn(b : BExp) -> BStatement {
+	switch (b) {
+		BValue(): BReturn(b);
+		BVar(name, type): BReturn(b);
+		BLet(name, value, body, type): {
+			BLetStatement(name, value, bexp2BReturn(body));
+		}
+		BLambda(args, body, type): BReturn(b);
+		BCall(fn, args, type): BReturn(b);
+		BIf(cond, then, else_, type): BIfStatement(cond, bexp2BReturn(then), bexp2BReturn(else_));
+		BSequence(exps, type): BSequenceStatement(map(exps, bexp2BReturn));
+		BComment(comment): BReturn(b);
+	}
+}

@@ -1,5 +1,6 @@
 import mini/backends/bprogram;
 import mini/backends/back_eval;
+import mini/backends/bprogram_lower;
 import mini/types/builtin;
 import text/blueprint;
 
@@ -83,7 +84,9 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 			])
 		}
 		BReturnVoid(): if (withReturn) "return;" else "";
-		BReturn(val): (if (withReturn) "return " else "") + bexp2js(backend, val) + ";";
+		BReturn(val): {
+			(if (withReturn) "return " else "") + bexp2js(backend, val) + ";";
+		}
 		BTailCall(fn, args, values): {
 			/*
 				var $a_=((start+1)|0);
@@ -127,14 +130,15 @@ bexp2js(backend : Backend, b : BExp) -> string {
 				}()", [
 					"name", name,
 					"value", bexp2js(backend, value),
-					"body", bstatement2js(backend, BReturn(body), true),
+					"body", bstatement2js(backend, bexp2BReturn(body), true),
 			])
 		}
-		BLambda(args, body, __): "function(" 
+		BLambda(args, body, __): {
+			"function(" 
 			+ superglue(args, \fa -> fa.name, ", ") + ") {" 
-			+ bstatement2js(backend, BReturn(body), true)
+			+ bstatement2js(backend, bexp2BReturn(body), true)
 			+ "}"
-		;
+		};
 		BCall(fn, args, restype): {
 			produceBackendCall(backend, b, bexp2js);
 		}
