@@ -281,6 +281,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(id.second, MiniCall(MiniVar("__typename" + i2s(cardinality), 0), concat([MiniVar(getMiniString(id.first), 0)], ttypars), 0));
 		}),
 
+
 		Pair("uniondef", \stack -> {
 			typenames = popMStack(stack);
 			typepars = popMStack(typenames.second);
@@ -315,6 +316,13 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		}),
 
 		Pair("structdef", \stack -> {
+			// 	<id> <args> structdef	- push a struct type definition on the stack
+			//   args is an array of __structarg(id, 0/1, type-exp)
+
+			// The result is a fn that builds a struct value.
+			// TODO: We should also construct the struct type
+			// 
+
 			typeargs = popMStack(stack);
 			id = popMStack(typeargs.second);
 			ttypeargs = getMiniArray(typeargs.first);
@@ -332,7 +340,8 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 					[
 						id.first,
 					], map(args, \a -> MiniString(a.first))
-				), 0), 0
+				), 0),
+				0
 			);
 
 			pushMStack(typeargs.second, lambda);
@@ -409,6 +418,10 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 
 
 // __structarg(string, 0/1, type)
+
+
+// decompose -> __structarg string 0/1 type 
+
 unwrapStructArg(arg : MiniExp) -> Triple<string, bool, MiniExp> {
 	switch (arg) {
 		MiniCall(fn, args, __): {

@@ -34,6 +34,7 @@
 - [Native fallbacks](#native-fallbacks)
 - [Deleted ids](#deleted-ids)
 - [Switch](#switch)
+- [Switch backend](#switch-backend)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -75,8 +76,8 @@ This diagram illustrates the processing pipeline:
 	-> This file is read by Mini if changed
 	-> This is parsed by a Gringo parser for Flow
 	-> This results in a bunch of Forth commands evaluated in Mini
-	-> This leads to commands that set definitions of ids in Mini
-	-> Thus, we build the AST for the parsed program in the exp language
+	-> This leads to commands that set definitions of ids in Mini (declarations, unprocessedAnnotations)
+	-> Thus, we build the AST for the parsed program in the exp language (MiniPopFile updates annotations)
 	-> These definitions are typed by the type inference and checker in topological order
 	-> We run optimizations of the AST
 	-> We lower the AST to BProgram for the backends
@@ -585,13 +586,86 @@ We have the AST with
 
 	__switch(s, __or(__case(__pattern0("None"), 0), __case(__pattern1("Some", "v"), v)))
 
-and need to introduce switch in the BExp.
+
+	__switch(s, __or(
+		__case(__pattern0("None"), 0), 
+		__case(__pattern1("Some", "v"), v)
+		)
+	)
+
+and need to lower to the appropriate switch in the BExp.
+
+	BSwitch(val : BExp, cases : [BCase], type : MiniType);
+			BCase(value : BValue, body : BExp);
+
+->
+
+	BSwitch(SVar("s"), [
+		BCase(BString("None"), BInt(0)),
+		BCase(BString("Some"), BLet("v", 
+			BField(SVar("s"), SString("value")), 
+			BVar("v")
+		)),
+	]);
+
+
+To be able to do this, the hardest part is changing "Some" to the let where it has "value".
+
+Because of a program like this:
+
+	foo = switch (a) {
+		None(): 0;
+		Some(v): 1;
+	}
+
+	// The type comes after
+	None();
+
+There is a problem: We can not do that let-expansion until we know the struct def, which comes
+after. 
+OK, with the proper "typedef" command, we could do that. Then the None will add a type-def,
+and that way, we can do it "locally" in the switch-processing. Arguably, this is best.
+
+We would like to have "local" desugaring. Therefore, maybe we should use indexing into 
+the struct instead of going by name:
+
+	BSwitch(SVar("s"), [
+		BCase(BString("None"), BInt(0)),
+		BCase(BString("Some"), BLet("v", 
+			BIndexField(SVar("s"), BString("Some"), SInt(0)), 
+			BVar("v")
+		)),
+	]);
+
+Plan:
+- Add "typedef" command.
+- Construct a record type for struct and typedef that
+  as part of struct-def.
+  So struct-def is decomposed into two parts:
+  - A typedef
+  - Making a constructor function
+
+- Figure out what to to do at the MiniExp level for cases.
 
 Special things:
-- Union-match
-- Default
+- Union-match: This requires knowing the unions, as well as the entire scope of the switch
+- Default: We can keep that as "default", and that should be fine for backends.
+- Let-bindings: This requires knowing the structs
 - Type cast of the value in the body.
-- Let-bindings
+
+For the type checking to be able to do the right thing, we need something before the
+type checker hits.
+
+	MSwitch(
+		MVar("a"),
+		MCase(BString("None"), BInt(0)
+		),
+
+	)
+
+So after type inference for switches, we have to do exhaustiveness checks then. Or we have to
+require that the type of the union in the switch is decided, as part of type checking?
+How to handle exhaustiveness?
 
 In flow, we expand let-bindings in the desugaring.
 Also, unions are expanded in desugaring.
@@ -604,7 +678,9 @@ Both of these require that we have the struct/union hierarchy.
 
 and it only works on ids in the switch cast.
 
-This is what is produced in JS at the moment:
+# Switch backend
+
+This part is done. This is what is produced in JS by flowc:
 
 	function(){
 		var s$;
@@ -619,8 +695,7 @@ This is what is produced in JS at the moment:
 		return s$;
 	}()
 
-
-We could produce this:
+With the BSwitch, we can produce this:
 
 	switch(s._id) {
 		case "None": println("None"); break;

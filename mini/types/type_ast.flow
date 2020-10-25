@@ -4,6 +4,7 @@ import mini/exp/exp;
 import mini/exp/value;
 
 export {
+	// Knows about void, bool, int, double, string, array, ref, typenames
 	convertMiniExp2Type(e : MiniExp) -> MiniType;
 }
 
@@ -28,6 +29,8 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 							targs = map(tail(args), convertMiniExp2Type);
 							MiniTypeCall(name, targs);
 						}
+					// TODO: Add the other type constructors here
+					
 					} else {
 						error();
 					}

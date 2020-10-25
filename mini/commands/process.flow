@@ -94,6 +94,15 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				program = MiniAst(db.program with unprocessedAnnotations = newAnnotations)
 			);
 		}
+		MiniTypeDefine(file, name, type): {
+			// We just do it, no questions asked
+
+			// TODO: Maybe we have to refine this later for incremental
+			MiniDb(
+				db with
+				program = MiniAst(db.program with types = setTree(db.program.types, name, type))
+			);
+		}
 		MiniDefine(file, id, body): {
 			// OK, extract annotations - TODO: Decide whether this is the time to do it or not
 			generalAnnotation = getTreeArrayValue(db.program.unprocessedAnnotations, "");
@@ -103,19 +112,19 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				annotations = newAnnotations, 
 				unprocessedAnnotations = removeFromTree(db.program.unprocessedAnnotations, id)
 			);
+			db0 = MiniDb(db with program = ast);
 
 			// Define or redefine this id to this body
 			mexisting = lookupTree(ast.declarations, id);
 
 			def = \ -> {
-				defineMiniDeclaration(db, file, id, body);
+				defineMiniDeclaration(db0, file, id, body);
 			};
 
 			mexisting ?? {
 				if (isSameMiniExp(mexisting, body)) {
-					// It is the same. Nothing to do.
-					// We ignore new attibutes at the moment!
-					db;
+					// It is the same. Nothing to do except for the annotations
+					db0;
 				} else {
 					// OK, it is new. We should put it in and process it
 					def();

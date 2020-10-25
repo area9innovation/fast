@@ -45,7 +45,7 @@ typePars2TypeVars(env : MiniTypeEnv, e : MiniType) -> MiniType {
 		}
 		MiniTypeRecord(fields): {
 			MiniTypeRecord(map(fields, \f -> {
-				MiniTypeField(f.name, typePars2TypeVars(env, f.type))
+				MiniTypeField(f.name, f.isMutable, typePars2TypeVars(env, f.type))
 			}))
 		}
 	}
@@ -72,7 +72,7 @@ typeVars2TypePars(env : MiniTypeEnv, e : MiniType) -> MiniType {
 		}
 		MiniTypeRecord(fields): {
 			MiniTypeRecord(map(fields, \f -> {
-				MiniTypeField(f.name, typeVars2TypePars(env, f.type))
+				MiniTypeField(f.name, f.isMutable, typeVars2TypePars(env, f.type))
 			}))
 		}
 	}

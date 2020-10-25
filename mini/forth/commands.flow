@@ -1,0 +1,63 @@
+import mini/forth/forth;
+import mini/forth/stack;
+import mini/commands/db;
+import mini/exp/value;
+import mini/exp/pretty;
+import mini/types/type_ast;
+
+export {
+	// Eval this Forth command as mini, in case it is. If not, just return the same db
+	forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb;
+}
+
+forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
+	if (command == "processfile") {
+		// 	MiniProcessFile(name : string, command);
+		filename = popMiniValue(db);
+		evalcommand = popMiniValue(filename.second);
+		pushMiniCommand(evalcommand.second, MiniProcessFile(file, getMiniString(filename.first), getMiniString(evalcommand.first)));
+	} else if (command == "popfile") {
+		pushMiniCommand(db, MiniPopFile(file));
+	} else if (command == "setannotation") {
+		// MiniSetAnnotation(annotation : string, scope : string, value : MiniExp);
+		value = popMiniValue(db);
+		scope = popMiniValue(value.second);
+		annotation = popMiniValue(scope.second);
+		scopes = getMiniString(scope.first);
+		annotations = getMiniString(annotation.first);
+
+		if (annotations == "") {
+			println(file + ":  Expected string for annotation, got " + miniPretty(annotation.first));
+		} else {
+			// println("Defined " + names);
+		};
+		pushMiniCommand(annotation.second, MiniSetAnnotation(annotations, scopes, value.first));
+	} else if (command == "typedef") {
+		// MiniDefine(name : string, value : MiniExp);
+		value = popMiniValue(db);
+		name = popMiniValue(value.second);
+		names = getMiniString(name.first);
+
+		type = convertMiniExp2Type(value.first);
+
+		if (names == "") {
+			println(file + ":  Expected string for name for type define, got " + miniPretty(name.first) + " "  + toString(name.first));
+			println(value.first);
+		} else {
+			// println("Defined " + names);
+		};
+		pushMiniCommand(name.second, MiniTypeDefine(file, names, type));
+	} else if (command == "define") {
+		// MiniDefine(name : string, value : MiniExp);
+		value = popMiniValue(db);
+		name = popMiniValue(value.second);
+		names = getMiniString(name.first);
+		if (names == "") {
+			println(file + ":  Expected string for name for define, got " + miniPretty(name.first) + " "  + toString(name.first));
+			println(value.first);
+		} else {
+			// println("Defined " + names);
+		};
+		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
+	} else db;
+}

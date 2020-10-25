@@ -139,7 +139,6 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 				}
 				default: def();
 			}
-
 		}
 	}
 }

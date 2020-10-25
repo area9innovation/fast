@@ -1,0 +1,218 @@
+import mini/backends/backend;
+
+export {
+	jsBackend() -> Backend;
+}
+
+jsBackend() -> Backend {
+	comparison = \name, target, prec -> {
+		[
+			BackGen(name, MiniTypeFunction([miniTypeBool, miniTypeBool], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniTypeFunction([miniTypeInt, miniTypeInt], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniTypeFunction([miniTypeDouble, miniTypeDouble], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, MiniTypeFunction([miniTypeString, miniTypeString], miniTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			// TODO: We need something fancy for other types here
+		]
+	};
+
+	makeBackend("js", [
+			// Keywords
+			"abstract", "arguments",  "await",        "boolean",
+			"break",    "byte",       "case",         "catch",
+			"char",     "class",      "const",        "continue",
+			"debugger", "default",    "delete",       "do",
+			"double",   "else",       "enum",         "eval",
+			"export",   "extends",    "false",        "final",
+			"finally",  "float",      "for",          "function",
+			"goto",     "if",         "implements",   "import",
+			"in",       "instanceof", "int",          "interface",
+			"let",      "long",       "native",       "new",
+			"null",     "package",    "private",      "protected",
+			"public",   "return",     "short",        "static",
+			"super",    "switch",     "synchronized", "this",
+			"throw",    "throws",     "transient",    "true",
+			"try",      "typeof",     "var",          "void",
+			"volatile", "while",      "with",         "yield",
+			"R_" // Used by runtime for references
+		], 
+
+		//
+		// Inlined operators
+		//
+		concatA([
+
+		// In JS, there is ? here for if
+
+		[
+			BackGen("||", miniTypeBool, BackBinOp("||", 10, BackArg(0), BackArg(1))),
+			BackGen("&&", miniTypeBool, BackBinOp("&&", 20, BackArg(0), BackArg(1))),
+		],
+
+		//	BackBinOp("|", 25, BackArg(0), BackArg(1)),
+		//	BackBinOp("^", 26, BackArg(0), BackArg(1)),
+		// 	BackBinOp("^", 27, BackArg(0), BackArg(1)),
+
+		comparison("==", "===", 30),
+		comparison("!=", "!==", 30),
+
+		comparison("<=", "<=", 35),
+		comparison("<", "<", 35),
+		comparison(">=", ">=", 35),
+		comparison(">", ">", 35),
+
+		// In JS, we have bitshifts here <<, >>, >>>
+
+		[
+			BackGen("+", miniTypeInt, BackBinOp("|", 25, BackBinOp("+", 40, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("+", miniTypeDouble, BackBinOp("+", 40, BackArg(0), BackArg(1))),
+			BackGen("+", miniTypeString, BackBinOp("+", 40, BackArg(0), BackArg(1))),
+
+			BackGen("-", miniTypeInt, BackBinOp("|", 25, BackBinOp("-", 40, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("-", miniTypeDouble, BackBinOp("-", 40, BackArg(0), BackArg(1))),
+
+			BackGen("*", miniTypeInt, 
+				BackRequire(
+					// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul
+					BackText("if (!Math.imul) Math.imul = function(opA, opB) {var result = (opA & 0x003fffff) * opB;if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB |0;return result |0;};"),
+					BackCall("Math.imul", [BackArg(0), BackArg(1)])
+				)
+			),
+			BackGen("*", miniTypeDouble, BackBinOp("*", 50, BackArg(0), BackArg(1))),
+
+			BackGen("/", miniTypeInt, BackBinOp("|", 25, BackBinOp("/", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("/", miniTypeDouble, BackBinOp("/", 50, BackArg(0), BackArg(1))),
+
+			BackGen("%", miniTypeInt, BackBinOp("|", 25, BackBinOp("%", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("%", miniTypeDouble, BackBinOp("%", 50, BackArg(0), BackArg(1))),
+
+	// In JS, there is ** for exponentiation here
+
+			BackGen("__neg", MiniTypeFunction([miniTypeInt], miniTypeInt), BackBinOp("|", 25, BackPreOp("-", 60, BackArg(0)), BackText("0"))),
+			BackGen("__neg", MiniTypeFunction([miniTypeDouble], miniTypeDouble), BackPreOp("-", 60, BackArg(0))),
+
+			BackGen("!", miniTypeVoid, BackPreOp("!", 60, BackArg(0))),
+
+			BackGen("__void", miniTypeVoid, BackText("null")),
+
+
+			// Cast and type is ignored
+//			BackGen("__cast", miniTypeVoid, BackArg(0)),
+			BackGen("__cast", miniTypeVoid, BackArg(0)),
+			BackGen(":", miniTypeVoid, BackArg(0)),
+
+			BackGen("__ref", miniTypeVoid, 
+				BackRequire(
+					// Alternative: class R_ {constructor(v) { this.__v = v; } }
+					BackText("function R_(v){this.v=v}"),
+					BackCall("new R_", [BackArg(0)])
+				)
+			),
+			BackGen("__deref", miniTypeVoid, BackPostOp(".v", 60, BackArg(0))),
+			BackGen(":=", miniTypeVoid, BackBinOp(".v=", 70, BackArg(0), BackArg(1))),
+
+			BackGen("__emptyarray", miniTypeVoid, BackText("[]")),
+			BackGen("[", miniTypeVoid, BackConcat([BackText("["), BackArg(0), BackText("]")])),
+			BackGen(",", miniTypeVoid, BackBinOp(",", 80, BackArg(0), BackArg(1))),
+			BackGen("__index", miniTypeVoid, BackConcat([BackBinOp("[", 80, BackArg(0), BackArg(1)), BackText("]")])),
+
+			BackGen(".", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackUnquote(BackArg(1)))),
+
+			BackGen("__construct0", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), BackText("}")])),
+			BackGen("__construct1", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), 
+					BackText(","), BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
+				BackText("}")])),
+			BackGen("__construct2", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), 
+					BackText(","), BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
+					BackText(","), BackArg(2), BackText(":"), BackUnquote(BackArg(2)), 
+				BackText("}")])),
+			BackGen("__construct3", miniTypeVoid, BackConcat([BackText("{_id:"), BackArg(0), 
+					BackText(","), BackArg(1), BackText(":"), BackUnquote(BackArg(1)), 
+					BackText(","), BackArg(2), BackText(":"), BackUnquote(BackArg(2)), 
+					BackText(","), BackArg(3), BackText(":"), BackUnquote(BackArg(3)), 
+				BackText("}")])),
+
+			// Used in th union
+			BackGen("__structname", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackText("_id"))),
+
+			// Inlined natives
+			BackGen("Native.println", miniTypeVoid, BackText("console.log")),
+
+			BackGen("Native.fold", miniTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
+			BackGen("Native.map", miniTypeVoid, BackText("function(a,fn){return a.map(fn);}")),
+			BackGen("Native.filter", miniTypeVoid, BackText("function(a,fn){return a.filter(fn);}")),
+			BackGen("Native.enumFromTo", miniTypeVoid, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
+
+			BackGen("Native.isSameStructType", miniTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),
+
+			BackGen("Native.quit", miniTypeVoid, 
+				BackIfDef("browser",
+					BackText("function(c) {window.open('','_top').close();}"),
+					BackText("function(c) {}")
+				)
+			),
+			BackGen("Native.sin", miniTypeVoid, BackText("Math.sin")),
+			BackGen("Native.asin", miniTypeVoid, BackText("Math.asin")),
+			BackGen("Native.cos", miniTypeVoid, BackText("Math.cos")),
+			BackGen("Native.acos", miniTypeVoid, BackText("Math.acos")),
+			BackGen("Native.atan", miniTypeVoid, BackText("Math.atan")),
+			BackGen("Native.atan2", miniTypeVoid, BackText("Math.atan2")),
+			BackGen("Native.exp", miniTypeVoid, BackText("Math.exp")),
+			BackGen("Native.log", miniTypeVoid, BackText("Math.log")),
+			// d->i
+			BackGen("Native.trunc", miniTypeVoid, BackText("function(d){return (d)|0;}")),
+			BackGen("Native.i2d", miniTypeVoid, BackText("function(i){return i;}")),
+			BackGen("Native.i2s", miniTypeVoid, BackText("function(i){return String(i);}")),
+			BackGen("Native.d2s", miniTypeVoid, BackText("function(d){return String(d);}")),
+			BackGen("Native.bitXor", miniTypeVoid, BackText("function(a,b){return a^b;}")),
+			BackGen("Native.bitAnd", miniTypeVoid, BackText("function(a,b){return a&b;}")),
+			BackGen("Native.bitOr", miniTypeVoid, BackText("function(a,b){return a|b;}")),
+			BackGen("Native.bitUshr", miniTypeVoid, BackText("function(a,b){return a>>>b;}")),
+			BackGen("Native.bitShl", miniTypeVoid, BackText("function(a,b){return a<<b;}")),
+			BackGen("Native.bitNot", miniTypeVoid, BackText("function(a){return ~a;}")),
+
+			BackGen("Native.strlen", miniTypeVoid, BackText("function(s){return s.length;}")),
+			BackGen("Native.strIndexOf", miniTypeVoid, BackText("function(str,substr) {return str.indexOf(substr,0);}")),
+
+			BackGen("Native.substring", miniTypeVoid, 
+				// It turns out that Chrome does NOT copy strings out when doing substring,
+				// and thus we never free the original string
+				BackText("function(str,start,len){
+					var s = str.slice(start,start+len);
+					if (2 * s.length < str.length){return (' '+s).slice(1);} else return s;
+				}")
+			),
+			BackGen("Native.cloneString", miniTypeVoid, BackText("function(s){return (' '+s).slice(1);}")),
+
+			BackGen("Native.getCharCodeAt", miniTypeVoid, BackText("function(s,i){return s.charCodeAt(i);}")),
+			BackGen("Native.getCharAt", miniTypeVoid, BackText("function(s,i){return s.charAt(i);}")),
+
+
+/*
+Native.toLowerCase = function(str) {
+	return str.toLowerCase();
+};
+Native.toUpperCase = function(str) {
+	return str.toUpperCase();
+};
+Native.strReplace = function(str,find,replace) {
+	return StringTools.replace(str,find,replace);
+};
+
+Native.concat = function(arr1,arr2) {
+	return arr1.concat(arr2);
+};
+
+Native.iter = function(values,clos) {
+	var _g = 0;
+	while(_g < values.length) {
+		var v = values[_g];
+		++_g;
+		clos(v);
+	}
+};
+*/
+
+		]
+		]),
+	);
+}

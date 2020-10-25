@@ -18,5 +18,5 @@ export {
 
 		// An (anonymous) record type
 		MiniTypeRecord(fields : [MiniTypeField]);
-			MiniTypeField(name : string, type : MiniType);
+			MiniTypeField(name : string, isMutable : bool, type : MiniType);
 }

@@ -2,7 +2,6 @@ import ds/tree;
 import ds/set;
 import mini/types/type;
 
-
 export {
 	// Some common types
 	miniTypeVoid : MiniType;
@@ -13,6 +12,7 @@ export {
 
 	getBuiltinMiniTypes() -> Tree<string, MiniType>;
 
+	// What builtin names are pure? cast & ref are NOT
 	getBuiltinPureNames() -> Set<string>;
 }
 
@@ -100,31 +100,39 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		// special
 		Pair("__native", MiniTypeFunction([i, ta, s], ta)),
 
-		Pair("__fntype0", MiniTypeFunction([ta], MiniTypeFunction([], ta))),
-		Pair("__fntype1", MiniTypeFunction([ta, tb], MiniTypeFunction([tb], ta))),
-		Pair("__fntype2", MiniTypeFunction([ta, tb, tc], MiniTypeFunction([tb, tc], ta))),
-		Pair("__fntype3", MiniTypeFunction([ta, tb, tc, td], MiniTypeFunction([tb, tc, td], ta))),
-		Pair("__fntype4", MiniTypeFunction([ta, tb, tc, td, te], MiniTypeFunction([tb, tc, td, te], ta))),
+		Pair(".", MiniTypeFunction([ta, s], tb)),
 
-		// Structs & unions:
+		//
+		// The following special functions are all constructed
+		// by Forth builtins
+		//
+
+		// Forth "structdef" uses this to build the constructor
 		Pair("__construct0", MiniTypeFunction([s], ta)),
 		Pair("__construct1", MiniTypeFunction([s, ta], tb)),
 		Pair("__construct2", MiniTypeFunction([s, ta, tb], tc)),
 		Pair("__construct3", MiniTypeFunction([s, ta, tb, tc], td)),
 		Pair("__construct4", MiniTypeFunction([s, ta, tb, tc, td], te)),
 
-		Pair(".", MiniTypeFunction([ta, s], tb)),
-		// Used by union to find the value to dispatch from
+		// Forth uniondef uses this to find the value to dispatch from
 		Pair("__structname", MiniTypeFunction([ta], tb)),
 
-		// Temporary:
+		// Forth "uniondef" makes this for the type. TODO: Polymorphism is lost
 		Pair("__union0", MiniTypeFunction([ta], tb)),
 		Pair("__union1", MiniTypeFunction([ta, tb], tc)),
 		Pair("__union2", MiniTypeFunction([ta, tb, tc], td)),
 
+		// Forth "typename" makes this for building typename types
 		Pair("__typename0", MiniTypeFunction([s], ta)),
 		Pair("__typename1", MiniTypeFunction([s, ta], tb)),
 		Pair("__typename2", MiniTypeFunction([s, ta, tb], tc)),
+
+		// Forth fntype makes this
+		Pair("__fntype0", MiniTypeFunction([ta], MiniTypeFunction([], ta))),
+		Pair("__fntype1", MiniTypeFunction([ta, tb], MiniTypeFunction([tb], ta))),
+		Pair("__fntype2", MiniTypeFunction([ta, tb, tc], MiniTypeFunction([tb, tc], ta))),
+		Pair("__fntype3", MiniTypeFunction([ta, tb, tc, td], MiniTypeFunction([tb, tc, td], ta))),
+		Pair("__fntype4", MiniTypeFunction([ta, tb, tc, td, te], MiniTypeFunction([tb, tc, td, te], ta))),
 	])
 }
 

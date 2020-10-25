@@ -1,10 +1,6 @@
 import mini/forth/forth;
 import mini/forth/gringo;
-import mini/commands/db;
-import text/serialize;
-import mini/forth/stack;
-import mini/exp/value;
-import mini/exp/pretty;
+import mini/forth/commands;
 
 export {
 	// Evaluate this - these commands can have side-effects on the compiler
@@ -14,48 +10,17 @@ export {
 	miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb;
 }
 
-miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
+miniEvalForth(file : string, db0 : MiniDb, command : string) -> MiniDb {
 	// println("\nRunning " + command + " with stack:");
 	// iterList(db.forth.stack, println);
+	
+	// Try to run this as a Forth command for mini
+	db = forthMiniCommand(file, db0, command);
 
-	fchar = getCharAt(command, 0);
-	if (command == "") db
-	else if (command == "processfile") {
-		// 	MiniProcessFile(name : string, command);
-		filename = popMiniValue(db);
-		evalcommand = popMiniValue(filename.second);
-		pushMiniCommand(evalcommand.second, MiniProcessFile(file, getMiniString(filename.first), getMiniString(evalcommand.first)));
-	} else if (command == "popfile") {
-		pushMiniCommand(db, MiniPopFile(file));
-	} else if (command == "setannotation") {
-		// MiniSetAnnotation(annotation : string, scope : string, value : MiniExp);
-		value = popMiniValue(db);
-		scope = popMiniValue(value.second);
-		annotation = popMiniValue(scope.second);
-		scopes = getMiniString(scope.first);
-		annotations = getMiniString(annotation.first);
-
-		if (annotations == "") {
-			println(file + ":  Expected string for annotation, got " + miniPretty(annotation.first));
-		} else {
-			// println("Defined " + names);
-		};
-		pushMiniCommand(annotation.second, MiniSetAnnotation(annotations, scopes, value.first));
-	} else if (command == "define") {
-		// MiniDefine(name : string, value : MiniExp);
-		value = popMiniValue(db);
-		name = popMiniValue(value.second);
-		names = getMiniString(name.first);
-		if (names == "") {
-			println(file + ":  Expected string for name for define, got " + miniPretty(name.first) + " "  + toString(name.first));
-			println(value.first);
-		} else {
-			// println("Defined " + names);
-		};
-		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
-	} else if (command == "evallines") {
+	if (command == "" || db != db0 || startsWith(command, "// ")) db
+	else if (command == "evallines") {
 		// Splits each line in the string, and evaluates it
-		// TODO: Could maybe be strsplit, and then some kind of foreach
+		// TODO: Could maybe be strsplit, and then some kind of foreach in Forth itself
 		content = popMiniValue(db);
 		lines = strSplit(getMiniString(content.first), "\n");
 		fold(lines, content.second, \acc, line -> {
@@ -90,9 +55,8 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 				db with macros = setTree(db.macros, name, commands)
 			)
 		}
-	} else if (startsWith(command, "// ")) {
-		db;
 	} else {
+		// OK, see if it is a macro, native, constant or builtin
 		macro = getTreeArrayValue(db.macros, command);
 		if (macro != []) {
 			miniEvalForths(file, db, macro)
@@ -100,6 +64,8 @@ miniEvalForth(file : string, db : MiniDb, command : string) -> MiniDb {
 			mnative = lookupTree(db.natives, command);
 			switch (mnative) {
 				None(): {
+					// Here, we have a simple parser for constants, and the builtins
+					fchar = getCharAt(command, 0);
 					mbuiltin = 
 						if (startsWith(command, "\"")) {
 							Some(\forth -> {
@@ -147,8 +113,6 @@ miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
 		miniEvalForth(file, acc, command);
 	})
 }
-
-
 
 gringoForthAction(file : string) -> GringoAction<MiniDb> {
 	GringoAction(
