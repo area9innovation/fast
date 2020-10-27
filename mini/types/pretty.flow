@@ -2,18 +2,18 @@ import mini/types/type;
 import text/blueprint;
 
 export {
-	mtype2string(t : MiniType) -> string;
+	miniType2string(t : MiniType) -> string;
 }
 
-mtype2string(t : MiniType) -> string {
+miniType2string(t : MiniType) -> string {
 	switch (t) {
 		MiniTypeInt(bits): "i" + i2s(bits);
-		MiniTypeFunction(args, returnType): "(" + superglue(args, mtype2string, ", ") + ") -> " + mtype2string(returnType);
-		MiniTypeCall(id, typars): id + if (typars != []) "<" + superglue(typars, mtype2string, ", ") + ">" else "";
+		MiniTypeFunction(args, returnType): "(" + superglue(args, miniType2string, ", ") + ") -> " + miniType2string(returnType);
+		MiniTypeCall(id, typars): id + if (typars != []) "<" + superglue(typars, miniType2string, ", ") + ">" else "";
 		MiniTypeVar(id): "α" + i2s(id);
 		MiniTypePar(id): id;
 		MiniTypeRecord(fields): {
-			"{" + superglue(fields, \field -> field.name + ":" + mtype2string(field.type), ", ") + "}";
+			"{" + superglue(fields, \field -> (if (field.isMutable) "mutable " else "") + field.name + ":" + miniType2string(field.type), ", ") + "}";
 		}
 	}
 }

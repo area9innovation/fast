@@ -116,23 +116,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 		// Forth uniondef uses this to find the value to dispatch from
 		Pair("__structname", MiniTypeFunction([ta], tb)),
-
-		// Forth "uniondef" makes this for the type. TODO: Polymorphism is lost
-		Pair("__union0", MiniTypeFunction([ta], tb)),
-		Pair("__union1", MiniTypeFunction([ta, tb], tc)),
-		Pair("__union2", MiniTypeFunction([ta, tb, tc], td)),
-
-		// Forth "typename" makes this for building typename types
-		Pair("__typename0", MiniTypeFunction([s], ta)),
-		Pair("__typename1", MiniTypeFunction([s, ta], tb)),
-		Pair("__typename2", MiniTypeFunction([s, ta, tb], tc)),
-
-		// Forth fntype makes this
-		Pair("__fntype0", MiniTypeFunction([ta], MiniTypeFunction([], ta))),
-		Pair("__fntype1", MiniTypeFunction([ta, tb], MiniTypeFunction([tb], ta))),
-		Pair("__fntype2", MiniTypeFunction([ta, tb, tc], MiniTypeFunction([tb, tc], ta))),
-		Pair("__fntype3", MiniTypeFunction([ta, tb, tc, td], MiniTypeFunction([tb, tc, td], ta))),
-		Pair("__fntype4", MiniTypeFunction([ta, tb, tc, td, te], MiniTypeFunction([tb, tc, td, te], ta))),
 	])
 }
 

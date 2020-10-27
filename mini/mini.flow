@@ -6,11 +6,11 @@ import mini/backends/js;
 import mini/backends/pretty;
 
 main() {
-	file = getUrlParameterDef("file", "mini/tests/struct.flow");
+	file = getUrlParameterDef("file", "mini/tests/test.flow");
 	//file = getUrlParameterDef("file", "demos/euler/euler3.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "1"));
+	verbose = s2i(getUrlParameterDef("verbose", "2"));
 
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 
@@ -31,11 +31,23 @@ main() {
 					mtype = lookupTree(tdb.program.types, st);
 
 					typeString = mtype ?? {
-						" : " + mtype2string(mtype)
+						" : " + miniType2string(mtype)
 					} : "";
 					println(st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", "));
 				});
 			};
+
+			if (verbose > 1) {
+				println("\nUnions:");
+				traverseInOrder(tdb.program.unions, \name, union -> {
+					println(name + " : " + toString(union));
+				});
+				println("\nTypes:");
+				traverseInOrder(tdb.program.types, \name, type -> {
+					println(name + " : " + miniType2string(type));
+				});
+
+			}
 
 			if (verbose > 0) {
 				// Print the typed backend representation here

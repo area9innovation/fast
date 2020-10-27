@@ -125,7 +125,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 			}
 			switch (fn) {
 				MiniVar(fname, __): {
-					if (fname == "__type") {
+					if (fname == "__type" || fname == "__fntype"|| fname == "__uniontype" || fname == "__recordtype") {
 						type = convertMiniExp2Type(ex);
 
 						// OK, we have to fix the type of the construct so the AST is still completely types
@@ -134,6 +134,12 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 						set(fn);
 						iter(args, set);
 						// Set the real type;
+						setMiniTypeVar(env, ex, type);
+					} else if (fname == ":") {
+						// This is special.
+						argType = typeInferenceMini(env, args[0]);
+						type = convertMiniExp2Type(args[1]);
+						constrainMiniType(env, argType, type);
 						setMiniTypeVar(env, ex, type);
 					} else def();
 				}
@@ -149,10 +155,10 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 	} else {
 		env.constraintCache := insertSet(^(env.constraintCache), Pair(lhs, rhs));
 		
-		// println("Constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));
+		// println("Constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
 
 		error = \ -> {
-			// println("Cannot constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));
+			// println("Cannot constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
 		}
 
 		rightTyVar = \rid -> {
@@ -161,7 +167,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 		}
 
 		todo = \ -> {
-			println("TODO: Implement constrain " + mtype2string(lhs) + " <: " + mtype2string(rhs));
+			println("TODO: Implement constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
 		}
 
 		switch (lhs) {

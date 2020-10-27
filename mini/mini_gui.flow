@@ -27,7 +27,7 @@ viewMiniDb(m : MiniDb) -> Material {
 				deps = getMiniDependencies(m.program.idDependents, st, false);
 				mtype = lookupTree(m.program.types, st);
 				typeString = mtype ?? {
-					" : " + mtype2string(mtype)
+					" : " + miniType2string(mtype)
 				} : "";
 				text = st  + typeString + " =\n\t" + miniPretty(val) + " « " + strGlue(set2array(deps), ", ");
 				arrayPush(acc, MText(text, []))

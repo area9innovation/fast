@@ -27,6 +27,8 @@ def unop var swap list1 call
 // <exp> <exp> <string>  -> <call>(var(string), [exp, exp])
 def binop var rot rot list2 call
 
+// Type name only
 def type0 "__type" var swap list1 call
 
+// Type with 1 type parameter
 def type1 "__type" var rot rot swap list2 call

@@ -75,7 +75,7 @@ bstatement2flow(backend : Backend, b : BStatement) -> string {
 					"cases", superglue(cases, \c -> {
 						bexp2flow(backend, c.value) + ": " + bstatement2flow(backend, c.body) + ";"
 					}, ""),
-					"type", mtype2string(type),
+					"type", miniType2string(type),
 			])
 		}
 	}
@@ -111,7 +111,7 @@ bexp2flow(backend : Backend, b : BExp) -> string {
 					"cases", superglue(cases, \c -> {
 						bexp2flow(backend, c.value) + ": " + bexp2flow(backend, c.body) + ";"
 					}, ""),
-					"type", mtype2string(type),
+					"type", miniType2string(type),
 			])
 		}
 	}

@@ -17,7 +17,7 @@ miniEvalForth(file : string, db0 : MiniDb, command : string) -> MiniDb {
 	// Try to run this as a Forth command for mini
 	db = forthMiniCommand(file, db0, command);
 
-	if (command == "" || db != db0 || startsWith(command, "// ")) db
+	if (command == "" || !isSameObj(db, db0) || startsWith(command, "// ")) db
 	else if (command == "evallines") {
 		// Splits each line in the string, and evaluates it
 		// TODO: Could maybe be strsplit, and then some kind of foreach in Forth itself

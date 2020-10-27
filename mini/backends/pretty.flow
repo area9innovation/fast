@@ -14,13 +14,13 @@ prettyBDeclaration(b : BDeclaration) -> string {
 		BFunction(name, args, body, tc, type): {
 			(if (tc) "tailcall " else "") + name + "(" + superglue(args, \a -> a.name , ", ") + ") {\n"
 			+ prettyBStatement(body)
-			+ "\n}" + ":" + mtype2string(type)
+			+ "\n}" + ":" + miniType2string(type)
 		}
 		BGlobalVar(name, body, type): {
-			name + "=" + prettyBExp(body) + ":" + mtype2string(type);
+			name + "=" + prettyBExp(body) + ":" + miniType2string(type);
 		}
 		BNative(name, isio, type, nativeName, mfallback): {
-			"native " + name + " : " + (if (isio) "io" else "") + mtype2string(type) + " = " + nativeName
+			"native " + name + " : " + (if (isio) "io" else "") + miniType2string(type) + " = " + nativeName
 			+ (mfallback ?? (" with " + prettyBDeclaration(mfallback)) : "");
 		}
 	}
@@ -64,7 +64,7 @@ prettyBStatement(b : BStatement) -> string {
 					"cases", superglue(cases, \c -> {
 						prettyBExp(c.value) + ": " + prettyBStatement(c.body) + ";"
 					}, ""),
-					"type", mtype2string(type),
+					"type", miniType2string(type),
 			])
 		}
 	}
@@ -73,38 +73,38 @@ prettyBStatement(b : BStatement) -> string {
 prettyBExp(b : BExp) -> string {
 	switch (b) {
 		BValue(): prettyBValue(b);
-		BVar(name, type): name + " : " + mtype2string(type);
+		BVar(name, type): name + " : " + miniType2string(type);
 		BLet(name, value, body, type): {
 			blueprint("
 				%name% : %type% = %value%;
 				%body%", [
 					"name", name,
-					"type", mtype2string(type),
+					"type", miniType2string(type),
 					"value", prettyBExp(value),
 					"body", prettyBExp(body),
 			])
 		}
-		BLambda(args, body, type): "\\" + superglue(args, \fa -> fa.name, ", ") + " : " + mtype2string(type) + " -> " + prettyBExp(body);
+		BLambda(args, body, type): "\\" + superglue(args, \fa -> fa.name, ", ") + " : " + miniType2string(type) + " -> " + prettyBExp(body);
 		BCall(fn, args, type): {
 			def = \ -> {
-				prettyBExp(fn) + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);
+				prettyBExp(fn) + "(" + superglue(args, prettyBExp, ", ") + ") : " + miniType2string(type);
 			};
 			switch (fn) {
 				BVar(fname, ftype): {
 					if (fname == ";") {
-						prettyBExp(args[0]) + ";" + prettyBExp(args[1]) + " : " + mtype2string(type);
+						prettyBExp(args[0]) + ";" + prettyBExp(args[1]) + " : " + miniType2string(type);
 					} else {
-						fname + "(" + superglue(args, prettyBExp, ", ") + ") : " + mtype2string(type);
+						fname + "(" + superglue(args, prettyBExp, ", ") + ") : " + miniType2string(type);
 					}
 				}
 				default: def();
 			}
 		}
 		BIf(cond, then, else_, type): {
-			"if (" + prettyBExp(cond) + ") {" + prettyBExp(then) + "} else {" + prettyBExp(else_) + "}" + " : " + mtype2string(type);
+			"if (" + prettyBExp(cond) + ") {" + prettyBExp(then) + "} else {" + prettyBExp(else_) + "}" + " : " + miniType2string(type);
 		}
 		BSequence(statements, type): {
-			"{" + superglue(statements, \s -> prettyBExp(s), "; ") + "}" + " /* " + mtype2string(type) + "*/";
+			"{" + superglue(statements, \s -> prettyBExp(s), "; ") + "}" + " /* " + miniType2string(type) + "*/";
 		}
 		BSwitch(val, cases, type): {
 			blueprint("
@@ -115,7 +115,7 @@ prettyBExp(b : BExp) -> string {
 					"cases", superglue(cases, \c -> {
 						prettyBExp(c.value) + ": " + prettyBExp(c.body) + ";"
 					}, ""),
-					"type", mtype2string(type),
+					"type", miniType2string(type),
 			])
 		}
 	}

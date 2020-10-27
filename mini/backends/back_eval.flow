@@ -35,7 +35,7 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string
 						gen = match[0];
 						evalBackExp(backend, args, rec, gen.product);
 					} else if (gens != []) {
-						backend.onError(0 /*call.pos*/, "Can not generate " + name + " for type " + mtype2string(fn.type));
+						backend.onError(0 /*call.pos*/, "Can not generate " + name + " for type " + miniType2string(fn.type));
 
 						gen = gens[0];
 						evalBackExp(backend, args, rec, gen.product);

@@ -30,6 +30,9 @@ export {
 		// We also keep the builtins here
 		types : Tree<string, MiniType>,
 
+		// Definitions of unions
+		unions : Tree<string, MiniUnion>,
+
 		// Typed versions of our declarations.
 		typedDeclarations : Tree<string, BExp>,
 
@@ -38,9 +41,9 @@ export {
 	);
 
 	MiniAnnotation(
-		// What is the scope of this annotation? if empty, all ids. Otherwise, the given id
+		// What is the scope of this annotation? If empty, all ids. Otherwise, the given id
 		scope : string,
-		// What is the name of this annotation? file, export, forward, native-def
+		// What is the name of this annotation? native-def, export, forward, 
 		annotation : string,
 		// What is the value of the annotation
 		value : MiniExp

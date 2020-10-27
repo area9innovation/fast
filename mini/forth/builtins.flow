@@ -2,6 +2,7 @@ import mini/forth/forth;
 import mini/forth/stack;
 import mini/exp/value;
 import mini/exp/pretty;
+import mini/types/type_ast;
 import ds/tree;
 import string;
 import math/math;
@@ -258,70 +259,24 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		}),
 
 		Pair("fntype", \stack -> {
-			//	__fntypeN(returnType, arg0, arg1, arg...);
+			//	__fntype(returnType, arg0, arg1, arg...);
 			rt = popMStack(stack);
 			args = popMStack(rt.second);
 			targs = getMiniArray(args.first);
-			cardinality = length(targs);
 
 			pushMStack(args.second, 
-				MiniCall(MiniVar("__fntype" + i2s(cardinality), 0), concat(
+				MiniCall(MiniVar("__fntype", 0), concat(
 					[rt.first], targs
 				), 0)
 			);
 		}),
 
-		Pair("typename", \stack -> {
-			// OK: We should make a __typenameX(id, typars) call
-			// Can this be written in the Forth lib?
-			typars = popMStack(stack);
-			id = popMStack(typars.second);
-			ttypars = getMiniArray(typars.first);
-			cardinality = length(ttypars);
-			pushMStack(id.second, MiniCall(MiniVar("__typename" + i2s(cardinality), 0), concat([MiniVar(getMiniString(id.first), 0)], ttypars), 0));
-		}),
-
-
-		Pair("uniondef", \stack -> {
-			typenames = popMStack(stack);
-			typepars = popMStack(typenames.second);
-			id = popMStack(typepars.second);
-			ttypenames = getMiniArray(typenames.first);
-			ttypars = getMiniArray(typepars.first);
-
-			cardinality = length(ttypenames);
-
-			// TODO: We should probably have cardinality for the typars?
-
-			pushMStack(typepars.second, 
-				MiniCall(MiniVar(":", 0),
-					[
-						MiniLambda(["u"], 
-							MiniCall(MiniVar("__structname", 0), [MiniVar("u", 0)], 0),
-							0
-						),
-						MiniCall(MiniVar("__union" + i2s(cardinality), 0), concat(
-							[
-								MiniCall(
-									MiniVar(getMiniString(id.first), 0),
-									ttypars,
-									0
-								)
-							], ttypenames
-						), 0)
-					]
-					, 0
-				)
-			);
-		}),
-
 		Pair("structdef", \stack -> {
-			// 	<id> <args> structdef	- push a struct type definition on the stack
+			// 	<id> <args> structdef	- push a constructor for a struct type on the stack
 			//   args is an array of __structarg(id, 0/1, type-exp)
 
-			// The result is a fn that builds a struct value.
-			// TODO: We should also construct the struct type
-			// 
+			// The result is a fn that builds a struct value of type
+			// (args) -> { field : Type, field : Type }
 
 			typeargs = popMStack(stack);
 			id = popMStack(typeargs.second);
@@ -331,18 +286,32 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 
 			args : [Triple<string, bool, MiniExp>] = map(ttypeargs, unwrapStructArg);
 	
-			// TODO: Figure out what to do with the mutable
-			// TODO: Add return type with :
+			// TODO: Should we add a field for the id? Yeah, we should
+			recordType = MiniTypeRecord(map(args, \a -> {
+				MiniTypeField(a.first, a.second, convertMiniExp2Type(a.third))
+			}));
 
-			lambda = MiniLambda(
-				map(args, \a -> a.first),
-				MiniCall(MiniVar("__construct" + i2s(cardinality), 0), concat(
-					[
-						id.first,
-					], map(args, \a -> MiniString(a.first))
-				), 0),
-				0
+			constructorType = MiniTypeFunction(
+				map(args, \a -> convertMiniExp2Type(a.third)), recordType
 			);
+
+			constructorTypeAsExp = miniType2Exp(constructorType);
+
+			lambda = 
+				MiniCall(
+					MiniVar(":", 0),
+					[
+						MiniLambda(
+							map(args, \a -> a.first),
+							MiniCall(MiniVar("__construct" + i2s(cardinality), 0), concat(
+								[
+									id.first,
+								], map(args, \a -> MiniString(a.first))
+							), 0), 0
+						), 
+						constructorTypeAsExp
+					], 0
+				);
 
 			pushMStack(typeargs.second, lambda);
 		}),

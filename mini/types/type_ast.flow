@@ -2,10 +2,13 @@ import mini/types/type;
 import mini/types/builtin;
 import mini/exp/exp;
 import mini/exp/value;
+import math/math;
 
 export {
 	// Knows about void, bool, int, double, string, array, ref, typenames
 	convertMiniExp2Type(e : MiniExp) -> MiniType;
+
+	miniType2Exp(t : MiniType) -> MiniExp;
 }
 
 convertMiniExp2Type(e : MiniExp) -> MiniType {
@@ -25,19 +28,80 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 							miniTypeBool
 						} else if (name == "int") {
 							miniTypeInt
+						} else if (name != "" && trim2(name, "?") == "") {
+							MiniTypePar(name)
 						} else {
 							targs = map(tail(args), convertMiniExp2Type);
 							MiniTypeCall(name, targs);
 						}
-					// TODO: Add the other type constructors here
-					
+					} else if (fname == "__fntype") {
+						retType = convertMiniExp2Type(args[0]);
+						argTypes = map(tail(args), convertMiniExp2Type);
+						MiniTypeFunction(argTypes, retType);
+					} else if (fname == "__recordtype") {
+						fields = map(args, convertMiniExp2Field);
+						MiniTypeRecord(fields);
 					} else {
-						error();
+						MiniTypeCall(fname, map(args, convertMiniExp2Type));
 					}
 				}
 				default: error();
 			}
 		}
 		default: error();
+	}
+}
+
+convertMiniExp2Field(e : MiniExp) -> MiniTypeField {
+	error = \ -> {
+		println("Expected field");
+		println(e);
+		MiniTypeField("", false, miniTypeVoid)
+	};
+	switch (e) {
+		MiniCall(fn, args, __): {
+			switch (fn) {
+				MiniVar(fname, __): {
+					if (fname == "__field") {
+						name = getMiniString(args[0]);
+						isMutable = i2b(getMiniInt(args[1]));
+						ftype = convertMiniExp2Type(args[2]);
+						MiniTypeField(name, isMutable, ftype);
+					} else error();
+				}
+				default: error();
+			}
+		}
+		default: error();
+	}
+}
+
+miniType2Exp(t : MiniType) -> MiniExp {
+	ty = \s,a : [MiniType] -> MiniCall(MiniVar("__type", 0), concat([MiniString(s)], map(a, miniType2Exp)), 0);
+	error = \ -> { 
+		println("Cannot convert type to exp:");
+		println(t);
+		ty("flow",[]);
+	}
+	switch (t) {
+		MiniTypeInt(bits): {
+			if (bits == 0) ty("void",[])
+			else if (bits == 1) ty("bool",[])
+			else if (bits == 32) ty("int",[])
+			else error();
+		}
+		MiniTypeFunction(args, returnType): {
+			MiniCall(MiniVar("__fntype", 0), concat([miniType2Exp(returnType)], map(args, miniType2Exp)), 0)
+		}
+		MiniTypeCall(id, typars): ty(id, typars);
+		MiniTypeVar(id): error();
+		MiniTypePar(id): ty(id, []);
+		MiniTypeRecord(fields): {
+			MiniCall(MiniVar("__recordtype", 0), map(fields, \f -> {
+				MiniCall(MiniVar("__field", 0), [
+					MiniString(f.name), MiniInt(b2i(f.isMutable), 0), miniType2Exp(f.type)
+				], 0);
+			}), 0)
+		}
 	}
 }

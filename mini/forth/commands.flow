@@ -40,6 +40,8 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		type = convertMiniExp2Type(value.first);
 
+		// println(MiniTypeDefine(file, names, type));
+
 		if (names == "") {
 			println(file + ":  Expected string for name for type define, got " + miniPretty(name.first) + " "  + toString(name.first));
 			println(value.first);
@@ -47,6 +49,25 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			// println("Defined " + names);
 		};
 		pushMiniCommand(name.second, MiniTypeDefine(file, names, type));
+
+	} else if (command == "uniondef") {
+		// MiniDefineUnion(name : string, typars : [MiniType], structs : [MiniType]);
+		structs = popMiniValue(db);
+		typars = popMiniValue(structs.second);
+		name = popMiniValue(typars.second);
+
+		structss = map(getMiniArray(structs.first), convertMiniExp2Type);
+		typarss = map(getMiniArray(typars.first), convertMiniExp2Type);
+		names = getMiniString(name.first);
+
+		// println(MiniTypeDefine(file, names, type));
+
+		if (names == "") {
+			println(file + ":  Expected string for name for union define, got " + miniPretty(name.first) + " "  + toString(name.first));
+		} else {
+			// println("Defined " + names);
+		};
+		pushMiniCommand(name.second, MiniUnionDefine(names, typarss, structss));
 	} else if (command == "define") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);

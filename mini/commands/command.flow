@@ -5,7 +5,7 @@ import algorithms;
 
 export {
 	// These are the commands that the underlying compiler understands
-	MiniCommand ::= MiniProcessFile, MiniSetAnnotation, MiniTypeDefine, MiniDefine, MiniPopFile, MiniTypeInfer;
+	MiniCommand ::= MiniProcessFile, MiniSetAnnotation, MiniTypeDefine, MiniUnionDefine, MiniDefine, MiniPopFile, MiniTypeInfer;
 
 		// Read a file and if changed, run this Forth command on it. Notice this is async
 		MiniProcessFile(usedByFile : string, name : string, asyncCommand : string);
@@ -15,8 +15,11 @@ export {
 		// "export" for the export section (not done yet)
 		MiniSetAnnotation(scope : string, annotation : string, value : MiniExp);
 
-		// Define a type. Used for structs, forward declarations
+		// Define a type. Used for forward declarations
 		MiniTypeDefine(file : string, name : string, type : MiniType);
+
+		// Define a type. Used for forward declarations
+		MiniUnionDefine(name : string, typars : [MiniType], typenames : [MiniType]);
 
 		// Define this id to this expression from this file. This will pick up any annotations
 		// so far for this id as well
@@ -45,6 +48,7 @@ getMiniCommandPriority(c : MiniCommand) -> int {
 		MiniProcessFile(__, name, command): 0;
 		MiniSetAnnotation(annotation, scope, value): 1;
 		MiniTypeDefine(file, name, type): 2;
+		MiniUnionDefine(name, typars, typenames): 2;
 		MiniDefine(file, name, value): 3;
 		MiniPopFile(file): 4;
 		MiniTypeInfer(ids): 5;
@@ -52,7 +56,7 @@ getMiniCommandPriority(c : MiniCommand) -> int {
 }
 
 getMiniCommandFromPriority(p : int) -> string {
-	["Files", "Annotations", "Type defs", "Defines", "Finish files", "Typechecks"][p]
+	["Files", "Annotations", "Type defs", "Union def", "Defines", "Finish files", "Typechecks"][p]
 }
 
 miniCommand2string(c : MiniCommand) -> string {
@@ -60,6 +64,7 @@ miniCommand2string(c : MiniCommand) -> string {
 		MiniProcessFile(__, name, command): "Process file '" + name + "' with '" + command + "'";
 		MiniSetAnnotation(annotation, scope, value): "Set annotation " + annotation + " with scope " + scope;
 		MiniTypeDefine(file, name, type): "Type define " + name;
+		MiniUnionDefine(name, typars, typenamse): "Union define " + name;
 		MiniDefine(file, name, value): "Define " + name;
 		MiniPopFile(file): "Pop file " + file;
 		MiniTypeInfer(ids): "Infer type " + strGlue(set2array(ids), ", ");
@@ -74,6 +79,7 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 			MiniProcessFile(__, __, command): uniq(ms);
 			MiniSetAnnotation(__, __, __): ms;
 			MiniTypeDefine(__, __, __): ms;
+			MiniUnionDefine(__, __, __): ms;
 			MiniDefine(__, __, __): ms;
 			MiniPopFile(__): ms;
 			MiniTypeInfer(__): {

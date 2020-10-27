@@ -538,6 +538,28 @@ Database:
 
 # How to handle types in the AST
 
+We express types as expressions like this:
+
+- void  	__type("void")
+- bool		__type("bool")
+- int		__type("int")
+- double	__type("double")
+- string	__type("string")
+- flow		__type("flow")
+- native	__type("native")
+- ref T		__type("ref", T)
+- [T]		__type("array", T)
+- ?			__type("?")
+- S<T, T>	__type(S(T, T))
+- () -> T	__fntype(T)
+- (T) -> R	__fntype(R, T)
+
+Unions are stored in the AST in the unions field.
+
+  a : T		 __fieldtype(a, 0, T)
+  mutable a : T	__fieldtype(a, 1, T)
+  { ... }    __recordtype(,,,)
+
 The use in the grammar is isolated to a few areas:
 - The ":" operator	-> :(exp, __type())
 - Forward declarations of globals and functions -> Forward declarations to types in AST

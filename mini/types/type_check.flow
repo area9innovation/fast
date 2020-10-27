@@ -72,7 +72,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	traverseInOrder(resTypes, \tv, restype -> {
 		resolved = simplifyResType(resTypes, restype);
 		tenv2.tyvars := setTree(^(tenv2.tyvars), tv, resolved);
-//		println("a"  + i2s(tv) + " = " + mtype2string(resolved));
+//		println("a"  + i2s(tv) + " = " + miniType2string(resolved));
 	});
 
 	// OK, remove the current set of ids from the pure set

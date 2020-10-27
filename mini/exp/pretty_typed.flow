@@ -60,16 +60,16 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 		mtype = lookupTree(^(env.tyvars), tv);
 		mtype ?? {
 			if (true) {
-				" :  α" + i2s(tv) + "≔ " + mtype2string(mtype)
+				" :  α" + i2s(tv) + "≔ " + miniType2string(mtype)
 			} else {
-				" : " + mtype2string(mtype)
+				" : " + miniType2string(mtype)
 			}
 		} : {
 			lower = lookupMultimap(^(env.tyvarLowerBounds), tv);
 			upper = lookupMultimap(^(env.tyvarUpperBounds), tv);
 			b = \s : Set<MiniType>, sep -> {
 				if (isEmptySet(s)) ""
-				else superglue(set2array(s), mtype2string, sep)
+				else superglue(set2array(s), miniType2string, sep)
 			}
 			" : α" + i2s(tv) 
 				+ (if (equalSet(lower, upper)) "≔" + b(lower, ",") 

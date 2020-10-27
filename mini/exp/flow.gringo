@@ -27,7 +27,7 @@ native = "native" s id ws ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" w
 
 assign = id ws '=' ws exp ';'? ws $"define";
 
-union = id ws typars "::=" ws typenames ';' ws $"uniondef" $"define";
+union = id ws typars "::=" ws typenames ';' ws $"uniondef";
 
 	// listof(typename, ",")
 	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
@@ -169,7 +169,7 @@ type =
 		| $("?"+) ws $"type0"
 	;
 
-typename = id ws typars $"typename";
+typename = id $"var" ws typars $"call"; 
 
 typars = "<" ws types ">" ws
 	| $"nil";

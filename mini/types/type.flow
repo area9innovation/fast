@@ -13,10 +13,14 @@ export {
 		// Used internally in the inference
 		MiniTypeVar(id : int);
 
-		// Polymorphism
+		// Polymorphism - TODO: It might be a good idea to add a type-var here
 		MiniTypePar(id : string);
 
 		// An (anonymous) record type
 		MiniTypeRecord(fields : [MiniTypeField]);
 			MiniTypeField(name : string, isMutable : bool, type : MiniType);
+
+	// The definition of a union
+	// TODO: typars : [MiniTypePar] and typenames : [MiniCall] instead
+	MiniUnion(name : string, typars : [MiniType], typenames : [MiniType]);
 }
