@@ -145,10 +145,9 @@ cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")+ | $$"__void" 
 
 defaultOrNamedCase = 
 	"default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
-	| id ws '(' ws names ')' $$"__pattern1" $"binop" ws ':' ws exp (';' ws)? $$"__case" $"binop"
-	| id ws '(' ws ')' $$"__pattern0" $"unop" ws ':' ws exp (';' ws)? $$"__case" $"binop";
+	| id ws '(' ws names ')' ws ':' ws exp (';' ws)? $"case";
 
-names = id ws (',' ws id $$"," $"binop")*;
+names = $"nil" id $"cons" ("," ws id $"cons")* | $"nil";
 
 type = 	
 		"bool" !letterOrDigit ws $$"bool" $"type0"

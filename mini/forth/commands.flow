@@ -68,7 +68,11 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		} else {
 			// println("Defined " + names);
 		};
-		pushMiniCommand(name.second, MiniUnionDefine(names, typarss, structss));
+		// TODO: This might be wrong in incremental?
+		MiniDb(
+			name.second with
+			program = MiniAst(name.second.program with unions = setTree(name.second.program.unions, names, MiniUnion(names, typarss, structss)))
+		);
 	} else if (command == "structdef") {
 		// 	<id> <args> structdef	- push a constructor for a struct type on the stack
 		//   args is an array of __structarg(id, 0/1, type-exp)
@@ -86,7 +90,6 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		fields = map(args, \a -> {
 			MiniTypeField(a.first, a.second, convertMiniExp2Type(a.third))
 		});
-
 
 		typars = extractMiniTypePars(makeSet(), MiniTypeRecord(fields));
 		constructorType = MiniTypeFunction(
@@ -112,7 +115,12 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 				], 0
 			);
 
-		db2 = pushMiniCommand(id.second, MiniStructDefine(ids, fields));
+		// TODO: This might be wrong in incremental?
+		db2 = MiniDb(
+				id.second with
+				program = MiniAst(id.second.program with structs = setTree(id.second.program.structs, ids, MiniStruct(ids, fields)))
+			);
+		// In addition to the type, we also register the constructor function
 		pushMiniCommand(db2, MiniDefine(file, ids, lambda));
 	} else if (command == "define") {
 		// MiniDefine(name : string, value : MiniExp);
@@ -126,6 +134,61 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			// println("Defined " + names);
 		};
 		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
+	} else if (command == "case") {
+		body = popMiniValue(db);
+		vars = popMiniValue(body.second);
+		struct = popMiniValue(vars.second);
+
+		structs : string = getMiniString(struct.first);
+		varss : [string] = map(getMiniArray(vars.first), getMiniString);
+		bodys : MiniExp = body.first;
+
+		mstructdef = lookupTree(db.program.structs, structs);
+		mstructdef ?? {
+			/*
+			We turn "Some(v): body;" into the equivalent of this:
+			__case(Some, 
+				// Downcast
+				__switchvar = __switchvar : __type("Some");
+				// Index
+				v = __switchvar."value";
+				v;
+			)
+			*/
+			bodyLet = foldi(varss, bodys, \i, acc, var -> {
+							if (var != "__") {
+								MiniLet(var, MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString(mstructdef.fields[i].name)], 0), acc, 0)
+							} else acc
+						});
+
+			case = MiniCall(MiniVar("__case", 0), 
+				[
+					MiniVar(structs, 0),
+					// TODO. This let might be superfluous if the body does not reference __switchvar
+					MiniLet(
+						"__switchvar",
+						MiniCall(MiniVar(":", 0), [
+							MiniVar("__switchvar", 0),
+							miniType2Exp(MiniTypeCall(structs, [])),
+						], 0), bodyLet, 0
+					)
+				], 
+				0
+			);
+			pushMiniValue(struct.second, case);
+		} : {
+			muniondef = lookupTree(db.program.unions, structs);
+			switch (muniondef) {
+				None(): {
+					println(file + " unknown case in switch " + structs);
+					struct.second;
+				}
+				Some(uniondef): {
+					println("TODO: Implement expansion of union case in switch: " + structs);
+					struct.second;
+				}
+			}
+		}
 	} else db;
 }
 

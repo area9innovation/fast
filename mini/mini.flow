@@ -46,11 +46,12 @@ main() {
 				traverseInOrder(tdb.program.structs, \name, struct -> {
 					println(name + " : " + toString(struct));
 				});
+			}
+			if (verbose > 2) {
 				println("\nTypes:");
 				traverseInOrder(tdb.program.types, \name, type -> {
 					println(name + " : " + miniType2string(type));
 				});
-
 			}
 
 			if (verbose > 0) {

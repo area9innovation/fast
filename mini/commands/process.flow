@@ -103,20 +103,6 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				program = MiniAst(db.program with types = setTree(db.program.types, name, type))
 			);
 		}
-		MiniUnionDefine(name, typars, typenames): {
-			// TODO: Maybe we have to refine this later for incremental
-			MiniDb(
-				db with
-				program = MiniAst(db.program with unions = setTree(db.program.unions, name, MiniUnion(name, typars, typenames)))
-			);
-		}
-		MiniStructDefine(name, fields): {
-			// TODO: Maybe we have to refine this later for incremental
-			MiniDb(
-				db with
-				program = MiniAst(db.program with structs = setTree(db.program.structs, name, MiniStruct(name, fields)))
-			);
-		}
 		MiniDefine(file, id, body): {
 			// OK, extract annotations - TODO: Decide whether this is the time to do it or not
 			generalAnnotation = getTreeArrayValue(db.program.unprocessedAnnotations, "");

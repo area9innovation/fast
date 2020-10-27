@@ -1,8 +1,10 @@
-Bar(a : string);
+None();
+Some(alpha : int);
 
-Baz(a : string, b : ?);
-
-Foo<?> ::= Bar, Baz<?>;
-
-a : Maybe<int, double> = 0;
-b : () -> void = 0;
+main() {
+	switch (m) {
+		None(): 0;
+		Some(v): v;
+		default: 0;
+	};
+}

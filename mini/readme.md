@@ -632,6 +632,8 @@ and need to lower to the appropriate switch in the BExp.
 
 
 To be able to do this, the hardest part is changing "Some" to the let where it has "value".
+Another problem is to get the "s" for the case out.
+Maybe we have to give the switch expression a standard name?
 
 Because of a program like this:
 
@@ -660,13 +662,6 @@ the struct instead of going by name:
 	]);
 
 Plan:
-- Add "typedef" command.
-- Construct a record type for struct and typedef that
-  as part of struct-def.
-  So struct-def is decomposed into two parts:
-  - A typedef
-  - Making a constructor function
-
 - Figure out what to to do at the MiniExp level for cases.
 
 Special things:
