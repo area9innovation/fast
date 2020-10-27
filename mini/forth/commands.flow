@@ -163,15 +163,18 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 
 			case = MiniCall(MiniVar("__case", 0), 
 				[
-					MiniVar(structs, 0),
-					// TODO. This let might be superfluous if the body does not reference __switchvar
-					MiniLet(
-						"__switchvar",
-						MiniCall(MiniVar(":", 0), [
-							MiniVar("__switchvar", 0),
-							miniType2Exp(MiniTypeCall(structs, [])),
-						], 0), bodyLet, 0
-					)
+					MiniCall(
+						MiniVar("__caseid", 0),
+						[
+							MiniVar(structs, 0),
+						], 0
+					),
+					// TODO: This implies a downcast in the body of __switchvar
+					MiniCall(MiniVar("__casebody", 0), [
+						MiniVar("__switchvar", 0),
+						miniType2Exp(MiniTypeCall(structs, [])),
+						bodyLet,
+					], 0),
 				], 
 				0
 			);

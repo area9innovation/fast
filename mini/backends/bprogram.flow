@@ -31,7 +31,7 @@ export {
 		BTailCall(fn : string, args : [string], values : [BExp]);
 
 		BSwitchStatement(exp : BExp, cases : [BCaseStatement], type : MiniType);
-			BCaseStatement(value : BValue, body : BStatement);
+			BCaseStatement(value : BExp, body : BStatement);
 
 	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BSwitch;
 		BVar(name : string, type : MiniType);
@@ -45,7 +45,7 @@ export {
 		BIf(cond : BExp, then : BExp, else_ : BExp, type : MiniType);
 		BSequence(exps : [BExp], type : MiniType);
 		BSwitch(val : BExp, cases : [BCase], type : MiniType);
-			BCase(value : BValue, body : BExp);
+			BCase(value : BExp, body : BExp);
 
 	// The backends get this language
 	BValue ::= BInt, BDouble, BString;

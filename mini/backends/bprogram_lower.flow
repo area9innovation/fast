@@ -180,6 +180,12 @@ miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 						} else {
 							BSequence(map(args, \a -> miniExp2BExp(env, a)), resolveMiniTypeVar(env, tv));
 						}
+					} else if (fname == "__switch") {
+						BSwitch(
+							miniExp2BExp(env, args[0]),
+							miniExp2BCases(env, args[1]),
+							resolveMiniTypeVar(env, tv)
+						);
 					} else {
 						BCall(miniExp2BExp(env, fn), map(args, \a -> miniExp2BExp(env, a)), resolveMiniTypeVar(env, tv));
 					}
@@ -195,6 +201,38 @@ miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
 		MiniInt(value, tv): BInt(value, resolveMiniTypeVar(env, tv));
 		MiniDouble(value): BDouble(value);
 		MiniString(value): BString(value);
+	}
+}
+
+miniExp2BCases(env : MiniTypeEnv, arg : MiniExp) -> [BCase] {
+	switch (arg) {
+		MiniCall(fn, args, tv): {
+			switch (fn) {
+				MiniVar(fname, __): {
+					if (fname == "__or") {
+						concat(miniExp2BCases(env, args[0]), miniExp2BCases(env, args[1]));
+					} else if (fname == "__case") {
+						case = miniExp2BExp(env, args[0]);
+						body = miniExp2BExp(env, args[1]);
+						[BCase(case, body)];
+					} else {
+						println("TODO: Handle this case");
+						println(arg);
+						[];
+					}
+				}
+				default: {
+					println("TODO: Handle this case");
+					println(arg);
+					[];
+				}
+			}
+		}
+		default: {
+			println("TODO: Handle this case");
+			println(arg);
+			[];
+		}
 	}
 }
 

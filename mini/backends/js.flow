@@ -121,8 +121,8 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 				}", [
 					"val", bexp2js(backend, val),
 					"cases", superglue(cases, \c -> {
-						"case " + bexp2js(backend, c.value) + ": " + bstatement2js(backend, c.body, withReturn) + ";break;"
-					}, ""),
+						"case " + bexp2js(backend, c.value) + ": " + bstatement2js(backend, c.body, withReturn)
+					}, "\n"),
 			])
 		}
 	}
