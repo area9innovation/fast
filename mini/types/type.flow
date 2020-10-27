@@ -23,4 +23,7 @@ export {
 	// The definition of a union
 	// TODO: typars : [MiniTypePar] and typenames : [MiniCall] instead
 	MiniUnion(name : string, typars : [MiniType], typenames : [MiniType]);
+
+	// The definition of a struct
+	MiniStruct(name : string, fields : [MiniTypeField]);
 }

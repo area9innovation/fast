@@ -4,6 +4,7 @@ import mini/commands/db;
 import mini/exp/value;
 import mini/exp/pretty;
 import mini/types/type_ast;
+import mini/types/polymorphism;
 
 export {
 	// Eval this Forth command as mini, in case it is. If not, just return the same db
@@ -68,6 +69,51 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			// println("Defined " + names);
 		};
 		pushMiniCommand(name.second, MiniUnionDefine(names, typarss, structss));
+	} else if (command == "structdef") {
+		// 	<id> <args> structdef	- push a constructor for a struct type on the stack
+		//   args is an array of __structarg(id, 0/1, type-exp)
+
+		// The result is a fn that builds a struct value of type
+		// (args) -> { field : Type, field : Type }
+
+		typeargs = popMiniValue(db);
+		id = popMiniValue(typeargs.second);
+		ttypeargs = getMiniArray(typeargs.first);
+
+		ids = getMiniString(id.first);
+
+		args : [Triple<string, bool, MiniExp>] = map(ttypeargs, unwrapStructArg);
+		fields = map(args, \a -> {
+			MiniTypeField(a.first, a.second, convertMiniExp2Type(a.third))
+		});
+
+
+		typars = extractMiniTypePars(makeSet(), MiniTypeRecord(fields));
+		constructorType = MiniTypeFunction(
+			map(args, \a -> convertMiniExp2Type(a.third)), MiniTypeCall(ids, set2array(typars))
+		);
+		constructorTypeAsExp = miniType2Exp(constructorType);
+
+		cardinality = length(fields);
+
+		lambda = 
+			MiniCall(
+				MiniVar(":", 0),
+				[
+					MiniLambda(
+						map(args, \a -> a.first),
+						MiniCall(MiniVar("__construct" + i2s(cardinality), 0), concat(
+							[
+								id.first,
+							], map(args, \a -> MiniString(a.first))
+						), 0), 0
+					), 
+					constructorTypeAsExp
+				], 0
+			);
+
+		db2 = pushMiniCommand(id.second, MiniStructDefine(ids, fields));
+		pushMiniCommand(db2, MiniDefine(file, ids, lambda));
 	} else if (command == "define") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);
@@ -81,4 +127,22 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		};
 		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
 	} else db;
+}
+
+
+// __structarg(string, 0/1, type)
+
+
+// decompose -> __structarg string 0/1 type 
+
+unwrapStructArg(arg : MiniExp) -> Triple<string, bool, MiniExp> {
+	switch (arg) {
+		MiniCall(fn, args, __): {
+			name = getMiniString(args[0]);
+			notmutable = i2b(getMiniInt(args[1]));
+			type = args[2];
+			Triple(name, !notmutable, type);
+		}
+		default: Triple("", false, arg);
+	}
 }

@@ -33,6 +33,9 @@ export {
 		// Definitions of unions
 		unions : Tree<string, MiniUnion>,
 
+		// Definitions of structs
+		structs : Tree<string, MiniStruct>,
+
 		// Typed versions of our declarations.
 		typedDeclarations : Tree<string, BExp>,
 

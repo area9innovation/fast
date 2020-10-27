@@ -12,6 +12,8 @@ export {
 	typeVars2TypePars(env : MiniTypeEnv, e : MiniType) -> MiniType;
 
 	makeMiniTypeVar(env : MiniTypeEnv) -> MiniTypeVar;
+
+	extractMiniTypePars(acc : Set<MiniTypePar>, e : MiniType) -> Set<MiniTypePar>;
 }
 
 initTyparMap(env : MiniTypeEnv) -> void {
@@ -93,4 +95,20 @@ makeMiniTypeVar(env : MiniTypeEnv) -> MiniTypeVar {
 	id = ^(env.tyvarId);
 	env.tyvarId := id + 1;
 	MiniTypeVar(id);
+}
+
+
+extractMiniTypePars(acc : Set<MiniTypePar>, e : MiniType) -> Set<MiniTypePar> {
+	switch (e) {
+		MiniTypeInt(bits): acc;
+		MiniTypeVar(id): acc;
+		MiniTypePar(id): insertSet(acc, e);
+		MiniTypeFunction(args, returnType): fold(args, extractMiniTypePars(acc, returnType), extractMiniTypePars);
+		MiniTypeCall(id, typars): fold(typars, acc, extractMiniTypePars);
+		MiniTypeRecord(fields): {
+			fold(fields, acc, \acc2, field -> {
+				extractMiniTypePars(acc2, field.type)
+			})
+		}
+	}	
 }

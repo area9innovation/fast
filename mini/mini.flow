@@ -42,6 +42,10 @@ main() {
 				traverseInOrder(tdb.program.unions, \name, union -> {
 					println(name + " : " + toString(union));
 				});
+				println("\nStructs:");
+				traverseInOrder(tdb.program.structs, \name, struct -> {
+					println(name + " : " + toString(struct));
+				});
 				println("\nTypes:");
 				traverseInOrder(tdb.program.types, \name, type -> {
 					println(name + " : " + miniType2string(type));
