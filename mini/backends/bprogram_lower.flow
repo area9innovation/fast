@@ -101,6 +101,10 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 
 bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailcall : bool, b : BExp) -> BStatement {
 	switch (b : BExp) {
+		BInt(value, type): {
+			if (type == miniTypeVoid) BReturnVoid()
+			else BReturn(b);
+		}
 		BValue(): BReturn(b);
 		BVar(name, type): BReturn(b);
 		BLet(name, value, body, type): {
@@ -219,20 +223,20 @@ miniExp2BCases(env : MiniTypeEnv, arg : MiniExp) -> [BCase] {
 						body = miniExp2BExp(env, args[0]);
 						[BCase(BVar("default", resolveMiniTypeVar(env, vtv)), body)];
 					} else {
-						println("TODO: Handle this case");
+						println("TODO: Handle this case 1");
 						println(arg);
 						[];
 					}
 				}
 				default: {
-					println("TODO: Handle this case");
+					println("TODO: Handle this case 2");
 					println(arg);
 					[];
 				}
 			}
 		}
 		default: {
-			println("TODO: Handle this case");
+			println("TODO: Handle this case 3");
 			println(arg);
 			[];
 		}
@@ -241,6 +245,10 @@ miniExp2BCases(env : MiniTypeEnv, arg : MiniExp) -> [BCase] {
 
 bexp2BReturn(b : BExp) -> BStatement {
 	switch (b) {
+		BInt(value, type): {
+			if (type == miniTypeVoid) BReturnVoid()
+			else BReturn(b);
+		}
 		BValue(): BReturn(b);
 		BVar(name, type): BReturn(b);
 		BLet(name, value, body, type): {

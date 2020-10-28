@@ -183,6 +183,8 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			muniondef = lookupTree(db.program.unions, structs);
 			switch (muniondef) {
 				None(): {
+					// OK, we have a problem if we import none, and that means it is
+					// not known at this point.
 					println(file + " unknown case in switch " + structs);
 					struct.second;
 				}

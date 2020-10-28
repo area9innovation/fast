@@ -83,8 +83,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		Pair("__caseid", MiniTypeFunction([ta], tb)),
 		Pair("__casebody", MiniTypeFunction([ta, tb, tc], tc)),
 
-		Pair("__switchvar", ta),
-
 		Pair("__pattern0", MiniTypeFunction([s], ta)),
 		// For patterns with arguments
 		Pair("__pattern1", MiniTypeFunction([s,ta], tb)),
