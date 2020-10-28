@@ -76,9 +76,14 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 		// switch
 		Pair("__switch", MiniTypeFunction([ta, tb], tb)),
+		Pair("__switchvalue", MiniTypeFunction([ta], tb)),
 		Pair("__case", MiniTypeFunction([ta, tb], tb)),
 		Pair("__defaultcase", MiniTypeFunction([ta], ta)),
 			Pair("__or", MiniTypeFunction([ta, ta], ta)),
+		Pair("__caseid", MiniTypeFunction([ta], tb)),
+		Pair("__casebody", MiniTypeFunction([ta, tb, tc], tc)),
+
+		Pair("__switchvar", ta),
 
 		Pair("__pattern0", MiniTypeFunction([s], ta)),
 		// For patterns with arguments
@@ -113,9 +118,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		Pair("__construct2", MiniTypeFunction([s, ta, tb], tc)),
 		Pair("__construct3", MiniTypeFunction([s, ta, tb, tc], td)),
 		Pair("__construct4", MiniTypeFunction([s, ta, tb, tc, td], te)),
-
-		// Forth uniondef uses this to find the value to dispatch from
-		Pair("__structname", MiniTypeFunction([ta], tb)),
 	])
 }
 

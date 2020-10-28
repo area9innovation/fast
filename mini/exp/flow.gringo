@@ -139,7 +139,7 @@ expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 
 semiexps = exp (";" ws exp $$";" $"binop")*;
 
-switch = "switch" !letterOrDigit ws '(' ws exp ')' ws '{' ws cases '}' ws $$"__switch" $"binop";
+switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvalue" $"unop" ')' ws '{' ws cases '}' ws $$"__switch" $"binop";
 
 cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")+ | $$"__void" $"var" $"nil" $"call";
 
