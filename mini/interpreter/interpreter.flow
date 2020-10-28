@@ -1,0 +1,55 @@
+import mini/exp/ast;
+
+export {
+	// TODO: Add builtins for switch and case handling
+	// into the declarations, so we only expand those parts
+	makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter;
+
+	MiniInterpreter(env : MiniAst);
+
+	interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
+}
+
+makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter {
+	MiniInterpreter(ast);
+}
+
+interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
+	switch (e) {
+		MiniValue(): e;
+		MiniVar(name, tyvar): {
+			lookupTreeDef(env.env.declarations, name, e);
+		}
+		MiniLet(name, value, body, tyvar): {
+			evalue = interpretMiniExp(env, value);
+			nenv = setMiniInterpreterVar(env, name, evalue);
+			interpretMiniExp(nenv, body);
+		}
+		MiniLambda(args, body, tyvar): {
+			// TODO: Grab closure?
+			e;
+		}
+		MiniCall(fn, args, tyvar): {
+			efn = interpretMiniExp(env, fn);
+			eargs = map(args, \a -> interpretMiniExp(env, a));
+			interpretMiniCall(env, efn, eargs, tyvar)
+		}
+	}
+}
+
+interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], tyvar : int) -> MiniExp {
+	switch (fn) {
+		MiniLambda(largs, body, __): {
+			nenv = foldi(largs, env, \i, acc, arg -> {
+				setMiniInterpreterVar(acc, arg, args[i])
+			});
+			interpretMiniExp(nenv, body)
+		}
+		default: MiniCall(fn, args, tyvar);
+	}
+}
+
+setMiniInterpreterVar(env : MiniInterpreter, name : string, value : MiniExp) -> MiniInterpreter {
+	nast = MiniAst(env.env with declarations = setTree(env.env.declarations, name, value));
+	MiniInterpreter(env with env = nast);
+}
