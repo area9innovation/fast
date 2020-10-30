@@ -13,7 +13,7 @@ export {
 miniEvalForth(file : string, db0 : MiniDb, command : string) -> MiniDb {
 	// println("\nRunning " + command + " with stack:");
 	// iterList(db.forth.stack, println);
-	
+
 	// Try to run this as a Forth command for mini
 	db = forthMiniCommand(file, db0, command);
 
@@ -117,7 +117,9 @@ miniEvalForths(file : string, db : MiniDb, commands : [string]) -> MiniDb {
 gringoForthAction(file : string) -> GringoAction<MiniDb> {
 	GringoAction(
 		\db : MiniDb, command -> {
-			miniEvalForth(file, db, command);
+			// Find what file this belongs to
+			head = headList(db.fileStack, file);
+			miniEvalForth(head, db, command);
 		},
 		\acc : MiniDb, token -> {
 			pushMiniValue(acc, MiniString(token));

@@ -1,0 +1,34 @@
+import mini/interpreter/interpreter;
+
+export {
+	partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
+}
+
+partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
+	switch (e) {
+		MiniValue(): e;
+		MiniVar(name, tyvar): e;
+		MiniLet(name, value, body, tyvar): {
+			MiniLet(name, partialMiniExp(env, value), partialMiniExp(env, body), tyvar);
+		}
+		MiniLambda(args, body, tyvar): {
+			MiniLambda(args, partialMiniExp(env, body), tyvar);
+		}
+		MiniCall(fn, args, tyvar): {
+			def = \ -> {
+				MiniCall(partialMiniExp(env, fn), map(args, \a -> partialMiniExp(env, a)), tyvar);
+			}
+			switch (fn) {
+				MiniVar(fname, __): {
+					if (fname == "__compiletime") {
+						interpretMiniExp(env, e);
+					} else {
+						println(fname);
+						def();
+					}
+				}
+				default: def();
+			}
+		}
+	}
+}

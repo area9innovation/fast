@@ -2,6 +2,8 @@ import fast/fast_path;
 
 import mini/commands/db;
 
+import mini/interpreter/partial;
+
 import mini/exp/dependencies;
 import mini/exp/topological;
 import mini/exp/compare;
@@ -73,7 +75,8 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				content = getFileContent(path);
 				// TODO: Update deps: We have to collect all of them from each file
 				ndb = pushMiniValue(db, MiniString(content));
-				miniEvalForth(name, ndb, evalcommand);
+				ndb2 = MiniDb(ndb with fileStack = Cons(name, ndb.fileStack));
+				miniEvalForth(name, ndb2, evalcommand);
 			} else {
 				// OK, this is already read. We can skip it
 				db;
@@ -134,16 +137,28 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		MiniPopFile(file): {
 			// OK, we have finished parsing the file.
 			// Now it is time to handle these things:
-
 			// natives without fallbacks.
 			ndb = foldTree(db.program.unprocessedAnnotations, db, \a, anns, acc -> {
 				fold(anns, acc, \acc2, ann -> {
 					processMiniAnnotation(acc2, file, ann)
 				})
 			});
+
+			popStack = tailList(ndb.fileStack);
+
+			ndb2 = MiniDb(ndb with fileStack = popStack);
+
 			// Clear out the annotations
-			fast = MiniAst(ndb.program with unprocessedAnnotations = makeTree());
-			MiniDb(ndb with program = fast);
+			fast = MiniAst(ndb2.program with unprocessedAnnotations = makeTree());
+			MiniDb(ndb2 with program = fast);
+		}
+		MiniCompileTime(): {
+			interpreter = makeMiniInterpreter(db.program);
+			decls = mapTree(db.program.declarations, \ex -> {
+				partialMiniExp(interpreter, ex);
+			});
+			ast = MiniAst(db.program with declarations = decls);
+			MiniDb(db with program = ast);
 		}
 		MiniTypeInfer(ids): {
 			// OK, what types do we have for these ids now?

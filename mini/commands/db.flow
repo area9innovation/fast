@@ -30,6 +30,8 @@ export {
 
 		// TODO: Add a set of outputs we are producing
 
+		fileStack : List<string>,
+
 		// TODO: Add a set of names which have errors. Change this interface accordingly:
 		onError : (string) -> void,
 	);

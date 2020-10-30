@@ -18,6 +18,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		makeMiniForth(),
 		makeTree(),
 		makeTree(),
+		makeList(),
 		onError
 	);
 

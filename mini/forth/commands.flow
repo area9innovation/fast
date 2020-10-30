@@ -15,10 +15,12 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 	if (command == "processfile") {
 		// 	MiniProcessFile(name : string, command);
 		filename = popMiniValue(db);
+		filenames = getMiniString(filename.first);
 		evalcommand = popMiniValue(filename.second);
-		pushMiniCommand(evalcommand.second, MiniProcessFile(file, getMiniString(filename.first), getMiniString(evalcommand.first)));
+		pushMiniCommand(evalcommand.second, MiniProcessFile(filenames, filenames, getMiniString(evalcommand.first)));
 	} else if (command == "popfile") {
-		pushMiniCommand(db, MiniPopFile(file));
+		ndb = pushMiniCommand(db, MiniPopFile(file));
+		pushMiniCommand(ndb, MiniCompileTime());
 	} else if (command == "setannotation") {
 		// MiniSetAnnotation(annotation : string, scope : string, value : MiniExp);
 		value = popMiniValue(db);
