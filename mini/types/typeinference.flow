@@ -20,7 +20,8 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ref 1,
 		ref makeTree(),
 		ref MiniTypeParMap(makeTree(), makeTree()),
-		ref makeSet()
+		ref makeSet(),
+		\e -> println(e)
 	);
 }
 
@@ -31,10 +32,14 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 	// TODO: Traverse the body and extract polymorphism and instantiate it from the forward declarations
 	mforward = lookupTree(env.ast.types, id);
 
+	env0 = MiniTypeEnv(env with onError = \e -> {
+		println(id + ": " + e)
+	})
+
 	if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
-		type = makeMiniTypeVar(env);
-		nenv = setMiniLocalType(env, id, type);
+		type = makeMiniTypeVar(env0);
+		nenv = setMiniLocalType(env0, id, type);
 		rt = typeInferenceMini(nenv, ex);
 
 		// OK, we constrain the type
@@ -45,12 +50,12 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 
 		setMiniTypeDeclaration(nenv, id, ptype);
 	} else {
-		rt = typeInferenceMini(env, ex);
+		rt = typeInferenceMini(env0, ex);
 
 		// Back-substitute polymorphism
-		ptype = typeVars2TypePars(env, rt);
+		ptype = typeVars2TypePars(env0, rt);
 
-		setMiniTypeDeclaration(env, id, ptype);
+		setMiniTypeDeclaration(env0, id, ptype);
 	};
 }
 
@@ -86,7 +91,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 				mglobal = lookupTree(env.ast.types, name);
 				switch (mglobal) {
 					None(): {
-						println("Does not know var " + name);
+						env.onError("Type inference: Does not know var " + name);
 						makeMiniTypeVar(env);
 					}
 					Some(t): t;

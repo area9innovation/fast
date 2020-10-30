@@ -69,7 +69,7 @@ typeVars2TypePars(env : MiniTypeEnv, e : MiniType) -> MiniType {
 			} : e;
 		}
 		MiniTypePar(id): {
-			println("Did not expect type par here");
+			env.onError("Did not expect type par " +id + " here");
 			e;
 		}
 		MiniTypeRecord(fields): {
