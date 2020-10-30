@@ -3,6 +3,7 @@ import mini/types/builtin;
 
 export {
 	bexpType(b : BExp) -> MiniType;
+	bstatementType(b : BStatement) -> MiniType;
 }
 
 bexpType(b : BExp) -> MiniType {
@@ -17,5 +18,19 @@ bexpType(b : BExp) -> MiniType {
 		BIf(cond, then, else_, type): type;
 		BSequence(exps, type): type;
 		BSwitch(val, cases, type): type;
+	}
+}
+
+bstatementType(b : BStatement) -> MiniType {
+	switch (b) {
+		BIfStatement(cond, then, else_): bstatementType(then);
+		BLetStatement(name, value, body): bstatementType(body);
+		BReturnVoid(): miniTypeVoid;
+		BReturn(val): bexpType(val);
+		BTailCall(fn, args, values, type): type;
+		BSequenceStatement(statements): {
+			bstatementType(lastElement(statements, BReturnVoid()));
+		}
+		BSwitchStatement(expr, cases, type): type;
 	}
 }

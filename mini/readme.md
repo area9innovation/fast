@@ -94,9 +94,8 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get euler examples to compile and run in JS.
-  - euler7: switch
   - euler9: "1000 - b - a;" is not producing (1000-b)-a, but 1000-(b-a)
-  - euler10: switch
+  - euler10: wrong result somewhere
 
   - Figure out natives from runtime & linking
 

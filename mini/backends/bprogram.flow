@@ -28,9 +28,9 @@ export {
 		BReturn(val : BExp);
 
 		// Do a tail call to ourselves with these bindings
-		BTailCall(fn : string, args : [string], values : [BExp]);
+		BTailCall(fn : string, args : [string], values : [BExp], type : MiniType);
 
-		BSwitchStatement(exp : BExp, cases : [BCaseStatement], type : MiniType);
+		BSwitchStatement(expr : BExp, cases : [BCaseStatement], type : MiniType);
 			BCaseStatement(value : BExp, body : BStatement);
 
 	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BSwitch;

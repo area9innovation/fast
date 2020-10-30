@@ -135,7 +135,7 @@ bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailca
 							}
 						});
 						hasTailcall := true;
-						BTailCall(decl, newArgs.first, newArgs.second);
+						BTailCall(decl, newArgs.first, newArgs.second, type);
 					} else BReturn(b);
 					default: BReturn(b);
 				}

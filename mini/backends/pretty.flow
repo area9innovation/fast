@@ -51,7 +51,7 @@ prettyBStatement(b : BStatement) -> string {
 		}
 		BReturnVoid(): "{}";
 		BReturn(val): prettyBExp(val);
-		BTailCall(fn, args, values): "tailcall " + fn + "(" + supergluei(args, \i, arg -> arg + ":" + prettyBExp(values[i]), ", ") + ")";
+		BTailCall(fn, args, values, type): "tailcall " + fn + "(" + supergluei(args, \i, arg -> arg + ":" + prettyBExp(values[i]), ", ") + ")";
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> prettyBStatement(s), ";\n") + "}";
 		}

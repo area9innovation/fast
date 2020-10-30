@@ -39,7 +39,7 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 					}", [
 					"name", name,
 					"args", superglue(args, \fa -> fa.name, ", "),
-					"body", bstatement2js(backend, body, true)
+					"body", bstatement2js(backend, body, bstatementType(body) != miniTypeVoid)
 				]);
 			}
 		}
@@ -98,7 +98,7 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 		BReturn(val): {
 			(if (withReturn) "return " else "") + bexp2js(backend, val) + ";";
 		}
-		BTailCall(fn, args, values): {
+		BTailCall(fn, args, values, type): {
 			/*
 				var $a_=((start+1)|0);
 				start=$a_;
@@ -122,7 +122,7 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 		}
 		BSequenceStatement(statements): {
 			supergluei(statements, \i, stat -> {
-				bstatement2js(backend, stat, withReturn && i == length(statements) - 1)
+				bstatement2js(backend, stat, withReturn && i == length(statements) - 1 && bstatementType(stat) != miniTypeVoid)
 			}, "\n");
 		}
 		BSwitchStatement(val, cases, type): {
@@ -145,7 +145,7 @@ bexp2js(backend : Backend, b : BExp) -> string {
 	switch (b) {
 		BValue(): bvalue2js(b);
 		BVar(name, __): name;
-		BLet(name, value, body, __): {
+		BLet(name, value, body, type): {
 			blueprint("
 				function() {
 				var %name% = %value%;
@@ -153,13 +153,13 @@ bexp2js(backend : Backend, b : BExp) -> string {
 				}()", [
 					"name", name,
 					"value", bexp2js(backend, value),
-					"body", bstatement2js(backend, bexp2BReturn(body), true),
+					"body", bstatement2js(backend, bexp2BReturn(body), type != miniTypeVoid),
 			])
 		}
 		BLambda(args, body, __): {
 			"function(" 
 			+ superglue(args, \fa -> fa.name, ", ") + ") {" 
-			+ bstatement2js(backend, bexp2BReturn(body), true)
+			+ bstatement2js(backend, bexp2BReturn(body), bexpType(body) != miniTypeVoid)
 			+ "}"
 		};
 		BCall(fn, args, restype): {
@@ -175,7 +175,7 @@ bexp2js(backend : Backend, b : BExp) -> string {
 		}
 		BSwitch(val, cases, type): {
 			"function() {" 
-			+ bstatement2js(backend, bexp2BReturn(b), true)
+			+ bstatement2js(backend, bexp2BReturn(b), type != miniTypeVoid)
 			+ "}()"
 		}
 	}

@@ -62,7 +62,7 @@ bstatement2flow(backend : Backend, b : BStatement) -> string {
 		}
 		BReturnVoid(): "{}";
 		BReturn(val): bexp2flow(backend, val);
-		BTailCall(fn, args, values): fn + "(" + superglue(values, \val -> bexp2flow(backend, val), ", ") + ")";
+		BTailCall(fn, args, values, type): fn + "(" + superglue(values, \val -> bexp2flow(backend, val), ", ") + ")";
 		BSequenceStatement(statements): {
 			"{" + superglue(statements, \s -> bstatement2flow(backend, s), ";\n") + "}";
 		}
