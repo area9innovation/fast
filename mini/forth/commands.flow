@@ -136,72 +136,11 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			// println("Defined " + names);
 		};
 		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
-	} else if (command == "case") {
-		body = popMiniValue(db);
-		vars = popMiniValue(body.second);
-		struct = popMiniValue(vars.second);
-
-		structs : string = getMiniString(struct.first);
-		varss : [string] = map(getMiniArray(vars.first), getMiniString);
-		bodys : MiniExp = body.first;
-
-		mstructdef = lookupTree(db.program.structs, structs);
-		mstructdef ?? {
-			/*
-			We turn "Some(v): body;" into the equivalent of this:
-			__case(Some, 
-				// Downcast
-				__switchvar = __switchvar : __type("Some");
-				// Index
-				v = __switchvar."value";
-				v;
-			)
-			*/
-			bodyLet = foldi(varss, bodys, \i, acc, var -> {
-							if (var != "__") {
-								MiniLet(var, MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString(mstructdef.fields[i].name)], 0), acc, 0)
-							} else acc
-						});
-
-			case = MiniCall(MiniVar("__case", 0), 
-				[
-					MiniCall(
-						MiniVar("__caseid", 0),
-						[
-							MiniVar(structs, 0),
-						], 0
-					),
-					// TODO: This implies a downcast in the body of __switchvar
-					MiniCall(MiniVar("__casebody", 0), [
-						MiniVar("__switchvar", 0),
-						miniType2Exp(MiniTypeCall(structs, [])),
-						bodyLet,
-					], 0),
-				], 
-				0
-			);
-			pushMiniValue(struct.second, case);
-		} : {
-			muniondef = lookupTree(db.program.unions, structs);
-			switch (muniondef) {
-				None(): {
-					// OK, we have a problem if we import none, and that means it is
-					// not known at this point.
-					println(file + " unknown case in switch " + structs);
-					struct.second;
-				}
-				Some(uniondef): {
-					println("TODO: Implement expansion of union case in switch: " + structs);
-					struct.second;
-				}
-			}
-		}
 	} else db;
 }
 
 
 // __structarg(string, 0/1, type)
-
 
 // decompose -> __structarg string 0/1 type 
 

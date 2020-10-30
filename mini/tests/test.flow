@@ -1,10 +1,10 @@
 None();
 Some(alpha : int);
 
-main() {
+main(m) {
 	switch (m) {
 		None(): 0;
-		Some(v): v;
+		Some(v): 1+v;
 		default: 0;
 	};
 }

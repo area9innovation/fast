@@ -145,7 +145,8 @@ cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")+ | $$"__void" 
 
 defaultOrNamedCase = 
 	"default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
-	| id ws '(' ws names ')' ws ':' ws exp (';' ws)? $"case";
+	// __ctcase(id, cons(args), body)
+	| $"nil" id $"cons" ws '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call";
 
 names = $"nil" id $"cons" ("," ws id $"cons")* | $"nil";
 

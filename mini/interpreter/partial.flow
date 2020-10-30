@@ -1,4 +1,6 @@
 import mini/interpreter/interpreter;
+import mini/exp/value;
+import mini/types/type_ast;
 
 export {
 	partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
@@ -20,14 +22,74 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 			}
 			switch (fn) {
 				MiniVar(fname, __): {
-					if (fname == "__compiletime") {
+					if (fname == "__ctcase") {
+						processMiniCase(env, args);
+					} else if (fname == "__compiletime") {
 						interpretMiniExp(env, e);
 					} else {
-						println(fname);
 						def();
 					}
 				}
 				default: def();
+			}
+		}
+	}
+}
+
+// This expands switch cases correctly
+// __ctcase(id, __cons("a", "b"), body)
+processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
+	struct : string = getMiniString(args[0]);
+	vars : [string] = map(getMiniArray(args[1]), getMiniString);
+	body = partialMiniExp(env, args[2]);
+
+	mstructdef = lookupTree(env.env.structs, struct);
+	mstructdef ?? {
+		/*
+		We turn "Some(v): body;" into the equivalent of this:
+		__case(Some, 
+			// Downcast
+			__switchvar = __switchvar : __type("Some");
+			// Index
+			v = __switchvar."value";
+			v;
+		)
+		*/
+		bodyLet = foldi(vars, body, \i, acc, var -> {
+						if (var != "__") {
+							MiniLet(var, MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString(mstructdef.fields[i].name)], 0), acc, 0)
+						} else acc
+					});
+
+		MiniCall(MiniVar("__case", 0), 
+			[
+				MiniCall(
+					MiniVar("__caseid", 0),
+					[
+						MiniVar(struct, 0),
+					], 0
+				),
+				// TODO: This implies a downcast in the body of __switchvar
+				MiniCall(MiniVar("__casebody", 0), [
+					MiniVar("__switchvar", 0),
+					miniType2Exp(MiniTypeCall(struct, [])),
+					bodyLet,
+				], 0),
+			], 
+			0
+		);
+	} : {
+		muniondef = lookupTree(env.env.unions, struct);
+		switch (muniondef) {
+			None(): {
+				// OK, we have a problem if we import none, and that means it is
+				// not known at this point.
+				println("Unknown case in switch " + struct);
+				body;
+			}
+			Some(uniondef): {
+				println("TODO: Implement expansion of union case in switch: " + struct);
+				body;
 			}
 		}
 	}
