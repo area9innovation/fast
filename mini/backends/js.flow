@@ -63,16 +63,27 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 	switch (b) {
 		BIfStatement(cond, then, else_): {
-			blueprint("
-				if (%cond%) {
-					%then%
-				} else {
-					%else%
-				}", [
-				"cond", bexp2js(backend, cond),
-				"then", bstatement2js(backend, then, withReturn),
-				"else", bstatement2js(backend, else_, withReturn),
-			])
+			if (!withReturn && else_ == BReturnVoid()) {
+				blueprint("
+					if (%cond%) {
+						%then%
+					}", [
+					"cond", bexp2js(backend, cond),
+					"then", bstatement2js(backend, then, withReturn),
+				])
+			} else {
+				blueprint("
+					if (%cond%) {
+						%then%
+					} else {
+						%else%
+					}", [
+					"cond", bexp2js(backend, cond),
+					"then", bstatement2js(backend, then, withReturn),
+					"else", bstatement2js(backend, else_, withReturn),
+				])
+
+			}
 		}
 		BLetStatement(name, value, body): {
 			blueprint("

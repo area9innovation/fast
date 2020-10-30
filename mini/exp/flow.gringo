@@ -107,6 +107,7 @@ exp =
 			| ":" ws type $$":" $"binop"
 			)+
 	)
+	|> '^' ws exp $$"__deref" $"unop"
 	|> (
 		"(" ws exp ")" ws 
 		| "true" !letterOrDigit ws $"1" $$"bool" $"type0" $$":" $"binop"
@@ -125,7 +126,6 @@ exp =
 		| string
 		| "[" ws expcommas "]" ws $$"[" $"unop"
 		| "[" ws "]" ws $$"__emptyarray" $"var" $"nil" $"call"
-		| '^' ws exp $$"__deref" $"unop"
 	);
 
 	// listof(fieldassign, ",")
@@ -139,7 +139,7 @@ expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 
 semiexps = exp (";" ws exp $$";" $"binop")*;
 
-switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvalue" $"unop" $$"__switchvar" $"swap" $$"__switchvar" $"var" ')' ws '{' ws cases '}' ws $$"__switch" $"binop" $"let";
+switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvar" $"swap" $$"__switchvar" $"var"  $$"__switchvalue" $"unop" ')' ws '{' ws cases '}' ws $$"__switch" $"binop" $"let";
 
 cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")+ | $$"__void" $"var" $"nil" $"call";
 
