@@ -1,7 +1,7 @@
 import ds/array;
 
 export {
-	GTerm ::= GRule, GPrecedence, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GUnquote, GString, GRange, GVar, GEpsilon;
+	GTerm ::= GRule, GPrecedence, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GLower, GUnquote, GString, GRange, GVar, GEpsilon;
 
 	GRule(id : string, term : GTerm, body : GTerm);
 
@@ -15,6 +15,7 @@ export {
 	GPlus(term : GTerm);
 	GOpt(term : GTerm);
 	GNegate(term : GTerm);
+	GLower(term : GTerm);	// Lowers the rule one step down
 	GUnquote(term : GTerm);	// Produces the matched output, except for GString, which is literally written out
 	GString(text : string);
 	GRange(lower : int, upper : int);

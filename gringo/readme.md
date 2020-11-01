@@ -60,6 +60,30 @@ is a short-hand syntax for this grammar:
 
 and thus provides a short syntax for the common definition of precedence.
 
+To get minus associativity right, use the "<" lower operator:
+
+	e = e "|" e $$"Or"
+		|> e 
+			<(
+				("+" e | "-" e)*
+			)
+		|> e "*" e
+		|> $var ; 
+	var = ('0'-'9')+;
+	e
+
+which is short for this grammar:
+
+	e = (e1 ((("|" e) $$"Or"))?);
+	e1 = (e2 (((("+" e2) $$"Plus") | (("-" e2) $$"Minus")))*);
+	e2 = (e3 ((("*" e2) $$"Prod"))?);
+	e3 = $var;
+
+	var = ('0'-'9')+;
+	e
+
+The "<" only works on the right-hand side of a sequence.
+
 ## Actions
 
 The $<term> construct is used to produce semantic output. This will produce
@@ -94,27 +118,6 @@ operations are produced verbatim.
 
 - Introduce pegcode or direct flow generation for faster parsing
 	http://www.inf.puc-rio.br/~roberto/docs/peg.pdf
-
-- We want to introduce a prefix + and prefix * to be used for
-  right-associate semantic matching.
-
-So "1.2.3" should result in a trace like "1 2 dot 3 dot", rather than "1 2 3 dot dot".
-
-- We have to do the other associative sequences to be able to get the
-  left/right association correct
-
-		*()  for left-associative star
-		+()  for left-associative plus
-
-  We could do this rewrite:
-	(a $)+ ->
-	( let t = ((a $) t | (a $)) in t)
-
-  It seems we can do this rewrite:
-	+(a $) ->
-	( let t = (a t $ | a $) in t)
-	==
-	( let t = (a (t)? $) in t )
 
 - Add error recovery
 
@@ -174,8 +177,8 @@ associativity and precedence.
 		|> exp "&&" exp $"&&"
 		|> exp "==" exp $"==" | exp "!=" exp $"!="
 		|> exp ("<=" | "<" | ">=" | ">") exp
-		|> exp *("+" exp $"+" | "-" exp $"-")
-		|> exp *("*" exp $"*" | "/" exp $"/" | "%" exp $"%")
+		|> exp <(("+" exp $"+" | "-" exp $"-")*)
+		|> exp <(("*" exp $"*" | "/" exp $"/" | "%" exp $"%")*)
 		|> exp ("[" exp "]" $"index")+	// Right associative
 		|> exp ("." exp $"dot")+		// Right associative
 		|> exp "?" exp ":" exp $"ifelse"

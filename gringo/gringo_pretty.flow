@@ -17,6 +17,7 @@ gterm2string(g : GTerm) -> string {
 		GPlus(term): "(" + gterm2string(term) + ")+";
 		GOpt(term): "(" + gterm2string(term) + ")?";
 		GNegate(term): "!" + gterm2string(term);
+		GLower(term): "<(" + gterm2string(term) +")";
 		GUnquote(term): "$" + gterm2string(term);
 		GString(text): {
 			if (text == "\"") "'\"'"

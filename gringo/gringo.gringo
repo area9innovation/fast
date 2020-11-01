@@ -7,6 +7,7 @@ term =
 	|> term "+" ws								$"GPlus"
 	|> term "?" ws								$"GOpt"
 	|> "!" ws term								$"GNegate"
+	|> "<" ws term								$"GLower"
 	|> 
 		"(" ws term ")" ws							
 		| '"' string '"' ws							$"GString"

@@ -107,6 +107,7 @@ ruleDependencies(acc : Set<string>, g : GTerm) -> Set<string> {
 		GPlus(term): ruleDependencies(acc, term);
 		GOpt(term): ruleDependencies(acc, term);
 		GNegate(term): ruleDependencies(acc, term);
+		GLower(term): ruleDependencies(acc, term);
 		GUnquote(term): ruleDependencies(acc, term);
 		GString(text): acc;
 		GRange(lower, upper): acc;
@@ -147,6 +148,7 @@ removeDeadRules(alive : Set<string>, g : GTerm) -> GTerm {
 		GStar(term): g;
 		GPlus(term): g;
 		GOpt(term): g;
+		GLower(term): g;
 		GNegate(term): g;
 		GUnquote(term): g;
 		GString(text): g;

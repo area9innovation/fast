@@ -32,8 +32,16 @@ optimizeGTerm(g : GTerm) -> GTerm {
 			GStar(optimizeGTerm(term));
 		}
 		GPlus(term): GPlus(optimizeGTerm(term));
-		GOpt(term): GOpt(optimizeGTerm(term));
+		GOpt(term): {
+			oterm = optimizeGTerm(term);
+			switch (oterm) {
+				GOpt(__): oterm;
+				GStar(__): oterm;
+				default: GOpt(oterm);
+			}
+		}
 		GNegate(term): GNegate(optimizeGTerm(term));
+		GLower(term): GLower(optimizeGTerm(term));
 		GUnquote(term): GUnquote(optimizeGTerm(term));
 		GString(text): g;
 		GRange(lower, upper): if (lower == upper) GString(fromCharCode(lower)) else g;

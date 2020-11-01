@@ -35,6 +35,7 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 		GPlus(term): acc;
 		GOpt(term): acc;
 		GNegate(term): acc;
+		GLower(term): acc;
 
 		GUnquote(term): acc;
 		GString(text): acc;
@@ -69,6 +70,7 @@ findRule(rule : string, g : GTerm) -> Maybe<GTerm> {
 		GPlus(term): findRule(rule, term);
 		GOpt(term): findRule(rule, term);
 		GNegate(term): findRule(rule, term);
+		GLower(term): findRule(rule, term);
 		GUnquote(term): findRule(rule, term);
 		GString(text): None();
 		GRange(lower, upper): None();
@@ -87,6 +89,7 @@ mainRule(g : GTerm) -> string {
 		GPlus(term): mainRule(term);
 		GOpt(term): mainRule(term);
 		GNegate(term): mainRule(term);
+		GLower(term): mainRule(term);
 		GUnquote(term): mainRule(term);
 		GString(text): "";
 		GRange(lower, upper): "";
@@ -111,6 +114,7 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 		GPlus(term): GPlus(replaceTerm(find, replace, exceptInRule, term));
 		GOpt(term): GOpt(replaceTerm(find, replace, exceptInRule, term));
 		GNegate(term): GNegate(replaceTerm(find, replace, exceptInRule, term));
+		GLower(term): GLower(replaceTerm(find, replace, exceptInRule, term));
 		GUnquote(term): GUnquote(replaceTerm(find, replace, exceptInRule, term));
 		GString(text): g;
 		GRange(lower, upper): g;

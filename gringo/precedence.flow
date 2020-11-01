@@ -70,16 +70,28 @@ replaceLeftRecursion(find : string, replaceLeft : GTerm, replaceRest : GTerm, so
 			);
 		}
 		GSeq(left, right): {
-			GSeq(
-				replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, isSomething(right), left),
+			leftRep = replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, isSomething(right), left);
+			rightRep = switch (right) {
+				GLower(rp): {
+					// OK, we have to replace all with the lower version in this area
+					replaceLeftRecursion(find, replaceLeft, replaceLeft, isSomething(left), somethingFollows, rp);
+				}
 				// OK, we use the other replacement for the rest
-				replaceLeftRecursion(find, replaceRest, replaceRest, isSomething(left), somethingFollows, right), 
+				default: replaceLeftRecursion(find, replaceRest, replaceRest, isSomething(left), somethingFollows, right);
+			}
+			GSeq(
+				leftRep,
+				rightRep
 			);
 		}
 		GStar(term): GStar(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GPlus(term): GPlus(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GOpt(term): GOpt(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GNegate(term): GNegate(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+		GLower(term): {
+			println("ERROR: Lower only works correct in a sequence");
+			GLower(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+		}
 		GUnquote(term): GUnquote(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GString(text): g;
 		GRange(lower, upper): g;
@@ -112,6 +124,7 @@ isSomething(g : GTerm) -> bool {
 		GPlus(term): isSomething(term);
 		GOpt(term): isSomething(term);
 		GNegate(term): false;
+		GLower(term): isSomething(term);
 		GUnquote(term): false;
 		GString(text): true;
 		GRange(lower, upper): true;

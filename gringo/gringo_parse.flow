@@ -83,6 +83,9 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 				senv;
 			}
 		}
+		GLower(term): {
+			gringoParse(env, term);
+		}
 		GNegate(term): {
 			senv = gringoParse(env, term);
 			if (senv.fail) {

@@ -83,6 +83,10 @@ generateFastParserFromTerm(file : string, t : GTerm, conf : Gringo2FastConf) -> 
                 )
             + "\n)"
         }
+		GLower(term): {
+			println("TODO");
+			generateFastParserFromTerm(file, term, conf)
+        }
 		GUnquote(term): {
             switch (term) {
                 GUnquote(ut):

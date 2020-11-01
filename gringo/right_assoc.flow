@@ -50,6 +50,7 @@ rightAssociateGTerm(g : GTerm) -> GTerm {
 		GPlus(term): GPlus(rightAssociateGTerm(term));
 		GOpt(term): GOpt(rightAssociateGTerm(term));
 		GNegate(term): GNegate(rightAssociateGTerm(term));
+		GLower(term): GLower(rightAssociateGTerm(term));
 		GUnquote(term): GUnquote(rightAssociateGTerm(term));
 		GString(text): g;
 		GRange(lower, upper): g;
