@@ -19,8 +19,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		evalcommand = popMiniValue(filename.second);
 		pushMiniCommand(evalcommand.second, MiniProcessFile(filenames, filenames, getMiniString(evalcommand.first)));
 	} else if (command == "popfile") {
-		ndb = pushMiniCommand(db, MiniPopFile(file));
-		pushMiniCommand(ndb, MiniCompileTime());
+		pushMiniCommand(db, MiniPopFile(file));
 	} else if (command == "setannotation") {
 		// MiniSetAnnotation(annotation : string, scope : string, value : MiniExp);
 		value = popMiniValue(db);
@@ -135,7 +134,8 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		} else {
 			// println("Defined " + names);
 		};
-		pushMiniCommand(name.second, MiniDefine(file, names, value.first));
+		ndb = pushMiniCommand(name.second, MiniDefine(file, names, value.first));
+		pushMiniCommand(ndb, MiniCompileTime(makeSet1(names)));
 	} else db;
 }
 

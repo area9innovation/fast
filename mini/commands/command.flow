@@ -10,7 +10,7 @@ export {
 		// Read a file and if changed, run this Forth command on it. Notice this is async
 		MiniProcessFile(usedByFile : string, name : string, asyncCommand : string);
 
-		// Set an annotation for a given scope (id). If scope is "", then it is all ids.
+		// Set an annotation for a given scope (id). If scope is "", then it is all ids in the file.
 		// Annotations include: "native" for native declarations
 		// "export" for the export section (not done yet)
 		MiniSetAnnotation(scope : string, annotation : string, value : MiniExp);
@@ -22,13 +22,14 @@ export {
 		// so far for this id as well
 		MiniDefine(file : string, name : string, value : MiniExp);
 
-		// Finish processing the current file. Processes unfinished natives
+		// Finish processing the current file. Processes unfinished native annotations
 		MiniPopFile(file : string);
 
-		// Now it is time for compile time
-		MiniCompileTime();
+		// Now it is time for compile time eval of these ids - happens when all dependent files are defined
+		// This will finish desugaring
+		MiniCompileTime(names : Set<string>);
 
-		// Infer the type of these ids, since they are new
+		// Infer the type of these ids, since they are new - happens once all ids are desugared
 		MiniTypeInfer(ids : Set<string>);
 
 	// What order should commands be run in? 0 is first.
@@ -50,7 +51,7 @@ getMiniCommandPriority(c : MiniCommand) -> int {
 		MiniTypeDefine(file, name, type): 2;
 		MiniDefine(file, name, value): 3;
 		MiniPopFile(file): 4;
-		MiniCompileTime(): 5;
+		MiniCompileTime(name): 5;
 		MiniTypeInfer(ids): 6;
 	}
 }
@@ -66,7 +67,7 @@ miniCommand2string(c : MiniCommand) -> string {
 		MiniTypeDefine(file, name, type): "Type define " + name;
 		MiniDefine(file, name, value): "Define " + name;
 		MiniPopFile(file): "Pop file " + file;
-		MiniCompileTime(): "Compile time";
+		MiniCompileTime(names): "Compile time " + strGlue(set2array(names), ", ");
 		MiniTypeInfer(ids): "Infer type " + strGlue(set2array(ids), ", ");
 	}
 }
@@ -81,7 +82,14 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 			MiniTypeDefine(__, __, __): ms;
 			MiniDefine(__, __, __): ms;
 			MiniPopFile(__): ms;
-			MiniCompileTime(): uniq(ms);
+			MiniCompileTime(names): {
+				[MiniCompileTime(fold(ms, makeSet(), \acc, tc -> {
+					switch (tc) {
+						MiniCompileTime(ss): mergeSets(acc, ss);
+						default: acc;
+					}
+				}))]
+			}
 			MiniTypeInfer(__): {
 				[MiniTypeInfer(fold(ms, makeSet(), \acc, tc -> {
 					switch (tc) {

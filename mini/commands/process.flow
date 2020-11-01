@@ -152,10 +152,13 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			fast = MiniAst(ndb2.program with unprocessedAnnotations = makeTree());
 			MiniDb(ndb2 with program = fast);
 		}
-		MiniCompileTime(): {
+		MiniCompileTime(names): {
 			interpreter = makeMiniInterpreter(db.program);
-			decls = mapTree(db.program.declarations, \ex -> {
-				partialMiniExp(interpreter, ex);
+			decls = foldSet(names, db.program.declarations, \acc, name -> {
+				mex = lookupTree(acc, name);
+				mex ?? {
+					setTree(acc, name, partialMiniExp(interpreter, mex));
+				} : acc
 			});
 			ast = MiniAst(db.program with declarations = decls);
 			MiniDb(db with program = ast);
