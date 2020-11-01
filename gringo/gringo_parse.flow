@@ -23,6 +23,8 @@ export {
 		fail : bool,
 		// Should we print debugging output?
 		verbose : bool,
+		// What errors did we get?
+		errors : Tree<int, string>
 	);
 }
 
@@ -90,15 +92,19 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 					if (senv.fail) {
 						GringoEnv(senv with fail = true);
 					} else {
-						println("ERROR at " + i2s(env.i) + ": Superfluous " + makeGExplanation(nterm));
-						senv;
+						error = "Superfluous " + makeGExplanation(nterm);
+						GringoEnv(
+							senv with errors = setTree(env.errors, env.i, error)
+						);
 					}
 				}
 				default: {
 					senv = gringoParse(env, term);
 					if (senv.fail) {
-						println("ERROR at " + i2s(env.i) + ": Expected " + makeGExplanation(term));
-						GringoEnv(senv with fail = false);
+						error = "Expected " + makeGExplanation(term);
+						GringoEnv(
+							senv with fail = false, errors = setTree(env.errors, env.i, error)
+						);
 					} else {
 						senv;
 					}

@@ -12,12 +12,16 @@ parseGringoGrammar(text : string) -> GTerm {
 	// doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool, debugGrammar : bool) -> GringoEnv<?> {
 	grammar = gringoGrammar();
 	ogrammar = prepareGringoGrammar(grammar);
-	env = GringoEnv(text, makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false);
+	env = GringoEnv(text, makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false, makeTree());
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {
 		println("Parsing failed");
 	}
+	if (!isEmptyTree(env.errors)) {
+		println("There are " + i2s(sizeTree(env.errors)) + " syntax errors");
+	}
+
 	remaining = strRight(env.input, genv.i);
 	if (remaining != "") {
 		println("Did not parse: " + remaining);

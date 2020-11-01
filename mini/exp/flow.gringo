@@ -22,12 +22,12 @@ toplevelDeclaration =
 	| functionOrStruct
 	| vardecl;
 
-native = "native" s id ws ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" ws $$"io" $"cons")? $"isnil" $"-" type $"list2" '=' ws $name $"cons" ws ';' ws $"call" $$"native" $"swap" $"setannotation";
+native = "native" s id ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" ws $$"io" $"cons")? $"isnil" $"-" type $"list2" '=' ws $name $"cons" ws ';' ws $"call" $$"native" $"swap" $"setannotation";
 	name = bid ('.' bid)*;
 
-assign = id ws '=' ws exp ';'? ws $"define";
+assign = id '=' ws exp ';'? ws $"define";
 
-union = id ws typars "::=" ws typenames ';' ws $"uniondef";
+union = id typars "::=" ws typenames ';' ws $"uniondef";
 
 	// listof(typename, ",")
 	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
@@ -36,39 +36,39 @@ union = id ws typars "::=" ws typenames ';' ws $"uniondef";
 // TODO: Extract the type and use a binop to declare the type of the body
 functionOrStruct = 
 	// Forward declaration - we drop for now
-	  id ws '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
-	| id ws '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
-	| id ws '(' ws funargs ')' ws returnType $"drop" brace $"lambda" $"define"
-	| id ws '(' ws funargs ')' ws brace $"lambda" $"define"
-	| id ws '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
+	  id '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
+	| id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
+	| id '(' ws funargs ')' ws returnType $"drop" brace $"lambda" $"define"
+	| id '(' ws funargs ')' ws brace $"lambda" $"define"
+	| id '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
 
 	// Forward type declarations
-	| id ws ':' ws '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
-	| id ws ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
+	| id ':' ws '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
+	| id ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
 	// Struct
-	| id ws ':' ws '(' ws structargs ')' ws ';' ws $$"structdef"
+	| id ':' ws '(' ws structargs ')' ws ';' ws $$"structdef"
 	;
 
 	// listof(funarg, ",")
 	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)? | $"nil";
 	// This is what we want:
-	// funarg = id ws ':' ws type $$":" $"binop";
-	funarg = id ws (':' ws type $"drop")?;
+	// funarg = id ':' ws type $$":" $"binop";
+	funarg = id (':' ws type $"drop")?;
 
 	// listof(structarg, ",")
 	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
-	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ws ':' ws type $"cons" $$"__structarg" $"var" $"swap" $"call";
+	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ':' ws type $"cons" $$"__structarg" $"var" $"swap" $"call";
 
 	returnType = ws "->" ws type;
 
-vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
-	| id ws ':' ws type ';'? ws $"typedef";
+vardecl = id ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
+	| id ':' ws type ';'? ws $"typedef";
 
 exp = 
 	backslash lambdaargs ws "->" ws exp $"lambda"
 	|> (
-		id ws "=" ws exp ";" ws semiexps $"let"
-	 	| id ws ":" ws type "=" ws exp ";" $"swap" $$":" $"binop" ws semiexps $"let"
+		id "=" ws exp ";" ws #semiexps $"let"
+	 	| id ":" ws type "=" ws #exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
 	|> exp "|>" ws exp $$"|>" $"binop"	// TODO: Should we desugar this here?
@@ -102,23 +102,23 @@ exp =
 			(
 			"(" ws exps ")" ws $"call"
 			| '(' ws exp "with" s $"list2" fields $"cons" ')' ws $$"__with" $"var" $"swap" $"call"
-			| "." ws id ws $"list2" "::=" ws exp $"cons" $$"__mutassign" $"swap" $"call"
-			| "." ws id ws $$"." $"binop"
+			| "." ws id $"list2" "::=" ws exp $"cons" $$"__mutassign" $"swap" $"call"
+			| "." ws id $$"." $"binop"
 			| "[" ws exp "]" ws $$"__index" $"binop"
 			| ":" ws type $$":" $"binop"
 			)+
 	)
 	|> '^' ws exp $$"__deref" $"unop"
 	|> (
-		"(" ws exp ")" ws 
+		"(" ws exp #")" ws 
 		| "true" !letterOrDigit ws $"1" $$"bool" $"type0" $$":" $"binop"
 		| "false" !letterOrDigit ws $"0" $$"bool" $"type0" $$":" $"binop"
 		| "ref" !letterOrDigit ws exp $$"__ref" $"unop"
 		| switch
 		| "cast" !letterOrDigit ws $$"__cast" $"var" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
-		| "if" !letterOrDigit ws "(" $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
-		| "if" !letterOrDigit ws "(" $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
-		| id ws $"var"
+		| "if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
+		| "if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
+		| id $"var"
 		| "0x" $(hexdigit+) ws $"parsehex"
 		| $('0'-'9'+ "." '0'-'9'*) ws $"s2d"
 		| $("." '0'-'9'+) ws $"s2d"
@@ -131,23 +131,23 @@ exp =
 
 	// listof(fieldassign, ",")
 	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")* | $"nil";
-		fieldassign = id ws '=' ws exp $$"__withassign" $"binop";
+		fieldassign = id '=' ws exp $$"__withassign" $"binop";
 
-brace = "{" ws exp (";" ws exp $$";" $"binop")* (";" ws)? "}" ws 
+brace = "{" ws exp (#";" ws exp $$";" $"binop")* (";" ws)? #"}" ws 
 	| "{" ws "}" ws $$"__void" $"var" $"nil" $"call";
 
 expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 
 semiexps = exp (";" ws exp $$";" $"binop")*;
 
-switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvar" $"swap" $$"__switchvar" $"var"  $$"__switchvalue" $"unop" ')' ws '{' ws cases '}' ws $$"__switch" $"binop" $"let";
+switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvar" $"swap" $$"__switchvar" $"var"  $$"__switchvalue" $"unop" ')' ws '{' ws cases #'}' ws $$"__switch" $"binop" $"let";
 
-cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")+ | $$"__void" $"var" $"nil" $"call";
+cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")* | $$"__void" $"var" $"nil" $"call";
 
 defaultOrNamedCase = 
 	"default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
 	// __ctcase(id, cons(args), body)
-	| $"nil" id $"cons" ws '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call";
+	| $"nil" id $"cons" '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call";
 
 names = $"nil" id $"cons" ("," ws id $"cons")* | $"nil";
 
@@ -170,7 +170,7 @@ type =
 		| $("?"+) ws $"type0"
 	;
 
-typename = id $"var" ws typars $"call"; 
+typename = id $"var" typars $"call"; 
 
 typars = "<" ws types ">" ws
 	| $"nil";
@@ -182,7 +182,7 @@ types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)? | $"nil";
 	namedargs = $"nil" namedarg $"cons" ("," ws namedarg $"cons")* ("," ws)? | $"nil";
 
 	// For now, we just drop the id
-	namedarg = id $"drop" ws ':' ws type;
+	namedarg = id $"drop" ':' ws type;
 
 // listof(lambdaarg)
 lambdaargs = $"nil" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? | $"nil";
@@ -215,7 +215,7 @@ escapedchar_ = backslash | '"' | "n" | "t" | "r";
 
 anychar = '0x0000'-'0xffff';
 
-id = $bid;
+id = $bid ws;
 
 bid = ('a'-'z' | 'A'-'Z' | '_') (letterOrDigit)*;
 
