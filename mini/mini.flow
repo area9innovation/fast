@@ -6,11 +6,11 @@ import mini/backends/js;
 import mini/backends/pretty;
 
 main() {
-	file = getUrlParameterDef("file", "mini/tests/test.flow");
+	file = getUrlParameterDef("file", "mini/tests/assoc.flow");
 	//file = getUrlParameterDef("file", "demos/euler/euler3.flow");
 	output = getUrlParameterDef("output", "output");
 
-	verbose = s2i(getUrlParameterDef("verbose", "0"));
+	verbose = s2i(getUrlParameterDef("verbose", "2"));
 
 	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 

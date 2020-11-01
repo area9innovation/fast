@@ -8,7 +8,7 @@ import net/url_parameter;
 import fs/filesystem;
 
 main() {
-	file0 = getUrlParameterDef("file", "gringo/exp.gringo");
+	file0 = getUrlParameterDef("file", "gringo/exp1.gringo");
 
 	if (file0 != "") {
 		grammar = gringoGrammar();
@@ -86,13 +86,19 @@ main() {
 			}
 
 			// Test parse
-			test = getUrlParameterDef("test", "1[1+2]");
+			test = getUrlParameterDef("test", "1-2-3");
 			testfile = getUrlParameter("testfile");
 			testtext = if (test != "") test else if (testfile != "") getFileContent(testfile) else "";
 			if (testtext != "") {
 				tenv = doGringoParse(resGrammar, jsonAction, makeList(), testtext, isUrlParameterTrue("trace"), isUrlParameterTrue("grammar"));
 				if (!tenv.fail && strlen(testtext) == tenv.i) {
 					println("Parsed test: " + i2s(tenv.i) + " chars successfully.");
+				}
+				if (true) {
+					println("Stack");
+					iterList(tenv.output, \j -> {
+						println(json2stringFormatted(j));
+					});
 				}
 				json : Json = getJsonGringo(tenv.output);
 				result = getUrlParameter("result");

@@ -63,7 +63,7 @@ evalBackExp(backend : Backend, args : [BExp], rec : (Backend, BExp) -> string, e
 			left = evalBackExp(backend, args, rec, arg0);
 			right = evalBackExp(backend, args, rec, arg1);
 
-			wrap = \pair -> if (pair.second < precedence) "(" + pair.first + ")" else pair.first;
+			wrap = \pair -> if (pair.second <= precedence) "(" + pair.first + ")" else pair.first;
 
 			Pair(wrap(left) + name + wrap(right), precedence);
 		}

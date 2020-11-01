@@ -114,7 +114,7 @@ So "1.2.3" should result in a trace like "1 2 dot 3 dot", rather than "1 2 3 dot
 	+(a $) ->
 	( let t = (a t $ | a $) in t)
 	==
-	( let t = (a (t $)? ) in t )
+	( let t = (a (t)? $) in t )
 
 - Add error recovery
 

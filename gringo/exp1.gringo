@@ -1,5 +1,5 @@
-e = e ("+" e)     $"Sum"
-	|> e ("*" e)  $"Prod"
+e = e ("-" e)     $$"Minus"
+	|> e ("*" e)  $$"Prod"
 	|> $var ; 
 var = ('0'-'9')+;
 e
