@@ -88,6 +88,7 @@ replaceLeftRecursion(find : string, replaceLeft : GTerm, replaceRest : GTerm, so
 		GPlus(term): GPlus(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GOpt(term): GOpt(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GNegate(term): GNegate(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+		GError(term): GError(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GLower(term): {
 			println("ERROR: Lower only works correct in a sequence");
 			GLower(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
@@ -124,6 +125,7 @@ isSomething(g : GTerm) -> bool {
 		GPlus(term): isSomething(term);
 		GOpt(term): isSomething(term);
 		GNegate(term): false;
+		GError(term): isSomething(term);
 		GLower(term): isSomething(term);
 		GUnquote(term): false;
 		GString(text): true;

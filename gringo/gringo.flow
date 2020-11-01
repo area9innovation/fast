@@ -86,7 +86,7 @@ main() {
 			}
 
 			// Test parse
-			test = getUrlParameterDef("test", "1-2-3");
+			test = getUrlParameterDef("test", "1-(2-3))");
 			testfile = getUrlParameter("testfile");
 			testtext = if (test != "") test else if (testfile != "") getFileContent(testfile) else "";
 			if (testtext != "") {

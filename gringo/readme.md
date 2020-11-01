@@ -162,6 +162,44 @@ Opcodes from PEGCODE:
 Adding error recovery:
 https://www.eyalkalderon.com/nom-error-recovery/
 
+They have a "throw" error failure state with a label, instead of just a bool "fail". This state is not
+handled by choice, but bubbles up. For each label, there is another grammar which recovers from that 
+error.
+
+If that recovery rule is epsilon, that means that we are tolerant to missing tokens, and just report an
+error, but otherwise continue. This works for ; and missing trailing ).
+
+Another recovery rule skips everything until an unbalanced } is hit.
+
+They describe a procedure of using first(*) and follow(*) operators to automatically come up with recovery
+schemes.
+
+The simplest way of handling syntax errors a bit better is to include the max. position we have seen.
+
+We could introduce an "if this is not there, report error, but otherwise continue" kind of thing.
+
+That can work for missing ; and } and ).
+
+We could also introduce a construct that just keeps going until we see a specific token.
+I.e. explicitly add
+
+  e |>
+	| recover-at ";";
+	
+construct, which reports an error, but otherwise, keeps parsing.
+
+Another case is superfluous chars. Here, we could do a match, but otherwise ignore it.
+
+So potentially, the way to do it is to have a "turn error into acceptance, but report it" construct.
+
+	#";"	-> matches ;. If ; is missing, we report an error, but otherwise continue
+	#!";"	-> does not match ;. If there is a ;, we match it and report an error, but otherwise continue
+
+To refine it, we could maybe have a construct which recovers, but understands structure to some extend:
+{ }, ( ) [ ] are recursively matched.
+
+Another 
+
 We did try a scheme for precedence and associativy inspired by the approach in
 
 	https://matklad.github.io//2020/04/13/simple-but-powerful-pratt-parsing.html

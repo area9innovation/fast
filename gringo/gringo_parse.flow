@@ -83,6 +83,28 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 				senv;
 			}
 		}
+		GError(term): {
+			switch (term) {
+				GNegate(nterm): {
+					senv = gringoParse(env, nterm);
+					if (senv.fail) {
+						GringoEnv(senv with fail = true);
+					} else {
+						println("ERROR at " + i2s(env.i) + ": Superfluous " + makeGExplanation(nterm));
+						senv;
+					}
+				}
+				default: {
+					senv = gringoParse(env, term);
+					if (senv.fail) {
+						println("ERROR at " + i2s(env.i) + ": Expected " + makeGExplanation(term));
+						GringoEnv(senv with fail = false);
+					} else {
+						senv;
+					}
+				}
+			}
+		}
 		GLower(term): {
 			gringoParse(env, term);
 		}
@@ -187,5 +209,25 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 		default: {
 			def();
 		}
+	}
+}
+
+makeGExplanation(g : GTerm) -> string {
+	switch (g) {
+		GRule(id, term, body): makeGExplanation(body);
+		GPrecedence(left, right): makeGExplanation(left) + " or " + makeGExplanation(right);
+		GChoice(left, right): makeGExplanation(left) + " or " + makeGExplanation(right);
+		GSeq(left, right): makeGExplanation(left);
+		GStar(term): makeGExplanation(term);
+		GPlus(term): makeGExplanation(term);
+		GNegate(term): "not " + makeGExplanation(term);
+		GOpt(term): makeGExplanation(term);
+		GError(term): makeGExplanation(term);
+		GLower(term): makeGExplanation(term);
+		GUnquote(term): makeGExplanation(term);
+		GString(text): toString(text);
+		GRange(lower, upper): "range " + i2s(lower) + " to " + i2s(upper);
+		GVar(id): id;
+		GEpsilon(): "";
 	}
 }

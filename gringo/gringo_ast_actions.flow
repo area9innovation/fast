@@ -51,6 +51,11 @@ export {
 				pterm = popAstStack(acc);
 				unquote = GNegate(pterm.first);
 				pushAstStack(pterm.second, unquote);
+			} else if (v == "GError") {
+				// GError(term : GTerm);
+				pterm = popAstStack(acc);
+				unquote = GError(pterm.first);
+				pushAstStack(pterm.second, unquote);
 			} else if (v == "GLower") {
 				// GLower(term : GTerm);
 				pterm = popAstStack(acc);

@@ -1,7 +1,7 @@
 import ds/array;
 
 export {
-	GTerm ::= GRule, GPrecedence, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GLower, GUnquote, GString, GRange, GVar, GEpsilon;
+	GTerm ::= GRule, GPrecedence, GChoice, GSeq, GStar, GPlus, GOpt, GNegate, GError, GLower, GUnquote, GString, GRange, GVar, GEpsilon;
 
 	GRule(id : string, term : GTerm, body : GTerm);
 
@@ -16,6 +16,7 @@ export {
 	GOpt(term : GTerm);
 	GNegate(term : GTerm);
 	GLower(term : GTerm);	// Lowers the rule one step down
+	GError(term : GTerm);	// If the child fails, report an error, but otherwise continue
 	GUnquote(term : GTerm);	// Produces the matched output, except for GString, which is literally written out
 	GString(text : string);
 	GRange(lower : int, upper : int);

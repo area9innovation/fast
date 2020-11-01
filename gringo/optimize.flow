@@ -41,6 +41,7 @@ optimizeGTerm(g : GTerm) -> GTerm {
 			}
 		}
 		GNegate(term): GNegate(optimizeGTerm(term));
+		GError(term): GError(optimizeGTerm(term));
 		GLower(term): GLower(optimizeGTerm(term));
 		GUnquote(term): GUnquote(optimizeGTerm(term));
 		GString(text): g;
