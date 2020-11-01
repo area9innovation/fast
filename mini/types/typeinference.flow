@@ -29,12 +29,15 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 	// Reset polymorphism for this id
 	initTyparMap(env);
 
-	// TODO: Traverse the body and extract polymorphism and instantiate it from the forward declarations
 	mforward = lookupTree(env.ast.types, id);
+	ftype = mforward ?? {
+		// Traverse the body and extract polymorphism and instantiate it from the forward declarations
+		Some(typePars2TypeVars(env, mforward))
+	} : None();
 
 	env0 = MiniTypeEnv(env with onError = \e -> {
 		println(id + ": " + e)
-	})
+	});
 
 	if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
@@ -48,12 +51,16 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 		// Back-substitute polymorphism
 		ptype = typeVars2TypePars(nenv, rt);
 
+		ftype ?? constrainMiniType(nenv, ptype, ftype) : {};
+
 		setMiniTypeDeclaration(nenv, id, ptype);
 	} else {
 		rt = typeInferenceMini(env0, ex);
 
 		// Back-substitute polymorphism
 		ptype = typeVars2TypePars(env0, rt);
+
+		ftype ?? constrainMiniType(env0, ptype, ftype) : {};
 
 		setMiniTypeDeclaration(env0, id, ptype);
 	};
@@ -163,7 +170,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 		// println("Constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
 
 		error = \ -> {
-			// println("Cannot constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
+			println("Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
 		}
 
 		rightTyVar = \rid -> {

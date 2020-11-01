@@ -36,35 +36,33 @@ union = id ws typars "::=" ws typenames ';' ws $"uniondef";
 // TODO: Extract the type and use a binop to declare the type of the body
 functionOrStruct = 
 	// Forward declaration - we drop for now
-	  id ws '(' ws funargs ')' ws returnType $"drop" ';' ws $"drop" $"drop"
-	//  id ws '(' ws funargs ')' ws returnType $"drop" ';' ws $"nil" $$";" $"var" $"call" $"lambda" $"define"	// We leave the body nil
+	  id ws '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
 	| id ws '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
 	| id ws '(' ws funargs ')' ws returnType $"drop" brace $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws brace $"lambda" $"define"
 	| id ws '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
 
 	// Forward type declarations
-	| id ws ':' ws '(' ws funargs ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
-	| id ws ':' ws '(' ws types ')' ws returnType $"drop" $"drop" $"drop" ';' ws // We ignore the forward declaration for now
+	| id ws ':' ws '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
+	| id ws ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
 	// Struct
 	| id ws ':' ws '(' ws structargs ')' ws ';' ws $$"structdef"
 	;
 
 	// listof(funarg, ",")
 	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)? | $"nil";
-
-	// For now, we just drop the types
+	// This is what we want:
+	// funarg = id ws ':' ws type $$":" $"binop";
 	funarg = id ws (':' ws type $"drop")?;
 
-	// listof(funarg, ",")
+	// listof(structarg, ",")
 	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
 	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ws ':' ws type $"cons" $$"__structarg" $"var" $"swap" $"call";
 
 	returnType = ws "->" ws type;
 
 vardecl = id ws ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
-	// TODO: AST, and how to do it? We just drop for now
-	| id ws ':' ws type ';'? ws $"drop" $"drop";
+	| id ws ':' ws type ';'? ws $"typedef";
 
 exp = 
 	backslash lambdaargs ws "->" ws exp $"lambda"
