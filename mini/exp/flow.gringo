@@ -84,8 +84,11 @@ exp =
 		| exp ">=" ws exp $$">=" $"binop"
 		| exp ">" ws exp $$">" $"binop"
 	)
-	|> (exp "+" ws exp $$"+" $"binop"
-		| exp "-" ws exp $$"-" $"binop"
+	|> exp < (
+			(
+			"+" ws exp $$"+" $"binop"
+			| "-" ws exp $$"-" $"binop"
+			)*
 	)
 	|> (exp "*" ws exp $$"*" $"binop"
 		| exp "/" ws exp $$"/" $"binop"

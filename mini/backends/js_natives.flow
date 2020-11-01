@@ -143,6 +143,7 @@ jsBackend() -> Backend {
 			BackGen("Native.map", miniTypeVoid, BackText("function(a,fn){return a.map(fn);}")),
 			BackGen("Native.filter", miniTypeVoid, BackText("function(a,fn){return a.filter(fn);}")),
 			BackGen("Native.enumFromTo", miniTypeVoid, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
+			BackGen("Native.length", miniTypeVoid, BackText("function(a){return a.length;}")),
 
 			BackGen("Native.isSameStructType", miniTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),
 
