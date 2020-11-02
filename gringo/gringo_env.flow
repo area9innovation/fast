@@ -1,0 +1,26 @@
+import gringo/gringo_ast;
+import gringo/gringo_action;
+import ds/tree;
+
+export {
+	GringoEnv(
+		// The string we are parsing
+		input : string,
+		// The rules
+		names : Tree<string, GTerm>,
+		// The position in the input
+		i : int,
+		// The action function
+		action : GringoAction<?>,
+		// The output produced so far
+		output : ?,
+		// Did parsing fail?
+		fail : bool,
+		// Should we print debugging output?
+		verbose : bool,
+		// What errors did we get?
+		errors : Tree<int, string>,
+		// What is the longest we have parsed?
+		maxi : int,
+	);
+}

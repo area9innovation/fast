@@ -1,0 +1,210 @@
+import gringo/gringo_ast;
+import gringo/gringo_pretty;
+import text/blueprint;
+
+export {
+	makeGTermParser(g : GTerm) -> string;
+}
+
+makeGTermParser(g : GTerm) -> string {
+	"import gringo/gringo_env;\nimport string;\n"
+	+ compileGTerm(g, "env");
+}
+
+compileGTerm(g : GTerm, envname : string) -> string {
+	todo = \ -> {
+		println("Can not compile " + gterm2summary(g));
+		"";
+	}
+	switch (g) {
+		GRule(id, term, body): {
+			blueprint("
+				parse_%id%(env : GringoEnv) -> GringoEnv {
+					%term%
+				}
+
+				%body%
+				", ["id", id,
+					"term", compileGTerm(term, "env"),
+					"body", compileGTerm(body, "")
+				]
+			)
+		}
+		GPrecedence(left, right): todo();
+		GChoice(left, right): {
+			blueprint("
+				{
+					// Choice
+					left = %left%;
+					if (left.fail) {
+						%right%
+					} else left
+				}
+				", [
+					"left", compileGTerm(left, envname),
+					"right", compileGTerm(right, envname)
+				]
+			)
+		}
+		GSeq(left, right): {
+			blueprint("
+				{
+					// seq
+					left = %left%;
+					if (left.fail) {
+						GringoEnv(%env% with fail = true)
+					} else {
+						%right%
+					}
+				}", [
+					"env", envname,
+					"left", compileGTerm(left, envname),
+					"right", compileGTerm(right, "left")
+				]
+			);
+		}
+		GStar(term): {
+			blueprint("
+				{
+					// *
+					star = ref \\acc -> acc;
+					star := \\acc -> {
+						senv = %term%;
+						if (senv.fail) {
+							acc
+						} else {
+							(^star)(senv)
+						}
+					};
+					(^star)(%env%);
+				}", [
+					"env", envname,
+					"term", compileGTerm(term, "acc"),
+				]
+			);
+		}
+		GPlus(term): {
+			compileGTerm(
+				GSeq(term, GStar(term)), envname
+			);
+		}
+		GOpt(term): {
+			blueprint("
+				{
+					// Opt
+					senv = %term%;
+					if (senv.fail) {
+						%env%
+					} else {
+						senv
+					}
+				}", [
+					"env", envname,
+					"term", compileGTerm(term, envname),
+				]
+			);
+		}
+		GNegate(term): {
+			todo();
+		}
+		GError(term): {
+			"// TODO: Error handling\n"
+			+ compileGTerm(term, envname)
+		}
+		GLower(term): todo();
+		GUnquote(term): {
+			def = \ -> {
+				blueprint("
+					{
+						// Unquote matched
+						starti = %env%.i;
+						rec = %term%;
+						if (rec.fail) {
+							rec;
+						} else {
+							matched = substring(env.input, starti, rec.i - starti);
+							GringoEnv(rec with output = %env%.action.addMatched(rec.output, matched))
+						}
+					}", [
+						"env", envname,
+						"term", compileGTerm(term, envname),
+					]
+				);
+			};
+			switch (term) {
+				GString(text): {
+					blueprint("GringoEnv(%env% with output = %env%.action.addVerbatim(%env%.output, %text%))", [
+							"env", envname,
+							"text", toString(text)
+						]
+					);
+				}
+				GUnquote(nt): {
+					switch (nt) {
+						GString(text): {
+							blueprint("GringoEnv(%env% with output = %env%.action.addMatched(%env%.output, %text%))", [
+									"env", envname,
+									"text", toString(text)
+								]
+							);
+						}
+						GVar(id): {
+							if (id == "pos") {
+								blueprint("GringoEnv(%env% with output = %env%.action.addVerbatim(%env%.output, i2s(%env%.i))", [
+										"env", envname,
+									]
+								);
+							} else def();
+						}
+						default: {
+							def();
+						}
+					}
+				}
+				default: def();
+			}
+		}
+		GString(text): {
+			blueprint("
+				if (strContainsAt(%env%.input, %env%.i, %text%)) {
+					ni = %env%.i + %length%;
+					GringoEnv(
+						%env% with i = ni,
+						maxi = max(%env%.maxi, ni)
+					)
+				} else {
+					GringoEnv(%env% with fail = true)
+				}", [
+					"env", envname,
+					"text", toString(text),
+					"length", i2s(strlen(text)),
+				]
+			);
+		}
+		GRange(lower, upper): {
+			blueprint("
+				{
+					// Range
+					code = getCharCodeAt(%env%.input, %env%.i);
+					if (%lower% <= code && code <= %upper%) {
+						ni = %env%.i + 1;
+						GringoEnv(
+							%env% with i = ni,
+							maxi = max(%env%.maxi, ni)
+						)
+					} else {
+						GringoEnv(%env% with fail = true)
+					}
+				}", [
+					"env", envname,
+					"lower", i2s(lower),
+					"upper", i2s(upper)
+				]
+			);
+		}
+		GVar(id): {
+			"parse_" + id + "(" + envname + ")";
+		}
+		GEpsilon():	envname;
+	}
+}

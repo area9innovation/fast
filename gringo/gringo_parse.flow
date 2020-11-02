@@ -1,6 +1,7 @@
 import gringo/gringo_ast;
 import gringo/gringo_action;
 import gringo/gringo_pretty;
+import gringo/gringo_env;
 import ds/tree;
 import string;
 import ds/set;
@@ -8,26 +9,6 @@ import ds/set;
 export {
 	gringoParse(env : GringoEnv<?>, term : GTerm) -> GringoEnv<?>;
 
-	GringoEnv(
-		// The string we are parsing
-		input : string,
-		// The rules
-		names : Tree<string, GTerm>,
-		// The position in the input
-		i : int,
-		// The action function
-		action : GringoAction<?>,
-		// The output produced so far
-		output : ?,
-		// Did parsing fail?
-		fail : bool,
-		// Should we print debugging output?
-		verbose : bool,
-		// What errors did we get?
-		errors : Tree<int, string>,
-		// What is the longest we have parsed?
-		maxi : int,
-	);
 }
 
 gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
@@ -45,7 +26,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 			} else lenv
 		}
 		GChoice(left, right): {
-			lenv = gringoParse(env,left);
+			lenv = gringoParse(env, left);
 			if (lenv.fail) {
 				gringoParse(env, right);
 			} else lenv

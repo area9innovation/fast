@@ -1,5 +1,6 @@
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
+import gringo/compiler/gcode;
 import gringo/gringo_prepare;
 import gringo/gringo_ast_actions;
 import gringo/json_actions;
@@ -85,6 +86,17 @@ main() {
 				{}
 			};
 
+			// Compile to flow code
+			compile = getUrlParameter("compile");
+			if (compile != "") {
+				name = strReplaces(changeFileExt(file, ""), ["/", "_", "\\", "_"]);
+				outfile = if (compile == "1") changeFileExt(file, "") + "_parser.flow" else compile;
+				println("Saving " + outfile);
+				grammar_term = prepareGringoGrammar(resGrammar);
+				setFileContent(outfile, makeGTermParser(grammar_term));
+				{}
+			}
+
 			// Test parse
 			test = getUrlParameterDef("test", "1-(2-3))");
 			testfile = getUrlParameter("testfile");
@@ -126,7 +138,10 @@ gringo file=path/grammar.gringo <options>
 
     file=<file> gives the path to the Gringo file to work with.
 
-    out=1 or <file> compiles the grammar and saves it as a flow file.
+    out=1 or <file> compiles the grammar to AST and saves it as a flow file.
+
+    compile=1 or <file> compiles the grammar to efficient flow code.
+    fast=1 or <file> compiles the grammar to fast code.
 
     grammar=1 prints the optimized grammar for inspection.
 
@@ -152,7 +167,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 		println(gterm2string(ogrammar));
 	};
 
-	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose, makeTree());
+	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose, makeTree(), 0);
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {
