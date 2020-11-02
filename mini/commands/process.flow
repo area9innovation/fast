@@ -76,6 +76,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				// TODO: Update deps: We have to collect all of them from each file
 				ndb = pushMiniValue(db, MiniString(content));
 				ndb2 = MiniDb(ndb with fileStack = Cons(name, ndb.fileStack));
+				// println("Parsing " + path);
 				miniEvalForth(name, ndb2, evalcommand);
 			} else {
 				// OK, this is already read. We can skip it
@@ -214,7 +215,7 @@ defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -
 		declarationFile = setTree(npr.declarationFile, id, file),
 	);
 	MiniDb(db2 with program = nast);
-};
+}
 
 processMiniAnnotation(db : MiniDb, file : string, annotation : MiniAnnotation) -> MiniDb {
 	if (annotation.annotation == "native") {

@@ -90,8 +90,8 @@ replaceLeftRecursion(find : string, replaceLeft : GTerm, replaceRest : GTerm, so
 		GNegate(term): GNegate(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GError(term): GError(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GLower(term): {
-			println("ERROR: Lower only works correct in a sequence");
-			GLower(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
+			// Force substitution in the children
+			GLower(replaceLeftRecursion(find, replaceLeft, replaceRest, false, false, term));
 		}
 		GUnquote(term): GUnquote(replaceLeftRecursion(find, replaceLeft, replaceRest, somethingBefore, somethingFollows, term));
 		GString(text): g;

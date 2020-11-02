@@ -12,7 +12,7 @@ parseGringoGrammar(text : string) -> GTerm {
 	// doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool, debugGrammar : bool) -> GringoEnv<?> {
 	grammar = gringoGrammar();
 	ogrammar = prepareGringoGrammar(grammar);
-	env = GringoEnv(text, makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false, makeTree());
+	env = GringoEnv(text, makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false, makeTree(), 0);
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {
@@ -22,7 +22,7 @@ parseGringoGrammar(text : string) -> GTerm {
 		println("There are " + i2s(sizeTree(env.errors)) + " syntax errors");
 	}
 
-	remaining = strRight(env.input, genv.i);
+	remaining = strRight(env.input, genv.maxi);
 	if (remaining != "") {
 		println("Did not parse: " + remaining);
 	}

@@ -4,6 +4,8 @@ import mini/exp/value;
 
 import gringo/gringo_lib;
 
+import lingo/linecolumn;
+
 export {
 	prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb) -> MiniDb;
 }
@@ -15,23 +17,28 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 	// println(gterm2string(gterm));
 
 	\db : MiniDb -> {
-		text = popMiniValue(db);
+		textp = popMiniValue(db);
 		// Here, we should parse the grammar using Forth actions
-		env = GringoEnv(getMiniString(text.first), makeTree(), 0, actions, text.second, false, false, makeTree());
+		text = getMiniString(textp.first);
+		env = GringoEnv(text, makeTree(), 0, actions, textp.second, false, false, makeTree(), 0);
 		genv : GringoEnv<MiniDb> = gringoParse(env, gterm);
 
-		if (!isEmptyTree(genv.errors)) {
+		if (!isEmptyTree(genv.errors) || genv.i < strlen(env.input) || genv.fail) {
+			// TODO: Should we resolve this file name, or push full names?
+			file = headList(db.fileStack, "");
+			resolver = makeLineResolver(text);
 
-			println("There are " + i2s(sizeTree(genv.errors)) + " syntax errors at " + headList(db.fileStack, ""));
-		}
-		if (genv.fail) {
-			println("Parsing failed");
-		} else {
-			// println("Parse success");
-		}
-		remaining = strRight(env.input, genv.i);
-		if (remaining != "") {
-			db.onError("Did not parse: " + remaining);
+			traverseInOrder(genv.errors, \pos, error -> {
+				linecol = findLine(resolver, pos);
+				db.onError(file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error);
+				db.onError(linecol.line);
+				db.onError(lpad("^", " ", linecol.lineIndex - 1));
+			})
+
+			if (genv.i < strlen(env.input) || genv.fail) {
+				linecol = findLine(resolver, genv.maxi);
+				db.onError(file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": Parsing ended here");
+			}
 		}
 
 		genv.output;

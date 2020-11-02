@@ -67,8 +67,8 @@ vardecl = id ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 exp = 
 	backslash lambdaargs ws "->" ws exp $"lambda"
 	|> (
-		id "=" ws exp ";" ws #semiexps $"let"
-	 	| id ":" ws type "=" ws #exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
+		id "=" ws exp #";" ws semiexps $"let"
+	 	| id ":" ws type "=" ws exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
 	|> exp "|>" ws exp $$"|>" $"binop"	// TODO: Should we desugar this here?
@@ -92,8 +92,11 @@ exp =
 		| exp "/" ws exp $$"/" $"binop"
 		| exp "%" ws exp $$"%" $"binop"
 	)
+	// To ensure that ?? does not consider the : as part of the type
+	|> exp (":" ws type $$":" $"binop")+
+
 	|> (
-		exp "??" ws exp $"list2" ":" ws exp $"cons" $$"__maybe" $"var" $"swap" $"call"
+		exp "??" ws <exp $"list2" ":" ws exp $"cons" $$"__maybe" $"var" $"swap" $"call"
 	)
 	|> (
 		'!' ws exp $$"!" $"unop"
@@ -105,7 +108,6 @@ exp =
 			| "." ws id $"list2" "::=" ws exp $"cons" $$"__mutassign" $"swap" $"call"
 			| "." ws id $$"." $"binop"
 			| "[" ws exp "]" ws $$"__index" $"binop"
-			| ":" ws type $$":" $"binop"
 			)+
 	)
 	|> '^' ws exp $$"__deref" $"unop"
@@ -130,7 +132,7 @@ exp =
 	);
 
 	// listof(fieldassign, ",")
-	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")* | $"nil";
+	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"nil";
 		fieldassign = id '=' ws exp $$"__withassign" $"binop";
 
 brace = "{" ws exp (#";" ws exp $$";" $"binop")* (";" ws)? #"}" ws 

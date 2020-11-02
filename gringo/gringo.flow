@@ -51,7 +51,7 @@ main() {
 					])
 				);
 				{}
-			}
+			};
 
 			// Produce fast parser code with the grammar AST
 			fast = getUrlParameter("fast");
@@ -83,7 +83,7 @@ main() {
 					])
 				);
 				{}
-			}
+			};
 
 			// Test parse
 			test = getUrlParameterDef("test", "1-(2-3))");
@@ -93,13 +93,13 @@ main() {
 				tenv = doGringoParse(resGrammar, jsonAction, makeList(), testtext, isUrlParameterTrue("trace"), isUrlParameterTrue("grammar"));
 				if (!tenv.fail && strlen(testtext) == tenv.i) {
 					println("Parsed test: " + i2s(tenv.i) + " chars successfully.");
-				}
+				};
 				if (true) {
 					println("Stack");
 					iterList(tenv.output, \j -> {
 						println(json2stringFormatted(j));
 					});
-				}
+				};
 				json : Json = getJsonGringo(tenv.output);
 				result = getUrlParameter("result");
 				if (result == "1") {
@@ -112,7 +112,7 @@ main() {
 				ogrammar = prepareGringoGrammar(resGrammar);
 				println("Fully optimized:");
 				println(gterm2string(ogrammar));
-			}
+			};
 
 			quit(0);
 		} else {
@@ -145,22 +145,22 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 	if (false) {
 		println("Original:");
 		println(gterm2string(grammar));
-	}
+	};
 	ogrammar = prepareGringoGrammar(grammar);
 	if (debugGrammar) {
 		println("Fully optimized:");
 		println(gterm2string(ogrammar));
-	}
+	};
 
 	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose, makeTree());
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {
 		println("Parsing failed");
-	}
+	};
 	remaining = strRight(env.input, genv.i);
 	if (remaining != "") {
 		println("Did not parse: " + remaining);
-	}
+	};
 	genv;
 }
