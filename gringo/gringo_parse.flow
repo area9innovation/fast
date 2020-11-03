@@ -2,6 +2,7 @@ import gringo/gringo_ast;
 import gringo/gringo_action;
 import gringo/gringo_pretty;
 import gringo/gringo_env;
+import gringo/utils;
 import ds/tree;
 import string;
 import ds/set;
@@ -169,25 +170,5 @@ unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
 		default: {
 			def();
 		}
-	}
-}
-
-makeGExplanation(g : GTerm) -> string {
-	switch (g) {
-		GRule(id, term, body): makeGExplanation(body);
-		GPrecedence(left, right): makeGExplanation(left) + " or " + makeGExplanation(right);
-		GChoice(left, right): makeGExplanation(left) + " or " + makeGExplanation(right);
-		GSeq(left, right): makeGExplanation(left);
-		GStar(term): makeGExplanation(term);
-		GPlus(term): makeGExplanation(term);
-		GNegate(term): "not " + makeGExplanation(term);
-		GOpt(term): makeGExplanation(term);
-		GError(term): makeGExplanation(term);
-		GLower(term): makeGExplanation(term);
-		GUnquote(term): makeGExplanation(term);
-		GString(text): toString(text);
-		GRange(lower, upper): "range " + i2s(lower) + " to " + i2s(upper);
-		GVar(id): id;
-		GEpsilon(): "";
 	}
 }

@@ -13,6 +13,9 @@ export {
 
 	// Does basic replacement in the term, except in a named rule
 	replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> GTerm;
+
+	// Construct an explanation for what this rule looks for
+	makeGExplanation(g : GTerm) -> string;
 }
 
 // Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
@@ -124,5 +127,25 @@ replaceTerm(find : GTerm, replace : GTerm, exceptInRule : string, g : GTerm) -> 
 		GRange(lower, upper): g;
 		GVar(id): g;
 		GEpsilon(): g;
+	}
+}
+
+makeGExplanation(g : GTerm) -> string {
+	switch (g) {
+		GRule(id, term, body): makeGExplanation(body);
+		GPrecedence(left, right): makeGExplanation(left) + " or " + makeGExplanation(right);
+		GChoice(left, right): makeGExplanation(left) + " or " + makeGExplanation(right);
+		GSeq(left, right): makeGExplanation(left);
+		GStar(term): "zero or more " + makeGExplanation(term);
+		GPlus(term): makeGExplanation(term);
+		GNegate(term): "not " + makeGExplanation(term);
+		GOpt(term): "optional " + makeGExplanation(term);
+		GError(term): makeGExplanation(term);
+		GLower(term): makeGExplanation(term);
+		GUnquote(term): makeGExplanation(term);
+		GString(text): toString(text);
+		GRange(lower, upper): "range " + i2s(lower) + " to " + i2s(upper);
+		GVar(id): id;
+		GEpsilon(): "";
 	}
 }

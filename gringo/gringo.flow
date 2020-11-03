@@ -167,7 +167,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 		println(gterm2string(ogrammar));
 	};
 
-	env = GringoEnv(text, makeTree(), 0, actions, output, false, verbose, makeTree(), 0);
+	env = GringoEnv(text, makeTree(), 0, actions, output, false, makeTree(), 0);
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {

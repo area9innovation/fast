@@ -1,17 +1,45 @@
 import gringo/gringo_ast;
 import gringo/gringo_pretty;
+import gringo/utils;
 import text/blueprint;
 
 export {
 	makeGTermParser(g : GTerm) -> string;
 }
 
+/*
+TODO:
+- Compile error handler
+
+The flow-parser takes a SyntaxParseAcc and returns the result.
+
+
+*/
+
 makeGTermParser(g : GTerm) -> string {
-	"import gringo/gringo_env;\nimport string;\n"
-	+ compileGTerm(g, "env");
+	main = mainRule(g);
+	blueprint("
+		import gringo/gringo_env;
+		import string;
+		
+		export {
+			parse_%main%(GringoEnv) -> GringoEnv;
+		}
+
+		%term%"
+		, [
+			"term", compileGTerm(g, ref 0, "env"),
+			"main", main
+		]
+	);
 }
 
-compileGTerm(g : GTerm, envname : string) -> string {
+
+compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
+	newid = \ -> {
+		var := ^var + 1;
+		"var" + i2s(^var)
+	}
 	todo = \ -> {
 		println("Can not compile " + gterm2summary(g));
 		"";
@@ -23,10 +51,14 @@ compileGTerm(g : GTerm, envname : string) -> string {
 					%term%
 				}
 
-				%body%
-				", ["id", id,
-					"term", compileGTerm(term, "env"),
-					"body", compileGTerm(body, "")
+				%body%", ["id", id,
+					"term", compileGTerm(term, var, "env"),
+					"body", {
+						switch (body) {
+							GVar(__): ""
+							default: compileGTerm(body, var, "")
+						}
+					}
 				]
 			)
 		}
@@ -35,31 +67,34 @@ compileGTerm(g : GTerm, envname : string) -> string {
 			blueprint("
 				{
 					// Choice
-					left = %left%;
-					if (left.fail) {
+					%var% = %left%;
+					if (%var%.fail) {
 						%right%
-					} else left
+					} else %var%
 				}
 				", [
-					"left", compileGTerm(left, envname),
-					"right", compileGTerm(right, envname)
+					"var", newid(),
+					"left", compileGTerm(left, var, envname),
+					"right", compileGTerm(right, var, envname)
 				]
 			)
 		}
 		GSeq(left, right): {
+			lvar = newid();
 			blueprint("
 				{
 					// seq
-					left = %left%;
-					if (left.fail) {
+					%var% = %left%;
+					if (%var%.fail) {
 						GringoEnv(%env% with fail = true)
 					} else {
 						%right%
 					}
 				}", [
+					"var", lvar,
 					"env", envname,
-					"left", compileGTerm(left, envname),
-					"right", compileGTerm(right, "left")
+					"left", compileGTerm(left, var, envname),
+					"right", compileGTerm(right, var, lvar)
 				]
 			);
 		}
@@ -67,49 +102,107 @@ compileGTerm(g : GTerm, envname : string) -> string {
 			blueprint("
 				{
 					// *
-					star = ref \\acc -> acc;
-					star := \\acc -> {
+					%var% = ref \\acc -> acc;
+					%var% := \\acc -> {
 						senv = %term%;
 						if (senv.fail) {
 							acc
 						} else {
-							(^star)(senv)
+							(^%var%)(senv)
 						}
 					};
-					(^star)(%env%);
+					(^%var%)(%env%);
 				}", [
 					"env", envname,
-					"term", compileGTerm(term, "acc"),
+					"var", newid(),
+					"term", compileGTerm(term, var, "acc"),
 				]
 			);
 		}
 		GPlus(term): {
 			compileGTerm(
-				GSeq(term, GStar(term)), envname
+				GSeq(term, GStar(term)), var, envname
 			);
 		}
 		GOpt(term): {
 			blueprint("
 				{
 					// Opt
-					senv = %term%;
-					if (senv.fail) {
+					%var% = %term%;
+					if (%var%.fail) {
 						%env%
 					} else {
-						senv
+						%var%
 					}
 				}", [
 					"env", envname,
-					"term", compileGTerm(term, envname),
+					"var", newid(),
+					"term", compileGTerm(term, var, envname),
 				]
 			);
 		}
 		GNegate(term): {
-			todo();
+			blueprint("
+				{
+					// Negate
+					%var% = %term%;
+					if (%var%.fail) {
+						GringoEnv(%var% with fail = false);
+					} else {
+						GringoEnv(%env% with fail = true);
+					}
+				}", [
+					"env", envname,
+					"var", newid(),
+					"term", compileGTerm(term, var, envname),
+				]
+			);
 		}
 		GError(term): {
-			"// TODO: Error handling\n"
-			+ compileGTerm(term, envname)
+			switch (term) {
+				GNegate(nterm): {
+					blueprint("
+						{
+							// Negative error
+							%var% = %term%;
+							if (%var%.fail) {
+								GringoEnv(%var% with fail = false);
+							} else {
+								GringoEnv(
+									%var% with errors = setTree(%env%.errors, %env%.i, %error%)
+								);
+							}
+						}", [
+							"env", envname,
+							"var", newid(),
+							"term", compileGTerm(term, var, envname),
+							"error", "Superfluous " + makeGExplanation(nterm)
+						]
+					);
+				}
+				default: {
+					blueprint("
+						{
+							// Error handling
+							%var% = %term%;
+							if (%var%.fail) {
+								GringoEnv(
+									%var% with fail = false, 
+									errors = setTree(%env%.errors, %env%.i, %error%)
+								);
+							} else {
+								%var%
+							}
+						}", [
+							"env", envname,
+							"var", newid(),
+							"term", compileGTerm(term, var, envname),
+							"error", "Expected " + makeGExplanation(term)
+						]
+					);
+				}
+			}
+			compileGTerm(term, var, envname)
 		}
 		GLower(term): todo();
 		GUnquote(term): {
@@ -117,17 +210,18 @@ compileGTerm(g : GTerm, envname : string) -> string {
 				blueprint("
 					{
 						// Unquote matched
-						starti = %env%.i;
-						rec = %term%;
-						if (rec.fail) {
-							rec;
+						%var% = %term%;
+						if (%var%.fail) {
+							%var%;
 						} else {
-							matched = substring(env.input, starti, rec.i - starti);
-							GringoEnv(rec with output = %env%.action.addMatched(rec.output, matched))
+							starti = %env%.i;
+							matched = substring(%env%.input, starti, %var%.i - starti);
+							GringoEnv(%var% with output = %env%.action.addMatched(%var%.output, matched))
 						}
 					}", [
 						"env", envname,
-						"term", compileGTerm(term, envname),
+						"var", newid(),
+						"term", compileGTerm(term, var, envname),
 					]
 				);
 			};
@@ -185,8 +279,8 @@ compileGTerm(g : GTerm, envname : string) -> string {
 			blueprint("
 				{
 					// Range
-					code = getCharCodeAt(%env%.input, %env%.i);
-					if (%lower% <= code && code <= %upper%) {
+					%code% = getCharCodeAt(%env%.input, %env%.i);
+					if (%lower% <= %code% && %code% <= %upper%) {
 						ni = %env%.i + 1;
 						GringoEnv(
 							%env% with i = ni,
@@ -197,6 +291,7 @@ compileGTerm(g : GTerm, envname : string) -> string {
 					}
 				}", [
 					"env", envname,
+					"code", newid(),
 					"lower", i2s(lower),
 					"upper", i2s(upper)
 				]
