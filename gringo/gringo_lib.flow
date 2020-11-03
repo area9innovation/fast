@@ -9,10 +9,9 @@ export {
 }
 
 parseGringoGrammar(text : string) -> GTerm {
-	// doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : string, verbose : bool, debugGrammar : bool) -> GringoEnv<?> {
 	grammar = gringoGrammar();
 	ogrammar = prepareGringoGrammar(grammar);
-	env = GringoEnv(text, makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, false, makeTree(), 0);
+	env = GringoEnv(text, makeTree(), 0, gringoAstAction, GringoAstAcc(makeList()), false, makeTree(), 0);
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {

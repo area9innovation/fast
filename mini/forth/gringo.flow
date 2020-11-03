@@ -20,7 +20,7 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 		textp = popMiniValue(db);
 		// Here, we should parse the grammar using Forth actions
 		text = getMiniString(textp.first);
-		env = GringoEnv(text, makeTree(), 0, actions, textp.second, false, false, makeTree(), 0);
+		env = GringoEnv(text, makeTree(), 0, actions, textp.second, false, makeTree(), 0);
 		genv : GringoEnv<MiniDb> = gringoParse(env, gterm);
 
 		if (!isEmptyTree(genv.errors) || genv.i < strlen(env.input) || genv.fail) {
