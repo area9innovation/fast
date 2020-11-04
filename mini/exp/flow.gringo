@@ -59,13 +59,14 @@ functionOrStruct =
 	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
 	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ':' ws type $"cons" $$"__structarg" $"var" $"swap" $"call";
 
-	returnType = ws "->" ws type;
+	returnType = "->" ws type;
 
 vardecl = id ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 	| id ':' ws type ';'? ws $"typedef";
 
 exp = 
 	backslash lambdaargs ws "->" ws exp $"lambda"
+	// OK, should this be done differently?
 	|> (
 		id "=" ws exp #";" ws semiexps $"let"
 	 	| id ":" ws type "=" ws exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
@@ -197,11 +198,9 @@ exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";
 
 
 string = '"' "#inc" "lude" s path '"' ws   // TODO: AST
-	| singlestring
+	| '"' $(onechar_)* '"' ws
 // 	| $"nil" (singlestring $"cons")+ $"concatStrings"
 	;
-
-singlestring = '"' $(onechar_)* '"' ws;
 
 onechar_ = backslash "u" hexdigit hexdigit hexdigit hexdigit
 	| backslash "X" hexdigit hexdigit hexdigit hexdigit

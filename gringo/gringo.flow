@@ -1,5 +1,6 @@
 import gringo/gringo_grammar;
 import gringo/gringo_parse;
+import gringo/exponential;
 import gringo/compiler/gcode;
 import gringo/gringo_prepare;
 import gringo/gringo_ast_actions;
@@ -28,6 +29,9 @@ main() {
 			// OK, we have the result of the parse
 			resGrammar = optimizeGTerm(getAstResult(env.output));
 
+			grammar_term = prepareGringoGrammar(resGrammar);
+			checkRules(file, grammar_term);
+
 			// Produce flow output with the grammar AST
 			out = getUrlParameter("out");
 			if (out != "") {
@@ -51,7 +55,7 @@ main() {
 						"file", file,
 						"out", out,
 						"name", changeFileExt(fileNameOnly(file), "") + "Grammar",
-						"grammar", toString(prepareGringoGrammar(resGrammar)),
+						"grammar", toString(grammar_term),
 					])
 				);
 				{}
@@ -63,7 +67,6 @@ main() {
 				name = strReplaces(changeFileExt(file, ""), ["/", "_", "\\", "_"]);
 				outfile = if (fast == "1") changeFileExt(file, "") + "_grammar.fast" else fast;
 				println("Saving " + outfile);
-				grammar_term = prepareGringoGrammar(resGrammar);
 				conf = Gringo2FastConf(
 					getUrlParameter("accType"),
 					getUrlParameter("verb"),
@@ -95,7 +98,6 @@ main() {
 				name = strReplaces(changeFileExt(file, ""), ["/", "_", "\\", "_"]);
 				outfile = if (compile == "1") changeFileExt(file, "") + "_parser.flow" else compile;
 				println("Saving " + outfile);
-				grammar_term = prepareGringoGrammar(resGrammar);
 				setFileContent(outfile, makeGTermParser(grammar_term, file));
 				{}
 			}
@@ -147,6 +149,7 @@ gringo file=path/grammar.gringo <options>
     fast=1 or <file> compiles the grammar to fast code.
 
     grammar=1 prints the optimized grammar for inspection.
+	prefix=1 dumps the prefix terminals per processed rule.
 
     test=<string> immediately tests the grammar on that string.
 	testfile=<filename> tests the grammar on the contents of that file.
