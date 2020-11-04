@@ -6,8 +6,8 @@ import mini/backends/js;
 import mini/backends/pretty;
 
 main() {
-	file = getUrlParameterDef("file", "mini/tests/assoc.flow");
-	//file = getUrlParameterDef("file", "demos/euler/euler3.flow");
+	//file = getUrlParameterDef("file", "mini/tests/assoc.flow");
+	file = getUrlParameterDef("file", "demos/euler/euler10.flow");
 	output = getUrlParameterDef("output", "output");
 
 	verbose = s2i(getUrlParameterDef("verbose", "0"));

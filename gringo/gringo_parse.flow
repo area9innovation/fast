@@ -66,7 +66,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 				GNegate(nterm): {
 					senv = gringoParse(env, nterm);
 					if (senv.fail) {
-						GringoEnv(senv with fail = true);
+						GringoEnv(senv with fail = false);
 					} else {
 						error = "Superfluous " + makeGExplanation(nterm);
 						GringoEnv(

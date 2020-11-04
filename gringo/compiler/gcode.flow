@@ -163,7 +163,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 							// Negative error
 							%var% = %nterm%;
 							if (%var%.fail) {
-								GringoEnv(%var% with fail = true);
+								GringoEnv(%var% with fail = false);
 							} else {
 								GringoEnv(
 									%var% with errors = setTree(%env%.errors, %env%.i, %error%)
@@ -255,21 +255,44 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 			}
 		}
 		GString(text): {
-			blueprint("
-				if (strContainsAt(%env%.input, %env%.i, %text%)) {
-					ni = %env%.i + %length%;
-					GringoEnv(
-						%env% with i = ni,
-						maxi = max(%env%.maxi, ni)
-					)
-				} else {
-					GringoEnv(%env% with fail = true)
-				}", [
-					"env", envname,
-					"text", toString(text),
-					"length", i2s(strlen(text)),
-				]
-			);
+			if (strlen(text) == 1) {
+				blueprint("
+					{
+						// Char
+						%code% = getCharCodeAt(%env%.input, %env%.i);
+						if (%code% == %textcode%) {
+							ni = %env%.i + 1;
+							GringoEnv(
+								%env% with i = ni,
+								maxi = max(%env%.maxi, ni)
+							)
+						} else {
+							GringoEnv(%env% with fail = true)
+						}
+					}", [
+						"env", envname,
+						"code", newid(),
+						"textcode", i2s(getCharCodeAt(text, 0)),
+					]
+				);
+			} else {
+				blueprint("
+					if (strContainsAt(%env%.input, %env%.i, %text%)) {
+						ni = %env%.i + %length%;
+						GringoEnv(
+							%env% with i = ni,
+							maxi = max(%env%.maxi, ni)
+						)
+					} else {
+						GringoEnv(%env% with fail = true)
+					}", [
+						"env", envname,
+						"text", toString(text),
+						"length", i2s(strlen(text)),
+					]
+				);
+
+			}
 		}
 		GRange(lower, upper): {
 			blueprint("

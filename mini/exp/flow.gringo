@@ -113,13 +113,13 @@ exp =
 	|> '^' ws exp $$"__deref" $"unop"
 	|> (
 		"(" ws exp #")" ws 
-		| "true" !letterOrDigit ws $"1" $$"bool" $"type0" $$":" $"binop"
-		| "false" !letterOrDigit ws $"0" $$"bool" $"type0" $$":" $"binop"
+		| "if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
+		| "if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
 		| "ref" !letterOrDigit ws exp $$"__ref" $"unop"
 		| switch
 		| "cast" !letterOrDigit ws $$"__cast" $"var" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
-		| "if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
-		| "if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
+		| "true" !letterOrDigit ws $"1" $$"bool" $"type0" $$":" $"binop"
+		| "false" !letterOrDigit ws $"0" $$"bool" $"type0" $$":" $"binop"
 		| id $"var"
 		| "0x" $(hexdigit+) ws $"parsehex"
 		| $('0'-'9'+ "." '0'-'9'*) ws $"s2d"
