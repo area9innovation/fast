@@ -34,7 +34,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		}
 		GSeq(left, right): {
 			lenv = gringoParse(env, left);
-			if (lenv.fail) GringoEnv(env with fail = true)
+			if (lenv.fail) lenv // GringoEnv(env with fail = true)
 			else gringoParse(lenv, right);
 		}
 		GStar(term): {

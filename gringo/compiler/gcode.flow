@@ -4,31 +4,49 @@ import gringo/utils;
 import text/blueprint;
 
 export {
-	makeGTermParser(g : GTerm) -> string;
+	makeGTermParser(g : GTerm, file : string) -> string;
 }
 
 /*
 TODO:
-- Compile error handler
-
 The flow-parser takes a SyntaxParseAcc and returns the result.
 
+Changes required:
 
+- Our output is polymorphic, so we have to figure out how to represent 
+  the failure node
+
+- Caching
+
+- Change i to be mutable
+  - Choice reverts the i when match fails
+
+- A sequence of multiple things is "outlined"
+
+- There is a range of low-level optimizations for Opt(string) and such.
+  - Consider to have an intermediate representation
+  - SyntaxStar is a function that takes a matching function
+  - SyntaxPlus is a function that takes a matching function
+
+- There is a special case for when we are NOT inside a choice
+
+- Two chars is still code with getCharCodeAt
 */
 
-makeGTermParser(g : GTerm) -> string {
+makeGTermParser(g : GTerm, file : string) -> string {
 	main = mainRule(g);
 	blueprint("
-		// Produced by  flowcpp gringo/gringo.flow -- file=<file>.gringo compile=1
-		import gringo/gringo_env;
+		// Produced by  flowcpp gringo/gringo.flow -- file=%file%.gringo compile=1
+		import gringo/compiler/gcode_env;
 		import string;
 		
 		export {
-			parse_%main%(GringoEnv) -> GringoEnv;
+			parse_%main%(GCodeEnv) -> GCodeEnv;
 		}
 
 		%term%"
 		, [
+			"file", file,
 			"term", compileGTerm(g, ref 0, "env"),
 			"main", main
 		]
@@ -44,7 +62,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 	switch (g) {
 		GRule(id, term, body): {
 			blueprint("
-				parse_%id%(env : GringoEnv) -> GringoEnv {
+				parse_%id%(env : GCodeEnv) -> GCodeEnv {
 					%term%
 				}
 
@@ -80,14 +98,11 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 			lvar = newid();
 			blueprint("
 				{
-					// seq
-					%var% = %left%;
-					if (%var%.fail) {
-						GringoEnv(%env% with fail = true)
-					} else {
-						%right%
-					}
-				}", [
+				// seq
+				%var% = %left%;
+				if (%var%.fail) {%var%} else {
+				%right%
+				}}", [
 					"var", lvar,
 					"env", envname,
 					"left", compileGTerm(left, var, envname),
@@ -144,9 +159,9 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 					// Negate
 					%var% = %term%;
 					if (%var%.fail) {
-						GringoEnv(%var% with fail = false);
+						GCodeEnv(%var% with fail = false);
 					} else {
-						GringoEnv(%env% with fail = true);
+						GCodeEnv(%env% with fail = true);
 					}
 				}", [
 					"env", envname,
@@ -163,9 +178,9 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 							// Negative error
 							%var% = %nterm%;
 							if (%var%.fail) {
-								GringoEnv(%var% with fail = false);
+								GCodeEnv(%var% with fail = false);
 							} else {
-								GringoEnv(
+								GCodeEnv(
 									%var% with errors = setTree(%env%.errors, %env%.i, %error%)
 								);
 							}
@@ -183,7 +198,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 							// Error handling
 							%var% = %term%;
 							if (%var%.fail) {
-								GringoEnv(
+								GCodeEnv(
 									%var% with fail = false, 
 									errors = setTree(%env%.errors, %env%.i, %error%)
 								);
@@ -212,7 +227,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 						} else {
 							starti = %env%.i;
 							matched = substring(%env%.input, starti, %var%.i - starti);
-							GringoEnv(%var% with output = %env%.action.addMatched(%var%.output, matched))
+							GCodeEnv(%var% with output = %env%.action.addMatched(%var%.output, matched))
 						}
 					}", [
 						"env", envname,
@@ -223,7 +238,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 			};
 			switch (term) {
 				GString(text): {
-					blueprint("GringoEnv(%env% with output = %env%.action.addVerbatim(%env%.output, %text%))", [
+					blueprint("GCodeEnv(%env% with output = %env%.action.addVerbatim(%env%.output, %text%))", [
 							"env", envname,
 							"text", toString(text)
 						]
@@ -232,7 +247,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 				GUnquote(nt): {
 					switch (nt) {
 						GString(text): {
-							blueprint("GringoEnv(%env% with output = %env%.action.addMatched(%env%.output, %text%))", [
+							blueprint("GCodeEnv(%env% with output = %env%.action.addMatched(%env%.output, %text%))", [
 									"env", envname,
 									"text", toString(text)
 								]
@@ -240,7 +255,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 						}
 						GVar(id): {
 							if (id == "pos") {
-								blueprint("GringoEnv(%env% with output = %env%.action.addVerbatim(%env%.output, i2s(%env%.i))", [
+								blueprint("GCodeEnv(%env% with output = %env%.action.addVerbatim(%env%.output, i2s(%env%.i))", [
 										"env", envname,
 									]
 								);
@@ -257,21 +272,17 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 		GString(text): {
 			if (strlen(text) == 1) {
 				blueprint("
-					{
-						// Char
-						%code% = getCharCodeAt(%env%.input, %env%.i);
-						if (%code% == %textcode%) {
-							ni = %env%.i + 1;
-							GringoEnv(
-								%env% with i = ni,
-								maxi = max(%env%.maxi, ni)
-							)
-						} else {
-							GringoEnv(%env% with fail = true)
-						}
+					// Char
+					if (getCharCodeAt(%env%.input, %env%.i) == %textcode%) {
+						ni = %env%.i + 1;
+						GCodeEnv(
+							%env% with i = ni,
+							maxi = max(%env%.maxi, ni)
+						)
+					} else {
+						GCodeEnv(%env% with fail = true)
 					}", [
 						"env", envname,
-						"code", newid(),
 						"textcode", i2s(getCharCodeAt(text, 0)),
 					]
 				);
@@ -279,12 +290,12 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 				blueprint("
 					if (strContainsAt(%env%.input, %env%.i, %text%)) {
 						ni = %env%.i + %length%;
-						GringoEnv(
+						GCodeEnv(
 							%env% with i = ni,
 							maxi = max(%env%.maxi, ni)
 						)
 					} else {
-						GringoEnv(%env% with fail = true)
+						GCodeEnv(%env% with fail = true)
 					}", [
 						"env", envname,
 						"text", toString(text),
@@ -296,18 +307,15 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 		}
 		GRange(lower, upper): {
 			blueprint("
-				{
-					// Range
-					%code% = getCharCodeAt(%env%.input, %env%.i);
-					if (%lower% <= %code% && %code% <= %upper%) {
-						ni = %env%.i + 1;
-						GringoEnv(
-							%env% with i = ni,
-							maxi = max(%env%.maxi, ni)
-						)
-					} else {
-						GringoEnv(%env% with fail = true)
-					}
+				// Range
+				if ({%code% = getCharCodeAt(%env%.input, %env%.i);%lower% <= %code% && %code% <= %upper%}) {
+					ni = %env%.i + 1;
+					GCodeEnv(
+						%env% with i = ni,
+						maxi = max(%env%.maxi, ni)
+					)
+				} else {
+					GCodeEnv(%env% with fail = true)
 				}", [
 					"env", envname,
 					"code", newid(),

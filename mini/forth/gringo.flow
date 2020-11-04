@@ -22,17 +22,17 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 		textp = popMiniValue(db);
 		// Here, we should parse the grammar using Forth actions
 		text = getMiniString(textp.first);
-		env = GringoEnv(text, makeTree(), 0, actions, textp.second, false, makeTree(), 0);
+		env = GringoEnv(text, makeTree(), actions, textp.second, makeTree(), 0, false, 0);
 
 		start = timestamp();
 		println("Parsing " + headList(db.fileStack, ""));
 
-		genv : GringoEnv<MiniDb> = if (true) gringoParse(env, gterm) else parse_flow(env);
+		genv : GringoEnv<MiniDb> = if (false) gringoParse(env, gterm) else GCodeEnv2GringoEnv(parse_flow(GringoEnv2GCodeEnv(env)));
 
 		println("Took " + d2st((timestamp() - start) / 1000.0, 2) + "s");
 
 		if (false) {
-			genv2 : GringoEnv<MiniDb> = if (true) gringoParse(env, gterm) else parse_flow(env);
+			genv2 : GringoEnv<MiniDb> = gringoParse(env, gterm);
 
 			if (genv.output != genv2.output) {
 				println("DIFFERENT AST");

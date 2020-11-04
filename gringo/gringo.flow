@@ -14,6 +14,9 @@ main() {
 	if (file0 != "") {
 		grammar = gringoGrammar();
 		file = changeFileExt(file0, ".gringo");
+		if (!fileExists(file)) {
+			println(file + " not found");
+		}
 		text = getFileContent(file);
 
 		// Construct a Gringo AST from the parse
@@ -93,12 +96,12 @@ main() {
 				outfile = if (compile == "1") changeFileExt(file, "") + "_parser.flow" else compile;
 				println("Saving " + outfile);
 				grammar_term = prepareGringoGrammar(resGrammar);
-				setFileContent(outfile, makeGTermParser(grammar_term));
+				setFileContent(outfile, makeGTermParser(grammar_term, file));
 				{}
 			}
 
 			// Test parse
-			test = getUrlParameterDef("test", "1-(2-3))");
+			test = getUrlParameterDef("test", "");
 			testfile = getUrlParameter("testfile");
 			testtext = if (test != "") test else if (testfile != "") getFileContent(testfile) else "";
 			if (testtext != "") {
@@ -167,7 +170,7 @@ doGringoParse(grammar : GTerm, actions : GringoAction<?>, output : ?, text : str
 		println(gterm2string(ogrammar));
 	};
 
-	env = GringoEnv(text, makeTree(), 0, actions, output, false, makeTree(), 0);
+	env = GringoEnv(text, makeTree(), actions, output, makeTree(), 0, false, 0);
 	genv = gringoParse(env, ogrammar);
 
 	if (genv.fail) {

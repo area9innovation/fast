@@ -1,0 +1,7485 @@
+// Produced by  flowcpp gringo/gringo.flow -- file=mini/exp/flow.gringo.gringo compile=1
+import gringo/compiler/gcode_env;
+import string;
+
+export {
+	parse_flow(GCodeEnv) -> GCodeEnv;
+}
+
+parse_flow(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var1 = {
+	// seq
+	var2 = {
+	// seq
+	var3 = {
+	// seq
+	var4 = {
+		// Opt
+		var5 = if (strContainsAt(env.input, env.i, "\\uFEFF")) {
+			ni = env.i + 6;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var5.fail) {
+			env
+		} else {
+			var5
+		}
+	};
+	if (var4.fail) {var4} else {
+	parse_ws(var4)
+	}};
+	if (var3.fail) {var3} else {
+	{
+		// *
+		var6 = ref \acc -> acc;
+		var6 := \acc -> {
+			senv = parse_importExport(acc);
+			if (senv.fail) {
+				acc
+			} else {
+				(^var6)(senv)
+			}
+		};
+		(^var6)(var3);
+	}
+	}};
+	if (var2.fail) {var2} else {
+	{
+		// *
+		var7 = ref \acc -> acc;
+		var7 := \acc -> {
+			senv = parse_toplevelDeclaration(acc);
+			if (senv.fail) {
+				acc
+			} else {
+				(^var7)(senv)
+			}
+		};
+		(^var7)(var2);
+	}
+	}};
+	if (var1.fail) {var1} else {
+	GCodeEnv(var1 with output = var1.action.addVerbatim(var1.output, "popfile"))
+	}}
+}
+
+parse_importExport(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var8 = parse_import(env);
+		if (var8.fail) {
+			{
+				// Choice
+				var9 = parse_dynamicImport(env);
+				if (var9.fail) {
+					{
+						// Choice
+						var10 = parse_export(env);
+						if (var10.fail) {
+							parse_forbid(env)
+						} else var10
+					}
+
+				} else var9
+			}
+
+		} else var8
+	}
+
+}
+
+parse_import(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var11 = {
+	// seq
+	var12 = {
+	// seq
+	var13 = {
+	// seq
+	var14 = {
+	// seq
+	var15 = {
+	// seq
+	var16 = {
+	// seq
+	var17 = {
+	// seq
+	var18 = if (strContainsAt(env.input, env.i, "import")) {
+		ni = env.i + 6;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var18.fail) {var18} else {
+	parse_s(var18)
+	}};
+	if (var17.fail) {var17} else {
+	{
+		// Unquote matched
+		var19 = parse_path(var17);
+		if (var19.fail) {
+			var19;
+		} else {
+			starti = var17.i;
+			matched = substring(var17.input, starti, var19.i - starti);
+			GCodeEnv(var19 with output = var17.action.addMatched(var19.output, matched))
+		}
+	}
+	}};
+	if (var16.fail) {var16} else {
+	parse_ws(var16)
+	}};
+	if (var15.fail) {var15} else {
+	// Char
+	if (getCharCodeAt(var15.input, var15.i) == 59) {
+		ni = var15.i + 1;
+		GCodeEnv(
+			var15 with i = ni,
+			maxi = max(var15.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var15 with fail = true)
+	}
+	}};
+	if (var14.fail) {var14} else {
+	parse_ws(var14)
+	}};
+	if (var13.fail) {var13} else {
+	GCodeEnv(var13 with output = var13.action.addMatched(var13.output, ".flow"))
+	}};
+	if (var12.fail) {var12} else {
+	GCodeEnv(var12 with output = var12.action.addVerbatim(var12.output, "changeFileExt"))
+	}};
+	if (var11.fail) {var11} else {
+	GCodeEnv(var11 with output = var11.action.addVerbatim(var11.output, "parsefile"))
+	}}
+}
+
+parse_dynamicImport(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var20 = {
+	// seq
+	var21 = {
+	// seq
+	var22 = {
+	// seq
+	var23 = {
+	// seq
+	var24 = if (strContainsAt(env.input, env.i, "require")) {
+		ni = env.i + 7;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var24.fail) {var24} else {
+	parse_s(var24)
+	}};
+	if (var23.fail) {var23} else {
+	{
+		// Unquote matched
+		var25 = parse_path(var23);
+		if (var25.fail) {
+			var25;
+		} else {
+			starti = var23.i;
+			matched = substring(var23.input, starti, var25.i - starti);
+			GCodeEnv(var25 with output = var23.action.addMatched(var25.output, matched))
+		}
+	}
+	}};
+	if (var22.fail) {var22} else {
+	parse_ws(var22)
+	}};
+	if (var21.fail) {var21} else {
+	// Char
+	if (getCharCodeAt(var21.input, var21.i) == 59) {
+		ni = var21.i + 1;
+		GCodeEnv(
+			var21 with i = ni,
+			maxi = max(var21.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var21 with fail = true)
+	}
+	}};
+	if (var20.fail) {var20} else {
+	parse_ws(var20)
+	}}
+}
+
+parse_export(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var26 = {
+	// seq
+	var27 = {
+	// seq
+	var28 = {
+	// seq
+	var29 = {
+	// seq
+	var30 = {
+	// seq
+	var31 = if (strContainsAt(env.input, env.i, "export")) {
+		ni = env.i + 6;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var31.fail) {var31} else {
+	parse_ws(var31)
+	}};
+	if (var30.fail) {var30} else {
+	// Char
+	if (getCharCodeAt(var30.input, var30.i) == 123) {
+		ni = var30.i + 1;
+		GCodeEnv(
+			var30 with i = ni,
+			maxi = max(var30.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var30 with fail = true)
+	}
+	}};
+	if (var29.fail) {var29} else {
+	parse_ws(var29)
+	}};
+	if (var28.fail) {var28} else {
+	{
+	// seq
+	var32 = parse_toplevelDeclaration(var28);
+	if (var32.fail) {var32} else {
+	{
+		// *
+		var33 = ref \acc -> acc;
+		var33 := \acc -> {
+			senv = parse_toplevelDeclaration(acc);
+			if (senv.fail) {
+				acc
+			} else {
+				(^var33)(senv)
+			}
+		};
+		(^var33)(var32);
+	}
+	}}
+	}};
+	if (var27.fail) {var27} else {
+	// Char
+	if (getCharCodeAt(var27.input, var27.i) == 125) {
+		ni = var27.i + 1;
+		GCodeEnv(
+			var27 with i = ni,
+			maxi = max(var27.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var27 with fail = true)
+	}
+	}};
+	if (var26.fail) {var26} else {
+	parse_ws(var26)
+	}}
+}
+
+parse_forbid(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var34 = {
+	// seq
+	var35 = {
+	// seq
+	var36 = {
+	// seq
+	var37 = {
+	// seq
+	var38 = if (strContainsAt(env.input, env.i, "forbid")) {
+		ni = env.i + 6;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var38.fail) {var38} else {
+	parse_s(var38)
+	}};
+	if (var37.fail) {var37} else {
+	{
+		// Unquote matched
+		var39 = parse_path(var37);
+		if (var39.fail) {
+			var39;
+		} else {
+			starti = var37.i;
+			matched = substring(var37.input, starti, var39.i - starti);
+			GCodeEnv(var39 with output = var37.action.addMatched(var39.output, matched))
+		}
+	}
+	}};
+	if (var36.fail) {var36} else {
+	parse_ws(var36)
+	}};
+	if (var35.fail) {var35} else {
+	// Char
+	if (getCharCodeAt(var35.input, var35.i) == 59) {
+		ni = var35.i + 1;
+		GCodeEnv(
+			var35 with i = ni,
+			maxi = max(var35.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var35 with fail = true)
+	}
+	}};
+	if (var34.fail) {var34} else {
+	parse_ws(var34)
+	}}
+}
+
+parse_path(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var40 = parse_bid(env);
+	if (var40.fail) {var40} else {
+	{
+		// *
+		var41 = ref \acc -> acc;
+		var41 := \acc -> {
+			senv = {
+			// seq
+			var42 = // Char
+			if (getCharCodeAt(acc.input, acc.i) == 47) {
+				ni = acc.i + 1;
+				GCodeEnv(
+					acc with i = ni,
+					maxi = max(acc.maxi, ni)
+				)
+			} else {
+				GCodeEnv(acc with fail = true)
+			};
+			if (var42.fail) {var42} else {
+			parse_bid(var42)
+			}};
+			if (senv.fail) {
+				acc
+			} else {
+				(^var41)(senv)
+			}
+		};
+		(^var41)(var40);
+	}
+	}}
+}
+
+parse_toplevelDeclaration(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var43 = parse_native(env);
+		if (var43.fail) {
+			{
+				// Choice
+				var44 = parse_assign(env);
+				if (var44.fail) {
+					{
+						// Choice
+						var45 = parse_union(env);
+						if (var45.fail) {
+							{
+								// Choice
+								var46 = parse_functionOrStruct(env);
+								if (var46.fail) {
+									parse_vardecl(env)
+								} else var46
+							}
+
+						} else var45
+					}
+
+				} else var44
+			}
+
+		} else var43
+	}
+
+}
+
+parse_native(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var47 = {
+	// seq
+	var48 = {
+	// seq
+	var49 = {
+	// seq
+	var50 = {
+	// seq
+	var51 = {
+	// seq
+	var52 = {
+	// seq
+	var53 = {
+	// seq
+	var54 = {
+	// seq
+	var55 = {
+	// seq
+	var56 = {
+	// seq
+	var57 = {
+	// seq
+	var58 = {
+	// seq
+	var59 = {
+	// seq
+	var60 = {
+	// seq
+	var61 = {
+	// seq
+	var62 = {
+	// seq
+	var63 = {
+	// seq
+	var64 = {
+	// seq
+	var65 = {
+	// seq
+	var66 = {
+	// seq
+	var67 = {
+	// seq
+	var68 = {
+	// seq
+	var69 = {
+	// seq
+	var70 = {
+	// seq
+	var71 = if (strContainsAt(env.input, env.i, "native")) {
+		ni = env.i + 6;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var71.fail) {var71} else {
+	parse_s(var71)
+	}};
+	if (var70.fail) {var70} else {
+	parse_id(var70)
+	}};
+	if (var69.fail) {var69} else {
+	// Char
+	if (getCharCodeAt(var69.input, var69.i) == 58) {
+		ni = var69.i + 1;
+		GCodeEnv(
+			var69 with i = ni,
+			maxi = max(var69.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var69 with fail = true)
+	}
+	}};
+	if (var68.fail) {var68} else {
+	GCodeEnv(var68 with output = var68.action.addMatched(var68.output, "__native"))
+	}};
+	if (var67.fail) {var67} else {
+	GCodeEnv(var67 with output = var67.action.addVerbatim(var67.output, "var"))
+	}};
+	if (var66.fail) {var66} else {
+	parse_ws(var66)
+	}};
+	if (var65.fail) {var65} else {
+	GCodeEnv(var65 with output = var65.action.addMatched(var65.output, "1"))
+	}};
+	if (var64.fail) {var64} else {
+	GCodeEnv(var64 with output = var64.action.addVerbatim(var64.output, "s2i"))
+	}};
+	if (var63.fail) {var63} else {
+	GCodeEnv(var63 with output = var63.action.addVerbatim(var63.output, "nil"))
+	}};
+	if (var62.fail) {var62} else {
+	{
+		// Opt
+		var72 = {
+		// seq
+		var73 = {
+		// seq
+		var74 = {
+		// seq
+		var75 = if (strContainsAt(var62.input, var62.i, "io")) {
+			ni = var62.i + 2;
+			GCodeEnv(
+				var62 with i = ni,
+				maxi = max(var62.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var62 with fail = true)
+		};
+		if (var75.fail) {var75} else {
+		parse_ws(var75)
+		}};
+		if (var74.fail) {var74} else {
+		GCodeEnv(var74 with output = var74.action.addMatched(var74.output, "io"))
+		}};
+		if (var73.fail) {var73} else {
+		GCodeEnv(var73 with output = var73.action.addVerbatim(var73.output, "cons"))
+		}};
+		if (var72.fail) {
+			var62
+		} else {
+			var72
+		}
+	}
+	}};
+	if (var61.fail) {var61} else {
+	GCodeEnv(var61 with output = var61.action.addVerbatim(var61.output, "isnil"))
+	}};
+	if (var60.fail) {var60} else {
+	GCodeEnv(var60 with output = var60.action.addVerbatim(var60.output, "-"))
+	}};
+	if (var59.fail) {var59} else {
+	parse_type(var59)
+	}};
+	if (var58.fail) {var58} else {
+	GCodeEnv(var58 with output = var58.action.addVerbatim(var58.output, "list2"))
+	}};
+	if (var57.fail) {var57} else {
+	// Char
+	if (getCharCodeAt(var57.input, var57.i) == 61) {
+		ni = var57.i + 1;
+		GCodeEnv(
+			var57 with i = ni,
+			maxi = max(var57.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var57 with fail = true)
+	}
+	}};
+	if (var56.fail) {var56} else {
+	parse_ws(var56)
+	}};
+	if (var55.fail) {var55} else {
+	{
+		// Unquote matched
+		var76 = parse_name(var55);
+		if (var76.fail) {
+			var76;
+		} else {
+			starti = var55.i;
+			matched = substring(var55.input, starti, var76.i - starti);
+			GCodeEnv(var76 with output = var55.action.addMatched(var76.output, matched))
+		}
+	}
+	}};
+	if (var54.fail) {var54} else {
+	GCodeEnv(var54 with output = var54.action.addVerbatim(var54.output, "cons"))
+	}};
+	if (var53.fail) {var53} else {
+	parse_ws(var53)
+	}};
+	if (var52.fail) {var52} else {
+	// Char
+	if (getCharCodeAt(var52.input, var52.i) == 59) {
+		ni = var52.i + 1;
+		GCodeEnv(
+			var52 with i = ni,
+			maxi = max(var52.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var52 with fail = true)
+	}
+	}};
+	if (var51.fail) {var51} else {
+	parse_ws(var51)
+	}};
+	if (var50.fail) {var50} else {
+	GCodeEnv(var50 with output = var50.action.addVerbatim(var50.output, "call"))
+	}};
+	if (var49.fail) {var49} else {
+	GCodeEnv(var49 with output = var49.action.addMatched(var49.output, "native"))
+	}};
+	if (var48.fail) {var48} else {
+	GCodeEnv(var48 with output = var48.action.addVerbatim(var48.output, "swap"))
+	}};
+	if (var47.fail) {var47} else {
+	GCodeEnv(var47 with output = var47.action.addVerbatim(var47.output, "setannotation"))
+	}}
+}
+
+parse_name(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var77 = parse_bid(env);
+	if (var77.fail) {var77} else {
+	{
+		// *
+		var78 = ref \acc -> acc;
+		var78 := \acc -> {
+			senv = {
+			// seq
+			var79 = // Char
+			if (getCharCodeAt(acc.input, acc.i) == 46) {
+				ni = acc.i + 1;
+				GCodeEnv(
+					acc with i = ni,
+					maxi = max(acc.maxi, ni)
+				)
+			} else {
+				GCodeEnv(acc with fail = true)
+			};
+			if (var79.fail) {var79} else {
+			parse_bid(var79)
+			}};
+			if (senv.fail) {
+				acc
+			} else {
+				(^var78)(senv)
+			}
+		};
+		(^var78)(var77);
+	}
+	}}
+}
+
+parse_assign(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var80 = {
+	// seq
+	var81 = {
+	// seq
+	var82 = {
+	// seq
+	var83 = {
+	// seq
+	var84 = {
+	// seq
+	var85 = parse_id(env);
+	if (var85.fail) {var85} else {
+	// Char
+	if (getCharCodeAt(var85.input, var85.i) == 61) {
+		ni = var85.i + 1;
+		GCodeEnv(
+			var85 with i = ni,
+			maxi = max(var85.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var85 with fail = true)
+	}
+	}};
+	if (var84.fail) {var84} else {
+	parse_ws(var84)
+	}};
+	if (var83.fail) {var83} else {
+	parse_exp(var83)
+	}};
+	if (var82.fail) {var82} else {
+	{
+		// Opt
+		var86 = // Char
+		if (getCharCodeAt(var82.input, var82.i) == 59) {
+			ni = var82.i + 1;
+			GCodeEnv(
+				var82 with i = ni,
+				maxi = max(var82.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var82 with fail = true)
+		};
+		if (var86.fail) {
+			var82
+		} else {
+			var86
+		}
+	}
+	}};
+	if (var81.fail) {var81} else {
+	parse_ws(var81)
+	}};
+	if (var80.fail) {var80} else {
+	GCodeEnv(var80 with output = var80.action.addVerbatim(var80.output, "define"))
+	}}
+}
+
+parse_union(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var87 = {
+	// seq
+	var88 = {
+	// seq
+	var89 = {
+	// seq
+	var90 = {
+	// seq
+	var91 = {
+	// seq
+	var92 = {
+	// seq
+	var93 = parse_id(env);
+	if (var93.fail) {var93} else {
+	parse_typars(var93)
+	}};
+	if (var92.fail) {var92} else {
+	if (strContainsAt(var92.input, var92.i, "::=")) {
+		ni = var92.i + 3;
+		GCodeEnv(
+			var92 with i = ni,
+			maxi = max(var92.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var92 with fail = true)
+	}
+	}};
+	if (var91.fail) {var91} else {
+	parse_ws(var91)
+	}};
+	if (var90.fail) {var90} else {
+	parse_typenames(var90)
+	}};
+	if (var89.fail) {var89} else {
+	// Char
+	if (getCharCodeAt(var89.input, var89.i) == 59) {
+		ni = var89.i + 1;
+		GCodeEnv(
+			var89 with i = ni,
+			maxi = max(var89.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var89 with fail = true)
+	}
+	}};
+	if (var88.fail) {var88} else {
+	parse_ws(var88)
+	}};
+	if (var87.fail) {var87} else {
+	GCodeEnv(var87 with output = var87.action.addVerbatim(var87.output, "uniondef"))
+	}}
+}
+
+parse_typenames(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var94 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var94.fail) {var94} else {
+	{
+		// Opt
+		var95 = {
+		// seq
+		var96 = {
+		// seq
+		var97 = {
+		// seq
+		var98 = parse_typename(var94);
+		if (var98.fail) {var98} else {
+		GCodeEnv(var98 with output = var98.action.addVerbatim(var98.output, "cons"))
+		}};
+		if (var97.fail) {var97} else {
+		{
+			// *
+			var99 = ref \acc -> acc;
+			var99 := \acc -> {
+				senv = {
+				// seq
+				var100 = {
+				// seq
+				var101 = {
+				// seq
+				var102 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var102.fail) {var102} else {
+				parse_ws(var102)
+				}};
+				if (var101.fail) {var101} else {
+				parse_typename(var101)
+				}};
+				if (var100.fail) {var100} else {
+				GCodeEnv(var100 with output = var100.action.addVerbatim(var100.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var99)(senv)
+				}
+			};
+			(^var99)(var97);
+		}
+		}};
+		if (var96.fail) {var96} else {
+		{
+			// Opt
+			var103 = {
+			// seq
+			var104 = // Char
+			if (getCharCodeAt(var96.input, var96.i) == 44) {
+				ni = var96.i + 1;
+				GCodeEnv(
+					var96 with i = ni,
+					maxi = max(var96.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var96 with fail = true)
+			};
+			if (var104.fail) {var104} else {
+			parse_ws(var104)
+			}};
+			if (var103.fail) {
+				var96
+			} else {
+				var103
+			}
+		}
+		}};
+		if (var95.fail) {
+			var94
+		} else {
+			var95
+		}
+	}
+	}}
+}
+
+parse_functionOrStruct(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var105 = parse_id(env);
+	if (var105.fail) {var105} else {
+	{
+		// Choice
+		var106 = {
+		// seq
+		var107 = {
+		// seq
+		var108 = // Char
+		if (getCharCodeAt(var105.input, var105.i) == 40) {
+			ni = var105.i + 1;
+			GCodeEnv(
+				var105 with i = ni,
+				maxi = max(var105.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var105 with fail = true)
+		};
+		if (var108.fail) {var108} else {
+		parse_ws(var108)
+		}};
+		if (var107.fail) {var107} else {
+		{
+			// Choice
+			var109 = {
+			// seq
+			var110 = {
+			// seq
+			var111 = {
+			// seq
+			var112 = {
+			// seq
+			var113 = {
+			// seq
+			var114 = {
+			// seq
+			var115 = {
+			// seq
+			var116 = parse_namedargs(var107);
+			if (var116.fail) {var116} else {
+			// Char
+			if (getCharCodeAt(var116.input, var116.i) == 41) {
+				ni = var116.i + 1;
+				GCodeEnv(
+					var116 with i = ni,
+					maxi = max(var116.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var116 with fail = true)
+			}
+			}};
+			if (var115.fail) {var115} else {
+			parse_ws(var115)
+			}};
+			if (var114.fail) {var114} else {
+			parse_returnType(var114)
+			}};
+			if (var113.fail) {var113} else {
+			// Char
+			if (getCharCodeAt(var113.input, var113.i) == 59) {
+				ni = var113.i + 1;
+				GCodeEnv(
+					var113 with i = ni,
+					maxi = max(var113.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var113 with fail = true)
+			}
+			}};
+			if (var112.fail) {var112} else {
+			parse_ws(var112)
+			}};
+			if (var111.fail) {var111} else {
+			GCodeEnv(var111 with output = var111.action.addVerbatim(var111.output, "fntype"))
+			}};
+			if (var110.fail) {var110} else {
+			GCodeEnv(var110 with output = var110.action.addVerbatim(var110.output, "typedef"))
+			}};
+			if (var109.fail) {
+				{
+					// Choice
+					var117 = {
+					// seq
+					var118 = {
+					// seq
+					var119 = {
+					// seq
+					var120 = {
+					// seq
+					var121 = {
+					// seq
+					var122 = parse_structargs(var107);
+					if (var122.fail) {var122} else {
+					// Char
+					if (getCharCodeAt(var122.input, var122.i) == 41) {
+						ni = var122.i + 1;
+						GCodeEnv(
+							var122 with i = ni,
+							maxi = max(var122.maxi, ni)
+						)
+					} else {
+						GCodeEnv(var122 with fail = true)
+					}
+					}};
+					if (var121.fail) {var121} else {
+					parse_ws(var121)
+					}};
+					if (var120.fail) {var120} else {
+					// Char
+					if (getCharCodeAt(var120.input, var120.i) == 59) {
+						ni = var120.i + 1;
+						GCodeEnv(
+							var120 with i = ni,
+							maxi = max(var120.maxi, ni)
+						)
+					} else {
+						GCodeEnv(var120 with fail = true)
+					}
+					}};
+					if (var119.fail) {var119} else {
+					parse_ws(var119)
+					}};
+					if (var118.fail) {var118} else {
+					GCodeEnv(var118 with output = var118.action.addVerbatim(var118.output, "structdef"))
+					}};
+					if (var117.fail) {
+						{
+							// Choice
+							var123 = {
+							// seq
+							var124 = {
+							// seq
+							var125 = {
+							// seq
+							var126 = {
+							// seq
+							var127 = {
+							// seq
+							var128 = {
+							// seq
+							var129 = {
+							// seq
+							var130 = parse_lambdaargs(var107);
+							if (var130.fail) {var130} else {
+							// Char
+							if (getCharCodeAt(var130.input, var130.i) == 41) {
+								ni = var130.i + 1;
+								GCodeEnv(
+									var130 with i = ni,
+									maxi = max(var130.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var130 with fail = true)
+							}
+							}};
+							if (var129.fail) {var129} else {
+							parse_ws(var129)
+							}};
+							if (var128.fail) {var128} else {
+							parse_returnType(var128)
+							}};
+							if (var127.fail) {var127} else {
+							GCodeEnv(var127 with output = var127.action.addVerbatim(var127.output, "drop"))
+							}};
+							if (var126.fail) {var126} else {
+							parse_brace(var126)
+							}};
+							if (var125.fail) {var125} else {
+							GCodeEnv(var125 with output = var125.action.addVerbatim(var125.output, "lambda"))
+							}};
+							if (var124.fail) {var124} else {
+							GCodeEnv(var124 with output = var124.action.addVerbatim(var124.output, "define"))
+							}};
+							if (var123.fail) {
+								{
+									// Choice
+									var131 = {
+									// seq
+									var132 = {
+									// seq
+									var133 = {
+									// seq
+									var134 = {
+									// seq
+									var135 = {
+									// seq
+									var136 = parse_lambdaargs(var107);
+									if (var136.fail) {var136} else {
+									// Char
+									if (getCharCodeAt(var136.input, var136.i) == 41) {
+										ni = var136.i + 1;
+										GCodeEnv(
+											var136 with i = ni,
+											maxi = max(var136.maxi, ni)
+										)
+									} else {
+										GCodeEnv(var136 with fail = true)
+									}
+									}};
+									if (var135.fail) {var135} else {
+									parse_ws(var135)
+									}};
+									if (var134.fail) {var134} else {
+									parse_brace(var134)
+									}};
+									if (var133.fail) {var133} else {
+									GCodeEnv(var133 with output = var133.action.addVerbatim(var133.output, "lambda"))
+									}};
+									if (var132.fail) {var132} else {
+									GCodeEnv(var132 with output = var132.action.addVerbatim(var132.output, "define"))
+									}};
+									if (var131.fail) {
+										{
+										// seq
+										var137 = {
+										// seq
+										var138 = {
+										// seq
+										var139 = {
+										// seq
+										var140 = {
+										// seq
+										var141 = {
+										// seq
+										var142 = {
+										// seq
+										var143 = parse_lambdaargs(var107);
+										if (var143.fail) {var143} else {
+										// Char
+										if (getCharCodeAt(var143.input, var143.i) == 41) {
+											ni = var143.i + 1;
+											GCodeEnv(
+												var143 with i = ni,
+												maxi = max(var143.maxi, ni)
+											)
+										} else {
+											GCodeEnv(var143 with fail = true)
+										}
+										}};
+										if (var142.fail) {var142} else {
+										parse_ws(var142)
+										}};
+										if (var141.fail) {var141} else {
+										parse_exp(var141)
+										}};
+										if (var140.fail) {var140} else {
+										{
+											// Opt
+											var144 = // Char
+											if (getCharCodeAt(var140.input, var140.i) == 59) {
+												ni = var140.i + 1;
+												GCodeEnv(
+													var140 with i = ni,
+													maxi = max(var140.maxi, ni)
+												)
+											} else {
+												GCodeEnv(var140 with fail = true)
+											};
+											if (var144.fail) {
+												var140
+											} else {
+												var144
+											}
+										}
+										}};
+										if (var139.fail) {var139} else {
+										parse_ws(var139)
+										}};
+										if (var138.fail) {var138} else {
+										GCodeEnv(var138 with output = var138.action.addVerbatim(var138.output, "lambda"))
+										}};
+										if (var137.fail) {var137} else {
+										GCodeEnv(var137 with output = var137.action.addVerbatim(var137.output, "define"))
+										}}
+									} else var131
+								}
+
+							} else var123
+						}
+
+					} else var117
+				}
+
+			} else var109
+		}
+
+		}};
+		if (var106.fail) {
+			{
+				// Choice
+				var145 = {
+				// seq
+				var146 = {
+				// seq
+				var147 = {
+				// seq
+				var148 = {
+				// seq
+				var149 = {
+				// seq
+				var150 = {
+				// seq
+				var151 = {
+				// seq
+				var152 = {
+				// seq
+				var153 = {
+				// seq
+				var154 = {
+				// seq
+				var155 = {
+				// seq
+				var156 = // Char
+				if (getCharCodeAt(var105.input, var105.i) == 58) {
+					ni = var105.i + 1;
+					GCodeEnv(
+						var105 with i = ni,
+						maxi = max(var105.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var105 with fail = true)
+				};
+				if (var156.fail) {var156} else {
+				parse_ws(var156)
+				}};
+				if (var155.fail) {var155} else {
+				// Char
+				if (getCharCodeAt(var155.input, var155.i) == 40) {
+					ni = var155.i + 1;
+					GCodeEnv(
+						var155 with i = ni,
+						maxi = max(var155.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var155 with fail = true)
+				}
+				}};
+				if (var154.fail) {var154} else {
+				parse_ws(var154)
+				}};
+				if (var153.fail) {var153} else {
+				parse_namedargs(var153)
+				}};
+				if (var152.fail) {var152} else {
+				// Char
+				if (getCharCodeAt(var152.input, var152.i) == 41) {
+					ni = var152.i + 1;
+					GCodeEnv(
+						var152 with i = ni,
+						maxi = max(var152.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var152 with fail = true)
+				}
+				}};
+				if (var151.fail) {var151} else {
+				parse_ws(var151)
+				}};
+				if (var150.fail) {var150} else {
+				parse_returnType(var150)
+				}};
+				if (var149.fail) {var149} else {
+				// Char
+				if (getCharCodeAt(var149.input, var149.i) == 59) {
+					ni = var149.i + 1;
+					GCodeEnv(
+						var149 with i = ni,
+						maxi = max(var149.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var149 with fail = true)
+				}
+				}};
+				if (var148.fail) {var148} else {
+				parse_ws(var148)
+				}};
+				if (var147.fail) {var147} else {
+				GCodeEnv(var147 with output = var147.action.addVerbatim(var147.output, "fntype"))
+				}};
+				if (var146.fail) {var146} else {
+				GCodeEnv(var146 with output = var146.action.addVerbatim(var146.output, "typedef"))
+				}};
+				if (var145.fail) {
+					{
+						// Choice
+						var157 = {
+						// seq
+						var158 = {
+						// seq
+						var159 = {
+						// seq
+						var160 = {
+						// seq
+						var161 = {
+						// seq
+						var162 = {
+						// seq
+						var163 = {
+						// seq
+						var164 = {
+						// seq
+						var165 = {
+						// seq
+						var166 = {
+						// seq
+						var167 = {
+						// seq
+						var168 = // Char
+						if (getCharCodeAt(var105.input, var105.i) == 58) {
+							ni = var105.i + 1;
+							GCodeEnv(
+								var105 with i = ni,
+								maxi = max(var105.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var105 with fail = true)
+						};
+						if (var168.fail) {var168} else {
+						parse_ws(var168)
+						}};
+						if (var167.fail) {var167} else {
+						// Char
+						if (getCharCodeAt(var167.input, var167.i) == 40) {
+							ni = var167.i + 1;
+							GCodeEnv(
+								var167 with i = ni,
+								maxi = max(var167.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var167 with fail = true)
+						}
+						}};
+						if (var166.fail) {var166} else {
+						parse_ws(var166)
+						}};
+						if (var165.fail) {var165} else {
+						parse_types(var165)
+						}};
+						if (var164.fail) {var164} else {
+						// Char
+						if (getCharCodeAt(var164.input, var164.i) == 41) {
+							ni = var164.i + 1;
+							GCodeEnv(
+								var164 with i = ni,
+								maxi = max(var164.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var164 with fail = true)
+						}
+						}};
+						if (var163.fail) {var163} else {
+						parse_ws(var163)
+						}};
+						if (var162.fail) {var162} else {
+						parse_returnType(var162)
+						}};
+						if (var161.fail) {var161} else {
+						// Char
+						if (getCharCodeAt(var161.input, var161.i) == 59) {
+							ni = var161.i + 1;
+							GCodeEnv(
+								var161 with i = ni,
+								maxi = max(var161.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var161 with fail = true)
+						}
+						}};
+						if (var160.fail) {var160} else {
+						parse_ws(var160)
+						}};
+						if (var159.fail) {var159} else {
+						GCodeEnv(var159 with output = var159.action.addVerbatim(var159.output, "fntype"))
+						}};
+						if (var158.fail) {var158} else {
+						GCodeEnv(var158 with output = var158.action.addVerbatim(var158.output, "typedef"))
+						}};
+						if (var157.fail) {
+							{
+							// seq
+							var169 = {
+							// seq
+							var170 = {
+							// seq
+							var171 = {
+							// seq
+							var172 = {
+							// seq
+							var173 = {
+							// seq
+							var174 = {
+							// seq
+							var175 = {
+							// seq
+							var176 = {
+							// seq
+							var177 = // Char
+							if (getCharCodeAt(var105.input, var105.i) == 58) {
+								ni = var105.i + 1;
+								GCodeEnv(
+									var105 with i = ni,
+									maxi = max(var105.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var105 with fail = true)
+							};
+							if (var177.fail) {var177} else {
+							parse_ws(var177)
+							}};
+							if (var176.fail) {var176} else {
+							// Char
+							if (getCharCodeAt(var176.input, var176.i) == 40) {
+								ni = var176.i + 1;
+								GCodeEnv(
+									var176 with i = ni,
+									maxi = max(var176.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var176 with fail = true)
+							}
+							}};
+							if (var175.fail) {var175} else {
+							parse_ws(var175)
+							}};
+							if (var174.fail) {var174} else {
+							parse_structargs(var174)
+							}};
+							if (var173.fail) {var173} else {
+							// Char
+							if (getCharCodeAt(var173.input, var173.i) == 41) {
+								ni = var173.i + 1;
+								GCodeEnv(
+									var173 with i = ni,
+									maxi = max(var173.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var173 with fail = true)
+							}
+							}};
+							if (var172.fail) {var172} else {
+							parse_ws(var172)
+							}};
+							if (var171.fail) {var171} else {
+							// Char
+							if (getCharCodeAt(var171.input, var171.i) == 59) {
+								ni = var171.i + 1;
+								GCodeEnv(
+									var171 with i = ni,
+									maxi = max(var171.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var171 with fail = true)
+							}
+							}};
+							if (var170.fail) {var170} else {
+							parse_ws(var170)
+							}};
+							if (var169.fail) {var169} else {
+							GCodeEnv(var169 with output = var169.action.addMatched(var169.output, "structdef"))
+							}}
+						} else var157
+					}
+
+				} else var145
+			}
+
+		} else var106
+	}
+
+	}}
+}
+
+parse_funarg(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var178 = parse_id(env);
+	if (var178.fail) {var178} else {
+	{
+		// Opt
+		var179 = {
+		// seq
+		var180 = {
+		// seq
+		var181 = {
+		// seq
+		var182 = // Char
+		if (getCharCodeAt(var178.input, var178.i) == 58) {
+			ni = var178.i + 1;
+			GCodeEnv(
+				var178 with i = ni,
+				maxi = max(var178.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var178 with fail = true)
+		};
+		if (var182.fail) {var182} else {
+		parse_ws(var182)
+		}};
+		if (var181.fail) {var181} else {
+		parse_type(var181)
+		}};
+		if (var180.fail) {var180} else {
+		GCodeEnv(var180 with output = var180.action.addVerbatim(var180.output, "drop"))
+		}};
+		if (var179.fail) {
+			var178
+		} else {
+			var179
+		}
+	}
+	}}
+}
+
+parse_structargs(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var183 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var183.fail) {var183} else {
+	{
+		// Opt
+		var184 = {
+		// seq
+		var185 = {
+		// seq
+		var186 = {
+		// seq
+		var187 = parse_structarg(var183);
+		if (var187.fail) {var187} else {
+		GCodeEnv(var187 with output = var187.action.addVerbatim(var187.output, "cons"))
+		}};
+		if (var186.fail) {var186} else {
+		{
+			// *
+			var188 = ref \acc -> acc;
+			var188 := \acc -> {
+				senv = {
+				// seq
+				var189 = {
+				// seq
+				var190 = {
+				// seq
+				var191 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var191.fail) {var191} else {
+				parse_ws(var191)
+				}};
+				if (var190.fail) {var190} else {
+				parse_structarg(var190)
+				}};
+				if (var189.fail) {var189} else {
+				GCodeEnv(var189 with output = var189.action.addVerbatim(var189.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var188)(senv)
+				}
+			};
+			(^var188)(var186);
+		}
+		}};
+		if (var185.fail) {var185} else {
+		{
+			// Opt
+			var192 = {
+			// seq
+			var193 = // Char
+			if (getCharCodeAt(var185.input, var185.i) == 44) {
+				ni = var185.i + 1;
+				GCodeEnv(
+					var185 with i = ni,
+					maxi = max(var185.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var185 with fail = true)
+			};
+			if (var193.fail) {var193} else {
+			parse_ws(var193)
+			}};
+			if (var192.fail) {
+				var185
+			} else {
+				var192
+			}
+		}
+		}};
+		if (var184.fail) {
+			var183
+		} else {
+			var184
+		}
+	}
+	}}
+}
+
+parse_structarg(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var194 = {
+	// seq
+	var195 = {
+	// seq
+	var196 = {
+	// seq
+	var197 = {
+	// seq
+	var198 = {
+	// seq
+	var199 = {
+	// seq
+	var200 = {
+	// seq
+	var201 = {
+	// seq
+	var202 = {
+	// seq
+	var203 = {
+	// seq
+	var204 = {
+	// seq
+	var205 = {
+	// seq
+	var206 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var206.fail) {var206} else {
+	{
+		// Opt
+		var207 = {
+		// seq
+		var208 = {
+		// seq
+		var209 = {
+		// seq
+		var210 = {
+		// seq
+		var211 = if (strContainsAt(var206.input, var206.i, "mutable")) {
+			ni = var206.i + 7;
+			GCodeEnv(
+				var206 with i = ni,
+				maxi = max(var206.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var206 with fail = true)
+		};
+		if (var211.fail) {var211} else {
+		{
+			// Negate
+			var212 = parse_letterOrDigit(var211);
+			if (var212.fail) {
+				GCodeEnv(var212 with fail = false);
+			} else {
+				GCodeEnv(var211 with fail = true);
+			}
+		}
+		}};
+		if (var210.fail) {var210} else {
+		parse_ws(var210)
+		}};
+		if (var209.fail) {var209} else {
+		GCodeEnv(var209 with output = var209.action.addMatched(var209.output, "mutable"))
+		}};
+		if (var208.fail) {var208} else {
+		GCodeEnv(var208 with output = var208.action.addVerbatim(var208.output, "cons"))
+		}};
+		if (var207.fail) {
+			var206
+		} else {
+			var207
+		}
+	}
+	}};
+	if (var205.fail) {var205} else {
+	GCodeEnv(var205 with output = var205.action.addVerbatim(var205.output, "isnil"))
+	}};
+	if (var204.fail) {var204} else {
+	parse_id(var204)
+	}};
+	if (var203.fail) {var203} else {
+	GCodeEnv(var203 with output = var203.action.addVerbatim(var203.output, "swap"))
+	}};
+	if (var202.fail) {var202} else {
+	GCodeEnv(var202 with output = var202.action.addVerbatim(var202.output, "list2"))
+	}};
+	if (var201.fail) {var201} else {
+	// Char
+	if (getCharCodeAt(var201.input, var201.i) == 58) {
+		ni = var201.i + 1;
+		GCodeEnv(
+			var201 with i = ni,
+			maxi = max(var201.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var201 with fail = true)
+	}
+	}};
+	if (var200.fail) {var200} else {
+	parse_ws(var200)
+	}};
+	if (var199.fail) {var199} else {
+	parse_type(var199)
+	}};
+	if (var198.fail) {var198} else {
+	GCodeEnv(var198 with output = var198.action.addVerbatim(var198.output, "cons"))
+	}};
+	if (var197.fail) {var197} else {
+	GCodeEnv(var197 with output = var197.action.addMatched(var197.output, "__structarg"))
+	}};
+	if (var196.fail) {var196} else {
+	GCodeEnv(var196 with output = var196.action.addVerbatim(var196.output, "var"))
+	}};
+	if (var195.fail) {var195} else {
+	GCodeEnv(var195 with output = var195.action.addVerbatim(var195.output, "swap"))
+	}};
+	if (var194.fail) {var194} else {
+	GCodeEnv(var194 with output = var194.action.addVerbatim(var194.output, "call"))
+	}}
+}
+
+parse_returnType(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var213 = {
+	// seq
+	var214 = {
+	// seq
+	var215 = parse_ws(env);
+	if (var215.fail) {var215} else {
+	if (strContainsAt(var215.input, var215.i, "->")) {
+		ni = var215.i + 2;
+		GCodeEnv(
+			var215 with i = ni,
+			maxi = max(var215.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var215 with fail = true)
+	}
+	}};
+	if (var214.fail) {var214} else {
+	parse_ws(var214)
+	}};
+	if (var213.fail) {var213} else {
+	parse_type(var213)
+	}}
+}
+
+parse_vardecl(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var216 = {
+	// seq
+	var217 = {
+	// seq
+	var218 = {
+	// seq
+	var219 = parse_id(env);
+	if (var219.fail) {var219} else {
+	// Char
+	if (getCharCodeAt(var219.input, var219.i) == 58) {
+		ni = var219.i + 1;
+		GCodeEnv(
+			var219 with i = ni,
+			maxi = max(var219.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var219 with fail = true)
+	}
+	}};
+	if (var218.fail) {var218} else {
+	parse_ws(var218)
+	}};
+	if (var217.fail) {var217} else {
+	parse_type(var217)
+	}};
+	if (var216.fail) {var216} else {
+	{
+		// Choice
+		var220 = {
+		// seq
+		var221 = {
+		// seq
+		var222 = {
+		// seq
+		var223 = {
+		// seq
+		var224 = {
+		// seq
+		var225 = {
+		// seq
+		var226 = {
+		// seq
+		var227 = {
+		// seq
+		var228 = // Char
+		if (getCharCodeAt(var216.input, var216.i) == 61) {
+			ni = var216.i + 1;
+			GCodeEnv(
+				var216 with i = ni,
+				maxi = max(var216.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var216 with fail = true)
+		};
+		if (var228.fail) {var228} else {
+		parse_ws(var228)
+		}};
+		if (var227.fail) {var227} else {
+		parse_exp(var227)
+		}};
+		if (var226.fail) {var226} else {
+		{
+			// Opt
+			var229 = // Char
+			if (getCharCodeAt(var226.input, var226.i) == 59) {
+				ni = var226.i + 1;
+				GCodeEnv(
+					var226 with i = ni,
+					maxi = max(var226.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var226 with fail = true)
+			};
+			if (var229.fail) {
+				var226
+			} else {
+				var229
+			}
+		}
+		}};
+		if (var225.fail) {var225} else {
+		parse_ws(var225)
+		}};
+		if (var224.fail) {var224} else {
+		GCodeEnv(var224 with output = var224.action.addVerbatim(var224.output, "swap"))
+		}};
+		if (var223.fail) {var223} else {
+		GCodeEnv(var223 with output = var223.action.addMatched(var223.output, ":"))
+		}};
+		if (var222.fail) {var222} else {
+		GCodeEnv(var222 with output = var222.action.addVerbatim(var222.output, "binop"))
+		}};
+		if (var221.fail) {var221} else {
+		GCodeEnv(var221 with output = var221.action.addVerbatim(var221.output, "define"))
+		}};
+		if (var220.fail) {
+			{
+			// seq
+			var230 = {
+			// seq
+			var231 = {
+				// Opt
+				var232 = // Char
+				if (getCharCodeAt(var216.input, var216.i) == 59) {
+					ni = var216.i + 1;
+					GCodeEnv(
+						var216 with i = ni,
+						maxi = max(var216.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var216 with fail = true)
+				};
+				if (var232.fail) {
+					var216
+				} else {
+					var232
+				}
+			};
+			if (var231.fail) {var231} else {
+			parse_ws(var231)
+			}};
+			if (var230.fail) {var230} else {
+			GCodeEnv(var230 with output = var230.action.addVerbatim(var230.output, "typedef"))
+			}}
+		} else var220
+	}
+
+	}}
+}
+
+parse_exp(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var233 = {
+		// seq
+		var234 = {
+		// seq
+		var235 = {
+		// seq
+		var236 = {
+		// seq
+		var237 = {
+		// seq
+		var238 = {
+		// seq
+		var239 = parse_backslash(env);
+		if (var239.fail) {var239} else {
+		parse_lambdaargs(var239)
+		}};
+		if (var238.fail) {var238} else {
+		parse_ws(var238)
+		}};
+		if (var237.fail) {var237} else {
+		if (strContainsAt(var237.input, var237.i, "->")) {
+			ni = var237.i + 2;
+			GCodeEnv(
+				var237 with i = ni,
+				maxi = max(var237.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var237 with fail = true)
+		}
+		}};
+		if (var236.fail) {var236} else {
+		parse_ws(var236)
+		}};
+		if (var235.fail) {var235} else {
+		parse_exp(var235)
+		}};
+		if (var234.fail) {var234} else {
+		GCodeEnv(var234 with output = var234.action.addVerbatim(var234.output, "lambda"))
+		}};
+		if (var233.fail) {
+			parse_exp1(env)
+		} else var233
+	}
+
+}
+
+parse_exp1(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var240 = {
+		// seq
+		var241 = parse_id(env);
+		if (var241.fail) {var241} else {
+		{
+			// Choice
+			var242 = {
+			// seq
+			var243 = {
+			// seq
+			var244 = {
+			// seq
+			var245 = {
+			// seq
+			var246 = {
+			// seq
+			var247 = {
+			// seq
+			var248 = // Char
+			if (getCharCodeAt(var241.input, var241.i) == 61) {
+				ni = var241.i + 1;
+				GCodeEnv(
+					var241 with i = ni,
+					maxi = max(var241.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var241 with fail = true)
+			};
+			if (var248.fail) {var248} else {
+			parse_ws(var248)
+			}};
+			if (var247.fail) {var247} else {
+			parse_exp(var247)
+			}};
+			if (var246.fail) {var246} else {
+			{
+				// Error handling
+				var249 = // Char
+				if (getCharCodeAt(var246.input, var246.i) == 59) {
+					ni = var246.i + 1;
+					GCodeEnv(
+						var246 with i = ni,
+						maxi = max(var246.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var246 with fail = true)
+				};
+				if (var249.fail) {
+					GCodeEnv(
+						var249 with fail = false, 
+						errors = setTree(var246.errors, var246.i, "Expected \";\"")
+					);
+				} else {
+					var249
+				}
+			}
+			}};
+			if (var245.fail) {var245} else {
+			parse_ws(var245)
+			}};
+			if (var244.fail) {var244} else {
+			parse_semiexps(var244)
+			}};
+			if (var243.fail) {var243} else {
+			GCodeEnv(var243 with output = var243.action.addVerbatim(var243.output, "let"))
+			}};
+			if (var242.fail) {
+				{
+				// seq
+				var250 = {
+				// seq
+				var251 = {
+				// seq
+				var252 = {
+				// seq
+				var253 = {
+				// seq
+				var254 = {
+				// seq
+				var255 = {
+				// seq
+				var256 = {
+				// seq
+				var257 = {
+				// seq
+				var258 = {
+				// seq
+				var259 = {
+				// seq
+				var260 = {
+				// seq
+				var261 = // Char
+				if (getCharCodeAt(var241.input, var241.i) == 58) {
+					ni = var241.i + 1;
+					GCodeEnv(
+						var241 with i = ni,
+						maxi = max(var241.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var241 with fail = true)
+				};
+				if (var261.fail) {var261} else {
+				parse_ws(var261)
+				}};
+				if (var260.fail) {var260} else {
+				parse_type(var260)
+				}};
+				if (var259.fail) {var259} else {
+				// Char
+				if (getCharCodeAt(var259.input, var259.i) == 61) {
+					ni = var259.i + 1;
+					GCodeEnv(
+						var259 with i = ni,
+						maxi = max(var259.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var259 with fail = true)
+				}
+				}};
+				if (var258.fail) {var258} else {
+				parse_ws(var258)
+				}};
+				if (var257.fail) {var257} else {
+				parse_exp(var257)
+				}};
+				if (var256.fail) {var256} else {
+				// Char
+				if (getCharCodeAt(var256.input, var256.i) == 59) {
+					ni = var256.i + 1;
+					GCodeEnv(
+						var256 with i = ni,
+						maxi = max(var256.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var256 with fail = true)
+				}
+				}};
+				if (var255.fail) {var255} else {
+				parse_ws(var255)
+				}};
+				if (var254.fail) {var254} else {
+				GCodeEnv(var254 with output = var254.action.addVerbatim(var254.output, "swap"))
+				}};
+				if (var253.fail) {var253} else {
+				GCodeEnv(var253 with output = var253.action.addMatched(var253.output, ":"))
+				}};
+				if (var252.fail) {var252} else {
+				GCodeEnv(var252 with output = var252.action.addVerbatim(var252.output, "binop"))
+				}};
+				if (var251.fail) {var251} else {
+				parse_semiexps(var251)
+				}};
+				if (var250.fail) {var250} else {
+				GCodeEnv(var250 with output = var250.action.addVerbatim(var250.output, "let"))
+				}}
+			} else var242
+		}
+
+		}};
+		if (var240.fail) {
+			parse_exp2(env)
+		} else var240
+	}
+
+}
+
+parse_exp2(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var262 = parse_exp3(env);
+	if (var262.fail) {var262} else {
+	{
+		// Opt
+		var263 = {
+		// seq
+		var264 = {
+		// seq
+		var265 = {
+		// seq
+		var266 = {
+		// seq
+		var267 = if (strContainsAt(var262.input, var262.i, ":=")) {
+			ni = var262.i + 2;
+			GCodeEnv(
+				var262 with i = ni,
+				maxi = max(var262.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var262 with fail = true)
+		};
+		if (var267.fail) {var267} else {
+		parse_ws(var267)
+		}};
+		if (var266.fail) {var266} else {
+		parse_exp2(var266)
+		}};
+		if (var265.fail) {var265} else {
+		GCodeEnv(var265 with output = var265.action.addMatched(var265.output, ":="))
+		}};
+		if (var264.fail) {var264} else {
+		GCodeEnv(var264 with output = var264.action.addVerbatim(var264.output, "binop"))
+		}};
+		if (var263.fail) {
+			var262
+		} else {
+			var263
+		}
+	}
+	}}
+}
+
+parse_exp3(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var268 = parse_exp4(env);
+	if (var268.fail) {var268} else {
+	{
+		// Opt
+		var269 = {
+		// seq
+		var270 = {
+		// seq
+		var271 = {
+		// seq
+		var272 = {
+		// seq
+		var273 = if (strContainsAt(var268.input, var268.i, "|>")) {
+			ni = var268.i + 2;
+			GCodeEnv(
+				var268 with i = ni,
+				maxi = max(var268.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var268 with fail = true)
+		};
+		if (var273.fail) {var273} else {
+		parse_ws(var273)
+		}};
+		if (var272.fail) {var272} else {
+		parse_exp3(var272)
+		}};
+		if (var271.fail) {var271} else {
+		GCodeEnv(var271 with output = var271.action.addMatched(var271.output, "|>"))
+		}};
+		if (var270.fail) {var270} else {
+		GCodeEnv(var270 with output = var270.action.addVerbatim(var270.output, "binop"))
+		}};
+		if (var269.fail) {
+			var268
+		} else {
+			var269
+		}
+	}
+	}}
+}
+
+parse_exp4(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var274 = parse_exp5(env);
+	if (var274.fail) {var274} else {
+	{
+		// Opt
+		var275 = {
+		// seq
+		var276 = {
+		// seq
+		var277 = {
+		// seq
+		var278 = {
+		// seq
+		var279 = if (strContainsAt(var274.input, var274.i, "||")) {
+			ni = var274.i + 2;
+			GCodeEnv(
+				var274 with i = ni,
+				maxi = max(var274.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var274 with fail = true)
+		};
+		if (var279.fail) {var279} else {
+		parse_ws(var279)
+		}};
+		if (var278.fail) {var278} else {
+		parse_exp4(var278)
+		}};
+		if (var277.fail) {var277} else {
+		GCodeEnv(var277 with output = var277.action.addMatched(var277.output, "||"))
+		}};
+		if (var276.fail) {var276} else {
+		GCodeEnv(var276 with output = var276.action.addVerbatim(var276.output, "binop"))
+		}};
+		if (var275.fail) {
+			var274
+		} else {
+			var275
+		}
+	}
+	}}
+}
+
+parse_exp5(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var280 = parse_exp6(env);
+	if (var280.fail) {var280} else {
+	{
+		// Opt
+		var281 = {
+		// seq
+		var282 = {
+		// seq
+		var283 = {
+		// seq
+		var284 = {
+		// seq
+		var285 = if (strContainsAt(var280.input, var280.i, "&&")) {
+			ni = var280.i + 2;
+			GCodeEnv(
+				var280 with i = ni,
+				maxi = max(var280.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var280 with fail = true)
+		};
+		if (var285.fail) {var285} else {
+		parse_ws(var285)
+		}};
+		if (var284.fail) {var284} else {
+		parse_exp5(var284)
+		}};
+		if (var283.fail) {var283} else {
+		GCodeEnv(var283 with output = var283.action.addMatched(var283.output, "&&"))
+		}};
+		if (var282.fail) {var282} else {
+		GCodeEnv(var282 with output = var282.action.addVerbatim(var282.output, "binop"))
+		}};
+		if (var281.fail) {
+			var280
+		} else {
+			var281
+		}
+	}
+	}}
+}
+
+parse_exp6(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var286 = parse_exp7(env);
+	if (var286.fail) {var286} else {
+	{
+		// Choice
+		var287 = {
+		// seq
+		var288 = {
+		// seq
+		var289 = {
+		// seq
+		var290 = {
+		// seq
+		var291 = if (strContainsAt(var286.input, var286.i, "==")) {
+			ni = var286.i + 2;
+			GCodeEnv(
+				var286 with i = ni,
+				maxi = max(var286.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var286 with fail = true)
+		};
+		if (var291.fail) {var291} else {
+		parse_ws(var291)
+		}};
+		if (var290.fail) {var290} else {
+		parse_exp6(var290)
+		}};
+		if (var289.fail) {var289} else {
+		GCodeEnv(var289 with output = var289.action.addMatched(var289.output, "=="))
+		}};
+		if (var288.fail) {var288} else {
+		GCodeEnv(var288 with output = var288.action.addVerbatim(var288.output, "binop"))
+		}};
+		if (var287.fail) {
+			{
+				// Choice
+				var292 = {
+				// seq
+				var293 = {
+				// seq
+				var294 = {
+				// seq
+				var295 = {
+				// seq
+				var296 = if (strContainsAt(var286.input, var286.i, "!=")) {
+					ni = var286.i + 2;
+					GCodeEnv(
+						var286 with i = ni,
+						maxi = max(var286.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var286 with fail = true)
+				};
+				if (var296.fail) {var296} else {
+				parse_ws(var296)
+				}};
+				if (var295.fail) {var295} else {
+				parse_exp6(var295)
+				}};
+				if (var294.fail) {var294} else {
+				GCodeEnv(var294 with output = var294.action.addMatched(var294.output, "!="))
+				}};
+				if (var293.fail) {var293} else {
+				GCodeEnv(var293 with output = var293.action.addVerbatim(var293.output, "binop"))
+				}};
+				if (var292.fail) {
+					{
+						// Choice
+						var297 = {
+						// seq
+						var298 = {
+						// seq
+						var299 = {
+						// seq
+						var300 = {
+						// seq
+						var301 = if (strContainsAt(var286.input, var286.i, "<=")) {
+							ni = var286.i + 2;
+							GCodeEnv(
+								var286 with i = ni,
+								maxi = max(var286.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var286 with fail = true)
+						};
+						if (var301.fail) {var301} else {
+						parse_ws(var301)
+						}};
+						if (var300.fail) {var300} else {
+						parse_exp6(var300)
+						}};
+						if (var299.fail) {var299} else {
+						GCodeEnv(var299 with output = var299.action.addMatched(var299.output, "<="))
+						}};
+						if (var298.fail) {var298} else {
+						GCodeEnv(var298 with output = var298.action.addVerbatim(var298.output, "binop"))
+						}};
+						if (var297.fail) {
+							{
+								// Choice
+								var302 = {
+								// seq
+								var303 = {
+								// seq
+								var304 = {
+								// seq
+								var305 = {
+								// seq
+								var306 = // Char
+								if (getCharCodeAt(var286.input, var286.i) == 60) {
+									ni = var286.i + 1;
+									GCodeEnv(
+										var286 with i = ni,
+										maxi = max(var286.maxi, ni)
+									)
+								} else {
+									GCodeEnv(var286 with fail = true)
+								};
+								if (var306.fail) {var306} else {
+								parse_ws(var306)
+								}};
+								if (var305.fail) {var305} else {
+								parse_exp6(var305)
+								}};
+								if (var304.fail) {var304} else {
+								GCodeEnv(var304 with output = var304.action.addMatched(var304.output, "<"))
+								}};
+								if (var303.fail) {var303} else {
+								GCodeEnv(var303 with output = var303.action.addVerbatim(var303.output, "binop"))
+								}};
+								if (var302.fail) {
+									{
+										// Choice
+										var307 = {
+										// seq
+										var308 = {
+										// seq
+										var309 = {
+										// seq
+										var310 = {
+										// seq
+										var311 = if (strContainsAt(var286.input, var286.i, ">=")) {
+											ni = var286.i + 2;
+											GCodeEnv(
+												var286 with i = ni,
+												maxi = max(var286.maxi, ni)
+											)
+										} else {
+											GCodeEnv(var286 with fail = true)
+										};
+										if (var311.fail) {var311} else {
+										parse_ws(var311)
+										}};
+										if (var310.fail) {var310} else {
+										parse_exp6(var310)
+										}};
+										if (var309.fail) {var309} else {
+										GCodeEnv(var309 with output = var309.action.addMatched(var309.output, ">="))
+										}};
+										if (var308.fail) {var308} else {
+										GCodeEnv(var308 with output = var308.action.addVerbatim(var308.output, "binop"))
+										}};
+										if (var307.fail) {
+											{
+												// Opt
+												var312 = {
+												// seq
+												var313 = {
+												// seq
+												var314 = {
+												// seq
+												var315 = {
+												// seq
+												var316 = // Char
+												if (getCharCodeAt(var286.input, var286.i) == 62) {
+													ni = var286.i + 1;
+													GCodeEnv(
+														var286 with i = ni,
+														maxi = max(var286.maxi, ni)
+													)
+												} else {
+													GCodeEnv(var286 with fail = true)
+												};
+												if (var316.fail) {var316} else {
+												parse_ws(var316)
+												}};
+												if (var315.fail) {var315} else {
+												parse_exp6(var315)
+												}};
+												if (var314.fail) {var314} else {
+												GCodeEnv(var314 with output = var314.action.addMatched(var314.output, ">"))
+												}};
+												if (var313.fail) {var313} else {
+												GCodeEnv(var313 with output = var313.action.addVerbatim(var313.output, "binop"))
+												}};
+												if (var312.fail) {
+													var286
+												} else {
+													var312
+												}
+											}
+										} else var307
+									}
+
+								} else var302
+							}
+
+						} else var297
+					}
+
+				} else var292
+			}
+
+		} else var287
+	}
+
+	}}
+}
+
+parse_exp7(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var317 = parse_exp8(env);
+	if (var317.fail) {var317} else {
+	{
+		// *
+		var318 = ref \acc -> acc;
+		var318 := \acc -> {
+			senv = {
+				// Choice
+				var319 = {
+				// seq
+				var320 = {
+				// seq
+				var321 = {
+				// seq
+				var322 = {
+				// seq
+				var323 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 43) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var323.fail) {var323} else {
+				parse_ws(var323)
+				}};
+				if (var322.fail) {var322} else {
+				parse_exp8(var322)
+				}};
+				if (var321.fail) {var321} else {
+				GCodeEnv(var321 with output = var321.action.addMatched(var321.output, "+"))
+				}};
+				if (var320.fail) {var320} else {
+				GCodeEnv(var320 with output = var320.action.addVerbatim(var320.output, "binop"))
+				}};
+				if (var319.fail) {
+					{
+					// seq
+					var324 = {
+					// seq
+					var325 = {
+					// seq
+					var326 = {
+					// seq
+					var327 = // Char
+					if (getCharCodeAt(acc.input, acc.i) == 45) {
+						ni = acc.i + 1;
+						GCodeEnv(
+							acc with i = ni,
+							maxi = max(acc.maxi, ni)
+						)
+					} else {
+						GCodeEnv(acc with fail = true)
+					};
+					if (var327.fail) {var327} else {
+					parse_ws(var327)
+					}};
+					if (var326.fail) {var326} else {
+					parse_exp8(var326)
+					}};
+					if (var325.fail) {var325} else {
+					GCodeEnv(var325 with output = var325.action.addMatched(var325.output, "-"))
+					}};
+					if (var324.fail) {var324} else {
+					GCodeEnv(var324 with output = var324.action.addVerbatim(var324.output, "binop"))
+					}}
+				} else var319
+			}
+			;
+			if (senv.fail) {
+				acc
+			} else {
+				(^var318)(senv)
+			}
+		};
+		(^var318)(var317);
+	}
+	}}
+}
+
+parse_exp8(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var328 = parse_exp9(env);
+	if (var328.fail) {var328} else {
+	{
+		// Choice
+		var329 = {
+		// seq
+		var330 = {
+		// seq
+		var331 = {
+		// seq
+		var332 = {
+		// seq
+		var333 = // Char
+		if (getCharCodeAt(var328.input, var328.i) == 42) {
+			ni = var328.i + 1;
+			GCodeEnv(
+				var328 with i = ni,
+				maxi = max(var328.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var328 with fail = true)
+		};
+		if (var333.fail) {var333} else {
+		parse_ws(var333)
+		}};
+		if (var332.fail) {var332} else {
+		parse_exp8(var332)
+		}};
+		if (var331.fail) {var331} else {
+		GCodeEnv(var331 with output = var331.action.addMatched(var331.output, "*"))
+		}};
+		if (var330.fail) {var330} else {
+		GCodeEnv(var330 with output = var330.action.addVerbatim(var330.output, "binop"))
+		}};
+		if (var329.fail) {
+			{
+				// Choice
+				var334 = {
+				// seq
+				var335 = {
+				// seq
+				var336 = {
+				// seq
+				var337 = {
+				// seq
+				var338 = // Char
+				if (getCharCodeAt(var328.input, var328.i) == 47) {
+					ni = var328.i + 1;
+					GCodeEnv(
+						var328 with i = ni,
+						maxi = max(var328.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var328 with fail = true)
+				};
+				if (var338.fail) {var338} else {
+				parse_ws(var338)
+				}};
+				if (var337.fail) {var337} else {
+				parse_exp8(var337)
+				}};
+				if (var336.fail) {var336} else {
+				GCodeEnv(var336 with output = var336.action.addMatched(var336.output, "/"))
+				}};
+				if (var335.fail) {var335} else {
+				GCodeEnv(var335 with output = var335.action.addVerbatim(var335.output, "binop"))
+				}};
+				if (var334.fail) {
+					{
+						// Opt
+						var339 = {
+						// seq
+						var340 = {
+						// seq
+						var341 = {
+						// seq
+						var342 = {
+						// seq
+						var343 = // Char
+						if (getCharCodeAt(var328.input, var328.i) == 37) {
+							ni = var328.i + 1;
+							GCodeEnv(
+								var328 with i = ni,
+								maxi = max(var328.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var328 with fail = true)
+						};
+						if (var343.fail) {var343} else {
+						parse_ws(var343)
+						}};
+						if (var342.fail) {var342} else {
+						parse_exp8(var342)
+						}};
+						if (var341.fail) {var341} else {
+						GCodeEnv(var341 with output = var341.action.addMatched(var341.output, "%"))
+						}};
+						if (var340.fail) {var340} else {
+						GCodeEnv(var340 with output = var340.action.addVerbatim(var340.output, "binop"))
+						}};
+						if (var339.fail) {
+							var328
+						} else {
+							var339
+						}
+					}
+				} else var334
+			}
+
+		} else var329
+	}
+
+	}}
+}
+
+parse_exp9(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var344 = parse_exp10(env);
+	if (var344.fail) {var344} else {
+	{
+		// Opt
+		var345 = {
+		// seq
+		var346 = {
+		// seq
+		var347 = {
+		// seq
+		var348 = {
+		// seq
+		var349 = {
+		// seq
+		var350 = // Char
+		if (getCharCodeAt(var344.input, var344.i) == 58) {
+			ni = var344.i + 1;
+			GCodeEnv(
+				var344 with i = ni,
+				maxi = max(var344.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var344 with fail = true)
+		};
+		if (var350.fail) {var350} else {
+		parse_ws(var350)
+		}};
+		if (var349.fail) {var349} else {
+		parse_type(var349)
+		}};
+		if (var348.fail) {var348} else {
+		GCodeEnv(var348 with output = var348.action.addMatched(var348.output, ":"))
+		}};
+		if (var347.fail) {var347} else {
+		GCodeEnv(var347 with output = var347.action.addVerbatim(var347.output, "binop"))
+		}};
+		if (var346.fail) {var346} else {
+		{
+			// *
+			var351 = ref \acc -> acc;
+			var351 := \acc -> {
+				senv = {
+				// seq
+				var352 = {
+				// seq
+				var353 = {
+				// seq
+				var354 = {
+				// seq
+				var355 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 58) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var355.fail) {var355} else {
+				parse_ws(var355)
+				}};
+				if (var354.fail) {var354} else {
+				parse_type(var354)
+				}};
+				if (var353.fail) {var353} else {
+				GCodeEnv(var353 with output = var353.action.addMatched(var353.output, ":"))
+				}};
+				if (var352.fail) {var352} else {
+				GCodeEnv(var352 with output = var352.action.addVerbatim(var352.output, "binop"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var351)(senv)
+				}
+			};
+			(^var351)(var346);
+		}
+		}};
+		if (var345.fail) {
+			var344
+		} else {
+			var345
+		}
+	}
+	}}
+}
+
+parse_exp10(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var356 = parse_exp11(env);
+	if (var356.fail) {var356} else {
+	{
+		// Opt
+		var357 = {
+		// seq
+		var358 = {
+		// seq
+		var359 = {
+		// seq
+		var360 = {
+		// seq
+		var361 = {
+		// seq
+		var362 = {
+		// seq
+		var363 = {
+		// seq
+		var364 = {
+		// seq
+		var365 = {
+		// seq
+		var366 = {
+		// seq
+		var367 = {
+		// seq
+		var368 = if (strContainsAt(var356.input, var356.i, "??")) {
+			ni = var356.i + 2;
+			GCodeEnv(
+				var356 with i = ni,
+				maxi = max(var356.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var356 with fail = true)
+		};
+		if (var368.fail) {var368} else {
+		parse_ws(var368)
+		}};
+		if (var367.fail) {var367} else {
+		parse_exp10(var367)
+		}};
+		if (var366.fail) {var366} else {
+		GCodeEnv(var366 with output = var366.action.addVerbatim(var366.output, "list2"))
+		}};
+		if (var365.fail) {var365} else {
+		// Char
+		if (getCharCodeAt(var365.input, var365.i) == 58) {
+			ni = var365.i + 1;
+			GCodeEnv(
+				var365 with i = ni,
+				maxi = max(var365.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var365 with fail = true)
+		}
+		}};
+		if (var364.fail) {var364} else {
+		parse_ws(var364)
+		}};
+		if (var363.fail) {var363} else {
+		parse_exp10(var363)
+		}};
+		if (var362.fail) {var362} else {
+		GCodeEnv(var362 with output = var362.action.addVerbatim(var362.output, "cons"))
+		}};
+		if (var361.fail) {var361} else {
+		GCodeEnv(var361 with output = var361.action.addMatched(var361.output, "__maybe"))
+		}};
+		if (var360.fail) {var360} else {
+		GCodeEnv(var360 with output = var360.action.addVerbatim(var360.output, "var"))
+		}};
+		if (var359.fail) {var359} else {
+		GCodeEnv(var359 with output = var359.action.addVerbatim(var359.output, "swap"))
+		}};
+		if (var358.fail) {var358} else {
+		GCodeEnv(var358 with output = var358.action.addVerbatim(var358.output, "call"))
+		}};
+		if (var357.fail) {
+			var356
+		} else {
+			var357
+		}
+	}
+	}}
+}
+
+parse_exp11(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var369 = {
+		// seq
+		var370 = {
+		// seq
+		var371 = {
+		// seq
+		var372 = {
+		// seq
+		var373 = // Char
+		if (getCharCodeAt(env.input, env.i) == 33) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var373.fail) {var373} else {
+		parse_ws(var373)
+		}};
+		if (var372.fail) {var372} else {
+		parse_exp11(var372)
+		}};
+		if (var371.fail) {var371} else {
+		GCodeEnv(var371 with output = var371.action.addMatched(var371.output, "!"))
+		}};
+		if (var370.fail) {var370} else {
+		GCodeEnv(var370 with output = var370.action.addVerbatim(var370.output, "unop"))
+		}};
+		if (var369.fail) {
+			{
+				// Choice
+				var374 = {
+				// seq
+				var375 = {
+				// seq
+				var376 = {
+				// seq
+				var377 = {
+				// seq
+				var378 = // Char
+				if (getCharCodeAt(env.input, env.i) == 45) {
+					ni = env.i + 1;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var378.fail) {var378} else {
+				parse_ws(var378)
+				}};
+				if (var377.fail) {var377} else {
+				parse_exp11(var377)
+				}};
+				if (var376.fail) {var376} else {
+				GCodeEnv(var376 with output = var376.action.addMatched(var376.output, "__neg"))
+				}};
+				if (var375.fail) {var375} else {
+				GCodeEnv(var375 with output = var375.action.addVerbatim(var375.output, "unop"))
+				}};
+				if (var374.fail) {
+					{
+						// Choice
+						var379 = {
+						// seq
+						var380 = parse_exp12(env);
+						if (var380.fail) {var380} else {
+						{
+						// seq
+						var381 = {
+							// Choice
+							var382 = {
+							// seq
+							var383 = {
+							// seq
+							var384 = {
+							// seq
+							var385 = {
+							// seq
+							var386 = {
+							// seq
+							var387 = // Char
+							if (getCharCodeAt(var380.input, var380.i) == 40) {
+								ni = var380.i + 1;
+								GCodeEnv(
+									var380 with i = ni,
+									maxi = max(var380.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var380 with fail = true)
+							};
+							if (var387.fail) {var387} else {
+							parse_ws(var387)
+							}};
+							if (var386.fail) {var386} else {
+							parse_exps(var386)
+							}};
+							if (var385.fail) {var385} else {
+							// Char
+							if (getCharCodeAt(var385.input, var385.i) == 41) {
+								ni = var385.i + 1;
+								GCodeEnv(
+									var385 with i = ni,
+									maxi = max(var385.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var385 with fail = true)
+							}
+							}};
+							if (var384.fail) {var384} else {
+							parse_ws(var384)
+							}};
+							if (var383.fail) {var383} else {
+							GCodeEnv(var383 with output = var383.action.addVerbatim(var383.output, "call"))
+							}};
+							if (var382.fail) {
+								{
+									// Choice
+									var388 = {
+									// seq
+									var389 = {
+									// seq
+									var390 = {
+									// seq
+									var391 = {
+									// seq
+									var392 = {
+									// seq
+									var393 = {
+									// seq
+									var394 = {
+									// seq
+									var395 = {
+									// seq
+									var396 = {
+									// seq
+									var397 = {
+									// seq
+									var398 = {
+									// seq
+									var399 = {
+									// seq
+									var400 = {
+									// seq
+									var401 = // Char
+									if (getCharCodeAt(var380.input, var380.i) == 40) {
+										ni = var380.i + 1;
+										GCodeEnv(
+											var380 with i = ni,
+											maxi = max(var380.maxi, ni)
+										)
+									} else {
+										GCodeEnv(var380 with fail = true)
+									};
+									if (var401.fail) {var401} else {
+									parse_ws(var401)
+									}};
+									if (var400.fail) {var400} else {
+									parse_exp(var400)
+									}};
+									if (var399.fail) {var399} else {
+									if (strContainsAt(var399.input, var399.i, "with")) {
+										ni = var399.i + 4;
+										GCodeEnv(
+											var399 with i = ni,
+											maxi = max(var399.maxi, ni)
+										)
+									} else {
+										GCodeEnv(var399 with fail = true)
+									}
+									}};
+									if (var398.fail) {var398} else {
+									parse_s(var398)
+									}};
+									if (var397.fail) {var397} else {
+									GCodeEnv(var397 with output = var397.action.addVerbatim(var397.output, "list2"))
+									}};
+									if (var396.fail) {var396} else {
+									parse_fields(var396)
+									}};
+									if (var395.fail) {var395} else {
+									GCodeEnv(var395 with output = var395.action.addVerbatim(var395.output, "cons"))
+									}};
+									if (var394.fail) {var394} else {
+									// Char
+									if (getCharCodeAt(var394.input, var394.i) == 41) {
+										ni = var394.i + 1;
+										GCodeEnv(
+											var394 with i = ni,
+											maxi = max(var394.maxi, ni)
+										)
+									} else {
+										GCodeEnv(var394 with fail = true)
+									}
+									}};
+									if (var393.fail) {var393} else {
+									parse_ws(var393)
+									}};
+									if (var392.fail) {var392} else {
+									GCodeEnv(var392 with output = var392.action.addMatched(var392.output, "__with"))
+									}};
+									if (var391.fail) {var391} else {
+									GCodeEnv(var391 with output = var391.action.addVerbatim(var391.output, "var"))
+									}};
+									if (var390.fail) {var390} else {
+									GCodeEnv(var390 with output = var390.action.addVerbatim(var390.output, "swap"))
+									}};
+									if (var389.fail) {var389} else {
+									GCodeEnv(var389 with output = var389.action.addVerbatim(var389.output, "call"))
+									}};
+									if (var388.fail) {
+										{
+											// Choice
+											var402 = {
+											// seq
+											var403 = {
+											// seq
+											var404 = {
+											// seq
+											var405 = {
+											// seq
+											var406 = {
+											// seq
+											var407 = {
+											// seq
+											var408 = {
+											// seq
+											var409 = {
+											// seq
+											var410 = {
+											// seq
+											var411 = {
+											// seq
+											var412 = // Char
+											if (getCharCodeAt(var380.input, var380.i) == 46) {
+												ni = var380.i + 1;
+												GCodeEnv(
+													var380 with i = ni,
+													maxi = max(var380.maxi, ni)
+												)
+											} else {
+												GCodeEnv(var380 with fail = true)
+											};
+											if (var412.fail) {var412} else {
+											parse_ws(var412)
+											}};
+											if (var411.fail) {var411} else {
+											parse_id(var411)
+											}};
+											if (var410.fail) {var410} else {
+											GCodeEnv(var410 with output = var410.action.addVerbatim(var410.output, "list2"))
+											}};
+											if (var409.fail) {var409} else {
+											if (strContainsAt(var409.input, var409.i, "::=")) {
+												ni = var409.i + 3;
+												GCodeEnv(
+													var409 with i = ni,
+													maxi = max(var409.maxi, ni)
+												)
+											} else {
+												GCodeEnv(var409 with fail = true)
+											}
+											}};
+											if (var408.fail) {var408} else {
+											parse_ws(var408)
+											}};
+											if (var407.fail) {var407} else {
+											parse_exp11(var407)
+											}};
+											if (var406.fail) {var406} else {
+											GCodeEnv(var406 with output = var406.action.addVerbatim(var406.output, "cons"))
+											}};
+											if (var405.fail) {var405} else {
+											GCodeEnv(var405 with output = var405.action.addMatched(var405.output, "__mutassign"))
+											}};
+											if (var404.fail) {var404} else {
+											GCodeEnv(var404 with output = var404.action.addVerbatim(var404.output, "swap"))
+											}};
+											if (var403.fail) {var403} else {
+											GCodeEnv(var403 with output = var403.action.addVerbatim(var403.output, "call"))
+											}};
+											if (var402.fail) {
+												{
+													// Choice
+													var413 = {
+													// seq
+													var414 = {
+													// seq
+													var415 = {
+													// seq
+													var416 = {
+													// seq
+													var417 = // Char
+													if (getCharCodeAt(var380.input, var380.i) == 46) {
+														ni = var380.i + 1;
+														GCodeEnv(
+															var380 with i = ni,
+															maxi = max(var380.maxi, ni)
+														)
+													} else {
+														GCodeEnv(var380 with fail = true)
+													};
+													if (var417.fail) {var417} else {
+													parse_ws(var417)
+													}};
+													if (var416.fail) {var416} else {
+													parse_id(var416)
+													}};
+													if (var415.fail) {var415} else {
+													GCodeEnv(var415 with output = var415.action.addMatched(var415.output, "."))
+													}};
+													if (var414.fail) {var414} else {
+													GCodeEnv(var414 with output = var414.action.addVerbatim(var414.output, "binop"))
+													}};
+													if (var413.fail) {
+														{
+														// seq
+														var418 = {
+														// seq
+														var419 = {
+														// seq
+														var420 = {
+														// seq
+														var421 = {
+														// seq
+														var422 = {
+														// seq
+														var423 = // Char
+														if (getCharCodeAt(var380.input, var380.i) == 91) {
+															ni = var380.i + 1;
+															GCodeEnv(
+																var380 with i = ni,
+																maxi = max(var380.maxi, ni)
+															)
+														} else {
+															GCodeEnv(var380 with fail = true)
+														};
+														if (var423.fail) {var423} else {
+														parse_ws(var423)
+														}};
+														if (var422.fail) {var422} else {
+														parse_exp(var422)
+														}};
+														if (var421.fail) {var421} else {
+														// Char
+														if (getCharCodeAt(var421.input, var421.i) == 93) {
+															ni = var421.i + 1;
+															GCodeEnv(
+																var421 with i = ni,
+																maxi = max(var421.maxi, ni)
+															)
+														} else {
+															GCodeEnv(var421 with fail = true)
+														}
+														}};
+														if (var420.fail) {var420} else {
+														parse_ws(var420)
+														}};
+														if (var419.fail) {var419} else {
+														GCodeEnv(var419 with output = var419.action.addMatched(var419.output, "__index"))
+														}};
+														if (var418.fail) {var418} else {
+														GCodeEnv(var418 with output = var418.action.addVerbatim(var418.output, "binop"))
+														}}
+													} else var413
+												}
+
+											} else var402
+										}
+
+									} else var388
+								}
+
+							} else var382
+						}
+						;
+						if (var381.fail) {var381} else {
+						{
+							// *
+							var424 = ref \acc -> acc;
+							var424 := \acc -> {
+								senv = {
+									// Choice
+									var425 = {
+									// seq
+									var426 = {
+									// seq
+									var427 = {
+									// seq
+									var428 = {
+									// seq
+									var429 = {
+									// seq
+									var430 = // Char
+									if (getCharCodeAt(acc.input, acc.i) == 40) {
+										ni = acc.i + 1;
+										GCodeEnv(
+											acc with i = ni,
+											maxi = max(acc.maxi, ni)
+										)
+									} else {
+										GCodeEnv(acc with fail = true)
+									};
+									if (var430.fail) {var430} else {
+									parse_ws(var430)
+									}};
+									if (var429.fail) {var429} else {
+									parse_exps(var429)
+									}};
+									if (var428.fail) {var428} else {
+									// Char
+									if (getCharCodeAt(var428.input, var428.i) == 41) {
+										ni = var428.i + 1;
+										GCodeEnv(
+											var428 with i = ni,
+											maxi = max(var428.maxi, ni)
+										)
+									} else {
+										GCodeEnv(var428 with fail = true)
+									}
+									}};
+									if (var427.fail) {var427} else {
+									parse_ws(var427)
+									}};
+									if (var426.fail) {var426} else {
+									GCodeEnv(var426 with output = var426.action.addVerbatim(var426.output, "call"))
+									}};
+									if (var425.fail) {
+										{
+											// Choice
+											var431 = {
+											// seq
+											var432 = {
+											// seq
+											var433 = {
+											// seq
+											var434 = {
+											// seq
+											var435 = {
+											// seq
+											var436 = {
+											// seq
+											var437 = {
+											// seq
+											var438 = {
+											// seq
+											var439 = {
+											// seq
+											var440 = {
+											// seq
+											var441 = {
+											// seq
+											var442 = {
+											// seq
+											var443 = {
+											// seq
+											var444 = // Char
+											if (getCharCodeAt(acc.input, acc.i) == 40) {
+												ni = acc.i + 1;
+												GCodeEnv(
+													acc with i = ni,
+													maxi = max(acc.maxi, ni)
+												)
+											} else {
+												GCodeEnv(acc with fail = true)
+											};
+											if (var444.fail) {var444} else {
+											parse_ws(var444)
+											}};
+											if (var443.fail) {var443} else {
+											parse_exp(var443)
+											}};
+											if (var442.fail) {var442} else {
+											if (strContainsAt(var442.input, var442.i, "with")) {
+												ni = var442.i + 4;
+												GCodeEnv(
+													var442 with i = ni,
+													maxi = max(var442.maxi, ni)
+												)
+											} else {
+												GCodeEnv(var442 with fail = true)
+											}
+											}};
+											if (var441.fail) {var441} else {
+											parse_s(var441)
+											}};
+											if (var440.fail) {var440} else {
+											GCodeEnv(var440 with output = var440.action.addVerbatim(var440.output, "list2"))
+											}};
+											if (var439.fail) {var439} else {
+											parse_fields(var439)
+											}};
+											if (var438.fail) {var438} else {
+											GCodeEnv(var438 with output = var438.action.addVerbatim(var438.output, "cons"))
+											}};
+											if (var437.fail) {var437} else {
+											// Char
+											if (getCharCodeAt(var437.input, var437.i) == 41) {
+												ni = var437.i + 1;
+												GCodeEnv(
+													var437 with i = ni,
+													maxi = max(var437.maxi, ni)
+												)
+											} else {
+												GCodeEnv(var437 with fail = true)
+											}
+											}};
+											if (var436.fail) {var436} else {
+											parse_ws(var436)
+											}};
+											if (var435.fail) {var435} else {
+											GCodeEnv(var435 with output = var435.action.addMatched(var435.output, "__with"))
+											}};
+											if (var434.fail) {var434} else {
+											GCodeEnv(var434 with output = var434.action.addVerbatim(var434.output, "var"))
+											}};
+											if (var433.fail) {var433} else {
+											GCodeEnv(var433 with output = var433.action.addVerbatim(var433.output, "swap"))
+											}};
+											if (var432.fail) {var432} else {
+											GCodeEnv(var432 with output = var432.action.addVerbatim(var432.output, "call"))
+											}};
+											if (var431.fail) {
+												{
+													// Choice
+													var445 = {
+													// seq
+													var446 = {
+													// seq
+													var447 = {
+													// seq
+													var448 = {
+													// seq
+													var449 = {
+													// seq
+													var450 = {
+													// seq
+													var451 = {
+													// seq
+													var452 = {
+													// seq
+													var453 = {
+													// seq
+													var454 = {
+													// seq
+													var455 = // Char
+													if (getCharCodeAt(acc.input, acc.i) == 46) {
+														ni = acc.i + 1;
+														GCodeEnv(
+															acc with i = ni,
+															maxi = max(acc.maxi, ni)
+														)
+													} else {
+														GCodeEnv(acc with fail = true)
+													};
+													if (var455.fail) {var455} else {
+													parse_ws(var455)
+													}};
+													if (var454.fail) {var454} else {
+													parse_id(var454)
+													}};
+													if (var453.fail) {var453} else {
+													GCodeEnv(var453 with output = var453.action.addVerbatim(var453.output, "list2"))
+													}};
+													if (var452.fail) {var452} else {
+													if (strContainsAt(var452.input, var452.i, "::=")) {
+														ni = var452.i + 3;
+														GCodeEnv(
+															var452 with i = ni,
+															maxi = max(var452.maxi, ni)
+														)
+													} else {
+														GCodeEnv(var452 with fail = true)
+													}
+													}};
+													if (var451.fail) {var451} else {
+													parse_ws(var451)
+													}};
+													if (var450.fail) {var450} else {
+													parse_exp11(var450)
+													}};
+													if (var449.fail) {var449} else {
+													GCodeEnv(var449 with output = var449.action.addVerbatim(var449.output, "cons"))
+													}};
+													if (var448.fail) {var448} else {
+													GCodeEnv(var448 with output = var448.action.addMatched(var448.output, "__mutassign"))
+													}};
+													if (var447.fail) {var447} else {
+													GCodeEnv(var447 with output = var447.action.addVerbatim(var447.output, "swap"))
+													}};
+													if (var446.fail) {var446} else {
+													GCodeEnv(var446 with output = var446.action.addVerbatim(var446.output, "call"))
+													}};
+													if (var445.fail) {
+														{
+															// Choice
+															var456 = {
+															// seq
+															var457 = {
+															// seq
+															var458 = {
+															// seq
+															var459 = {
+															// seq
+															var460 = // Char
+															if (getCharCodeAt(acc.input, acc.i) == 46) {
+																ni = acc.i + 1;
+																GCodeEnv(
+																	acc with i = ni,
+																	maxi = max(acc.maxi, ni)
+																)
+															} else {
+																GCodeEnv(acc with fail = true)
+															};
+															if (var460.fail) {var460} else {
+															parse_ws(var460)
+															}};
+															if (var459.fail) {var459} else {
+															parse_id(var459)
+															}};
+															if (var458.fail) {var458} else {
+															GCodeEnv(var458 with output = var458.action.addMatched(var458.output, "."))
+															}};
+															if (var457.fail) {var457} else {
+															GCodeEnv(var457 with output = var457.action.addVerbatim(var457.output, "binop"))
+															}};
+															if (var456.fail) {
+																{
+																// seq
+																var461 = {
+																// seq
+																var462 = {
+																// seq
+																var463 = {
+																// seq
+																var464 = {
+																// seq
+																var465 = {
+																// seq
+																var466 = // Char
+																if (getCharCodeAt(acc.input, acc.i) == 91) {
+																	ni = acc.i + 1;
+																	GCodeEnv(
+																		acc with i = ni,
+																		maxi = max(acc.maxi, ni)
+																	)
+																} else {
+																	GCodeEnv(acc with fail = true)
+																};
+																if (var466.fail) {var466} else {
+																parse_ws(var466)
+																}};
+																if (var465.fail) {var465} else {
+																parse_exp(var465)
+																}};
+																if (var464.fail) {var464} else {
+																// Char
+																if (getCharCodeAt(var464.input, var464.i) == 93) {
+																	ni = var464.i + 1;
+																	GCodeEnv(
+																		var464 with i = ni,
+																		maxi = max(var464.maxi, ni)
+																	)
+																} else {
+																	GCodeEnv(var464 with fail = true)
+																}
+																}};
+																if (var463.fail) {var463} else {
+																parse_ws(var463)
+																}};
+																if (var462.fail) {var462} else {
+																GCodeEnv(var462 with output = var462.action.addMatched(var462.output, "__index"))
+																}};
+																if (var461.fail) {var461} else {
+																GCodeEnv(var461 with output = var461.action.addVerbatim(var461.output, "binop"))
+																}}
+															} else var456
+														}
+
+													} else var445
+												}
+
+											} else var431
+										}
+
+									} else var425
+								}
+								;
+								if (senv.fail) {
+									acc
+								} else {
+									(^var424)(senv)
+								}
+							};
+							(^var424)(var381);
+						}
+						}}
+						}};
+						if (var379.fail) {
+							parse_exp12(env)
+						} else var379
+					}
+
+				} else var374
+			}
+
+		} else var369
+	}
+
+}
+
+parse_exp12(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var467 = {
+		// seq
+		var468 = {
+		// seq
+		var469 = {
+		// seq
+		var470 = {
+		// seq
+		var471 = // Char
+		if (getCharCodeAt(env.input, env.i) == 94) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var471.fail) {var471} else {
+		parse_ws(var471)
+		}};
+		if (var470.fail) {var470} else {
+		parse_exp12(var470)
+		}};
+		if (var469.fail) {var469} else {
+		GCodeEnv(var469 with output = var469.action.addMatched(var469.output, "__deref"))
+		}};
+		if (var468.fail) {var468} else {
+		GCodeEnv(var468 with output = var468.action.addVerbatim(var468.output, "unop"))
+		}};
+		if (var467.fail) {
+			parse_exp13(env)
+		} else var467
+	}
+
+}
+
+parse_exp13(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var472 = {
+		// seq
+		var473 = {
+		// seq
+		var474 = {
+		// seq
+		var475 = {
+		// seq
+		var476 = // Char
+		if (getCharCodeAt(env.input, env.i) == 40) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var476.fail) {var476} else {
+		parse_ws(var476)
+		}};
+		if (var475.fail) {var475} else {
+		parse_exp(var475)
+		}};
+		if (var474.fail) {var474} else {
+		{
+			// Error handling
+			var477 = // Char
+			if (getCharCodeAt(var474.input, var474.i) == 41) {
+				ni = var474.i + 1;
+				GCodeEnv(
+					var474 with i = ni,
+					maxi = max(var474.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var474 with fail = true)
+			};
+			if (var477.fail) {
+				GCodeEnv(
+					var477 with fail = false, 
+					errors = setTree(var474.errors, var474.i, "Expected \")\"")
+				);
+			} else {
+				var477
+			}
+		}
+		}};
+		if (var473.fail) {var473} else {
+		parse_ws(var473)
+		}};
+		if (var472.fail) {
+			{
+				// Choice
+				var478 = {
+				// seq
+				var479 = {
+				// seq
+				var480 = {
+				// seq
+				var481 = {
+				// seq
+				var482 = {
+				// seq
+				var483 = {
+				// seq
+				var484 = {
+				// seq
+				var485 = {
+				// seq
+				var486 = {
+				// seq
+				var487 = {
+				// seq
+				var488 = {
+				// seq
+				var489 = {
+				// seq
+				var490 = {
+				// seq
+				var491 = {
+				// seq
+				var492 = {
+				// seq
+				var493 = {
+				// seq
+				var494 = {
+				// seq
+				var495 = {
+				// seq
+				var496 = {
+				// seq
+				var497 = if (strContainsAt(env.input, env.i, "if")) {
+					ni = env.i + 2;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var497.fail) {var497} else {
+				{
+					// Negate
+					var498 = parse_letterOrDigit(var497);
+					if (var498.fail) {
+						GCodeEnv(var498 with fail = false);
+					} else {
+						GCodeEnv(var497 with fail = true);
+					}
+				}
+				}};
+				if (var496.fail) {var496} else {
+				parse_ws(var496)
+				}};
+				if (var495.fail) {var495} else {
+				// Char
+				if (getCharCodeAt(var495.input, var495.i) == 40) {
+					ni = var495.i + 1;
+					GCodeEnv(
+						var495 with i = ni,
+						maxi = max(var495.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var495 with fail = true)
+				}
+				}};
+				if (var494.fail) {var494} else {
+				parse_ws(var494)
+				}};
+				if (var493.fail) {var493} else {
+				GCodeEnv(var493 with output = var493.action.addVerbatim(var493.output, "nil"))
+				}};
+				if (var492.fail) {var492} else {
+				parse_exp(var492)
+				}};
+				if (var491.fail) {var491} else {
+				GCodeEnv(var491 with output = var491.action.addVerbatim(var491.output, "cons"))
+				}};
+				if (var490.fail) {var490} else {
+				// Char
+				if (getCharCodeAt(var490.input, var490.i) == 41) {
+					ni = var490.i + 1;
+					GCodeEnv(
+						var490 with i = ni,
+						maxi = max(var490.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var490 with fail = true)
+				}
+				}};
+				if (var489.fail) {var489} else {
+				parse_ws(var489)
+				}};
+				if (var488.fail) {var488} else {
+				parse_exp(var488)
+				}};
+				if (var487.fail) {var487} else {
+				GCodeEnv(var487 with output = var487.action.addVerbatim(var487.output, "cons"))
+				}};
+				if (var486.fail) {var486} else {
+				if (strContainsAt(var486.input, var486.i, "else")) {
+					ni = var486.i + 4;
+					GCodeEnv(
+						var486 with i = ni,
+						maxi = max(var486.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var486 with fail = true)
+				}
+				}};
+				if (var485.fail) {var485} else {
+				parse_ws(var485)
+				}};
+				if (var484.fail) {var484} else {
+				parse_exp(var484)
+				}};
+				if (var483.fail) {var483} else {
+				GCodeEnv(var483 with output = var483.action.addVerbatim(var483.output, "cons"))
+				}};
+				if (var482.fail) {var482} else {
+				GCodeEnv(var482 with output = var482.action.addMatched(var482.output, "__ifte"))
+				}};
+				if (var481.fail) {var481} else {
+				GCodeEnv(var481 with output = var481.action.addVerbatim(var481.output, "var"))
+				}};
+				if (var480.fail) {var480} else {
+				GCodeEnv(var480 with output = var480.action.addVerbatim(var480.output, "swap"))
+				}};
+				if (var479.fail) {var479} else {
+				GCodeEnv(var479 with output = var479.action.addVerbatim(var479.output, "call"))
+				}};
+				if (var478.fail) {
+					{
+						// Choice
+						var499 = {
+						// seq
+						var500 = {
+						// seq
+						var501 = {
+						// seq
+						var502 = {
+						// seq
+						var503 = {
+						// seq
+						var504 = {
+						// seq
+						var505 = {
+						// seq
+						var506 = {
+						// seq
+						var507 = {
+						// seq
+						var508 = {
+						// seq
+						var509 = {
+						// seq
+						var510 = {
+						// seq
+						var511 = {
+						// seq
+						var512 = {
+						// seq
+						var513 = {
+						// seq
+						var514 = if (strContainsAt(env.input, env.i, "if")) {
+							ni = env.i + 2;
+							GCodeEnv(
+								env with i = ni,
+								maxi = max(env.maxi, ni)
+							)
+						} else {
+							GCodeEnv(env with fail = true)
+						};
+						if (var514.fail) {var514} else {
+						{
+							// Negate
+							var515 = parse_letterOrDigit(var514);
+							if (var515.fail) {
+								GCodeEnv(var515 with fail = false);
+							} else {
+								GCodeEnv(var514 with fail = true);
+							}
+						}
+						}};
+						if (var513.fail) {var513} else {
+						parse_ws(var513)
+						}};
+						if (var512.fail) {var512} else {
+						// Char
+						if (getCharCodeAt(var512.input, var512.i) == 40) {
+							ni = var512.i + 1;
+							GCodeEnv(
+								var512 with i = ni,
+								maxi = max(var512.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var512 with fail = true)
+						}
+						}};
+						if (var511.fail) {var511} else {
+						parse_ws(var511)
+						}};
+						if (var510.fail) {var510} else {
+						GCodeEnv(var510 with output = var510.action.addVerbatim(var510.output, "nil"))
+						}};
+						if (var509.fail) {var509} else {
+						parse_exp(var509)
+						}};
+						if (var508.fail) {var508} else {
+						GCodeEnv(var508 with output = var508.action.addVerbatim(var508.output, "cons"))
+						}};
+						if (var507.fail) {var507} else {
+						// Char
+						if (getCharCodeAt(var507.input, var507.i) == 41) {
+							ni = var507.i + 1;
+							GCodeEnv(
+								var507 with i = ni,
+								maxi = max(var507.maxi, ni)
+							)
+						} else {
+							GCodeEnv(var507 with fail = true)
+						}
+						}};
+						if (var506.fail) {var506} else {
+						parse_ws(var506)
+						}};
+						if (var505.fail) {var505} else {
+						parse_exp(var505)
+						}};
+						if (var504.fail) {var504} else {
+						GCodeEnv(var504 with output = var504.action.addVerbatim(var504.output, "cons"))
+						}};
+						if (var503.fail) {var503} else {
+						GCodeEnv(var503 with output = var503.action.addMatched(var503.output, "__ift"))
+						}};
+						if (var502.fail) {var502} else {
+						GCodeEnv(var502 with output = var502.action.addVerbatim(var502.output, "var"))
+						}};
+						if (var501.fail) {var501} else {
+						GCodeEnv(var501 with output = var501.action.addVerbatim(var501.output, "swap"))
+						}};
+						if (var500.fail) {var500} else {
+						GCodeEnv(var500 with output = var500.action.addVerbatim(var500.output, "call"))
+						}};
+						if (var499.fail) {
+							{
+								// Choice
+								var516 = {
+								// seq
+								var517 = {
+								// seq
+								var518 = {
+								// seq
+								var519 = {
+								// seq
+								var520 = {
+								// seq
+								var521 = if (strContainsAt(env.input, env.i, "ref")) {
+									ni = env.i + 3;
+									GCodeEnv(
+										env with i = ni,
+										maxi = max(env.maxi, ni)
+									)
+								} else {
+									GCodeEnv(env with fail = true)
+								};
+								if (var521.fail) {var521} else {
+								{
+									// Negate
+									var522 = parse_letterOrDigit(var521);
+									if (var522.fail) {
+										GCodeEnv(var522 with fail = false);
+									} else {
+										GCodeEnv(var521 with fail = true);
+									}
+								}
+								}};
+								if (var520.fail) {var520} else {
+								parse_ws(var520)
+								}};
+								if (var519.fail) {var519} else {
+								parse_exp(var519)
+								}};
+								if (var518.fail) {var518} else {
+								GCodeEnv(var518 with output = var518.action.addMatched(var518.output, "__ref"))
+								}};
+								if (var517.fail) {var517} else {
+								GCodeEnv(var517 with output = var517.action.addVerbatim(var517.output, "unop"))
+								}};
+								if (var516.fail) {
+									{
+										// Choice
+										var523 = parse_switch(env);
+										if (var523.fail) {
+											{
+												// Choice
+												var524 = {
+												// seq
+												var525 = {
+												// seq
+												var526 = {
+												// seq
+												var527 = {
+												// seq
+												var528 = {
+												// seq
+												var529 = {
+												// seq
+												var530 = {
+												// seq
+												var531 = {
+												// seq
+												var532 = {
+												// seq
+												var533 = {
+												// seq
+												var534 = {
+												// seq
+												var535 = {
+												// seq
+												var536 = {
+												// seq
+												var537 = {
+												// seq
+												var538 = {
+												// seq
+												var539 = {
+												// seq
+												var540 = if (strContainsAt(env.input, env.i, "cast")) {
+													ni = env.i + 4;
+													GCodeEnv(
+														env with i = ni,
+														maxi = max(env.maxi, ni)
+													)
+												} else {
+													GCodeEnv(env with fail = true)
+												};
+												if (var540.fail) {var540} else {
+												{
+													// Negate
+													var541 = parse_letterOrDigit(var540);
+													if (var541.fail) {
+														GCodeEnv(var541 with fail = false);
+													} else {
+														GCodeEnv(var540 with fail = true);
+													}
+												}
+												}};
+												if (var539.fail) {var539} else {
+												parse_ws(var539)
+												}};
+												if (var538.fail) {var538} else {
+												GCodeEnv(var538 with output = var538.action.addMatched(var538.output, "__cast"))
+												}};
+												if (var537.fail) {var537} else {
+												GCodeEnv(var537 with output = var537.action.addVerbatim(var537.output, "var"))
+												}};
+												if (var536.fail) {var536} else {
+												GCodeEnv(var536 with output = var536.action.addVerbatim(var536.output, "nil"))
+												}};
+												if (var535.fail) {var535} else {
+												// Char
+												if (getCharCodeAt(var535.input, var535.i) == 40) {
+													ni = var535.i + 1;
+													GCodeEnv(
+														var535 with i = ni,
+														maxi = max(var535.maxi, ni)
+													)
+												} else {
+													GCodeEnv(var535 with fail = true)
+												}
+												}};
+												if (var534.fail) {var534} else {
+												parse_ws(var534)
+												}};
+												if (var533.fail) {var533} else {
+												parse_exp(var533)
+												}};
+												if (var532.fail) {var532} else {
+												GCodeEnv(var532 with output = var532.action.addVerbatim(var532.output, "cons"))
+												}};
+												if (var531.fail) {var531} else {
+												if (strContainsAt(var531.input, var531.i, "->")) {
+													ni = var531.i + 2;
+													GCodeEnv(
+														var531 with i = ni,
+														maxi = max(var531.maxi, ni)
+													)
+												} else {
+													GCodeEnv(var531 with fail = true)
+												}
+												}};
+												if (var530.fail) {var530} else {
+												parse_ws(var530)
+												}};
+												if (var529.fail) {var529} else {
+												parse_type(var529)
+												}};
+												if (var528.fail) {var528} else {
+												GCodeEnv(var528 with output = var528.action.addVerbatim(var528.output, "cons"))
+												}};
+												if (var527.fail) {var527} else {
+												// Char
+												if (getCharCodeAt(var527.input, var527.i) == 41) {
+													ni = var527.i + 1;
+													GCodeEnv(
+														var527 with i = ni,
+														maxi = max(var527.maxi, ni)
+													)
+												} else {
+													GCodeEnv(var527 with fail = true)
+												}
+												}};
+												if (var526.fail) {var526} else {
+												parse_ws(var526)
+												}};
+												if (var525.fail) {var525} else {
+												GCodeEnv(var525 with output = var525.action.addVerbatim(var525.output, "call"))
+												}};
+												if (var524.fail) {
+													{
+														// Choice
+														var542 = {
+														// seq
+														var543 = {
+														// seq
+														var544 = {
+														// seq
+														var545 = {
+														// seq
+														var546 = {
+														// seq
+														var547 = {
+														// seq
+														var548 = {
+														// seq
+														var549 = if (strContainsAt(env.input, env.i, "true")) {
+															ni = env.i + 4;
+															GCodeEnv(
+																env with i = ni,
+																maxi = max(env.maxi, ni)
+															)
+														} else {
+															GCodeEnv(env with fail = true)
+														};
+														if (var549.fail) {var549} else {
+														{
+															// Negate
+															var550 = parse_letterOrDigit(var549);
+															if (var550.fail) {
+																GCodeEnv(var550 with fail = false);
+															} else {
+																GCodeEnv(var549 with fail = true);
+															}
+														}
+														}};
+														if (var548.fail) {var548} else {
+														parse_ws(var548)
+														}};
+														if (var547.fail) {var547} else {
+														GCodeEnv(var547 with output = var547.action.addVerbatim(var547.output, "1"))
+														}};
+														if (var546.fail) {var546} else {
+														GCodeEnv(var546 with output = var546.action.addMatched(var546.output, "bool"))
+														}};
+														if (var545.fail) {var545} else {
+														GCodeEnv(var545 with output = var545.action.addVerbatim(var545.output, "type0"))
+														}};
+														if (var544.fail) {var544} else {
+														GCodeEnv(var544 with output = var544.action.addMatched(var544.output, ":"))
+														}};
+														if (var543.fail) {var543} else {
+														GCodeEnv(var543 with output = var543.action.addVerbatim(var543.output, "binop"))
+														}};
+														if (var542.fail) {
+															{
+																// Choice
+																var551 = {
+																// seq
+																var552 = {
+																// seq
+																var553 = {
+																// seq
+																var554 = {
+																// seq
+																var555 = {
+																// seq
+																var556 = {
+																// seq
+																var557 = {
+																// seq
+																var558 = if (strContainsAt(env.input, env.i, "false")) {
+																	ni = env.i + 5;
+																	GCodeEnv(
+																		env with i = ni,
+																		maxi = max(env.maxi, ni)
+																	)
+																} else {
+																	GCodeEnv(env with fail = true)
+																};
+																if (var558.fail) {var558} else {
+																{
+																	// Negate
+																	var559 = parse_letterOrDigit(var558);
+																	if (var559.fail) {
+																		GCodeEnv(var559 with fail = false);
+																	} else {
+																		GCodeEnv(var558 with fail = true);
+																	}
+																}
+																}};
+																if (var557.fail) {var557} else {
+																parse_ws(var557)
+																}};
+																if (var556.fail) {var556} else {
+																GCodeEnv(var556 with output = var556.action.addVerbatim(var556.output, "0"))
+																}};
+																if (var555.fail) {var555} else {
+																GCodeEnv(var555 with output = var555.action.addMatched(var555.output, "bool"))
+																}};
+																if (var554.fail) {var554} else {
+																GCodeEnv(var554 with output = var554.action.addVerbatim(var554.output, "type0"))
+																}};
+																if (var553.fail) {var553} else {
+																GCodeEnv(var553 with output = var553.action.addMatched(var553.output, ":"))
+																}};
+																if (var552.fail) {var552} else {
+																GCodeEnv(var552 with output = var552.action.addVerbatim(var552.output, "binop"))
+																}};
+																if (var551.fail) {
+																	{
+																		// Choice
+																		var560 = {
+																		// seq
+																		var561 = parse_id(env);
+																		if (var561.fail) {var561} else {
+																		GCodeEnv(var561 with output = var561.action.addVerbatim(var561.output, "var"))
+																		}};
+																		if (var560.fail) {
+																			{
+																				// Choice
+																				var562 = {
+																				// seq
+																				var563 = {
+																				// seq
+																				var564 = {
+																				// seq
+																				var565 = if (strContainsAt(env.input, env.i, "0x")) {
+																					ni = env.i + 2;
+																					GCodeEnv(
+																						env with i = ni,
+																						maxi = max(env.maxi, ni)
+																					)
+																				} else {
+																					GCodeEnv(env with fail = true)
+																				};
+																				if (var565.fail) {var565} else {
+																				{
+																					// Unquote matched
+																					var566 = {
+																					// seq
+																					var567 = parse_hexdigit(var565);
+																					if (var567.fail) {var567} else {
+																					{
+																						// *
+																						var568 = ref \acc -> acc;
+																						var568 := \acc -> {
+																							senv = parse_hexdigit(acc);
+																							if (senv.fail) {
+																								acc
+																							} else {
+																								(^var568)(senv)
+																							}
+																						};
+																						(^var568)(var567);
+																					}
+																					}};
+																					if (var566.fail) {
+																						var566;
+																					} else {
+																						starti = var565.i;
+																						matched = substring(var565.input, starti, var566.i - starti);
+																						GCodeEnv(var566 with output = var565.action.addMatched(var566.output, matched))
+																					}
+																				}
+																				}};
+																				if (var564.fail) {var564} else {
+																				parse_ws(var564)
+																				}};
+																				if (var563.fail) {var563} else {
+																				GCodeEnv(var563 with output = var563.action.addVerbatim(var563.output, "parsehex"))
+																				}};
+																				if (var562.fail) {
+																					{
+																						// Choice
+																						var569 = {
+																						// seq
+																						var570 = {
+																						// seq
+																						var571 = {
+																							// Unquote matched
+																							var572 = {
+																							// seq
+																							var573 = {
+																							// seq
+																							var574 = {
+																							// seq
+																							var575 = // Range
+																							if ({var576 = getCharCodeAt(env.input, env.i);48 <= var576 && var576 <= 57}) {
+																								ni = env.i + 1;
+																								GCodeEnv(
+																									env with i = ni,
+																									maxi = max(env.maxi, ni)
+																								)
+																							} else {
+																								GCodeEnv(env with fail = true)
+																							};
+																							if (var575.fail) {var575} else {
+																							{
+																								// *
+																								var577 = ref \acc -> acc;
+																								var577 := \acc -> {
+																									senv = // Range
+																									if ({var578 = getCharCodeAt(acc.input, acc.i);48 <= var578 && var578 <= 57}) {
+																										ni = acc.i + 1;
+																										GCodeEnv(
+																											acc with i = ni,
+																											maxi = max(acc.maxi, ni)
+																										)
+																									} else {
+																										GCodeEnv(acc with fail = true)
+																									};
+																									if (senv.fail) {
+																										acc
+																									} else {
+																										(^var577)(senv)
+																									}
+																								};
+																								(^var577)(var575);
+																							}
+																							}};
+																							if (var574.fail) {var574} else {
+																							// Char
+																							if (getCharCodeAt(var574.input, var574.i) == 46) {
+																								ni = var574.i + 1;
+																								GCodeEnv(
+																									var574 with i = ni,
+																									maxi = max(var574.maxi, ni)
+																								)
+																							} else {
+																								GCodeEnv(var574 with fail = true)
+																							}
+																							}};
+																							if (var573.fail) {var573} else {
+																							{
+																								// *
+																								var579 = ref \acc -> acc;
+																								var579 := \acc -> {
+																									senv = // Range
+																									if ({var580 = getCharCodeAt(acc.input, acc.i);48 <= var580 && var580 <= 57}) {
+																										ni = acc.i + 1;
+																										GCodeEnv(
+																											acc with i = ni,
+																											maxi = max(acc.maxi, ni)
+																										)
+																									} else {
+																										GCodeEnv(acc with fail = true)
+																									};
+																									if (senv.fail) {
+																										acc
+																									} else {
+																										(^var579)(senv)
+																									}
+																								};
+																								(^var579)(var573);
+																							}
+																							}};
+																							if (var572.fail) {
+																								var572;
+																							} else {
+																								starti = env.i;
+																								matched = substring(env.input, starti, var572.i - starti);
+																								GCodeEnv(var572 with output = env.action.addMatched(var572.output, matched))
+																							}
+																						};
+																						if (var571.fail) {var571} else {
+																						parse_ws(var571)
+																						}};
+																						if (var570.fail) {var570} else {
+																						GCodeEnv(var570 with output = var570.action.addVerbatim(var570.output, "s2d"))
+																						}};
+																						if (var569.fail) {
+																							{
+																								// Choice
+																								var581 = {
+																								// seq
+																								var582 = {
+																								// seq
+																								var583 = {
+																									// Unquote matched
+																									var584 = {
+																									// seq
+																									var585 = // Char
+																									if (getCharCodeAt(env.input, env.i) == 46) {
+																										ni = env.i + 1;
+																										GCodeEnv(
+																											env with i = ni,
+																											maxi = max(env.maxi, ni)
+																										)
+																									} else {
+																										GCodeEnv(env with fail = true)
+																									};
+																									if (var585.fail) {var585} else {
+																									{
+																									// seq
+																									var586 = // Range
+																									if ({var587 = getCharCodeAt(var585.input, var585.i);48 <= var587 && var587 <= 57}) {
+																										ni = var585.i + 1;
+																										GCodeEnv(
+																											var585 with i = ni,
+																											maxi = max(var585.maxi, ni)
+																										)
+																									} else {
+																										GCodeEnv(var585 with fail = true)
+																									};
+																									if (var586.fail) {var586} else {
+																									{
+																										// *
+																										var588 = ref \acc -> acc;
+																										var588 := \acc -> {
+																											senv = // Range
+																											if ({var589 = getCharCodeAt(acc.input, acc.i);48 <= var589 && var589 <= 57}) {
+																												ni = acc.i + 1;
+																												GCodeEnv(
+																													acc with i = ni,
+																													maxi = max(acc.maxi, ni)
+																												)
+																											} else {
+																												GCodeEnv(acc with fail = true)
+																											};
+																											if (senv.fail) {
+																												acc
+																											} else {
+																												(^var588)(senv)
+																											}
+																										};
+																										(^var588)(var586);
+																									}
+																									}}
+																									}};
+																									if (var584.fail) {
+																										var584;
+																									} else {
+																										starti = env.i;
+																										matched = substring(env.input, starti, var584.i - starti);
+																										GCodeEnv(var584 with output = env.action.addMatched(var584.output, matched))
+																									}
+																								};
+																								if (var583.fail) {var583} else {
+																								parse_ws(var583)
+																								}};
+																								if (var582.fail) {var582} else {
+																								GCodeEnv(var582 with output = var582.action.addVerbatim(var582.output, "s2d"))
+																								}};
+																								if (var581.fail) {
+																									{
+																										// Choice
+																										var590 = {
+																										// seq
+																										var591 = {
+																										// seq
+																										var592 = parse_int(env);
+																										if (var592.fail) {var592} else {
+																										parse_ws(var592)
+																										}};
+																										if (var591.fail) {var591} else {
+																										GCodeEnv(var591 with output = var591.action.addVerbatim(var591.output, "s2i"))
+																										}};
+																										if (var590.fail) {
+																											{
+																												// Choice
+																												var593 = parse_brace(env);
+																												if (var593.fail) {
+																													{
+																														// Choice
+																														var594 = parse_string(env);
+																														if (var594.fail) {
+																															{
+																																// Choice
+																																var595 = {
+																																// seq
+																																var596 = {
+																																// seq
+																																var597 = {
+																																// seq
+																																var598 = {
+																																// seq
+																																var599 = {
+																																// seq
+																																var600 = {
+																																// seq
+																																var601 = // Char
+																																if (getCharCodeAt(env.input, env.i) == 91) {
+																																	ni = env.i + 1;
+																																	GCodeEnv(
+																																		env with i = ni,
+																																		maxi = max(env.maxi, ni)
+																																	)
+																																} else {
+																																	GCodeEnv(env with fail = true)
+																																};
+																																if (var601.fail) {var601} else {
+																																parse_ws(var601)
+																																}};
+																																if (var600.fail) {var600} else {
+																																parse_expcommas(var600)
+																																}};
+																																if (var599.fail) {var599} else {
+																																// Char
+																																if (getCharCodeAt(var599.input, var599.i) == 93) {
+																																	ni = var599.i + 1;
+																																	GCodeEnv(
+																																		var599 with i = ni,
+																																		maxi = max(var599.maxi, ni)
+																																	)
+																																} else {
+																																	GCodeEnv(var599 with fail = true)
+																																}
+																																}};
+																																if (var598.fail) {var598} else {
+																																parse_ws(var598)
+																																}};
+																																if (var597.fail) {var597} else {
+																																GCodeEnv(var597 with output = var597.action.addMatched(var597.output, "["))
+																																}};
+																																if (var596.fail) {var596} else {
+																																GCodeEnv(var596 with output = var596.action.addVerbatim(var596.output, "unop"))
+																																}};
+																																if (var595.fail) {
+																																	{
+																																	// seq
+																																	var602 = {
+																																	// seq
+																																	var603 = {
+																																	// seq
+																																	var604 = {
+																																	// seq
+																																	var605 = {
+																																	// seq
+																																	var606 = {
+																																	// seq
+																																	var607 = {
+																																	// seq
+																																	var608 = // Char
+																																	if (getCharCodeAt(env.input, env.i) == 91) {
+																																		ni = env.i + 1;
+																																		GCodeEnv(
+																																			env with i = ni,
+																																			maxi = max(env.maxi, ni)
+																																		)
+																																	} else {
+																																		GCodeEnv(env with fail = true)
+																																	};
+																																	if (var608.fail) {var608} else {
+																																	parse_ws(var608)
+																																	}};
+																																	if (var607.fail) {var607} else {
+																																	// Char
+																																	if (getCharCodeAt(var607.input, var607.i) == 93) {
+																																		ni = var607.i + 1;
+																																		GCodeEnv(
+																																			var607 with i = ni,
+																																			maxi = max(var607.maxi, ni)
+																																		)
+																																	} else {
+																																		GCodeEnv(var607 with fail = true)
+																																	}
+																																	}};
+																																	if (var606.fail) {var606} else {
+																																	parse_ws(var606)
+																																	}};
+																																	if (var605.fail) {var605} else {
+																																	GCodeEnv(var605 with output = var605.action.addMatched(var605.output, "__emptyarray"))
+																																	}};
+																																	if (var604.fail) {var604} else {
+																																	GCodeEnv(var604 with output = var604.action.addVerbatim(var604.output, "var"))
+																																	}};
+																																	if (var603.fail) {var603} else {
+																																	GCodeEnv(var603 with output = var603.action.addVerbatim(var603.output, "nil"))
+																																	}};
+																																	if (var602.fail) {var602} else {
+																																	GCodeEnv(var602 with output = var602.action.addVerbatim(var602.output, "call"))
+																																	}}
+																																} else var595
+																															}
+
+																														} else var594
+																													}
+
+																												} else var593
+																											}
+
+																										} else var590
+																									}
+
+																								} else var581
+																							}
+
+																						} else var569
+																					}
+
+																				} else var562
+																			}
+
+																		} else var560
+																	}
+
+																} else var551
+															}
+
+														} else var542
+													}
+
+												} else var524
+											}
+
+										} else var523
+									}
+
+								} else var516
+							}
+
+						} else var499
+					}
+
+				} else var478
+			}
+
+		} else var472
+	}
+
+}
+
+parse_fields(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var609 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var609.fail) {var609} else {
+	{
+		// Opt
+		var610 = {
+		// seq
+		var611 = {
+		// seq
+		var612 = {
+		// seq
+		var613 = parse_fieldassign(var609);
+		if (var613.fail) {var613} else {
+		GCodeEnv(var613 with output = var613.action.addVerbatim(var613.output, "cons"))
+		}};
+		if (var612.fail) {var612} else {
+		{
+			// *
+			var614 = ref \acc -> acc;
+			var614 := \acc -> {
+				senv = {
+				// seq
+				var615 = {
+				// seq
+				var616 = {
+				// seq
+				var617 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var617.fail) {var617} else {
+				parse_ws(var617)
+				}};
+				if (var616.fail) {var616} else {
+				parse_fieldassign(var616)
+				}};
+				if (var615.fail) {var615} else {
+				GCodeEnv(var615 with output = var615.action.addVerbatim(var615.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var614)(senv)
+				}
+			};
+			(^var614)(var612);
+		}
+		}};
+		if (var611.fail) {var611} else {
+		{
+			// Opt
+			var618 = {
+			// seq
+			var619 = // Char
+			if (getCharCodeAt(var611.input, var611.i) == 44) {
+				ni = var611.i + 1;
+				GCodeEnv(
+					var611 with i = ni,
+					maxi = max(var611.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var611 with fail = true)
+			};
+			if (var619.fail) {var619} else {
+			parse_ws(var619)
+			}};
+			if (var618.fail) {
+				var611
+			} else {
+				var618
+			}
+		}
+		}};
+		if (var610.fail) {
+			var609
+		} else {
+			var610
+		}
+	}
+	}}
+}
+
+parse_fieldassign(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var620 = {
+	// seq
+	var621 = {
+	// seq
+	var622 = {
+	// seq
+	var623 = {
+	// seq
+	var624 = parse_id(env);
+	if (var624.fail) {var624} else {
+	// Char
+	if (getCharCodeAt(var624.input, var624.i) == 61) {
+		ni = var624.i + 1;
+		GCodeEnv(
+			var624 with i = ni,
+			maxi = max(var624.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var624 with fail = true)
+	}
+	}};
+	if (var623.fail) {var623} else {
+	parse_ws(var623)
+	}};
+	if (var622.fail) {var622} else {
+	parse_exp(var622)
+	}};
+	if (var621.fail) {var621} else {
+	GCodeEnv(var621 with output = var621.action.addMatched(var621.output, "__withassign"))
+	}};
+	if (var620.fail) {var620} else {
+	GCodeEnv(var620 with output = var620.action.addVerbatim(var620.output, "binop"))
+	}}
+}
+
+parse_brace(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var625 = {
+	// seq
+	var626 = // Char
+	if (getCharCodeAt(env.input, env.i) == 123) {
+		ni = env.i + 1;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var626.fail) {var626} else {
+	parse_ws(var626)
+	}};
+	if (var625.fail) {var625} else {
+	{
+		// Choice
+		var627 = {
+		// seq
+		var628 = {
+		// seq
+		var629 = {
+		// seq
+		var630 = {
+		// seq
+		var631 = parse_exp(var625);
+		if (var631.fail) {var631} else {
+		{
+			// *
+			var632 = ref \acc -> acc;
+			var632 := \acc -> {
+				senv = {
+				// seq
+				var633 = {
+				// seq
+				var634 = {
+				// seq
+				var635 = {
+				// seq
+				var636 = {
+					// Error handling
+					var637 = // Char
+					if (getCharCodeAt(acc.input, acc.i) == 59) {
+						ni = acc.i + 1;
+						GCodeEnv(
+							acc with i = ni,
+							maxi = max(acc.maxi, ni)
+						)
+					} else {
+						GCodeEnv(acc with fail = true)
+					};
+					if (var637.fail) {
+						GCodeEnv(
+							var637 with fail = false, 
+							errors = setTree(acc.errors, acc.i, "Expected \";\"")
+						);
+					} else {
+						var637
+					}
+				};
+				if (var636.fail) {var636} else {
+				parse_ws(var636)
+				}};
+				if (var635.fail) {var635} else {
+				parse_exp(var635)
+				}};
+				if (var634.fail) {var634} else {
+				GCodeEnv(var634 with output = var634.action.addMatched(var634.output, ";"))
+				}};
+				if (var633.fail) {var633} else {
+				GCodeEnv(var633 with output = var633.action.addVerbatim(var633.output, "binop"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var632)(senv)
+				}
+			};
+			(^var632)(var631);
+		}
+		}};
+		if (var630.fail) {var630} else {
+		{
+			// Opt
+			var638 = {
+			// seq
+			var639 = // Char
+			if (getCharCodeAt(var630.input, var630.i) == 59) {
+				ni = var630.i + 1;
+				GCodeEnv(
+					var630 with i = ni,
+					maxi = max(var630.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var630 with fail = true)
+			};
+			if (var639.fail) {var639} else {
+			parse_ws(var639)
+			}};
+			if (var638.fail) {
+				var630
+			} else {
+				var638
+			}
+		}
+		}};
+		if (var629.fail) {var629} else {
+		{
+			// Error handling
+			var640 = // Char
+			if (getCharCodeAt(var629.input, var629.i) == 125) {
+				ni = var629.i + 1;
+				GCodeEnv(
+					var629 with i = ni,
+					maxi = max(var629.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var629 with fail = true)
+			};
+			if (var640.fail) {
+				GCodeEnv(
+					var640 with fail = false, 
+					errors = setTree(var629.errors, var629.i, "Expected \"}\"")
+				);
+			} else {
+				var640
+			}
+		}
+		}};
+		if (var628.fail) {var628} else {
+		parse_ws(var628)
+		}};
+		if (var627.fail) {
+			{
+			// seq
+			var641 = {
+			// seq
+			var642 = {
+			// seq
+			var643 = {
+			// seq
+			var644 = {
+			// seq
+			var645 = // Char
+			if (getCharCodeAt(var625.input, var625.i) == 125) {
+				ni = var625.i + 1;
+				GCodeEnv(
+					var625 with i = ni,
+					maxi = max(var625.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var625 with fail = true)
+			};
+			if (var645.fail) {var645} else {
+			parse_ws(var645)
+			}};
+			if (var644.fail) {var644} else {
+			GCodeEnv(var644 with output = var644.action.addMatched(var644.output, "__void"))
+			}};
+			if (var643.fail) {var643} else {
+			GCodeEnv(var643 with output = var643.action.addVerbatim(var643.output, "var"))
+			}};
+			if (var642.fail) {var642} else {
+			GCodeEnv(var642 with output = var642.action.addVerbatim(var642.output, "nil"))
+			}};
+			if (var641.fail) {var641} else {
+			GCodeEnv(var641 with output = var641.action.addVerbatim(var641.output, "call"))
+			}}
+		} else var627
+	}
+
+	}}
+}
+
+parse_expcommas(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var646 = {
+	// seq
+	var647 = parse_exp(env);
+	if (var647.fail) {var647} else {
+	{
+		// *
+		var648 = ref \acc -> acc;
+		var648 := \acc -> {
+			senv = {
+			// seq
+			var649 = {
+			// seq
+			var650 = {
+			// seq
+			var651 = {
+			// seq
+			var652 = // Char
+			if (getCharCodeAt(acc.input, acc.i) == 44) {
+				ni = acc.i + 1;
+				GCodeEnv(
+					acc with i = ni,
+					maxi = max(acc.maxi, ni)
+				)
+			} else {
+				GCodeEnv(acc with fail = true)
+			};
+			if (var652.fail) {var652} else {
+			parse_ws(var652)
+			}};
+			if (var651.fail) {var651} else {
+			parse_exp(var651)
+			}};
+			if (var650.fail) {var650} else {
+			GCodeEnv(var650 with output = var650.action.addMatched(var650.output, ","))
+			}};
+			if (var649.fail) {var649} else {
+			GCodeEnv(var649 with output = var649.action.addVerbatim(var649.output, "binop"))
+			}};
+			if (senv.fail) {
+				acc
+			} else {
+				(^var648)(senv)
+			}
+		};
+		(^var648)(var647);
+	}
+	}};
+	if (var646.fail) {var646} else {
+	{
+		// Opt
+		var653 = {
+		// seq
+		var654 = // Char
+		if (getCharCodeAt(var646.input, var646.i) == 44) {
+			ni = var646.i + 1;
+			GCodeEnv(
+				var646 with i = ni,
+				maxi = max(var646.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var646 with fail = true)
+		};
+		if (var654.fail) {var654} else {
+		parse_ws(var654)
+		}};
+		if (var653.fail) {
+			var646
+		} else {
+			var653
+		}
+	}
+	}}
+}
+
+parse_semiexps(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var655 = parse_exp(env);
+	if (var655.fail) {var655} else {
+	{
+		// *
+		var656 = ref \acc -> acc;
+		var656 := \acc -> {
+			senv = {
+			// seq
+			var657 = {
+			// seq
+			var658 = {
+			// seq
+			var659 = {
+			// seq
+			var660 = // Char
+			if (getCharCodeAt(acc.input, acc.i) == 59) {
+				ni = acc.i + 1;
+				GCodeEnv(
+					acc with i = ni,
+					maxi = max(acc.maxi, ni)
+				)
+			} else {
+				GCodeEnv(acc with fail = true)
+			};
+			if (var660.fail) {var660} else {
+			parse_ws(var660)
+			}};
+			if (var659.fail) {var659} else {
+			parse_exp(var659)
+			}};
+			if (var658.fail) {var658} else {
+			GCodeEnv(var658 with output = var658.action.addMatched(var658.output, ";"))
+			}};
+			if (var657.fail) {var657} else {
+			GCodeEnv(var657 with output = var657.action.addVerbatim(var657.output, "binop"))
+			}};
+			if (senv.fail) {
+				acc
+			} else {
+				(^var656)(senv)
+			}
+		};
+		(^var656)(var655);
+	}
+	}}
+}
+
+parse_switch(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var661 = {
+	// seq
+	var662 = {
+	// seq
+	var663 = {
+	// seq
+	var664 = {
+	// seq
+	var665 = {
+	// seq
+	var666 = {
+	// seq
+	var667 = {
+	// seq
+	var668 = {
+	// seq
+	var669 = {
+	// seq
+	var670 = {
+	// seq
+	var671 = {
+	// seq
+	var672 = {
+	// seq
+	var673 = {
+	// seq
+	var674 = {
+	// seq
+	var675 = {
+	// seq
+	var676 = {
+	// seq
+	var677 = {
+	// seq
+	var678 = {
+	// seq
+	var679 = {
+	// seq
+	var680 = {
+	// seq
+	var681 = if (strContainsAt(env.input, env.i, "switch")) {
+		ni = env.i + 6;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var681.fail) {var681} else {
+	{
+		// Negate
+		var682 = parse_letterOrDigit(var681);
+		if (var682.fail) {
+			GCodeEnv(var682 with fail = false);
+		} else {
+			GCodeEnv(var681 with fail = true);
+		}
+	}
+	}};
+	if (var680.fail) {var680} else {
+	parse_ws(var680)
+	}};
+	if (var679.fail) {var679} else {
+	// Char
+	if (getCharCodeAt(var679.input, var679.i) == 40) {
+		ni = var679.i + 1;
+		GCodeEnv(
+			var679 with i = ni,
+			maxi = max(var679.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var679 with fail = true)
+	}
+	}};
+	if (var678.fail) {var678} else {
+	parse_ws(var678)
+	}};
+	if (var677.fail) {var677} else {
+	parse_exp(var677)
+	}};
+	if (var676.fail) {var676} else {
+	GCodeEnv(var676 with output = var676.action.addMatched(var676.output, "__switchvar"))
+	}};
+	if (var675.fail) {var675} else {
+	GCodeEnv(var675 with output = var675.action.addVerbatim(var675.output, "swap"))
+	}};
+	if (var674.fail) {var674} else {
+	GCodeEnv(var674 with output = var674.action.addMatched(var674.output, "__switchvar"))
+	}};
+	if (var673.fail) {var673} else {
+	GCodeEnv(var673 with output = var673.action.addVerbatim(var673.output, "var"))
+	}};
+	if (var672.fail) {var672} else {
+	GCodeEnv(var672 with output = var672.action.addMatched(var672.output, "__switchvalue"))
+	}};
+	if (var671.fail) {var671} else {
+	GCodeEnv(var671 with output = var671.action.addVerbatim(var671.output, "unop"))
+	}};
+	if (var670.fail) {var670} else {
+	// Char
+	if (getCharCodeAt(var670.input, var670.i) == 41) {
+		ni = var670.i + 1;
+		GCodeEnv(
+			var670 with i = ni,
+			maxi = max(var670.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var670 with fail = true)
+	}
+	}};
+	if (var669.fail) {var669} else {
+	parse_ws(var669)
+	}};
+	if (var668.fail) {var668} else {
+	// Char
+	if (getCharCodeAt(var668.input, var668.i) == 123) {
+		ni = var668.i + 1;
+		GCodeEnv(
+			var668 with i = ni,
+			maxi = max(var668.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var668 with fail = true)
+	}
+	}};
+	if (var667.fail) {var667} else {
+	parse_ws(var667)
+	}};
+	if (var666.fail) {var666} else {
+	parse_cases(var666)
+	}};
+	if (var665.fail) {var665} else {
+	{
+		// Error handling
+		var683 = // Char
+		if (getCharCodeAt(var665.input, var665.i) == 125) {
+			ni = var665.i + 1;
+			GCodeEnv(
+				var665 with i = ni,
+				maxi = max(var665.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var665 with fail = true)
+		};
+		if (var683.fail) {
+			GCodeEnv(
+				var683 with fail = false, 
+				errors = setTree(var665.errors, var665.i, "Expected \"}\"")
+			);
+		} else {
+			var683
+		}
+	}
+	}};
+	if (var664.fail) {var664} else {
+	parse_ws(var664)
+	}};
+	if (var663.fail) {var663} else {
+	GCodeEnv(var663 with output = var663.action.addMatched(var663.output, "__switch"))
+	}};
+	if (var662.fail) {var662} else {
+	GCodeEnv(var662 with output = var662.action.addVerbatim(var662.output, "binop"))
+	}};
+	if (var661.fail) {var661} else {
+	GCodeEnv(var661 with output = var661.action.addVerbatim(var661.output, "let"))
+	}}
+}
+
+parse_cases(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var684 = {
+		// seq
+		var685 = parse_defaultOrNamedCase(env);
+		if (var685.fail) {var685} else {
+		{
+			// *
+			var686 = ref \acc -> acc;
+			var686 := \acc -> {
+				senv = {
+				// seq
+				var687 = {
+				// seq
+				var688 = parse_defaultOrNamedCase(acc);
+				if (var688.fail) {var688} else {
+				GCodeEnv(var688 with output = var688.action.addMatched(var688.output, "__or"))
+				}};
+				if (var687.fail) {var687} else {
+				GCodeEnv(var687 with output = var687.action.addVerbatim(var687.output, "binop"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var686)(senv)
+				}
+			};
+			(^var686)(var685);
+		}
+		}};
+		if (var684.fail) {
+			{
+			// seq
+			var689 = {
+			// seq
+			var690 = {
+			// seq
+			var691 = GCodeEnv(env with output = env.action.addMatched(env.output, "__void"));
+			if (var691.fail) {var691} else {
+			GCodeEnv(var691 with output = var691.action.addVerbatim(var691.output, "var"))
+			}};
+			if (var690.fail) {var690} else {
+			GCodeEnv(var690 with output = var690.action.addVerbatim(var690.output, "nil"))
+			}};
+			if (var689.fail) {var689} else {
+			GCodeEnv(var689 with output = var689.action.addVerbatim(var689.output, "call"))
+			}}
+		} else var684
+	}
+
+}
+
+parse_defaultOrNamedCase(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var692 = {
+		// seq
+		var693 = {
+		// seq
+		var694 = {
+		// seq
+		var695 = {
+		// seq
+		var696 = {
+		// seq
+		var697 = {
+		// seq
+		var698 = {
+		// seq
+		var699 = {
+		// seq
+		var700 = if (strContainsAt(env.input, env.i, "default")) {
+			ni = env.i + 7;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var700.fail) {var700} else {
+		{
+			// Negate
+			var701 = parse_letterOrDigit(var700);
+			if (var701.fail) {
+				GCodeEnv(var701 with fail = false);
+			} else {
+				GCodeEnv(var700 with fail = true);
+			}
+		}
+		}};
+		if (var699.fail) {var699} else {
+		parse_ws(var699)
+		}};
+		if (var698.fail) {var698} else {
+		// Char
+		if (getCharCodeAt(var698.input, var698.i) == 58) {
+			ni = var698.i + 1;
+			GCodeEnv(
+				var698 with i = ni,
+				maxi = max(var698.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var698 with fail = true)
+		}
+		}};
+		if (var697.fail) {var697} else {
+		parse_ws(var697)
+		}};
+		if (var696.fail) {var696} else {
+		parse_exp(var696)
+		}};
+		if (var695.fail) {var695} else {
+		{
+			// Opt
+			var702 = {
+			// seq
+			var703 = // Char
+			if (getCharCodeAt(var695.input, var695.i) == 59) {
+				ni = var695.i + 1;
+				GCodeEnv(
+					var695 with i = ni,
+					maxi = max(var695.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var695 with fail = true)
+			};
+			if (var703.fail) {var703} else {
+			parse_ws(var703)
+			}};
+			if (var702.fail) {
+				var695
+			} else {
+				var702
+			}
+		}
+		}};
+		if (var694.fail) {var694} else {
+		GCodeEnv(var694 with output = var694.action.addMatched(var694.output, "__defaultcase"))
+		}};
+		if (var693.fail) {var693} else {
+		GCodeEnv(var693 with output = var693.action.addVerbatim(var693.output, "unop"))
+		}};
+		if (var692.fail) {
+			{
+			// seq
+			var704 = {
+			// seq
+			var705 = {
+			// seq
+			var706 = {
+			// seq
+			var707 = {
+			// seq
+			var708 = {
+			// seq
+			var709 = {
+			// seq
+			var710 = {
+			// seq
+			var711 = {
+			// seq
+			var712 = {
+			// seq
+			var713 = {
+			// seq
+			var714 = {
+			// seq
+			var715 = {
+			// seq
+			var716 = {
+			// seq
+			var717 = {
+			// seq
+			var718 = {
+			// seq
+			var719 = {
+			// seq
+			var720 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+			if (var720.fail) {var720} else {
+			parse_id(var720)
+			}};
+			if (var719.fail) {var719} else {
+			GCodeEnv(var719 with output = var719.action.addVerbatim(var719.output, "cons"))
+			}};
+			if (var718.fail) {var718} else {
+			// Char
+			if (getCharCodeAt(var718.input, var718.i) == 40) {
+				ni = var718.i + 1;
+				GCodeEnv(
+					var718 with i = ni,
+					maxi = max(var718.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var718 with fail = true)
+			}
+			}};
+			if (var717.fail) {var717} else {
+			parse_ws(var717)
+			}};
+			if (var716.fail) {var716} else {
+			parse_names(var716)
+			}};
+			if (var715.fail) {var715} else {
+			GCodeEnv(var715 with output = var715.action.addVerbatim(var715.output, "cons"))
+			}};
+			if (var714.fail) {var714} else {
+			// Char
+			if (getCharCodeAt(var714.input, var714.i) == 41) {
+				ni = var714.i + 1;
+				GCodeEnv(
+					var714 with i = ni,
+					maxi = max(var714.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var714 with fail = true)
+			}
+			}};
+			if (var713.fail) {var713} else {
+			parse_ws(var713)
+			}};
+			if (var712.fail) {var712} else {
+			// Char
+			if (getCharCodeAt(var712.input, var712.i) == 58) {
+				ni = var712.i + 1;
+				GCodeEnv(
+					var712 with i = ni,
+					maxi = max(var712.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var712 with fail = true)
+			}
+			}};
+			if (var711.fail) {var711} else {
+			parse_ws(var711)
+			}};
+			if (var710.fail) {var710} else {
+			parse_exp(var710)
+			}};
+			if (var709.fail) {var709} else {
+			{
+				// Opt
+				var721 = {
+				// seq
+				var722 = // Char
+				if (getCharCodeAt(var709.input, var709.i) == 59) {
+					ni = var709.i + 1;
+					GCodeEnv(
+						var709 with i = ni,
+						maxi = max(var709.maxi, ni)
+					)
+				} else {
+					GCodeEnv(var709 with fail = true)
+				};
+				if (var722.fail) {var722} else {
+				parse_ws(var722)
+				}};
+				if (var721.fail) {
+					var709
+				} else {
+					var721
+				}
+			}
+			}};
+			if (var708.fail) {var708} else {
+			GCodeEnv(var708 with output = var708.action.addVerbatim(var708.output, "cons"))
+			}};
+			if (var707.fail) {var707} else {
+			GCodeEnv(var707 with output = var707.action.addMatched(var707.output, "__ctcase"))
+			}};
+			if (var706.fail) {var706} else {
+			GCodeEnv(var706 with output = var706.action.addVerbatim(var706.output, "var"))
+			}};
+			if (var705.fail) {var705} else {
+			GCodeEnv(var705 with output = var705.action.addVerbatim(var705.output, "swap"))
+			}};
+			if (var704.fail) {var704} else {
+			GCodeEnv(var704 with output = var704.action.addVerbatim(var704.output, "call"))
+			}}
+		} else var692
+	}
+
+}
+
+parse_names(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var723 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var723.fail) {var723} else {
+	{
+		// Opt
+		var724 = {
+		// seq
+		var725 = {
+		// seq
+		var726 = parse_id(var723);
+		if (var726.fail) {var726} else {
+		GCodeEnv(var726 with output = var726.action.addVerbatim(var726.output, "cons"))
+		}};
+		if (var725.fail) {var725} else {
+		{
+			// *
+			var727 = ref \acc -> acc;
+			var727 := \acc -> {
+				senv = {
+				// seq
+				var728 = {
+				// seq
+				var729 = {
+				// seq
+				var730 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var730.fail) {var730} else {
+				parse_ws(var730)
+				}};
+				if (var729.fail) {var729} else {
+				parse_id(var729)
+				}};
+				if (var728.fail) {var728} else {
+				GCodeEnv(var728 with output = var728.action.addVerbatim(var728.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var727)(senv)
+				}
+			};
+			(^var727)(var725);
+		}
+		}};
+		if (var724.fail) {
+			var723
+		} else {
+			var724
+		}
+	}
+	}}
+}
+
+parse_type(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var731 = {
+		// seq
+		var732 = {
+		// seq
+		var733 = {
+		// seq
+		var734 = {
+		// seq
+		var735 = if (strContainsAt(env.input, env.i, "bool")) {
+			ni = env.i + 4;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var735.fail) {var735} else {
+		{
+			// Negate
+			var736 = parse_letterOrDigit(var735);
+			if (var736.fail) {
+				GCodeEnv(var736 with fail = false);
+			} else {
+				GCodeEnv(var735 with fail = true);
+			}
+		}
+		}};
+		if (var734.fail) {var734} else {
+		parse_ws(var734)
+		}};
+		if (var733.fail) {var733} else {
+		GCodeEnv(var733 with output = var733.action.addMatched(var733.output, "bool"))
+		}};
+		if (var732.fail) {var732} else {
+		GCodeEnv(var732 with output = var732.action.addVerbatim(var732.output, "type0"))
+		}};
+		if (var731.fail) {
+			{
+				// Choice
+				var737 = {
+				// seq
+				var738 = {
+				// seq
+				var739 = {
+				// seq
+				var740 = {
+				// seq
+				var741 = if (strContainsAt(env.input, env.i, "int")) {
+					ni = env.i + 3;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var741.fail) {var741} else {
+				{
+					// Negate
+					var742 = parse_letterOrDigit(var741);
+					if (var742.fail) {
+						GCodeEnv(var742 with fail = false);
+					} else {
+						GCodeEnv(var741 with fail = true);
+					}
+				}
+				}};
+				if (var740.fail) {var740} else {
+				parse_ws(var740)
+				}};
+				if (var739.fail) {var739} else {
+				GCodeEnv(var739 with output = var739.action.addMatched(var739.output, "int"))
+				}};
+				if (var738.fail) {var738} else {
+				GCodeEnv(var738 with output = var738.action.addVerbatim(var738.output, "type0"))
+				}};
+				if (var737.fail) {
+					{
+						// Choice
+						var743 = {
+						// seq
+						var744 = {
+						// seq
+						var745 = {
+						// seq
+						var746 = {
+						// seq
+						var747 = if (strContainsAt(env.input, env.i, "double")) {
+							ni = env.i + 6;
+							GCodeEnv(
+								env with i = ni,
+								maxi = max(env.maxi, ni)
+							)
+						} else {
+							GCodeEnv(env with fail = true)
+						};
+						if (var747.fail) {var747} else {
+						{
+							// Negate
+							var748 = parse_letterOrDigit(var747);
+							if (var748.fail) {
+								GCodeEnv(var748 with fail = false);
+							} else {
+								GCodeEnv(var747 with fail = true);
+							}
+						}
+						}};
+						if (var746.fail) {var746} else {
+						parse_ws(var746)
+						}};
+						if (var745.fail) {var745} else {
+						GCodeEnv(var745 with output = var745.action.addMatched(var745.output, "double"))
+						}};
+						if (var744.fail) {var744} else {
+						GCodeEnv(var744 with output = var744.action.addVerbatim(var744.output, "type0"))
+						}};
+						if (var743.fail) {
+							{
+								// Choice
+								var749 = {
+								// seq
+								var750 = {
+								// seq
+								var751 = {
+								// seq
+								var752 = {
+								// seq
+								var753 = if (strContainsAt(env.input, env.i, "string")) {
+									ni = env.i + 6;
+									GCodeEnv(
+										env with i = ni,
+										maxi = max(env.maxi, ni)
+									)
+								} else {
+									GCodeEnv(env with fail = true)
+								};
+								if (var753.fail) {var753} else {
+								{
+									// Negate
+									var754 = parse_letterOrDigit(var753);
+									if (var754.fail) {
+										GCodeEnv(var754 with fail = false);
+									} else {
+										GCodeEnv(var753 with fail = true);
+									}
+								}
+								}};
+								if (var752.fail) {var752} else {
+								parse_ws(var752)
+								}};
+								if (var751.fail) {var751} else {
+								GCodeEnv(var751 with output = var751.action.addMatched(var751.output, "string"))
+								}};
+								if (var750.fail) {var750} else {
+								GCodeEnv(var750 with output = var750.action.addVerbatim(var750.output, "type0"))
+								}};
+								if (var749.fail) {
+									{
+										// Choice
+										var755 = {
+										// seq
+										var756 = {
+										// seq
+										var757 = {
+										// seq
+										var758 = {
+										// seq
+										var759 = if (strContainsAt(env.input, env.i, "flow")) {
+											ni = env.i + 4;
+											GCodeEnv(
+												env with i = ni,
+												maxi = max(env.maxi, ni)
+											)
+										} else {
+											GCodeEnv(env with fail = true)
+										};
+										if (var759.fail) {var759} else {
+										{
+											// Negate
+											var760 = parse_letterOrDigit(var759);
+											if (var760.fail) {
+												GCodeEnv(var760 with fail = false);
+											} else {
+												GCodeEnv(var759 with fail = true);
+											}
+										}
+										}};
+										if (var758.fail) {var758} else {
+										parse_ws(var758)
+										}};
+										if (var757.fail) {var757} else {
+										GCodeEnv(var757 with output = var757.action.addMatched(var757.output, "flow"))
+										}};
+										if (var756.fail) {var756} else {
+										GCodeEnv(var756 with output = var756.action.addVerbatim(var756.output, "type0"))
+										}};
+										if (var755.fail) {
+											{
+												// Choice
+												var761 = {
+												// seq
+												var762 = {
+												// seq
+												var763 = {
+												// seq
+												var764 = {
+												// seq
+												var765 = if (strContainsAt(env.input, env.i, "void")) {
+													ni = env.i + 4;
+													GCodeEnv(
+														env with i = ni,
+														maxi = max(env.maxi, ni)
+													)
+												} else {
+													GCodeEnv(env with fail = true)
+												};
+												if (var765.fail) {var765} else {
+												{
+													// Negate
+													var766 = parse_letterOrDigit(var765);
+													if (var766.fail) {
+														GCodeEnv(var766 with fail = false);
+													} else {
+														GCodeEnv(var765 with fail = true);
+													}
+												}
+												}};
+												if (var764.fail) {var764} else {
+												parse_ws(var764)
+												}};
+												if (var763.fail) {var763} else {
+												GCodeEnv(var763 with output = var763.action.addMatched(var763.output, "void"))
+												}};
+												if (var762.fail) {var762} else {
+												GCodeEnv(var762 with output = var762.action.addVerbatim(var762.output, "type0"))
+												}};
+												if (var761.fail) {
+													{
+														// Choice
+														var767 = {
+														// seq
+														var768 = {
+														// seq
+														var769 = {
+														// seq
+														var770 = {
+														// seq
+														var771 = if (strContainsAt(env.input, env.i, "native")) {
+															ni = env.i + 6;
+															GCodeEnv(
+																env with i = ni,
+																maxi = max(env.maxi, ni)
+															)
+														} else {
+															GCodeEnv(env with fail = true)
+														};
+														if (var771.fail) {var771} else {
+														{
+															// Negate
+															var772 = parse_letterOrDigit(var771);
+															if (var772.fail) {
+																GCodeEnv(var772 with fail = false);
+															} else {
+																GCodeEnv(var771 with fail = true);
+															}
+														}
+														}};
+														if (var770.fail) {var770} else {
+														parse_ws(var770)
+														}};
+														if (var769.fail) {var769} else {
+														GCodeEnv(var769 with output = var769.action.addMatched(var769.output, "native"))
+														}};
+														if (var768.fail) {var768} else {
+														GCodeEnv(var768 with output = var768.action.addVerbatim(var768.output, "type0"))
+														}};
+														if (var767.fail) {
+															{
+																// Choice
+																var773 = {
+																// seq
+																var774 = {
+																// seq
+																var775 = {
+																// seq
+																var776 = {
+																// seq
+																var777 = {
+																// seq
+																var778 = if (strContainsAt(env.input, env.i, "ref")) {
+																	ni = env.i + 3;
+																	GCodeEnv(
+																		env with i = ni,
+																		maxi = max(env.maxi, ni)
+																	)
+																} else {
+																	GCodeEnv(env with fail = true)
+																};
+																if (var778.fail) {var778} else {
+																{
+																	// Negate
+																	var779 = parse_letterOrDigit(var778);
+																	if (var779.fail) {
+																		GCodeEnv(var779 with fail = false);
+																	} else {
+																		GCodeEnv(var778 with fail = true);
+																	}
+																}
+																}};
+																if (var777.fail) {var777} else {
+																parse_ws(var777)
+																}};
+																if (var776.fail) {var776} else {
+																parse_type(var776)
+																}};
+																if (var775.fail) {var775} else {
+																GCodeEnv(var775 with output = var775.action.addMatched(var775.output, "ref"))
+																}};
+																if (var774.fail) {var774} else {
+																GCodeEnv(var774 with output = var774.action.addVerbatim(var774.output, "type1"))
+																}};
+																if (var773.fail) {
+																	{
+																		// Choice
+																		var780 = {
+																		// seq
+																		var781 = {
+																		// seq
+																		var782 = {
+																		// seq
+																		var783 = {
+																		// seq
+																		var784 = {
+																		// seq
+																		var785 = {
+																		// seq
+																		var786 = {
+																		// seq
+																		var787 = {
+																		// seq
+																		var788 = // Char
+																		if (getCharCodeAt(env.input, env.i) == 40) {
+																			ni = env.i + 1;
+																			GCodeEnv(
+																				env with i = ni,
+																				maxi = max(env.maxi, ni)
+																			)
+																		} else {
+																			GCodeEnv(env with fail = true)
+																		};
+																		if (var788.fail) {var788} else {
+																		parse_ws(var788)
+																		}};
+																		if (var787.fail) {var787} else {
+																		parse_namedargs(var787)
+																		}};
+																		if (var786.fail) {var786} else {
+																		// Char
+																		if (getCharCodeAt(var786.input, var786.i) == 41) {
+																			ni = var786.i + 1;
+																			GCodeEnv(
+																				var786 with i = ni,
+																				maxi = max(var786.maxi, ni)
+																			)
+																		} else {
+																			GCodeEnv(var786 with fail = true)
+																		}
+																		}};
+																		if (var785.fail) {var785} else {
+																		parse_ws(var785)
+																		}};
+																		if (var784.fail) {var784} else {
+																		if (strContainsAt(var784.input, var784.i, "->")) {
+																			ni = var784.i + 2;
+																			GCodeEnv(
+																				var784 with i = ni,
+																				maxi = max(var784.maxi, ni)
+																			)
+																		} else {
+																			GCodeEnv(var784 with fail = true)
+																		}
+																		}};
+																		if (var783.fail) {var783} else {
+																		parse_ws(var783)
+																		}};
+																		if (var782.fail) {var782} else {
+																		parse_type(var782)
+																		}};
+																		if (var781.fail) {var781} else {
+																		GCodeEnv(var781 with output = var781.action.addVerbatim(var781.output, "fntype"))
+																		}};
+																		if (var780.fail) {
+																			{
+																				// Choice
+																				var789 = {
+																				// seq
+																				var790 = {
+																				// seq
+																				var791 = {
+																				// seq
+																				var792 = {
+																				// seq
+																				var793 = {
+																				// seq
+																				var794 = {
+																				// seq
+																				var795 = {
+																				// seq
+																				var796 = {
+																				// seq
+																				var797 = // Char
+																				if (getCharCodeAt(env.input, env.i) == 40) {
+																					ni = env.i + 1;
+																					GCodeEnv(
+																						env with i = ni,
+																						maxi = max(env.maxi, ni)
+																					)
+																				} else {
+																					GCodeEnv(env with fail = true)
+																				};
+																				if (var797.fail) {var797} else {
+																				parse_ws(var797)
+																				}};
+																				if (var796.fail) {var796} else {
+																				parse_types(var796)
+																				}};
+																				if (var795.fail) {var795} else {
+																				// Char
+																				if (getCharCodeAt(var795.input, var795.i) == 41) {
+																					ni = var795.i + 1;
+																					GCodeEnv(
+																						var795 with i = ni,
+																						maxi = max(var795.maxi, ni)
+																					)
+																				} else {
+																					GCodeEnv(var795 with fail = true)
+																				}
+																				}};
+																				if (var794.fail) {var794} else {
+																				parse_ws(var794)
+																				}};
+																				if (var793.fail) {var793} else {
+																				if (strContainsAt(var793.input, var793.i, "->")) {
+																					ni = var793.i + 2;
+																					GCodeEnv(
+																						var793 with i = ni,
+																						maxi = max(var793.maxi, ni)
+																					)
+																				} else {
+																					GCodeEnv(var793 with fail = true)
+																				}
+																				}};
+																				if (var792.fail) {var792} else {
+																				parse_ws(var792)
+																				}};
+																				if (var791.fail) {var791} else {
+																				parse_type(var791)
+																				}};
+																				if (var790.fail) {var790} else {
+																				GCodeEnv(var790 with output = var790.action.addVerbatim(var790.output, "fntype"))
+																				}};
+																				if (var789.fail) {
+																					{
+																						// Choice
+																						var798 = parse_typename(env);
+																						if (var798.fail) {
+																							{
+																								// Choice
+																								var799 = {
+																								// seq
+																								var800 = {
+																								// seq
+																								var801 = {
+																								// seq
+																								var802 = {
+																								// seq
+																								var803 = {
+																								// seq
+																								var804 = {
+																								// seq
+																								var805 = // Char
+																								if (getCharCodeAt(env.input, env.i) == 91) {
+																									ni = env.i + 1;
+																									GCodeEnv(
+																										env with i = ni,
+																										maxi = max(env.maxi, ni)
+																									)
+																								} else {
+																									GCodeEnv(env with fail = true)
+																								};
+																								if (var805.fail) {var805} else {
+																								parse_ws(var805)
+																								}};
+																								if (var804.fail) {var804} else {
+																								parse_type(var804)
+																								}};
+																								if (var803.fail) {var803} else {
+																								// Char
+																								if (getCharCodeAt(var803.input, var803.i) == 93) {
+																									ni = var803.i + 1;
+																									GCodeEnv(
+																										var803 with i = ni,
+																										maxi = max(var803.maxi, ni)
+																									)
+																								} else {
+																									GCodeEnv(var803 with fail = true)
+																								}
+																								}};
+																								if (var802.fail) {var802} else {
+																								parse_ws(var802)
+																								}};
+																								if (var801.fail) {var801} else {
+																								GCodeEnv(var801 with output = var801.action.addMatched(var801.output, "array"))
+																								}};
+																								if (var800.fail) {var800} else {
+																								GCodeEnv(var800 with output = var800.action.addVerbatim(var800.output, "type1"))
+																								}};
+																								if (var799.fail) {
+																									{
+																									// seq
+																									var806 = {
+																									// seq
+																									var807 = {
+																										// Unquote matched
+																										var808 = {
+																										// seq
+																										var809 = // Char
+																										if (getCharCodeAt(env.input, env.i) == 63) {
+																											ni = env.i + 1;
+																											GCodeEnv(
+																												env with i = ni,
+																												maxi = max(env.maxi, ni)
+																											)
+																										} else {
+																											GCodeEnv(env with fail = true)
+																										};
+																										if (var809.fail) {var809} else {
+																										{
+																											// *
+																											var810 = ref \acc -> acc;
+																											var810 := \acc -> {
+																												senv = // Char
+																												if (getCharCodeAt(acc.input, acc.i) == 63) {
+																													ni = acc.i + 1;
+																													GCodeEnv(
+																														acc with i = ni,
+																														maxi = max(acc.maxi, ni)
+																													)
+																												} else {
+																													GCodeEnv(acc with fail = true)
+																												};
+																												if (senv.fail) {
+																													acc
+																												} else {
+																													(^var810)(senv)
+																												}
+																											};
+																											(^var810)(var809);
+																										}
+																										}};
+																										if (var808.fail) {
+																											var808;
+																										} else {
+																											starti = env.i;
+																											matched = substring(env.input, starti, var808.i - starti);
+																											GCodeEnv(var808 with output = env.action.addMatched(var808.output, matched))
+																										}
+																									};
+																									if (var807.fail) {var807} else {
+																									parse_ws(var807)
+																									}};
+																									if (var806.fail) {var806} else {
+																									GCodeEnv(var806 with output = var806.action.addVerbatim(var806.output, "type0"))
+																									}}
+																								} else var799
+																							}
+
+																						} else var798
+																					}
+
+																				} else var789
+																			}
+
+																		} else var780
+																	}
+
+																} else var773
+															}
+
+														} else var767
+													}
+
+												} else var761
+											}
+
+										} else var755
+									}
+
+								} else var749
+							}
+
+						} else var743
+					}
+
+				} else var737
+			}
+
+		} else var731
+	}
+
+}
+
+parse_typename(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var811 = {
+	// seq
+	var812 = {
+	// seq
+	var813 = parse_id(env);
+	if (var813.fail) {var813} else {
+	GCodeEnv(var813 with output = var813.action.addVerbatim(var813.output, "var"))
+	}};
+	if (var812.fail) {var812} else {
+	parse_typars(var812)
+	}};
+	if (var811.fail) {var811} else {
+	GCodeEnv(var811 with output = var811.action.addVerbatim(var811.output, "call"))
+	}}
+}
+
+parse_typars(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var814 = {
+		// seq
+		var815 = {
+		// seq
+		var816 = {
+		// seq
+		var817 = {
+		// seq
+		var818 = // Char
+		if (getCharCodeAt(env.input, env.i) == 60) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var818.fail) {var818} else {
+		parse_ws(var818)
+		}};
+		if (var817.fail) {var817} else {
+		parse_types(var817)
+		}};
+		if (var816.fail) {var816} else {
+		// Char
+		if (getCharCodeAt(var816.input, var816.i) == 62) {
+			ni = var816.i + 1;
+			GCodeEnv(
+				var816 with i = ni,
+				maxi = max(var816.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var816 with fail = true)
+		}
+		}};
+		if (var815.fail) {var815} else {
+		parse_ws(var815)
+		}};
+		if (var814.fail) {
+			GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"))
+		} else var814
+	}
+
+}
+
+parse_types(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var819 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var819.fail) {var819} else {
+	{
+		// Opt
+		var820 = {
+		// seq
+		var821 = {
+		// seq
+		var822 = {
+		// seq
+		var823 = parse_type(var819);
+		if (var823.fail) {var823} else {
+		GCodeEnv(var823 with output = var823.action.addVerbatim(var823.output, "cons"))
+		}};
+		if (var822.fail) {var822} else {
+		{
+			// *
+			var824 = ref \acc -> acc;
+			var824 := \acc -> {
+				senv = {
+				// seq
+				var825 = {
+				// seq
+				var826 = {
+				// seq
+				var827 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var827.fail) {var827} else {
+				parse_ws(var827)
+				}};
+				if (var826.fail) {var826} else {
+				parse_type(var826)
+				}};
+				if (var825.fail) {var825} else {
+				GCodeEnv(var825 with output = var825.action.addVerbatim(var825.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var824)(senv)
+				}
+			};
+			(^var824)(var822);
+		}
+		}};
+		if (var821.fail) {var821} else {
+		{
+			// Opt
+			var828 = {
+			// seq
+			var829 = // Char
+			if (getCharCodeAt(var821.input, var821.i) == 44) {
+				ni = var821.i + 1;
+				GCodeEnv(
+					var821 with i = ni,
+					maxi = max(var821.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var821 with fail = true)
+			};
+			if (var829.fail) {var829} else {
+			parse_ws(var829)
+			}};
+			if (var828.fail) {
+				var821
+			} else {
+				var828
+			}
+		}
+		}};
+		if (var820.fail) {
+			var819
+		} else {
+			var820
+		}
+	}
+	}}
+}
+
+parse_namedargs(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var830 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var830.fail) {var830} else {
+	{
+		// Opt
+		var831 = {
+		// seq
+		var832 = {
+		// seq
+		var833 = {
+		// seq
+		var834 = parse_namedarg(var830);
+		if (var834.fail) {var834} else {
+		GCodeEnv(var834 with output = var834.action.addVerbatim(var834.output, "cons"))
+		}};
+		if (var833.fail) {var833} else {
+		{
+			// *
+			var835 = ref \acc -> acc;
+			var835 := \acc -> {
+				senv = {
+				// seq
+				var836 = {
+				// seq
+				var837 = {
+				// seq
+				var838 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var838.fail) {var838} else {
+				parse_ws(var838)
+				}};
+				if (var837.fail) {var837} else {
+				parse_namedarg(var837)
+				}};
+				if (var836.fail) {var836} else {
+				GCodeEnv(var836 with output = var836.action.addVerbatim(var836.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var835)(senv)
+				}
+			};
+			(^var835)(var833);
+		}
+		}};
+		if (var832.fail) {var832} else {
+		{
+			// Opt
+			var839 = {
+			// seq
+			var840 = // Char
+			if (getCharCodeAt(var832.input, var832.i) == 44) {
+				ni = var832.i + 1;
+				GCodeEnv(
+					var832 with i = ni,
+					maxi = max(var832.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var832 with fail = true)
+			};
+			if (var840.fail) {var840} else {
+			parse_ws(var840)
+			}};
+			if (var839.fail) {
+				var832
+			} else {
+				var839
+			}
+		}
+		}};
+		if (var831.fail) {
+			var830
+		} else {
+			var831
+		}
+	}
+	}}
+}
+
+parse_namedarg(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var841 = {
+	// seq
+	var842 = {
+	// seq
+	var843 = {
+	// seq
+	var844 = parse_id(env);
+	if (var844.fail) {var844} else {
+	GCodeEnv(var844 with output = var844.action.addVerbatim(var844.output, "drop"))
+	}};
+	if (var843.fail) {var843} else {
+	// Char
+	if (getCharCodeAt(var843.input, var843.i) == 58) {
+		ni = var843.i + 1;
+		GCodeEnv(
+			var843 with i = ni,
+			maxi = max(var843.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var843 with fail = true)
+	}
+	}};
+	if (var842.fail) {var842} else {
+	parse_ws(var842)
+	}};
+	if (var841.fail) {var841} else {
+	parse_type(var841)
+	}}
+}
+
+parse_lambdaargs(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var845 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var845.fail) {var845} else {
+	{
+		// Opt
+		var846 = {
+		// seq
+		var847 = {
+		// seq
+		var848 = {
+		// seq
+		var849 = parse_funarg(var845);
+		if (var849.fail) {var849} else {
+		GCodeEnv(var849 with output = var849.action.addVerbatim(var849.output, "cons"))
+		}};
+		if (var848.fail) {var848} else {
+		{
+			// *
+			var850 = ref \acc -> acc;
+			var850 := \acc -> {
+				senv = {
+				// seq
+				var851 = {
+				// seq
+				var852 = {
+				// seq
+				var853 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var853.fail) {var853} else {
+				parse_ws(var853)
+				}};
+				if (var852.fail) {var852} else {
+				parse_funarg(var852)
+				}};
+				if (var851.fail) {var851} else {
+				GCodeEnv(var851 with output = var851.action.addVerbatim(var851.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var850)(senv)
+				}
+			};
+			(^var850)(var848);
+		}
+		}};
+		if (var847.fail) {var847} else {
+		{
+			// Opt
+			var854 = {
+			// seq
+			var855 = // Char
+			if (getCharCodeAt(var847.input, var847.i) == 44) {
+				ni = var847.i + 1;
+				GCodeEnv(
+					var847 with i = ni,
+					maxi = max(var847.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var847 with fail = true)
+			};
+			if (var855.fail) {var855} else {
+			parse_ws(var855)
+			}};
+			if (var854.fail) {
+				var847
+			} else {
+				var854
+			}
+		}
+		}};
+		if (var846.fail) {
+			var845
+		} else {
+			var846
+		}
+	}
+	}}
+}
+
+parse_exps(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var856 = GCodeEnv(env with output = env.action.addVerbatim(env.output, "nil"));
+	if (var856.fail) {var856} else {
+	{
+		// Opt
+		var857 = {
+		// seq
+		var858 = {
+		// seq
+		var859 = {
+		// seq
+		var860 = parse_exp(var856);
+		if (var860.fail) {var860} else {
+		GCodeEnv(var860 with output = var860.action.addVerbatim(var860.output, "cons"))
+		}};
+		if (var859.fail) {var859} else {
+		{
+			// *
+			var861 = ref \acc -> acc;
+			var861 := \acc -> {
+				senv = {
+				// seq
+				var862 = {
+				// seq
+				var863 = {
+				// seq
+				var864 = // Char
+				if (getCharCodeAt(acc.input, acc.i) == 44) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (var864.fail) {var864} else {
+				parse_ws(var864)
+				}};
+				if (var863.fail) {var863} else {
+				parse_exp(var863)
+				}};
+				if (var862.fail) {var862} else {
+				GCodeEnv(var862 with output = var862.action.addVerbatim(var862.output, "cons"))
+				}};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var861)(senv)
+				}
+			};
+			(^var861)(var859);
+		}
+		}};
+		if (var858.fail) {var858} else {
+		{
+			// Opt
+			var865 = {
+			// seq
+			var866 = // Char
+			if (getCharCodeAt(var858.input, var858.i) == 44) {
+				ni = var858.i + 1;
+				GCodeEnv(
+					var858 with i = ni,
+					maxi = max(var858.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var858 with fail = true)
+			};
+			if (var866.fail) {var866} else {
+			parse_ws(var866)
+			}};
+			if (var865.fail) {
+				var858
+			} else {
+				var865
+			}
+		}
+		}};
+		if (var857.fail) {
+			var856
+		} else {
+			var857
+		}
+	}
+	}}
+}
+
+parse_string(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var867 = {
+		// seq
+		var868 = {
+		// seq
+		var869 = {
+		// seq
+		var870 = {
+		// seq
+		var871 = {
+		// seq
+		var872 = {
+		// seq
+		var873 = // Char
+		if (getCharCodeAt(env.input, env.i) == 34) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var873.fail) {var873} else {
+		if (strContainsAt(var873.input, var873.i, "#inc")) {
+			ni = var873.i + 4;
+			GCodeEnv(
+				var873 with i = ni,
+				maxi = max(var873.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var873 with fail = true)
+		}
+		}};
+		if (var872.fail) {var872} else {
+		if (strContainsAt(var872.input, var872.i, "lude")) {
+			ni = var872.i + 4;
+			GCodeEnv(
+				var872 with i = ni,
+				maxi = max(var872.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var872 with fail = true)
+		}
+		}};
+		if (var871.fail) {var871} else {
+		parse_s(var871)
+		}};
+		if (var870.fail) {var870} else {
+		parse_path(var870)
+		}};
+		if (var869.fail) {var869} else {
+		// Char
+		if (getCharCodeAt(var869.input, var869.i) == 34) {
+			ni = var869.i + 1;
+			GCodeEnv(
+				var869 with i = ni,
+				maxi = max(var869.maxi, ni)
+			)
+		} else {
+			GCodeEnv(var869 with fail = true)
+		}
+		}};
+		if (var868.fail) {var868} else {
+		parse_ws(var868)
+		}};
+		if (var867.fail) {
+			parse_singlestring(env)
+		} else var867
+	}
+
+}
+
+parse_singlestring(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var874 = {
+	// seq
+	var875 = {
+	// seq
+	var876 = // Char
+	if (getCharCodeAt(env.input, env.i) == 34) {
+		ni = env.i + 1;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	};
+	if (var876.fail) {var876} else {
+	{
+		// Unquote matched
+		var877 = {
+			// *
+			var878 = ref \acc -> acc;
+			var878 := \acc -> {
+				senv = parse_onechar_(acc);
+				if (senv.fail) {
+					acc
+				} else {
+					(^var878)(senv)
+				}
+			};
+			(^var878)(var876);
+		};
+		if (var877.fail) {
+			var877;
+		} else {
+			starti = var876.i;
+			matched = substring(var876.input, starti, var877.i - starti);
+			GCodeEnv(var877 with output = var876.action.addMatched(var877.output, matched))
+		}
+	}
+	}};
+	if (var875.fail) {var875} else {
+	// Char
+	if (getCharCodeAt(var875.input, var875.i) == 34) {
+		ni = var875.i + 1;
+		GCodeEnv(
+			var875 with i = ni,
+			maxi = max(var875.maxi, ni)
+		)
+	} else {
+		GCodeEnv(var875 with fail = true)
+	}
+	}};
+	if (var874.fail) {var874} else {
+	parse_ws(var874)
+	}}
+}
+
+parse_onechar_(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var879 = {
+		// seq
+		var880 = parse_backslash(env);
+		if (var880.fail) {var880} else {
+		{
+			// Choice
+			var881 = {
+			// seq
+			var882 = {
+			// seq
+			var883 = {
+			// seq
+			var884 = {
+			// seq
+			var885 = // Char
+			if (getCharCodeAt(var880.input, var880.i) == 117) {
+				ni = var880.i + 1;
+				GCodeEnv(
+					var880 with i = ni,
+					maxi = max(var880.maxi, ni)
+				)
+			} else {
+				GCodeEnv(var880 with fail = true)
+			};
+			if (var885.fail) {var885} else {
+			parse_hexdigit(var885)
+			}};
+			if (var884.fail) {var884} else {
+			parse_hexdigit(var884)
+			}};
+			if (var883.fail) {var883} else {
+			parse_hexdigit(var883)
+			}};
+			if (var882.fail) {var882} else {
+			parse_hexdigit(var882)
+			}};
+			if (var881.fail) {
+				{
+					// Choice
+					var886 = {
+					// seq
+					var887 = {
+					// seq
+					var888 = {
+					// seq
+					var889 = {
+					// seq
+					var890 = // Char
+					if (getCharCodeAt(var880.input, var880.i) == 88) {
+						ni = var880.i + 1;
+						GCodeEnv(
+							var880 with i = ni,
+							maxi = max(var880.maxi, ni)
+						)
+					} else {
+						GCodeEnv(var880 with fail = true)
+					};
+					if (var890.fail) {var890} else {
+					parse_hexdigit(var890)
+					}};
+					if (var889.fail) {var889} else {
+					parse_hexdigit(var889)
+					}};
+					if (var888.fail) {var888} else {
+					parse_hexdigit(var888)
+					}};
+					if (var887.fail) {var887} else {
+					parse_hexdigit(var887)
+					}};
+					if (var886.fail) {
+						{
+							// Choice
+							var891 = {
+							// seq
+							var892 = {
+							// seq
+							var893 = // Char
+							if (getCharCodeAt(var880.input, var880.i) == 120) {
+								ni = var880.i + 1;
+								GCodeEnv(
+									var880 with i = ni,
+									maxi = max(var880.maxi, ni)
+								)
+							} else {
+								GCodeEnv(var880 with fail = true)
+							};
+							if (var893.fail) {var893} else {
+							parse_hexdigit(var893)
+							}};
+							if (var892.fail) {var892} else {
+							parse_hexdigit(var892)
+							}};
+							if (var891.fail) {
+								parse_escapedchar_(var880)
+							} else var891
+						}
+
+					} else var886
+				}
+
+			} else var881
+		}
+
+		}};
+		if (var879.fail) {
+			{
+			// seq
+			var894 = {
+			// seq
+			var895 = {
+				// Negate
+				var896 = // Char
+				if (getCharCodeAt(env.input, env.i) == 34) {
+					ni = env.i + 1;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var896.fail) {
+					GCodeEnv(var896 with fail = false);
+				} else {
+					GCodeEnv(env with fail = true);
+				}
+			};
+			if (var895.fail) {var895} else {
+			{
+				// Negate
+				var897 = parse_backslash(var895);
+				if (var897.fail) {
+					GCodeEnv(var897 with fail = false);
+				} else {
+					GCodeEnv(var895 with fail = true);
+				}
+			}
+			}};
+			if (var894.fail) {var894} else {
+			parse_anychar(var894)
+			}}
+		} else var879
+	}
+
+}
+
+parse_hexdigit(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var898 = // Range
+		if ({var899 = getCharCodeAt(env.input, env.i);48 <= var899 && var899 <= 57}) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var898.fail) {
+			{
+				// Choice
+				var900 = // Range
+				if ({var901 = getCharCodeAt(env.input, env.i);97 <= var901 && var901 <= 102}) {
+					ni = env.i + 1;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var900.fail) {
+					// Range
+					if ({var902 = getCharCodeAt(env.input, env.i);65 <= var902 && var902 <= 70}) {
+						ni = env.i + 1;
+						GCodeEnv(
+							env with i = ni,
+							maxi = max(env.maxi, ni)
+						)
+					} else {
+						GCodeEnv(env with fail = true)
+					}
+				} else var900
+			}
+
+		} else var898
+	}
+
+}
+
+parse_escapedchar_(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var903 = parse_backslash(env);
+		if (var903.fail) {
+			{
+				// Choice
+				var904 = // Char
+				if (getCharCodeAt(env.input, env.i) == 34) {
+					ni = env.i + 1;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var904.fail) {
+					{
+						// Choice
+						var905 = // Char
+						if (getCharCodeAt(env.input, env.i) == 110) {
+							ni = env.i + 1;
+							GCodeEnv(
+								env with i = ni,
+								maxi = max(env.maxi, ni)
+							)
+						} else {
+							GCodeEnv(env with fail = true)
+						};
+						if (var905.fail) {
+							{
+								// Choice
+								var906 = // Char
+								if (getCharCodeAt(env.input, env.i) == 116) {
+									ni = env.i + 1;
+									GCodeEnv(
+										env with i = ni,
+										maxi = max(env.maxi, ni)
+									)
+								} else {
+									GCodeEnv(env with fail = true)
+								};
+								if (var906.fail) {
+									// Char
+									if (getCharCodeAt(env.input, env.i) == 114) {
+										ni = env.i + 1;
+										GCodeEnv(
+											env with i = ni,
+											maxi = max(env.maxi, ni)
+										)
+									} else {
+										GCodeEnv(env with fail = true)
+									}
+								} else var906
+							}
+
+						} else var905
+					}
+
+				} else var904
+			}
+
+		} else var903
+	}
+
+}
+
+parse_anychar(env : GCodeEnv) -> GCodeEnv {
+	// Range
+	if ({var907 = getCharCodeAt(env.input, env.i);0 <= var907 && var907 <= 65535}) {
+		ni = env.i + 1;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	}
+}
+
+parse_id(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var908 = {
+		// Unquote matched
+		var909 = parse_bid(env);
+		if (var909.fail) {
+			var909;
+		} else {
+			starti = env.i;
+			matched = substring(env.input, starti, var909.i - starti);
+			GCodeEnv(var909 with output = env.action.addMatched(var909.output, matched))
+		}
+	};
+	if (var908.fail) {var908} else {
+	parse_ws(var908)
+	}}
+}
+
+parse_bid(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var910 = {
+		// Choice
+		var911 = // Range
+		if ({var912 = getCharCodeAt(env.input, env.i);97 <= var912 && var912 <= 122}) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var911.fail) {
+			{
+				// Choice
+				var913 = // Range
+				if ({var914 = getCharCodeAt(env.input, env.i);65 <= var914 && var914 <= 90}) {
+					ni = env.i + 1;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var913.fail) {
+					// Char
+					if (getCharCodeAt(env.input, env.i) == 95) {
+						ni = env.i + 1;
+						GCodeEnv(
+							env with i = ni,
+							maxi = max(env.maxi, ni)
+						)
+					} else {
+						GCodeEnv(env with fail = true)
+					}
+				} else var913
+			}
+
+		} else var911
+	}
+	;
+	if (var910.fail) {var910} else {
+	{
+		// *
+		var915 = ref \acc -> acc;
+		var915 := \acc -> {
+			senv = parse_letterOrDigit(acc);
+			if (senv.fail) {
+				acc
+			} else {
+				(^var915)(senv)
+			}
+		};
+		(^var915)(var910);
+	}
+	}}
+}
+
+parse_letterOrDigit(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var916 = // Range
+		if ({var917 = getCharCodeAt(env.input, env.i);97 <= var917 && var917 <= 122}) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var916.fail) {
+			{
+				// Choice
+				var918 = // Range
+				if ({var919 = getCharCodeAt(env.input, env.i);65 <= var919 && var919 <= 90}) {
+					ni = env.i + 1;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var918.fail) {
+					{
+						// Choice
+						var920 = // Char
+						if (getCharCodeAt(env.input, env.i) == 95) {
+							ni = env.i + 1;
+							GCodeEnv(
+								env with i = ni,
+								maxi = max(env.maxi, ni)
+							)
+						} else {
+							GCodeEnv(env with fail = true)
+						};
+						if (var920.fail) {
+							// Range
+							if ({var921 = getCharCodeAt(env.input, env.i);48 <= var921 && var921 <= 57}) {
+								ni = env.i + 1;
+								GCodeEnv(
+									env with i = ni,
+									maxi = max(env.maxi, ni)
+								)
+							} else {
+								GCodeEnv(env with fail = true)
+							}
+						} else var920
+					}
+
+				} else var918
+			}
+
+		} else var916
+	}
+
+}
+
+parse_int(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Unquote matched
+		var922 = {
+		// seq
+		var923 = // Range
+		if ({var924 = getCharCodeAt(env.input, env.i);48 <= var924 && var924 <= 57}) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var923.fail) {var923} else {
+		{
+			// *
+			var925 = ref \acc -> acc;
+			var925 := \acc -> {
+				senv = // Range
+				if ({var926 = getCharCodeAt(acc.input, acc.i);48 <= var926 && var926 <= 57}) {
+					ni = acc.i + 1;
+					GCodeEnv(
+						acc with i = ni,
+						maxi = max(acc.maxi, ni)
+					)
+				} else {
+					GCodeEnv(acc with fail = true)
+				};
+				if (senv.fail) {
+					acc
+				} else {
+					(^var925)(senv)
+				}
+			};
+			(^var925)(var923);
+		}
+		}};
+		if (var922.fail) {
+			var922;
+		} else {
+			starti = env.i;
+			matched = substring(env.input, starti, var922.i - starti);
+			GCodeEnv(var922 with output = env.action.addMatched(var922.output, matched))
+		}
+	}
+}
+
+parse_backslash(env : GCodeEnv) -> GCodeEnv {
+	// Char
+	if (getCharCodeAt(env.input, env.i) == 92) {
+		ni = env.i + 1;
+		GCodeEnv(
+			env with i = ni,
+			maxi = max(env.maxi, ni)
+		)
+	} else {
+		GCodeEnv(env with fail = true)
+	}
+}
+
+parse_ws(env : GCodeEnv) -> GCodeEnv {
+	{
+		// *
+		var927 = ref \acc -> acc;
+		var927 := \acc -> {
+			senv = parse_cs(acc);
+			if (senv.fail) {
+				acc
+			} else {
+				(^var927)(senv)
+			}
+		};
+		(^var927)(env);
+	}
+}
+
+parse_s(env : GCodeEnv) -> GCodeEnv {
+	{
+	// seq
+	var928 = parse_cs(env);
+	if (var928.fail) {var928} else {
+	{
+		// *
+		var929 = ref \acc -> acc;
+		var929 := \acc -> {
+			senv = parse_cs(acc);
+			if (senv.fail) {
+				acc
+			} else {
+				(^var929)(senv)
+			}
+		};
+		(^var929)(var928);
+	}
+	}}
+}
+
+parse_cs(env : GCodeEnv) -> GCodeEnv {
+	{
+		// Choice
+		var930 = // Char
+		if (getCharCodeAt(env.input, env.i) == 32) {
+			ni = env.i + 1;
+			GCodeEnv(
+				env with i = ni,
+				maxi = max(env.maxi, ni)
+			)
+		} else {
+			GCodeEnv(env with fail = true)
+		};
+		if (var930.fail) {
+			{
+				// Choice
+				var931 = // Char
+				if (getCharCodeAt(env.input, env.i) == 9) {
+					ni = env.i + 1;
+					GCodeEnv(
+						env with i = ni,
+						maxi = max(env.maxi, ni)
+					)
+				} else {
+					GCodeEnv(env with fail = true)
+				};
+				if (var931.fail) {
+					{
+						// Choice
+						var932 = // Char
+						if (getCharCodeAt(env.input, env.i) == 10) {
+							ni = env.i + 1;
+							GCodeEnv(
+								env with i = ni,
+								maxi = max(env.maxi, ni)
+							)
+						} else {
+							GCodeEnv(env with fail = true)
+						};
+						if (var932.fail) {
+							{
+								// Choice
+								var933 = {
+								// seq
+								var934 = {
+								// seq
+								var935 = if (strContainsAt(env.input, env.i, "//")) {
+									ni = env.i + 2;
+									GCodeEnv(
+										env with i = ni,
+										maxi = max(env.maxi, ni)
+									)
+								} else {
+									GCodeEnv(env with fail = true)
+								};
+								if (var935.fail) {var935} else {
+								{
+									// *
+									var936 = ref \acc -> acc;
+									var936 := \acc -> {
+										senv = {
+										// seq
+										var937 = {
+											// Negate
+											var938 = // Char
+											if (getCharCodeAt(acc.input, acc.i) == 10) {
+												ni = acc.i + 1;
+												GCodeEnv(
+													acc with i = ni,
+													maxi = max(acc.maxi, ni)
+												)
+											} else {
+												GCodeEnv(acc with fail = true)
+											};
+											if (var938.fail) {
+												GCodeEnv(var938 with fail = false);
+											} else {
+												GCodeEnv(acc with fail = true);
+											}
+										};
+										if (var937.fail) {var937} else {
+										parse_anychar(var937)
+										}};
+										if (senv.fail) {
+											acc
+										} else {
+											(^var936)(senv)
+										}
+									};
+									(^var936)(var935);
+								}
+								}};
+								if (var934.fail) {var934} else {
+								// Char
+								if (getCharCodeAt(var934.input, var934.i) == 10) {
+									ni = var934.i + 1;
+									GCodeEnv(
+										var934 with i = ni,
+										maxi = max(var934.maxi, ni)
+									)
+								} else {
+									GCodeEnv(var934 with fail = true)
+								}
+								}};
+								if (var933.fail) {
+									{
+									// seq
+									var939 = {
+									// seq
+									var940 = if (strContainsAt(env.input, env.i, "/*")) {
+										ni = env.i + 2;
+										GCodeEnv(
+											env with i = ni,
+											maxi = max(env.maxi, ni)
+										)
+									} else {
+										GCodeEnv(env with fail = true)
+									};
+									if (var940.fail) {var940} else {
+									{
+										// *
+										var941 = ref \acc -> acc;
+										var941 := \acc -> {
+											senv = {
+											// seq
+											var942 = {
+												// Negate
+												var943 = if (strContainsAt(acc.input, acc.i, "*/")) {
+													ni = acc.i + 2;
+													GCodeEnv(
+														acc with i = ni,
+														maxi = max(acc.maxi, ni)
+													)
+												} else {
+													GCodeEnv(acc with fail = true)
+												};
+												if (var943.fail) {
+													GCodeEnv(var943 with fail = false);
+												} else {
+													GCodeEnv(acc with fail = true);
+												}
+											};
+											if (var942.fail) {var942} else {
+											parse_anychar(var942)
+											}};
+											if (senv.fail) {
+												acc
+											} else {
+												(^var941)(senv)
+											}
+										};
+										(^var941)(var940);
+									}
+									}};
+									if (var939.fail) {var939} else {
+									if (strContainsAt(var939.input, var939.i, "*/")) {
+										ni = var939.i + 2;
+										GCodeEnv(
+											var939 with i = ni,
+											maxi = max(var939.maxi, ni)
+										)
+									} else {
+										GCodeEnv(var939 with fail = true)
+									}
+									}}
+								} else var933
+							}
+
+						} else var932
+					}
+
+				} else var931
+			}
+
+		} else var930
+	}
+
+}
+
