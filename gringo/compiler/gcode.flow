@@ -19,6 +19,7 @@ The flow-parser takes a SyntaxParseAcc and returns the result.
 makeGTermParser(g : GTerm) -> string {
 	main = mainRule(g);
 	blueprint("
+		// Produced by  flowcpp gringo/gringo.flow -- file=<file>.gringo compile=1
 		import gringo/gringo_env;
 		import string;
 		
@@ -40,10 +41,6 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 		var := ^var + 1;
 		"var" + i2s(^var)
 	}
-	todo = \ -> {
-		println("Can not compile " + gterm2summary(g));
-		"";
-	}
 	switch (g) {
 		GRule(id, term, body): {
 			blueprint("
@@ -62,7 +59,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 				]
 			)
 		}
-		GPrecedence(left, right): todo();
+		GPrecedence(left, right): "ERROR";
 		GChoice(left, right): {
 			blueprint("
 				{
@@ -164,9 +161,9 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 					blueprint("
 						{
 							// Negative error
-							%var% = %term%;
+							%var% = %nterm%;
 							if (%var%.fail) {
-								GringoEnv(%var% with fail = false);
+								GringoEnv(%var% with fail = true);
 							} else {
 								GringoEnv(
 									%var% with errors = setTree(%env%.errors, %env%.i, %error%)
@@ -175,8 +172,8 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 						}", [
 							"env", envname,
 							"var", newid(),
-							"term", compileGTerm(term, var, envname),
-							"error", "Superfluous " + makeGExplanation(nterm)
+							"nterm", compileGTerm(nterm, var, envname),
+							"error", toString("Superfluous " + makeGExplanation(nterm))
 						]
 					);
 				}
@@ -197,14 +194,13 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 							"env", envname,
 							"var", newid(),
 							"term", compileGTerm(term, var, envname),
-							"error", "Expected " + makeGExplanation(term)
+							"error", toString("Expected " + makeGExplanation(term))
 						]
 					);
 				}
 			}
-			compileGTerm(term, var, envname)
 		}
-		GLower(term): todo();
+		GLower(term): compileGTerm(term, var, envname);
 		GUnquote(term): {
 			def = \ -> {
 				blueprint("
