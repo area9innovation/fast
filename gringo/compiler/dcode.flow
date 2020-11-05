@@ -3,13 +3,16 @@ import gringo/utils;
 import text/blueprint;
 
 export {
+	/*
+	TODO: This works well, but we should do some
+	intermediate representation so we can optimize 
+	restore/discard pairs
+	*/
 	makeDExpParser(g : GTerm, file : string) -> string;
 }
 
-
 makeDExpParser(g : GTerm, file : string) -> string {
 	dexp = compileDExp(g);
-	println(dexp);
 
 	main = mainRule(g);
 	blueprint("
@@ -29,8 +32,6 @@ makeDExpParser(g : GTerm, file : string) -> string {
 		]
 	);
 }
-
-
 
 compileDExp(t : GTerm) -> string {
 	switch (t) {
