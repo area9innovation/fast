@@ -1,6 +1,7 @@
 import gringo/gringo_ast;
 import gringo/gringo_pretty;
 import gringo/utils;
+import gringo/compiler/dcode;
 import text/blueprint;
 
 export {
@@ -34,25 +35,28 @@ Changes required:
 */
 
 makeGTermParser(g : GTerm, file : string) -> string {
-	main = mainRule(g);
-	blueprint("
-		// Produced by  flowcpp gringo/gringo.flow -- file=%file%.gringo compile=1
-		import gringo/compiler/gcode_env;
-		import string;
-		
-		export {
-			parse_%main%(GCodeEnv) -> GCodeEnv;
-		}
+	if (true) {
+		makeDExpParser(g, file);
+	} else {
+		main = mainRule(g);
+		blueprint("
+			// Produced by  flowcpp gringo/gringo.flow -- file=%file%.gringo compile=1
+			import gringo/compiler/gcode_env;
+			import string;
+			
+			export {
+				parse_%main%(GCodeEnv) -> GCodeEnv;
+			}
 
-		%term%"
-		, [
-			"file", file,
-			"term", compileGTerm(g, ref 0, "env"),
-			"main", main
-		]
-	);
+			%term%"
+			, [
+				"file", file,
+				"term", compileGTerm(g, ref 0, "env"),
+				"main", main
+			]
+		);
+	}
 }
-
 
 compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 	newid = \ -> {
@@ -159,7 +163,7 @@ compileGTerm(g : GTerm, var : ref int, envname : string) -> string {
 					// Negate
 					%var% = %term%;
 					if (%var%.fail) {
-						GCodeEnv(%var% with fail = false);
+						%env%
 					} else {
 						GCodeEnv(%env% with fail = true);
 					}

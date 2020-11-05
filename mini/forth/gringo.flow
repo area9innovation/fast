@@ -27,7 +27,11 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 		start = timestamp();
 		println("Parsing " + headList(db.fileStack, ""));
 
-		genv : GringoEnv<MiniDb> = if (false) gringoParse(env, gterm) else GCodeEnv2GringoEnv(parse_flow(GringoEnv2GCodeEnv(env)));
+		genv : GringoEnv<MiniDb> = if (false) gringoParse(env, gterm) else {
+			acc = GringoEnv2DParseAcc(env);
+			success = parse_flow(acc);
+			DParseAcc2GringoEnv(acc);
+		}
 
 		println("Took " + d2st((timestamp() - start) / 1000.0, 2) + "s");
 

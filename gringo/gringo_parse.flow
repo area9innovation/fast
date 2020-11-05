@@ -93,7 +93,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		GNegate(term): {
 			senv = gringoParse(env, term);
 			if (senv.fail) {
-				GringoEnv(senv with fail = false);
+				env;
 			} else {
 				GringoEnv(env with fail = true);
 			}
