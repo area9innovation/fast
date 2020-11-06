@@ -55,7 +55,7 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 	var = \ -> {
 		BGlobalVar(declid, b, bexpType(b));
-	}
+	};
 	switch (b) {
 		BValue(): var();
 		BVar(__, __): var();
@@ -121,7 +121,7 @@ bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailca
 							val = args[i];
 							def = \ -> {
 								Pair(arrayPush(accnames, fnarg), arrayPush(accvals, val));
-							}
+							};
 							switch (val) {
 								BVar(aname, __): {
 									if (aname == fnarg) {

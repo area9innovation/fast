@@ -15,7 +15,7 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 	error = \ -> {
 		println("This is not a type: " + toString(e));
 		miniTypeVoid;
-	}
+	};
 	switch (e) {
 		MiniCall(fn, args, tv): {
 			switch (fn) {
@@ -82,7 +82,7 @@ miniType2Exp(t : MiniType) -> MiniExp {
 		println("Cannot convert type to exp:");
 		println(t);
 		ty("flow",[]);
-	}
+	};
 	switch (t) {
 		MiniTypeInt(bits): {
 			if (bits == 0) ty("void",[])

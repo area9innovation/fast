@@ -29,7 +29,7 @@ gterm2string(g : GTerm) -> string {
 				if (code < 0x20 || code > 0xff) {
 					"0x" + formatHex(code)
 				} else fromCharCode(code)
-			}
+			};
 			"'" + c(lower) + "'-'" + c(upper) + "'"
 		}
 		GVar(id): id;

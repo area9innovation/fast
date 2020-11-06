@@ -20,7 +20,7 @@ shouldReadFile(cache : MiniFileCache, file : string) -> bool {
 		entry = getMiniFileEntry(file);
 		cache.files := setTree(^(cache.files), file, entry);
 		true;
-	}
+	};
 
 	mentry = lookupTree(^(cache.files), file);
 	mentry ?? {

@@ -78,7 +78,7 @@ replaceLeftRecursion(find : string, replaceLeft : GTerm, replaceRest : GTerm, so
 				}
 				// OK, we use the other replacement for the rest
 				default: replaceLeftRecursion(find, replaceRest, replaceRest, isSomething(left), somethingFollows, right);
-			}
+			};
 			GSeq(
 				leftRep,
 				rightRep

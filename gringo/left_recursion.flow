@@ -63,7 +63,7 @@ rewriteLeftRecursion(g : GTerm) -> GTerm {
 					}
 				}
 				default: term;
-			}
+			};
 			GRule(rule, nterm, rewriteLeftRecursion(body));
 		}
 		GSeq(left, right): {

@@ -27,7 +27,7 @@ findRules(acc : Tree<string, GTerm>, g : GTerm) -> Tree<string, GTerm> {
 		GRule(id, term, body): {
 			if (containsKeyTree(acc, id)) {
 				println("Duplicate rule " + id);
-			}
+			};
 			nacc = setTree(acc, id, term);
 			findRules(nacc, body);
 		}

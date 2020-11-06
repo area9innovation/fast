@@ -29,7 +29,7 @@ isBExpPure(pureIds : Set<string>, b : BExp) -> bool {
 		BCall(fn, args, type): {
 			def = \ -> {
 				isBExpPure(pureIds, fn) && forall(args, \a -> isBExpPure(pureIds, a));
-			}
+			};
 			switch (fn) {
 				BVar(fname, __): {
 					if (fname == "__native") {

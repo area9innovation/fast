@@ -96,7 +96,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 			} else {
 				// println(id + " is NOT pure");
 				acc;
-			}
+			};
 
 			MiniAst(acc0 with typedDeclarations = setTree(acc0.typedDeclarations, id, opt));
 		} : {

@@ -70,7 +70,7 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 			b = \s : Set<MiniType>, sep -> {
 				if (isEmptySet(s)) ""
 				else superglue(set2array(s), miniType2string, sep)
-			}
+			};
 			" : α" + i2s(tv) 
 				+ (if (equalSet(lower, upper)) "≔" + b(lower, ",") 
 				else { "∊{" + b(lower, "|") + "}..{" + b(upper,"&") + "}"});

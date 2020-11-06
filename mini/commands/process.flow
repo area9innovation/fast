@@ -227,7 +227,7 @@ processMiniAnnotation(db : MiniDb, file : string, annotation : MiniAnnotation) -
 					MiniCall(fn, arrayPush(args, mfallback), type);
 				}
 				default: annotation.value;
-			}
+			};
 			defineMiniDeclaration(db, file, annotation.scope, combined);
 		} : {
 			// OK, we just use this as the definition of the native

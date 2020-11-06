@@ -31,7 +31,7 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 			acc = GringoEnv2DParseAcc(env);
 			success = parse_flow(acc);
 			DParseAcc2GringoEnv(acc);
-		}
+		};
 
 		println("Took " + d2st((timestamp() - start) / 1000.0, 2) + "s");
 
@@ -41,7 +41,7 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 			if (genv.output != genv2.output) {
 				println("DIFFERENT AST");
 			}
-		}
+		};
 
 		if (!isEmptyTree(genv.errors) || genv.i < strlen(env.input) || genv.fail) {
 			// TODO: Should we resolve this file name, or push full names?
@@ -53,13 +53,13 @@ prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb
 				db.onError(file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error);
 				db.onError(linecol.line);
 				db.onError(lpad("^", " ", linecol.lineIndex - 1));
-			})
+			});
 
 			if (genv.i < strlen(env.input) || genv.fail) {
 				linecol = findLine(resolver, genv.maxi);
 				db.onError(file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": Parsing ended here");
 			}
-		}
+		};
 
 		genv.output;
 	}

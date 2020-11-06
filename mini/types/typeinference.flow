@@ -72,7 +72,7 @@ setMiniTypeDeclaration(env : MiniTypeEnv, id : string, type : MiniType) -> MiniT
 	mtype = lookupTree(env.ast.types, id);
 	mtype ?? {
 		constrainMiniType(env, type, mtype);
-	} : {}
+	} : {};
 
 	MiniTypeEnv(
 		env with ast = MiniAst(env.ast with types = setTree(env.ast.types, id, type))
@@ -134,7 +134,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 				);
 				constrainMiniType(env, fnType, callType);
 				setMiniTypeVar(env, ex, resType);
-			}
+			};
 			switch (fn) {
 				MiniVar(fname, __): {
 					if (fname == "__type" || fname == "__fntype"|| fname == "__uniontype" || fname == "__recordtype") {
@@ -171,16 +171,16 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 
 		error = \ -> {
 			println("Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
-		}
+		};
 
 		rightTyVar = \rid -> {
 			addMiniLowerBound(env, rid, lhs);
 			constrainUpperBounds(env, rid, lhs);
-		}
+		};
 
 		todo = \ -> {
 			println("TODO: Implement constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
-		}
+		};
 
 		switch (lhs) {
 			MiniTypeInt(lbits): {
@@ -227,7 +227,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 				def = \ -> {
 					addMiniUpperBound(env, lid, rhs);
 					constrainLowerBounds(env, lid, rhs);
-				}
+				};
 
 				switch (rhs) {
 					MiniTypeVar(rid): if (lid != rid) {
@@ -289,7 +289,7 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 		addMiniLowerBound(env, id, type);
 		addMiniUpperBound(env, id, type);
 		type;
-	}
+	};
 	switch (ex) {
 		MiniInt(value, tyvar): def(tyvar);
 		MiniVar(name, tyvar): def(tyvar);

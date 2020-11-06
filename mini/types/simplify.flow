@@ -11,7 +11,7 @@ simplifyResType(tyvars : Tree<int, ResType>, r : ResType) -> MiniType {
 	todo = \ -> {
 		// println("Can not convert " + resType2string(r));
 		MiniTypeCall("flow", []);
-	}
+	};
 	switch (r) {
 		ResUnion(types): {
 			stypes = mapSet(types, \t -> simplifyResType(tyvars, t));

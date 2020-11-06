@@ -19,7 +19,7 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 		MiniCall(fn, args, tyvar): {
 			def = \ -> {
 				MiniCall(partialMiniExp(env, fn), map(args, \a -> partialMiniExp(env, a)), tyvar);
-			}
+			};
 			switch (fn) {
 				MiniVar(fname, __): {
 					if (fname == "__ctcase") {

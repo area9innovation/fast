@@ -16,15 +16,15 @@ parseGringoGrammar(text : string) -> GTerm {
 
 	if (genv.fail) {
 		println("Parsing failed");
-	}
+	};
 	if (!isEmptyTree(env.errors)) {
 		println("There are " + i2s(sizeTree(env.errors)) + " syntax errors");
-	}
+	};
 
 	remaining = strRight(env.input, genv.maxi);
 	if (remaining != "") {
 		println("Did not parse: " + remaining);
-	}
+	};
 
 	prepareGringoGrammar(optimizeGTerm(getAstResult(genv.output)));
 }

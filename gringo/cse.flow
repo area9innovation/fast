@@ -22,12 +22,12 @@ reduceCommon(g : GTerm) -> GTerm {
 		dot = simpleGraph2dot(graph, "", [], \node -> [DotLabel(node)], \edge -> []);
 		setFileContent("deps.dot", dot);
 		{}
-	}
+	};
 
 	if (false) {
 		println("Expanded, not optimized:");
 		println(gterm2string(g));
-	}
+	};
 
 	// Find a topological order, and start from the leaves
 	order = reverseA(topoSortSimpleGraph(graph));
@@ -57,7 +57,7 @@ reduceCommon(g : GTerm) -> GTerm {
 	if (false) {
 		println("After CSE:");
 		println(gterm2string(reduced));
-	}
+	};
 
 	// Finally, do dead code elimination, where identity rules (and other dead rules) will be removed
 	deadCodeElimination(reduced);
@@ -76,7 +76,7 @@ deadCodeElimination(g : GTerm) -> GTerm {
 	if (false) {
 		dead = differenceSets(buildSet(getTreeKeys(rules)), alive);
 		println("Dead rules: " + strGlue(set2array(dead), ", "));
-	}
+	};
 	
 	removeDeadRules(alive, g);
 }
