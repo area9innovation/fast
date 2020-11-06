@@ -1,8 +1,7 @@
-
-
 export {
 	// The opcodes for an imperative parser
 	DOpCode ::= 
+		DFunction,
 		DTrue, DFalse, DString, DIf, DSequence,
 		DPushCheckpoint, DDiscardCheckpoint, DRestoreCheckpoint,
 		DParseStar, DAddError, 
@@ -12,11 +11,14 @@ export {
 		DCall
 		;
 
+	DFunction(name : string, code : DOpCode, body : DOpCode);
+
 	DTrue();
 	DFalse();
 	DString(s : string);
 	DIf(cond : DOpCode, then : DOpCode, else_ : DOpCode);
 
+	// TODO: We could maybe add flags to i, output, errors to capture?
 	DPushCheckpoint();
 	DDiscardCheckpoint();
 	DRestoreCheckpoint();

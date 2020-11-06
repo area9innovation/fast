@@ -1,4 +1,7 @@
 import gringo/compiler/dcode_lib;
+import gringo/compiler/dopcode;
+import gringo/compiler/dopcode_opt;
+import gringo/compiler/dopcode_code;
 import gringo/utils;
 import text/blueprint;
 
@@ -12,7 +15,8 @@ export {
 }
 
 makeDExpParser(g : GTerm, file : string) -> string {
-	dexp = compileDExp(g);
+	
+	term = if (false) compileDExp(g) else opcode2code(optimizeDOpCode(compileDExp2(g)));
 
 	main = mainRule(g);
 	blueprint("
@@ -27,7 +31,7 @@ makeDExpParser(g : GTerm, file : string) -> string {
 		%term%"
 		, [
 			"file", file,
-			"term", compileDExp(g),
+			"term", term,
 			"main", main
 		]
 	);
@@ -220,3 +224,150 @@ compileDExp(t : GTerm) -> string {
 	}
 }
 
+compileDExp2(t : GTerm) -> DOpCode {
+	switch (t) {
+		GRule(id, term, body): {
+			DFunction(id, compileDExp2(term),
+				switch (body) {
+					GVar(__): DSequence([]);
+					default: compileDExp2(body)
+				}
+			);
+		}
+		GPrecedence(left, right): DSequence([]);
+		GChoice(left, right): {
+			DSequence([
+				DPushCheckpoint(),
+				DIf(
+					compileDExp2(left),
+					DSequence([
+						DDiscardCheckpoint(),
+						DTrue()
+					]),
+					DSequence([
+						DRestoreCheckpoint(),
+						compileDExp2(right),
+					]),
+				)
+			])
+		}
+		GSeq(left, right): {
+			DSequence([
+				DPushCheckpoint(),
+				DIf(
+					compileDExp2(left),
+					DSequence([
+						DDiscardCheckpoint(),
+						compileDExp2(right),
+					]),
+					DSequence([
+						DRestoreCheckpoint(),
+						DFalse()
+					]),
+				)
+			])
+		}
+		GStar(term): {
+			DParseStar(compileDExp2(term));
+		}
+		GPlus(term): {
+			compileDExp2(
+				GSeq(term, GStar(term))
+			);
+		}
+		GOpt(term): {
+			DSequence([
+				DPushCheckpoint(),
+				DIf(
+					compileDExp2(term),
+					DDiscardCheckpoint(),
+					DRestoreCheckpoint(),
+				),
+				DTrue()
+			])
+		}
+		GNegate(term): {
+			DSequence([
+				DPushCheckpoint(),
+				DIf(
+					compileDExp2(term),
+					DSequence([
+						DRestoreCheckpoint(),
+						DFalse(),
+					]),
+					DSequence([
+						DRestoreCheckpoint(),
+						DTrue()
+					]),
+				)
+			])
+		}
+		GError(term): {
+			switch (term) {
+				GNegate(nterm): {
+					DIf(
+						compileDExp2(nterm),
+						DSequence([
+							DAddError("Superfluous " + makeGExplanation(nterm)),
+							DTrue(),
+						]),
+						DTrue()
+					);
+				}
+				default: {
+					DIf(
+						compileDExp2(term),
+						DTrue(),
+						DSequence([
+							DAddError("Expected " + makeGExplanation(term)),
+							DTrue(),
+						]),
+					);
+				}
+			}
+		}
+		GLower(term): compileDExp2(term);
+		GUnquote(term): {
+			def = \ -> {
+				DSequence([
+					DCaptureI(),
+					DIf(
+						compileDExp2(term),
+						DSequence([
+							DMatched(),
+							DTrue(),
+						]),
+						DFalse()
+					)
+				])
+			}
+			switch (term) {
+				GString(text): {
+					DAddVerbatim(DString(text));
+				}
+				GUnquote(nt): {
+					switch (nt) {
+						GString(text): {
+							DAddMatched(DString(text));
+						}
+						GVar(id): {
+							if (id == "pos") {
+								DAddVerbatim(DPosition());
+							} else def();
+						}
+						default: def();
+					}
+				}
+				default: def();
+			}
+		}
+		GString(text): {
+			DMatchString(text)
+		}
+		GRange(lower, upper): {
+			DMatchRange(lower, upper);
+		}
+		GVar(id): DCall(id);
+		GEpsilon(): DSequence([]);
+	}
+}
