@@ -107,13 +107,6 @@ replaceLeftRecursion(find : string, replaceLeft : GTerm, replaceRest : GTerm, so
 	}
 }
 
-getGSequence(g : GTerm) -> [GTerm] {
-	switch (g) {
-		GSeq(l, r): concat(getGSequence(l), getGSequence(r));
-		default: [g];
-	}
-}
-
 // Could this match some token?
 isSomething(g : GTerm) -> bool {
 	switch (g) {

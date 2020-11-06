@@ -17,7 +17,9 @@ export {
 		// What errors did we get?
 		mutable errors : Tree<int, string>,
 		// A stack of checkpoints
-		mutable stack : List<DCheckpoint<?>>
+		mutable stack : List<DCheckpoint<?>>,
+		// The last checkpoint for match string
+		mutable starti : int,
 	);
 	DCheckpoint(i : int, output : ?, errors : Tree<int, string>);
 
@@ -26,8 +28,8 @@ export {
 
 
 	pushDCheckpoint(acc : DParseAcc<?>) -> void;
-	discardDCheckpoint(acc : DParseAcc) -> void;
-	restoreDCheckpoint(acc : DParseAcc) -> void;
+	discardDCheckpoint(acc : DParseAcc) -> bool;
+	restoreDCheckpoint(acc : DParseAcc) -> bool;
 	parseStar(acc : DParseAcc<?>, matcher : () -> bool) -> bool;
 	matchString(acc : DParseAcc<?>, s : string) -> bool;
 	matchRange(acc : DParseAcc<?>, l : int, u : int) -> bool;
@@ -50,7 +52,7 @@ DParseAcc2GringoEnv(d : DParseAcc) -> GringoEnv {
 }
 
 GringoEnv2DParseAcc(g : GringoEnv) -> DParseAcc {
-	DParseAcc(g.input, g.action, g.i, g.output, g.errors, makeList())
+	DParseAcc(g.input, g.action, g.i, g.output, g.errors, makeList(), 0)
 }
 
 
@@ -58,23 +60,25 @@ pushDCheckpoint(acc : DParseAcc<?>) -> void {
 	acc.stack ::= Cons(DCheckpoint(acc.i, acc.output, acc.errors), acc.stack);
 }
 
-discardDCheckpoint(acc : DParseAcc) -> void {
+discardDCheckpoint(acc : DParseAcc) -> bool {
 	switch (acc.stack) {
-		EmptyList(): {}
+		EmptyList(): false;
 		Cons(head, tail_): {
 			acc.stack ::= tail_;
+			true;
 		}
 	}
 }
 
-restoreDCheckpoint(acc : DParseAcc) -> void {
+restoreDCheckpoint(acc : DParseAcc) -> bool {
 	switch (acc.stack) {
-		EmptyList(): {}
+		EmptyList(): false;
 		Cons(head, tail_): {
 			acc.i ::= head.i;
 			acc.output ::= head.output;
 			acc.errors ::= head.errors;
 			acc.stack ::= tail_;
+			false;
 		}
 	}
 }

@@ -5,6 +5,7 @@ import ds/arrayutils;
 import net/url_parameter;
 
 export {
+	// This does a prefix-calculation and warns about potential backtracking
 	checkRules(file : string, g : GTerm) -> void;
 }
 
@@ -147,6 +148,8 @@ stripToPrefixes(rulePrefixes : Tree<string, [GTerm]>, emptyRules : Set<string>, 
 }
 
 // Build a set of what rules can be empty
+// TODO: Instead of this algorithm, collect the minimum prefix
+// since we have to resolve cycles of ids
 findEmptyRules(emptyRules : Set<string>, t : GTerm) -> Set<string> {
 	switch (t) {
 		GRule(id, term, body): {

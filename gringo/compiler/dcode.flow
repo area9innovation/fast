@@ -6,17 +6,11 @@ import gringo/utils;
 import text/blueprint;
 
 export {
-	/*
-	TODO: This works well, but we should do some
-	intermediate representation so we can optimize 
-	restore/discard pairs
-	*/
 	makeDExpParser(g : GTerm, file : string) -> string;
 }
 
 makeDExpParser(g : GTerm, file : string) -> string {
-	
-	term = if (false) compileDExp(g) else opcode2code(optimizeDOpCode(compileDExp2(g)));
+	term = opcode2code(optimizeDOpCode(compileDExp(g)));
 
 	main = mainRule(g);
 	blueprint("
@@ -37,200 +31,13 @@ makeDExpParser(g : GTerm, file : string) -> string {
 	);
 }
 
-compileDExp(t : GTerm) -> string {
+compileDExp(t : GTerm) -> DOpCode {
 	switch (t) {
 		GRule(id, term, body): {
-			blueprint("
-				parse_%id%(acc : DParseAcc) -> bool {
-					%term%
-				}
-
-				%body%", [
-					"id", id,
-					"term", compileDExp(term),
-					"body", {
-						switch (body) {
-							GVar(__): ""
-							default: compileDExp(body)
-						}
-					}
-				]
-			)
-		}
-		GPrecedence(left, right): "NOT EXPECTED!";
-		GChoice(left, right): {
-			blueprint("
-				{
-					// choice
-					pushDCheckpoint(acc);
-					if (%left%) {
-						discardDCheckpoint(acc);
-						true
-					} else {
-						restoreDCheckpoint(acc);
-						%right%
-					}
-				}
-			",
-			[
-				"left", compileDExp(left),
-				"right", compileDExp(right),
-			]);
-		}
-		GSeq(left, right): {
-			blueprint("
-				{
-					// seq
-					pushDCheckpoint(acc);
-					if (%left%) {
-						discardDCheckpoint(acc);
-						%right%
-					} else {
-						restoreDCheckpoint(acc);
-						false;
-					}
-				}
-			",
-			[
-				"left", compileDExp(left),
-				"right", compileDExp(right),
-			]);
-		}
-		GStar(term): {
-			blueprint("
-				parseStar(acc, \\ -> {
-					%term%
-				})
-			", [
-				"term", compileDExp(term)
-			]);
-		}
-		GPlus(term): {
-			compileDExp(
-				GSeq(term, GStar(term))
-			);
-		}
-		GOpt(term): {
-			blueprint("
-			{
-				// Opt
-				pushDCheckpoint(acc);
-				if (%term%) {
-					discardDCheckpoint(acc);
-				} else {
-					restoreDCheckpoint(acc);
-				};
-				true;
-			}
-			", [
-				"term", compileDExp(term)
-			])
-		}
-		GNegate(term): {
-			blueprint("
-				{
-					// Negate
-					pushDCheckpoint(acc);
-					if (%term%) {
-						restoreDCheckpoint(acc);
-						false;
-					} else {
-						restoreDCheckpoint(acc);
-						true;
-					}
-				}", [
-					"term", compileDExp(term),
-				]
-			);
-		}
-		GError(term): {
-			switch (term) {
-				GNegate(nterm): {
-					blueprint("
-						{
-							// Negative error
-							if (%nterm%) {
-								addError(acc, %error%);
-								true
-							} else true
-						}", [
-							"nterm", compileDExp(nterm),
-							"error", toString("Superfluous " + makeGExplanation(nterm))
-						]
-					);
-				}
-				default: {
-					blueprint("
-						{
-							// Error handling
-							if (%term%) {
-								true
-							} else {
-								addError(acc, %error%);
-								true;
-							}
-						}", [
-							"term", compileDExp(term),
-							"error", toString("Expected " + makeGExplanation(term))
-						]
-					);
-				}
-			}
-		}
-		GLower(term): compileDExp(term);
-		GUnquote(term): {
-			def = \ -> {
-				blueprint("
-					{
-						// Unquote match
-						starti = acc.i;
-						if (%term%) {
-							addMatched(acc, substring(acc.input, starti, acc.i - starti));
-							true;
-						} else false;
-					}
-				", [
-					"term", compileDExp(term)
-				])
-			}
-			switch (term) {
-				GString(text): {
-					"addVerbatim(acc, " + toString(text) + ")"
-				}
-				GUnquote(nt): {
-					switch (nt) {
-						GString(text): {
-							"addMatched(acc, " + toString(text) + ")"
-						}
-						GVar(id): {
-							if (id == "pos") {
-								"addVerbatim(acc, i2s(acc.i))"
-							} else def();
-						}
-						default: def();
-					}
-				}
-				default: def();
-			}
-		}
-		GString(text): {
-			"matchString(acc, " + toString(text) + ")"
-		}
-		GRange(lower, upper): {
-			"matchRange(acc, " + i2s(lower) + ", " + i2s(upper) + ")"
-		}
-		GVar(id): "parse_" + id + "(acc)";
-		GEpsilon(): "";
-	}
-}
-
-compileDExp2(t : GTerm) -> DOpCode {
-	switch (t) {
-		GRule(id, term, body): {
-			DFunction(id, compileDExp2(term),
+			DFunction(id, compileDExp(term),
 				switch (body) {
 					GVar(__): DSequence([]);
-					default: compileDExp2(body)
+					default: compileDExp(body)
 				}
 			);
 		}
@@ -239,39 +46,44 @@ compileDExp2(t : GTerm) -> DOpCode {
 			DSequence([
 				DPushCheckpoint(),
 				DIf(
-					compileDExp2(left),
-					DSequence([
-						DDiscardCheckpoint(),
-						DTrue()
-					]),
+					compileDExp(left),
+					DDiscardCheckpoint(),
 					DSequence([
 						DRestoreCheckpoint(),
-						compileDExp2(right),
+						compileDExp(right),
 					]),
 				)
 			])
 		}
 		GSeq(left, right): {
-			DSequence([
-				DPushCheckpoint(),
-				DIf(
-					compileDExp2(left),
-					DSequence([
-						DDiscardCheckpoint(),
-						compileDExp2(right),
-					]),
-					DSequence([
-						DRestoreCheckpoint(),
-						DFalse()
-					]),
-				)
-			])
+			seq = getGSequence(t);
+			code = DSequence(
+				[
+					DPushCheckpoint(),
+					fold(reverseA(seq), DDiscardCheckpoint(), \acc, s -> {
+						DIf(compileDExp(s), acc, DRestoreCheckpoint());
+					})
+				]
+			);
+			if (false) {
+				DSequence([
+					DPushCheckpoint(),
+					DIf(
+						compileDExp(left),
+						DSequence([
+							DDiscardCheckpoint(),
+							compileDExp(right),
+						]),
+						DRestoreCheckpoint()
+					)
+				])
+			} else code;
 		}
 		GStar(term): {
-			DParseStar(compileDExp2(term));
+			DParseStar(compileDExp(term));
 		}
 		GPlus(term): {
-			compileDExp2(
+			compileDExp(
 				GSeq(term, GStar(term))
 			);
 		}
@@ -279,7 +91,7 @@ compileDExp2(t : GTerm) -> DOpCode {
 			DSequence([
 				DPushCheckpoint(),
 				DIf(
-					compileDExp2(term),
+					compileDExp(term),
 					DDiscardCheckpoint(),
 					DRestoreCheckpoint(),
 				),
@@ -290,11 +102,8 @@ compileDExp2(t : GTerm) -> DOpCode {
 			DSequence([
 				DPushCheckpoint(),
 				DIf(
-					compileDExp2(term),
-					DSequence([
-						DRestoreCheckpoint(),
-						DFalse(),
-					]),
+					compileDExp(term),
+					DRestoreCheckpoint(),
 					DSequence([
 						DRestoreCheckpoint(),
 						DTrue()
@@ -306,7 +115,7 @@ compileDExp2(t : GTerm) -> DOpCode {
 			switch (term) {
 				GNegate(nterm): {
 					DIf(
-						compileDExp2(nterm),
+						compileDExp(nterm),
 						DSequence([
 							DAddError("Superfluous " + makeGExplanation(nterm)),
 							DTrue(),
@@ -316,7 +125,7 @@ compileDExp2(t : GTerm) -> DOpCode {
 				}
 				default: {
 					DIf(
-						compileDExp2(term),
+						compileDExp(term),
 						DTrue(),
 						DSequence([
 							DAddError("Expected " + makeGExplanation(term)),
@@ -326,13 +135,13 @@ compileDExp2(t : GTerm) -> DOpCode {
 				}
 			}
 		}
-		GLower(term): compileDExp2(term);
+		GLower(term): compileDExp(term);
 		GUnquote(term): {
 			def = \ -> {
 				DSequence([
 					DCaptureI(),
 					DIf(
-						compileDExp2(term),
+						compileDExp(term),
 						DSequence([
 							DMatched(),
 							DTrue(),
