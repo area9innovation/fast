@@ -19,6 +19,9 @@ export {
 
 	// Extract all in a sequence
 	getGSequence(g : GTerm) -> [GTerm];
+
+	// Extract all choices
+	getGChoice(g : GTerm) -> [GTerm];
 }
 
 // Extract rule definitioms. We only support a seq of rules. Not deeply nested rules.
@@ -156,6 +159,13 @@ makeGExplanation(g : GTerm) -> string {
 getGSequence(g : GTerm) -> [GTerm] {
 	switch (g) {
 		GSeq(l, r): concat(getGSequence(l), getGSequence(r));
+		default: [g];
+	}
+}
+
+getGChoice(g : GTerm) -> [GTerm] {
+	switch (g) {
+		GChoice(l, r): concat(getGChoice(l), getGChoice(r));
 		default: [g];
 	}
 }

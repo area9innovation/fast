@@ -15,8 +15,10 @@ export {
 prepareGringoParser(actions : GringoAction<MiniDb>, grammar : string) -> (MiniDb) -> MiniDb {
 	gterm = parseGringoGrammar(grammar);
 
-	// println("The grammar we will parse:");
-	// println(gterm2string(gterm));
+	if (false) {
+		println("The grammar we will parse:");
+		println(gterm2string(gterm));
+	}
 
 	\db : MiniDb -> {
 		textp = popMiniValue(db);

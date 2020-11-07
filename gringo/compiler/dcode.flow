@@ -43,21 +43,19 @@ compileDExp(t : GTerm) -> DOpCode {
 		}
 		GPrecedence(left, right): DSequence([]);
 		GChoice(left, right): {
-			DSequence([
-				DPushCheckpoint(),
-				DIf(
-					compileDExp(left),
-					DDiscardCheckpoint(),
-					DSequence([
-						DRestoreCheckpoint(),
-						compileDExp(right),
-					]),
-				)
-			])
+			choices = getGChoice(t);
+			DSequence(
+				[
+					DPushCheckpoint(),
+					fold(reverseA(choices), DRestoreCheckpoint(), \acc, s -> {
+						DIf(compileDExp(s), DDiscardCheckpoint(), acc);
+					})
+				]
+			);
 		}
 		GSeq(left, right): {
 			seq = getGSequence(t);
-			code = DSequence(
+			DSequence(
 				[
 					DPushCheckpoint(),
 					fold(reverseA(seq), DDiscardCheckpoint(), \acc, s -> {
@@ -65,19 +63,6 @@ compileDExp(t : GTerm) -> DOpCode {
 					})
 				]
 			);
-			if (false) {
-				DSequence([
-					DPushCheckpoint(),
-					DIf(
-						compileDExp(left),
-						DSequence([
-							DDiscardCheckpoint(),
-							compileDExp(right),
-						]),
-						DRestoreCheckpoint()
-					)
-				])
-			} else code;
 		}
 		GStar(term): {
 			DParseStar(compileDExp(term));
