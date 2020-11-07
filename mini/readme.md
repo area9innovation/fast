@@ -101,7 +101,7 @@ the development, we have defined some milestones.
 
 - Parse all of flow syntax. Missing:
 
-  - maybe ?? exp : exp, string-include, quoting, string-escapes in AST
+  - string-include, quoting, string-escapes in AST
   - require, forbid
   - Optimizations possible in parser: 
     - Use && instead of nested ifs
@@ -109,6 +109,7 @@ the development, we have defined some milestones.
 	- Epsilon is probably correctly compiled to TRUE
 	- Add a BExp backend for DOpCode, and add a C++ or Rust backend for BExp
       and try to use Wasm
+	- Consider to make // and /* an operator in some contexts to capture them
 
 - Get type inference to work: 
   - Type declarations are ignored
@@ -177,6 +178,9 @@ We do not support multi-strings:'
 
 	"Hello " "World"	// "Hello World"
 
+TODO:
+- Add a mode which adds the missing semi-colons based on the error-recovery in the grammar
+
 ## Mini Commands
 
 The compiler internally supports a range of commands (see `commands/command.flow`)
@@ -201,10 +205,7 @@ commands, so we will not do type inference if there are pending files to be
 read and parsed.
 
 TODO:
-- Consider a forward-type declaration command to allow "stitching" types declarations
-  and definitions together without propagation too much. We can use the type declarations
-  map for this.
-- Add "desugaring"/"export" checking phase, which might also do the stitching type thing?
+- Add ""export" checking phase
 - Command to define what files to compile to what, with what options
 - Command to run executables we have constructed
 - Run the commands in the queue in parallel
@@ -321,7 +322,7 @@ TODO:
 - Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
 - Document how to write a Gringo grammar with semantic actions, maybe implement Basic?
 - Consider adding other syntaxes, just to demonstrate the multi-headed nature of Mini. Maybe a
-  subset of JS or Java?
+  subset of JS or Java or ML?
 
 ### Async and the Forth standard library
 
@@ -581,8 +582,6 @@ This encodes the convention for how to represent types as values.
 
 Plan:
 - Use "forward" in the grammar and check that it works
-- Find a suitable way to implement struct constructors and field functions
-- Finish exp types
 
 # Native fallbacks
 
@@ -609,96 +608,14 @@ Should we have a "final" map of annotations on an id when we define it? Yeah, pr
 
 # Switch
 
-We have the AST with 
+We expand let-bindings in cases in the compile-time step by partially evaluating the __ctcase
+functino accordingly.
 
-	__switch(s, __or(__case(__pattern0("None"), 0), __case(__pattern1("Some", "v"), v)))
+Similarly, we expand a ?? b : c to a switch at compile time to a switch.
 
-
-	__switch(s, __or(
-		__case(__pattern0("None"), 0), 
-		__case(__pattern1("Some", "v"), v)
-		)
-	)
-
-and need to lower to the appropriate switch in the BExp.
-
-	BSwitch(val : BExp, cases : [BCase], type : MiniType);
-			BCase(value : BValue, body : BExp);
-
-->
-
-	BSwitch(SVar("s"), [
-		BCase(BString("None"), BInt(0)),
-		BCase(BString("Some"), BLet("v", 
-			BField(SVar("s"), SString("value")), 
-			BVar("v")
-		)),
-	]);
-
-
-To be able to do this, the hardest part is changing "Some" to the let where it has "value".
-Another problem is to get the "s" for the case out.
-Maybe we have to give the switch expression a standard name?
-
-Because of a program like this:
-
-	foo = switch (a) {
-		None(): 0;
-		Some(v): 1;
-	}
-
-	// The type comes after
-	None();
-
-There is a problem: We can not do that let-expansion until we know the struct def, which comes
-after. 
-OK, with the proper "typedef" command, we could do that. Then the None will add a type-def,
-and that way, we can do it "locally" in the switch-processing. Arguably, this is best.
-
-We would like to have "local" desugaring. Therefore, maybe we should use indexing into 
-the struct instead of going by name:
-
-	BSwitch(SVar("s"), [
-		BCase(BString("None"), BInt(0)),
-		BCase(BString("Some"), BLet("v", 
-			BIndexField(SVar("s"), BString("Some"), SInt(0)), 
-			BVar("v")
-		)),
-	]);
-
-Plan:
-- Figure out what to to do at the MiniExp level for cases.
-
-Special things:
+TODO:
 - Union-match: This requires knowing the unions, as well as the entire scope of the switch
-- Default: We can keep that as "default", and that should be fine for backends.
-- Let-bindings: This requires knowing the structs
-- Type cast of the value in the body.
-
-For the type checking to be able to do the right thing, we need something before the
-type checker hits.
-
-	MSwitch(
-		MVar("a"),
-		MCase(BString("None"), BInt(0)
-		),
-
-	)
-
-So after type inference for switches, we have to do exhaustiveness checks then. Or we have to
-require that the type of the union in the switch is decided, as part of type checking?
-How to handle exhaustiveness?
-
-In flow, we expand let-bindings in the desugaring.
-Also, unions are expanded in desugaring.
-
-Both of these require that we have the struct/union hierarchy.
-
-	FiSwitch(x: FiVar, switchType : FiType, cases: [FiCase], type : FiType, start : int);
-		// struct is "default" for default case
-		FiCase(struct: string, argNames : [string], body: FiExp, start : int);
-
-and it only works on ids in the switch cast.
+- Exaustiveness check
 
 # Switch backend
 
