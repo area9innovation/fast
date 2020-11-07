@@ -631,7 +631,7 @@ parse_functionOrStruct(acc : DParseAcc) -> bool {
 						{
 							pushDCheckpoint(acc);
 							pushDCheckpoint(acc);
-							if (if (if (parse_namedargs(acc)) {
+							if (if (if (parse_typedargs(acc)) {
 								if (matchString(acc, ")")) {
 									if (parse_ws(acc)) {
 										if (parse_returnType(acc)) {
@@ -831,7 +831,7 @@ parse_functionOrStruct(acc : DParseAcc) -> bool {
 							if (parse_ws(acc)) {
 								if (matchString(acc, "(")) {
 									if (parse_ws(acc)) {
-										if (parse_namedargs(acc)) {
+										if (parse_typedargs(acc)) {
 											if (matchString(acc, ")")) {
 												if (parse_ws(acc)) {
 													if (parse_returnType(acc)) {
@@ -4123,7 +4123,7 @@ parse_type(acc : DParseAcc) -> bool {
 																		pushDCheckpoint(acc);
 																		if (if (matchString(acc, "(")) {
 																			if (parse_ws(acc)) {
-																				if (parse_namedargs(acc)) {
+																				if (parse_typedargs(acc)) {
 																					if (matchString(acc, ")")) {
 																						if (parse_ws(acc)) {
 																							if (matchString(acc, "->")) {
@@ -4430,21 +4430,21 @@ parse_types(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_namedargs(acc : DParseAcc) -> bool {
+parse_typedargs(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "nil")) {
 			{
 				pushDCheckpoint(acc);
 				pushDCheckpoint(acc);
-				if (if (parse_namedarg(acc)) {
+				if (if (parse_typedarg(acc)) {
 					if (addVerbatim(acc, "cons")) {
 						if (parseStar(acc, \ -> {
 							{
 								pushDCheckpoint(acc);
 								if (matchString(acc, ",")) {
 									if (parse_ws(acc)) {
-										if (parse_namedarg(acc)) {
+										if (parse_typedarg(acc)) {
 											if (addVerbatim(acc, "cons")) {
 												discardDCheckpoint(acc)
 											} else {
@@ -4500,7 +4500,7 @@ parse_namedargs(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_namedarg(acc : DParseAcc) -> bool {
+parse_typedarg(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_id(acc)) {

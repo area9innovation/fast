@@ -1,3 +1,5 @@
+// TODO: We should probably set some marker that a new file is started, instead of immediately adding the parse
+// TODO: We should probably set some marker that a new file is started, instead of immediately adding the parse
 flow = '\uFEFF'? ws importExport* toplevelDeclaration* $"popfile";
 
 importExport = import
@@ -5,7 +7,6 @@ importExport = import
 	| export
 	| forbid;
 
-// TODO: We should set some marker that a new file is started, instead of immediately adding the parse
 import = "import" s $path ws ';' ws $$".flow" $"changeFileExt" $"parsefile";
 
 dynamicImport = "require" s $path ws ';' ws; // TODO: AST
@@ -32,18 +33,18 @@ union = id typars "::=" ws typenames ';' ws $"uniondef";
 	// listof(typename, ",")
 	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
 
-// For now, we ignore the types
-// TODO: Extract the type and use a binop to declare the type of the body
 functionOrStruct = 
-	// Forward declaration - we drop for now
-	  id '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
+	// Forward declaration
+	  id '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
 	| id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
+
+	// TODO: We should keep the fn type in the next 3
 	| id '(' ws funargs ')' ws returnType $"drop" brace $"lambda" $"define"
 	| id '(' ws funargs ')' ws brace $"lambda" $"define"
 	| id '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
 
 	// Forward type declarations
-	| id ':' ws '(' ws namedargs ')' ws returnType ';' ws $"fntype" $"typedef"
+	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
 	| id ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
 	// Struct
 	| id ':' ws '(' ws structargs ')' ws ';' ws $$"structdef"
@@ -72,7 +73,7 @@ exp =
 	 	| id ":" ws type "=" ws exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
-	|> exp "|>" ws exp $$"|>" $"binop"	// TODO: Should we desugar this here?
+	|> exp "|>" ws exp $"swap" $"list1" $"call" // We desugar it here immediately
 	|> exp "||" ws exp $$"||" $"binop"
 	|> exp "&&" ws exp $$"&&" $"binop"
 	|> (
@@ -164,7 +165,7 @@ type =
 		| "native" !letterOrDigit ws $$"native" $"type0"
 		| "ref" !letterOrDigit ws type $$"ref" $"type1"
 
-		| "(" ws namedargs ")" ws "->" ws type $"fntype"
+		| "(" ws typedargs ")" ws "->" ws type $"fntype"
 		| "(" ws types ")" ws "->" ws type $"fntype"
 		| typename
 
@@ -181,11 +182,11 @@ typars = "<" ws types ">" ws
 // listof(type, ",")
 types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)? | $"nil";
 
-	// listof(namedargs, ",")
-	namedargs = $"nil" namedarg $"cons" ("," ws namedarg $"cons")* ("," ws)? | $"nil";
+	// listof(typedargs, ",")
+	typedargs = $"nil" typedarg $"cons" ("," ws typedarg $"cons")* ("," ws)? | $"nil";
 
 	// For now, we just drop the id
-	namedarg = id $"drop" ':' ws type;
+	typedarg = id $"drop" ':' ws type;
 
 // listof(lambdaarg)
 lambdaargs = $"nil" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? | $"nil";

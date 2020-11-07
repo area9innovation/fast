@@ -13,6 +13,6 @@ prec() -> int {
 
 main() {
 	prec();
-	fact(0xffffffff);
+	println(fact(0xffffffff));
 	println("Hello world");
 }

@@ -35,6 +35,7 @@
 - [Deleted ids](#deleted-ids)
 - [Switch](#switch)
 - [Switch backend](#switch-backend)
+- [Native runtime](#native-runtime)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -723,3 +724,16 @@ With the BSwitch, we can produce this:
 		case "Some": println("Some"); break;
 	}
 
+# Native runtime
+
+According to this benchmark:
+
+https://jsben.ch/wY5fo
+
+This is the fastest way to iterate an array in JS:
+
+	var x = 0, l = arr.length;
+	while (x < l) {
+		dosmth = arr[x];
+		++x;
+	}
