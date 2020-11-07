@@ -12,6 +12,9 @@ export {
 makeDExpParser(g : GTerm, file : string) -> string {
 	term = opcode2code(optimizeDOpCode(compileDExp(g)));
 
+	profile = getUrlParameter("profile");
+
+
 	main = mainRule(g);
 	blueprint("
 		// Produced by  flowcpp gringo/gringo.flow -- file=%file%.gringo compile=1
@@ -19,14 +22,17 @@ makeDExpParser(g : GTerm, file : string) -> string {
 		import string;
 		
 		export {
-			parse_%main%(DParseAcc) -> bool;
+			parse_%main%(DParseAcc) -> bool;%profile1%
 		}
 
+		%profile2%
 		%term%"
 		, [
 			"file", file,
 			"term", term,
-			"main", main
+			"main", main,
+			"profile1", if (profile == "") "" else "\ndumpParseProfile() -> void { traverseInOrder(^profileProductions, \\n, v -> println(n + \": \" + i2s(v))) }",
+			"profile2", if (profile == "") "" else "profileProductions : ref Tree<string, int> = ref makeTree();"
 		]
 	);
 }

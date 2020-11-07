@@ -109,7 +109,7 @@ exp =
 			| "." ws id $"list2" "::=" ws exp $"cons" $$"__mutassign" $"swap" $"call"
 			| "." ws id $$"." $"binop"
 			| "[" ws exp "]" ws $$"__index" $"binop"
-			)+
+			)*
 	)
 	|> '^' ws exp $$"__deref" $"unop"
 	|> (

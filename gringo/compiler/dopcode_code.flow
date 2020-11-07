@@ -1,6 +1,7 @@
 import gringo/compiler/dopcode;
 import string;
 import text/blueprint;
+import net/url_parameter;
 
 export {
 	opcode2code(c : DOpCode) -> string;
@@ -9,14 +10,18 @@ export {
 opcode2code(c : DOpCode) -> string {
 	switch (c) {
 		DFunction(name, code, body): {
+			profile = getUrlParameter("profile");
 			blueprint("
 				parse_%id%(acc : DParseAcc) -> bool {
-					%term%
+					%prof%%term%
 				}
 
 				%body%
 				", [
 					"id", name,
+					"prof", if (profile != "" && startsWith(name, profile)) {
+						"profileProductions := incTreeValue(^profileProductions, " + toString(name) + ");"
+					} else "", 
 					"term", opcode2code(code),
 					"body", opcode2code(body),
 				]

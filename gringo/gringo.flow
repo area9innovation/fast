@@ -151,6 +151,8 @@ gringo file=path/grammar.gringo <options>
     grammar=1 prints the optimized grammar for inspection.
 	prefix=1 dumps the prefix terminals per processed rule.
 
+	profile=<rule> will count the number of times rules with the <rule> prefix are called
+
     test=<string> immediately tests the grammar on that string.
 	testfile=<filename> tests the grammar on the contents of that file.
     result=1 prints the output of the test parse.

@@ -6,6 +6,7 @@ export {
 	parse_flow(DParseAcc) -> bool;
 }
 
+
 parse_flow(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
@@ -2186,17 +2187,20 @@ parse_exp11(acc : DParseAcc) -> bool {
 					{
 						pushDCheckpoint(acc);
 						if (if (parse_exp12(acc)) {
-							{
-								pushDCheckpoint(acc);
-								pushDCheckpoint(acc);
-								pushDCheckpoint(acc);
-								if (if (if (if (matchString(acc, "(")) {
-									if (parse_ws(acc)) {
-										if (parse_exps(acc)) {
-											if (matchString(acc, ")")) {
-												if (parse_ws(acc)) {
-													if (addVerbatim(acc, "call")) {
-														discardDCheckpoint(acc)
+							if (parseStar(acc, \ -> {
+								{
+									pushDCheckpoint(acc);
+									pushDCheckpoint(acc);
+									if (if (matchString(acc, "(")) {
+										if (parse_ws(acc)) {
+											if (parse_exps(acc)) {
+												if (matchString(acc, ")")) {
+													if (parse_ws(acc)) {
+														if (addVerbatim(acc, "call")) {
+															discardDCheckpoint(acc)
+														} else {
+															restoreDCheckpoint(acc)
+														}
 													} else {
 														restoreDCheckpoint(acc)
 													}
@@ -2211,29 +2215,29 @@ parse_exp11(acc : DParseAcc) -> bool {
 										}
 									} else {
 										restoreDCheckpoint(acc)
-									}
-								} else {
-									restoreDCheckpoint(acc)
-								}) {
-									discardDCheckpoint(acc)
-								} else {
-									{
-										pushDCheckpoint(acc);
-										if (if (matchString(acc, "(")) {
-											if (parse_ws(acc)) {
-												if (parse_exp(acc)) {
-													if (matchString(acc, "with")) {
-														if (parse_s(acc)) {
-															if (addVerbatim(acc, "list2")) {
-																if (parse_fields(acc)) {
-																	if (addVerbatim(acc, "cons")) {
-																		if (matchString(acc, ")")) {
-																			if (parse_ws(acc)) {
-																				if (addMatched(acc, "__with")) {
-																					if (addVerbatim(acc, "var")) {
-																						if (addVerbatim(acc, "swap")) {
-																							if (addVerbatim(acc, "call")) {
-																								discardDCheckpoint(acc)
+									}) {
+										discardDCheckpoint(acc)
+									} else {
+										{
+											pushDCheckpoint(acc);
+											if (if (matchString(acc, "(")) {
+												if (parse_ws(acc)) {
+													if (parse_exp(acc)) {
+														if (matchString(acc, "with")) {
+															if (parse_s(acc)) {
+																if (addVerbatim(acc, "list2")) {
+																	if (parse_fields(acc)) {
+																		if (addVerbatim(acc, "cons")) {
+																			if (matchString(acc, ")")) {
+																				if (parse_ws(acc)) {
+																					if (addMatched(acc, "__with")) {
+																						if (addVerbatim(acc, "var")) {
+																							if (addVerbatim(acc, "swap")) {
+																								if (addVerbatim(acc, "call")) {
+																									discardDCheckpoint(acc)
+																								} else {
+																									restoreDCheckpoint(acc)
+																								}
 																							} else {
 																								restoreDCheckpoint(acc)
 																							}
@@ -2272,186 +2276,23 @@ parse_exp11(acc : DParseAcc) -> bool {
 												}
 											} else {
 												restoreDCheckpoint(acc)
-											}
-										} else {
-											restoreDCheckpoint(acc)
-										}) {
-											discardDCheckpoint(acc)
-										} else {
-											{
-												pushDCheckpoint(acc);
-												if (if (matchString(acc, ".")) {
-													if (parse_ws(acc)) {
-														if (parse_id(acc)) {
-															if (addVerbatim(acc, "list2")) {
-																if (matchString(acc, "::=")) {
-																	if (parse_ws(acc)) {
-																		if (parse_exp11(acc)) {
-																			if (addVerbatim(acc, "cons")) {
-																				if (addMatched(acc, "__mutassign")) {
-																					if (addVerbatim(acc, "swap")) {
-																						if (addVerbatim(acc, "call")) {
-																							discardDCheckpoint(acc)
-																						} else {
-																							restoreDCheckpoint(acc)
-																						}
-																					} else {
-																						restoreDCheckpoint(acc)
-																					}
-																				} else {
-																					restoreDCheckpoint(acc)
-																				}
-																			} else {
-																				restoreDCheckpoint(acc)
-																			}
-																		} else {
-																			restoreDCheckpoint(acc)
-																		}
-																	} else {
-																		restoreDCheckpoint(acc)
-																	}
-																} else {
-																	restoreDCheckpoint(acc)
-																}
-															} else {
-																restoreDCheckpoint(acc)
-															}
-														} else {
-															restoreDCheckpoint(acc)
-														}
-													} else {
-														restoreDCheckpoint(acc)
-													}
-												} else {
-													restoreDCheckpoint(acc)
-												}) {
-													discardDCheckpoint(acc)
-												} else {
-													{
-														pushDCheckpoint(acc);
-														if (if (matchString(acc, ".")) {
-															if (parse_ws(acc)) {
-																if (parse_id(acc)) {
-																	if (addMatched(acc, ".")) {
-																		if (addVerbatim(acc, "binop")) {
-																			discardDCheckpoint(acc)
-																		} else {
-																			restoreDCheckpoint(acc)
-																		}
-																	} else {
-																		restoreDCheckpoint(acc)
-																	}
-																} else {
-																	restoreDCheckpoint(acc)
-																}
-															} else {
-																restoreDCheckpoint(acc)
-															}
-														} else {
-															restoreDCheckpoint(acc)
-														}) {
-															discardDCheckpoint(acc)
-														} else {
-															{
-																pushDCheckpoint(acc);
-																if (if (matchString(acc, "[")) {
-																	if (parse_ws(acc)) {
-																		if (parse_exp(acc)) {
-																			if (matchString(acc, "]")) {
-																				if (parse_ws(acc)) {
-																					if (addMatched(acc, "__index")) {
-																						if (addVerbatim(acc, "binop")) {
-																							discardDCheckpoint(acc)
-																						} else {
-																							restoreDCheckpoint(acc)
-																						}
-																					} else {
-																						restoreDCheckpoint(acc)
-																					}
-																				} else {
-																					restoreDCheckpoint(acc)
-																				}
-																			} else {
-																				restoreDCheckpoint(acc)
-																			}
-																		} else {
-																			restoreDCheckpoint(acc)
-																		}
-																	} else {
-																		restoreDCheckpoint(acc)
-																	}
-																} else {
-																	restoreDCheckpoint(acc)
-																}) {
-																	discardDCheckpoint(acc)
-																} else {
-																	restoreDCheckpoint(acc)
-																}
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}) {
-									if (parseStar(acc, \ -> {
-										{
-											pushDCheckpoint(acc);
-											pushDCheckpoint(acc);
-											if (if (matchString(acc, "(")) {
-												if (parse_ws(acc)) {
-													if (parse_exps(acc)) {
-														if (matchString(acc, ")")) {
-															if (parse_ws(acc)) {
-																if (addVerbatim(acc, "call")) {
-																	discardDCheckpoint(acc)
-																} else {
-																	restoreDCheckpoint(acc)
-																}
-															} else {
-																restoreDCheckpoint(acc)
-															}
-														} else {
-															restoreDCheckpoint(acc)
-														}
-													} else {
-														restoreDCheckpoint(acc)
-													}
-												} else {
-													restoreDCheckpoint(acc)
-												}
-											} else {
-												restoreDCheckpoint(acc)
 											}) {
 												discardDCheckpoint(acc)
 											} else {
 												{
 													pushDCheckpoint(acc);
-													if (if (matchString(acc, "(")) {
+													if (if (matchString(acc, ".")) {
 														if (parse_ws(acc)) {
-															if (parse_exp(acc)) {
-																if (matchString(acc, "with")) {
-																	if (parse_s(acc)) {
-																		if (addVerbatim(acc, "list2")) {
-																			if (parse_fields(acc)) {
+															if (parse_id(acc)) {
+																if (addVerbatim(acc, "list2")) {
+																	if (matchString(acc, "::=")) {
+																		if (parse_ws(acc)) {
+																			if (parse_exp11(acc)) {
 																				if (addVerbatim(acc, "cons")) {
-																					if (matchString(acc, ")")) {
-																						if (parse_ws(acc)) {
-																							if (addMatched(acc, "__with")) {
-																								if (addVerbatim(acc, "var")) {
-																									if (addVerbatim(acc, "swap")) {
-																										if (addVerbatim(acc, "call")) {
-																											discardDCheckpoint(acc)
-																										} else {
-																											restoreDCheckpoint(acc)
-																										}
-																									} else {
-																										restoreDCheckpoint(acc)
-																									}
-																								} else {
-																									restoreDCheckpoint(acc)
-																								}
+																					if (addMatched(acc, "__mutassign")) {
+																						if (addVerbatim(acc, "swap")) {
+																							if (addVerbatim(acc, "call")) {
+																								discardDCheckpoint(acc)
 																							} else {
 																								restoreDCheckpoint(acc)
 																							}
@@ -2492,33 +2333,9 @@ parse_exp11(acc : DParseAcc) -> bool {
 															if (if (matchString(acc, ".")) {
 																if (parse_ws(acc)) {
 																	if (parse_id(acc)) {
-																		if (addVerbatim(acc, "list2")) {
-																			if (matchString(acc, "::=")) {
-																				if (parse_ws(acc)) {
-																					if (parse_exp11(acc)) {
-																						if (addVerbatim(acc, "cons")) {
-																							if (addMatched(acc, "__mutassign")) {
-																								if (addVerbatim(acc, "swap")) {
-																									if (addVerbatim(acc, "call")) {
-																										discardDCheckpoint(acc)
-																									} else {
-																										restoreDCheckpoint(acc)
-																									}
-																								} else {
-																									restoreDCheckpoint(acc)
-																								}
-																							} else {
-																								restoreDCheckpoint(acc)
-																							}
-																						} else {
-																							restoreDCheckpoint(acc)
-																						}
-																					} else {
-																						restoreDCheckpoint(acc)
-																					}
-																				} else {
-																					restoreDCheckpoint(acc)
-																				}
+																		if (addMatched(acc, ".")) {
+																			if (addVerbatim(acc, "binop")) {
+																				discardDCheckpoint(acc)
 																			} else {
 																				restoreDCheckpoint(acc)
 																			}
@@ -2538,12 +2355,20 @@ parse_exp11(acc : DParseAcc) -> bool {
 															} else {
 																{
 																	pushDCheckpoint(acc);
-																	if (if (matchString(acc, ".")) {
+																	if (if (matchString(acc, "[")) {
 																		if (parse_ws(acc)) {
-																			if (parse_id(acc)) {
-																				if (addMatched(acc, ".")) {
-																					if (addVerbatim(acc, "binop")) {
-																						discardDCheckpoint(acc)
+																			if (parse_exp(acc)) {
+																				if (matchString(acc, "]")) {
+																					if (parse_ws(acc)) {
+																						if (addMatched(acc, "__index")) {
+																							if (addVerbatim(acc, "binop")) {
+																								discardDCheckpoint(acc)
+																							} else {
+																								restoreDCheckpoint(acc)
+																							}
+																						} else {
+																							restoreDCheckpoint(acc)
+																						}
 																					} else {
 																						restoreDCheckpoint(acc)
 																					}
@@ -2561,42 +2386,7 @@ parse_exp11(acc : DParseAcc) -> bool {
 																	}) {
 																		discardDCheckpoint(acc)
 																	} else {
-																		{
-																			pushDCheckpoint(acc);
-																			if (if (matchString(acc, "[")) {
-																				if (parse_ws(acc)) {
-																					if (parse_exp(acc)) {
-																						if (matchString(acc, "]")) {
-																							if (parse_ws(acc)) {
-																								if (addMatched(acc, "__index")) {
-																									if (addVerbatim(acc, "binop")) {
-																										discardDCheckpoint(acc)
-																									} else {
-																										restoreDCheckpoint(acc)
-																									}
-																								} else {
-																									restoreDCheckpoint(acc)
-																								}
-																							} else {
-																								restoreDCheckpoint(acc)
-																							}
-																						} else {
-																							restoreDCheckpoint(acc)
-																						}
-																					} else {
-																						restoreDCheckpoint(acc)
-																					}
-																				} else {
-																					restoreDCheckpoint(acc)
-																				}
-																			} else {
-																				restoreDCheckpoint(acc)
-																			}) {
-																				discardDCheckpoint(acc)
-																			} else {
-																				restoreDCheckpoint(acc)
-																			}
-																		}
+																		restoreDCheckpoint(acc)
 																	}
 																}
 															}
@@ -2605,18 +2395,12 @@ parse_exp11(acc : DParseAcc) -> bool {
 												}
 											}
 										}
-									})) {
-										discardDCheckpoint(acc)
-									} else {
-										restoreDCheckpoint(acc)
 									}
-								} else {
-									restoreDCheckpoint(acc)
-								}) {
-									discardDCheckpoint(acc)
-								} else {
-									restoreDCheckpoint(acc)
 								}
+							})) {
+								discardDCheckpoint(acc)
+							} else {
+								restoreDCheckpoint(acc)
 							}
 						} else {
 							restoreDCheckpoint(acc)
