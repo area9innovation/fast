@@ -98,7 +98,7 @@ exp =
 	|> exp (":" ws type $$":" $"binop")+
 
 	|> (
-		exp "??" ws <exp $"list2" ":" ws exp $"cons" $$"__maybe" $"var" $"swap" $"call"
+		exp "??" ws <exp $"list2" ":" ws exp $"cons" $$"__ctmaybe" $"var" $"swap" $"call"
 	)
 	|> (
 		'!' ws exp $$"!" $"unop"

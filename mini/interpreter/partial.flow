@@ -16,14 +16,18 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 		MiniLambda(args, body, tyvar): {
 			MiniLambda(args, partialMiniExp(env, body), tyvar);
 		}
-		MiniCall(fn, args, tyvar): {
+		MiniCall(ofn, oargs, tyvar): {
+			fn = partialMiniExp(env, ofn);
+			args = map(oargs, \a -> partialMiniExp(env, a));
 			def = \ -> {
-				MiniCall(partialMiniExp(env, fn), map(args, \a -> partialMiniExp(env, a)), tyvar);
+				MiniCall(fn, args, tyvar);
 			};
 			switch (fn) {
 				MiniVar(fname, __): {
 					if (fname == "__ctcase") {
 						processMiniCase(env, args);
+					} else if (fname == "__ctmaybe") {
+						processMiniMaybe(env, args);
 					} else if (fname == "__compiletime") {
 						interpretMiniExp(env, e);
 					} else {
@@ -90,6 +94,97 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 			Some(uniondef): {
 				println("TODO: Implement expansion of union case in switch: " + struct);
 				body;
+			}
+		}
+	}
+}
+
+processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
+	/*
+	We expand "a ?? b : c" like this:
+
+	__switchvar = %a%;
+	__switch(
+		__switchvalue(__switchvar), 
+		__or(
+			__case(
+				__caseid(Some), 
+				__casebody(
+					__switchvar, 
+					__type("Some"), 
+					(
+						__maybevalue = .(__switchvar, "value");
+						replace(%b%, %a%, __maybevalue) 
+					)
+				)
+			), 
+			__case(
+				__caseid(None), 
+				__casebody(
+					__switchvar, 
+					__type("None"), 
+					%c%
+				)
+			)
+		)
+	)
+	*/
+
+	MiniLet("__switchvar", args[0], 
+		MiniCall(MiniVar("__switch", 0), [
+			MiniCall(MiniVar("__switchvalue", 0), [
+				MiniVar("__switchvar", 0)
+			], 0),
+			MiniCall(MiniVar("__or", 0), [
+				MiniCall(MiniVar("__case", 0), [
+					MiniCall(MiniVar("__caseid", 0), [
+						MiniVar("Some", 0)
+					], 0),
+					MiniCall(MiniVar("__casebody", 0), [
+						MiniVar("__switchvar", 0),
+						MiniCall(MiniVar("__type", 0), [MiniString("Some")], 0),
+						MiniLet(
+							"__maybeval",
+							MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString("value")], 0),
+							// Replace "args[0]" with MiniVar("__maybeval")
+							replaceMiniExp(args[1], args[0], MiniVar("__maybeval", 0)),
+							0
+						)
+					], 0),
+
+				], 0),
+				MiniCall(MiniVar("__case", 0), [
+					MiniCall(MiniVar("__caseid", 0), [
+						MiniVar("None", 0)
+					], 0),
+					MiniCall(MiniVar("__casebody", 0), [
+						MiniVar("__switchvar", 0),
+						MiniCall(MiniVar("__type", 0), [MiniString("None")], 0),
+						args[2]
+					], 0),
+				], 0)
+			], 0)
+		], 0), 0
+	);
+}
+
+replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
+	if (e == finde) replacee
+	else {
+		rec = \v -> replaceMiniExp(v, finde, replacee);
+		switch (e) {
+			MiniInt(value, tyvar): e;
+			MiniDouble(value): e;
+			MiniString(value): e;
+			MiniVar(name, tyvar): e;
+			MiniLet(name, value, body, tyvar): {
+				MiniLet(name, rec(value), rec(body), tyvar)
+			}
+			MiniLambda(args, body, tyvar): {
+				MiniLambda(args, rec(body), tyvar);
+			}
+			MiniCall(fn, args, tyvar): {
+				MiniCall(rec(fn), map(args, rec), tyvar)
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 native println : io (flow) -> void = Native.println;
 
-Maybe ::= None, Some<?>;
+Maybe<?> ::= None, Some<?>;
 	None();
 	Some(value : ?);
 
@@ -12,19 +12,18 @@ either(m, alternative) {
 	}
 }
 
-
 main() {
-	None();
+	n = None();
 	s = Some(1);
 	println(s.value);
 	println(either(s, 14));
-	m : Maybe = s;
+	m : Maybe = if (true) s else n;
 	println(switch (m) {
+		Some(v): v + 1;
 		None(): 0;
-		Some(v): v;
 	});
-//	println(s ?? { 1; } : 0);
+	println(m ?? { m + 1; } : 0);
 
 //	e = Some(s with value = 2);
-	e;
+//	s;
 }
