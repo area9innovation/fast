@@ -9,5 +9,7 @@ extractBExpGlobals(program : BExpProgram) -> BExpProgram {
 	// them out to one, new top-level decl with a big array of these values, and 
 	// replace references to the constants with an index into this array.
 
+	// TODO: Implement this phase
+
 	program;
 }

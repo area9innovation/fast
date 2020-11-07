@@ -23,8 +23,8 @@ main() {
 		miniProcessCommand(cdb, make(""), \tdb -> {
 			program = miniAst2BProgram(tdb.program);
 
-			if (verbose > 2) {
-				println("\nDeclarations after type checking:");
+			if (verbose > 1) {
+				println("\nMini declarations after type checking:");
 				traverseInOrder(tdb.program.declarations, \st, val -> {
 
 					deps = getMiniDependencies(tdb.program.idDependents, st, false);
@@ -71,7 +71,7 @@ main() {
 				println(flowprogram);
 			};
 
-			if (verbose > 0) {
+			if (verbose > 1) {
 				println("\nJS output:");
 				println(jsprogram);
 			};

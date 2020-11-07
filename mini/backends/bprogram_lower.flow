@@ -43,6 +43,7 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 		})
 	);
 
+	// Optimize constants
 	opt = extractBExpGlobals(bexp);
 
 	BProgram(
