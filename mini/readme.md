@@ -36,6 +36,7 @@
 - [Switch](#switch)
 - [Switch backend](#switch-backend)
 - [Native runtime](#native-runtime)
+- [Polymorphism](#polymorphism)
 
 This is an experiment to build a queue-based, always live compiler.
 
@@ -654,3 +655,14 @@ This is the fastest way to iterate an array in JS:
 		dosmth = arr[x];
 		++x;
 	}
+
+
+# Polymorphism
+
+When we have top-level polymorphism, it is tracked by 
+having a type declaration in the types with typars.
+
+When we do inference of such a thing, we should probably
+keep them as ?.
+
+When we reference a polymorphic name, it should be instantiated.

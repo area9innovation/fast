@@ -57,7 +57,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		println("\nBefore resolution:");
 		debugMiniTypeEnv(tenv2);
 
-		println("\nDeclarations before:");
+		println("\nMini exp declarations before:");
 		iter(order, \id -> {
 			mfn = lookupTree(ast.declarations, id);
 			mfn ?? {

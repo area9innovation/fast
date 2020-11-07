@@ -1,4 +1,4 @@
-a : int;
+a : double;
 foo(a : double) -> int;
 
 bar(a : ?) -> ?;
