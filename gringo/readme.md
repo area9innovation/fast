@@ -105,6 +105,15 @@ operations are produced verbatim.
 
 ## TODO
 
+- This construct is exponential:
+	exp1 = exp2 (...)+ | exp2
+
+  but can be changed to 
+
+	exp1 = exp2 (...)*
+
+  which is not. Do this, and found out why we did not warn about it.
+
 - Warn if the "last" level of a GPrecedence sequence has left- or right-
   recursion, which will break precedence
 
@@ -115,11 +124,6 @@ operations are produced verbatim.
 - "flowfile" to make a parser driver
 
 - Support multiple grammars to allow composition
-
-- Introduce pegcode or direct flow generation for faster parsing
-	http://www.inf.puc-rio.br/~roberto/docs/peg.pdf
-
-- Add error recovery
 
 - Add JSON action output, parse flow types, and construct actions for that
 

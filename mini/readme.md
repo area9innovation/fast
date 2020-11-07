@@ -100,8 +100,14 @@ the development, we have defined some milestones.
 
 - Parse all of flow syntax. Missing:
 
-  - maybe ?? exp : exp, string-include, quoting, string-escapes in AST, forbid
+  - maybe ?? exp : exp, string-include, quoting, string-escapes in AST
   - require, forbid
+  - Optimizations possible in parser: 
+    - Use && instead of nested ifs
+    - Change NOT to be a sequence
+	- Epsilon is probably correctly compiled to TRUE
+	- Add a BExp backend for DOpCode, and add a C++ or Rust backend for BExp
+      and try to use Wasm
 
 - Get type inference to work: 
   - Type declarations are ignored
