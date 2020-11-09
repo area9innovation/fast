@@ -28,13 +28,15 @@ debugMiniTypeEnv(env : MiniTypeEnv) -> void {
 		generate(1, ^(env.tyvarId), \id -> {
 			println(miniPrettyTypeVar(env, id));
 
-			lower = lookupMultimap(^(env.tyvarLowerBounds), id);
-			upper = lookupMultimap(^(env.tyvarLowerBounds), id);
-			if (!isEmptySet(lower)) {
-				println("    Lower: " + superglue(set2array(lower), miniType2string, ", "));
-			}
-			if (!isEmptySet(upper)) {
-				println("    Upper: " + superglue(set2array(upper), miniType2string, ", "));
+			if (false) {
+				lower = lookupMultimap(^(env.tyvarLowerBounds), id);
+				upper = lookupMultimap(^(env.tyvarLowerBounds), id);
+				if (!isEmptySet(lower)) {
+					println("    Lower: " + superglue(set2array(lower), miniType2string, ", "));
+				}
+				if (!isEmptySet(upper)) {
+					println("    Upper: " + superglue(set2array(upper), miniType2string, ", "));
+				}
 			}
 		});
 		{}

@@ -29,8 +29,10 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 						} else if (name == "int") {
 							miniTypeInt
 						} else if (name != "" && trim2(name, "?") == "") {
+							// Type parameter
 							MiniTypePar(name)
 						} else {
+							// Typename
 							targs = map(tail(args), convertMiniExp2Type);
 							MiniTypeCall(name, targs);
 						}

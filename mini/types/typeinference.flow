@@ -46,8 +46,18 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 	// Check if we have a forward declaration, 
 	mforward = lookupTree(env.ast.types, id);
 	mforward ?? {
-		// when we do, then constraint it, but keep it as the type of this id
+		// When we do, then constraint it, but keep it as the type of this id
 		constrainMiniType(env0, inferredType, mforward) ;
+
+
+		if (false) {
+			// If this is polymorphic, we could probably resolve it immediately?
+			typars = extractMiniTypePars(makeSet(), mforward);
+			if (!isEmptySet(typars)) {
+				println(typars);
+			}
+		}
+
 		env0
 	} : {
 		// No forward, so set the type
@@ -159,7 +169,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 		// println("Constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
 
 		error = \ -> {
-			println("Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
+			env.onError("Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
 		};
 
 		rightTyVar = \rid -> {

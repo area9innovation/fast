@@ -24,7 +24,11 @@ typePars2TypeVars(env : MiniTypeEnv, typarMap : ref Tree<string, int>, e : MiniT
 		MiniTypeCall(id, typars): {
 			MiniTypeCall(id, map(typars, \a -> typePars2TypeVars(env, typarMap, a)));
 		}
-		MiniTypeVar(id): e;
+		MiniTypeVar(id): {
+			mtype = lookupTree(^(env.tyvars), id);
+			mtype ?? {
+				typePars2TypeVars(env, typarMap, mtype);
+			} : e;		}
 		MiniTypePar(id): {
 			mtyvarid = lookupTree(^typarMap, id);
 			mtyvarid ?? { MiniTypeVar(mtyvarid) } : {

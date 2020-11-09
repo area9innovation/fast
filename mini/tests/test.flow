@@ -1,4 +1,7 @@
+
 native println : io (?) -> void = Native.println;
+
+println(v : ?) -> void;
 
 a : double;
 foo(a : double) -> int;

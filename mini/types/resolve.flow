@@ -1,4 +1,7 @@
 import mini/types/typeenv;
+import text/blueprint;
+import mini/types/pretty;
+import mini/types/builtin;
 
 export {
 	// Lookup the type
@@ -11,7 +14,14 @@ resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType {
 	mtype ?? {
 		mtype
 	} : {
-		// println("Could not resolve tyvar " + i2s(tyvarId));
-		MiniTypeVar(tyvarId);
+		if (tyvarId == 0) {
+			miniTypeVoid
+		} else {
+			lower = lookupMultimap(^(env.tyvarLowerBounds), tyvarId);
+			upper = lookupMultimap(^(env.tyvarLowerBounds), tyvarId);
+			fn = \l -> "{" + superglue(set2array(l), miniType2string, ", ") + "}";
+			env.onError("Could not resolve tyvar " + i2s(tyvarId) + " with " + fn(lower) + ".." + fn(upper));
+			MiniTypeVar(tyvarId);
+		}
 	};
 }
