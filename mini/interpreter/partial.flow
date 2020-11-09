@@ -190,10 +190,3 @@ replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
 		}
 	}
 }
-
-getMiniVar(m : MiniExp) -> string {
-	switch (m) {
-		MiniVar(s, __): s;
-		default: "";
-	}
-}

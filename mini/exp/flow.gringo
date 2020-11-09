@@ -175,7 +175,7 @@ type =
 		| $("?"+) ws $"type0"
 	;
 
-typename = id $"var" typars $"call"; 
+typename = id $"var" typars $"call" $"type0";
 
 typars = "<" ws types ">" ws
 	| $"nil";

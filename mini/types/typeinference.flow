@@ -3,6 +3,7 @@ import mini/types/pretty;
 import mini/types/type_ast;
 import mini/types/polymorphism;
 import mini/types/debug;
+import net/url_parameter;
 import ds/treeutils;
 
 export {
@@ -220,12 +221,19 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 			MiniTypeCall(lid, ltypars): {
 				switch (rhs) {
 					MiniTypeCall(rid, rtypars): {
-						if (lid != rid || length(ltypars) != length(rtypars)) {
-							error();
+						if (lid != rid) {
+							constrainMiniTypeCalls(env, lhs, rhs);
 						} else {
-							iteri(ltypars, \i, larg -> {
-								constrainMiniType(env, rtypars[i], larg);
-							});
+							if (isUrlParameterTrue("strict") && length(ltypars) != length(rtypars)) {
+								// We do not allow "implicit" type parameters when strict
+								error();
+							} else {
+								iteri(ltypars, \i, larg -> {
+									if (i < length(rtypars)) {
+										constrainMiniType(env, rtypars[i], larg);
+									}
+								});
+							}
 						}
 					}
 					MiniTypeVar(rid): rightTyVar(rid);
@@ -272,6 +280,11 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 			}
 		}
 	}
+}
+
+constrainMiniTypeCalls(env : MiniTypeEnv, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
+	println("TODO: Constrain " + lhs.id + " vs " + rhs.id);
+
 }
 
 setMiniLocalType(env : MiniTypeEnv, id : string, type : MiniType) -> MiniTypeEnv {
@@ -332,3 +345,4 @@ constrainUpperBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 		constrainMiniType(env, type, utype)
 	})
 }
+

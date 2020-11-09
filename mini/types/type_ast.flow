@@ -9,6 +9,8 @@ export {
 	convertMiniExp2Type(e : MiniExp) -> MiniType;
 
 	miniType2Exp(t : MiniType) -> MiniExp;
+
+	getMiniVar(m : MiniExp) -> string;
 }
 
 convertMiniExp2Type(e : MiniExp) -> MiniType {
@@ -31,8 +33,22 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 						} else if (name != "" && trim2(name, "?") == "") {
 							// Type parameter
 							MiniTypePar(name)
+						} else if (name == "") {
+							if (length(args) == 1) {
+								// Typename<typars>
+								switch (args[0]) {
+									MiniCall(tfn, nargs, __): {
+										tname = getMiniVar(tfn);
+										targs = map(nargs, convertMiniExp2Type);
+										MiniTypeCall(tname, targs);
+									}
+									default: {
+										error();
+									}
+								}
+							} else error();
 						} else {
-							// Typename
+							// string, flow, auto, ref, array
 							targs = map(tail(args), convertMiniExp2Type);
 							MiniTypeCall(name, targs);
 						}
@@ -44,7 +60,7 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 						fields = map(args, convertMiniExp2Field);
 						MiniTypeRecord(fields);
 					} else {
-						MiniTypeCall(fname, map(args, convertMiniExp2Type));
+						error();
 					}
 				}
 				default: error();
@@ -105,5 +121,13 @@ miniType2Exp(t : MiniType) -> MiniExp {
 				], 0);
 			}), 0)
 		}
+	}
+}
+
+
+getMiniVar(m : MiniExp) -> string {
+	switch (m) {
+		MiniVar(s, __): s;
+		default: "";
 	}
 }
