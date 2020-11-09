@@ -43,6 +43,9 @@ functionOrStruct =
 	| id '(' ws $"dup" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
 	| id '(' ws $"dup" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" exp ';'? ws $"lambda" $"define"
 
+	// When we only have names
+	| id '(' ws names ')' ws exp ';'? ws $"lambda" $"define"
+
 	// Forward type declarations
 	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
 	| id ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
@@ -64,7 +67,7 @@ vardecl = id ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
 	| id ':' ws type ';'? ws $"typedef";
 
 exp = 
-	backslash lambdaargs ws "->" ws exp $"lambda"
+	backslash ws lambdaargs "->" ws exp $"lambda"
 	// OK, should this be done differently?
 	|> (
 		id "=" ws exp #";" ws semiexps $"let"
@@ -149,7 +152,7 @@ cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")* | $$"__void" 
 defaultOrNamedCase = 
 	"default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
 	// __ctcase(id, cons(args), body)
-	| $"nil" id $"cons" '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call";
+	| $"nil" id $"var" $"cons" '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call";
 
 names = $"nil" id $"cons" ("," ws id $"cons")* | $"nil";
 
@@ -187,10 +190,11 @@ types = $"nil" type $"cons" ("," ws type $"cons")* ("," ws)? | $"nil";
 	typedarg = id $"drop" ':' ws type;
 
 // listof(lambdaarg)
-lambdaargs = $"nil" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? | $"nil";
+lambdaargs = $"nil" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? 
+		| $"nil";
 
-	// We just drop the type for now
-	lambdaarg = funarg;
+	// TODO: If there is a type, capture it and do a type annotation of the lambda!
+	lambdaarg = id ':' ws type $"drop" | id;
 
 // listof(exp, ",")
 exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";

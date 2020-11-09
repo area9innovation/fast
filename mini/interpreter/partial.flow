@@ -44,7 +44,7 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 // This expands switch cases correctly
 // __ctcase(id, __cons("a", "b"), body)
 processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
-	struct : string = getMiniString(args[0]);
+	struct : string = getMiniVar(args[0]);
 	vars : [string] = map(getMiniArray(args[1]), getMiniString);
 	body = partialMiniExp(env, args[2]);
 
@@ -188,5 +188,12 @@ replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
 				MiniCall(rec(fn), map(args, rec), tyvar)
 			}
 		}
+	}
+}
+
+getMiniVar(m : MiniExp) -> string {
+	switch (m) {
+		MiniVar(s, __): s;
+		default: "";
 	}
 }
