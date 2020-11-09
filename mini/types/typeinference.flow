@@ -87,7 +87,9 @@ https://github.com/LPTK/simple-sub
 */
 typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 	switch (ex) {
-		MiniInt(value, __): setMiniTypeVar(env, ex, MiniTypeInt(32));
+		MiniInt(value, tv): {
+			setMiniTypeVar(env, ex, MiniTypeInt(32));
+		}
 		MiniDouble(value): MiniTypeCall("double", []);
 		MiniString(value): MiniTypeCall("string", []);
 		MiniVar(name, __): {
@@ -150,7 +152,15 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 						// This is special.
 						argType = typeInferenceMini(env, args[0]);
 						type = convertMiniExp2Type(args[1]);
-						constrainMiniType(env, argType, type);
+						switch (args[0]) {
+							MiniInt(__, __): {
+								// This is fine
+							}
+							default: {
+								// For the rest, check the type
+								constrainMiniType(env, argType, type);
+							}
+						};
 						setMiniTypeVar(env, ex, type);
 					} else def();
 				}
