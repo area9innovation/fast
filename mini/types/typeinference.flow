@@ -20,7 +20,6 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ref makeTree(),
 		ref 1,
 		ref makeTree(),
-		ref MiniTypeParMap(makeTree(), makeTree()),
 		ref makeSet(),
 		\e -> println(e)
 	);
@@ -96,7 +95,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 			};
 
 			// OK, we should instantiate this polymorphism
-			itype = localTypePars2TypeVars(env, type);
+			itype = instantiateTypePars2TypeVars(env, type);
 
 			setMiniTypeVar(env, ex, itype);
 		}

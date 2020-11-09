@@ -21,20 +21,10 @@ export {
 		// This is set by the resolution
 		tyvars : ref Tree<int, MiniType>,
 
-		// Map to handle top-level polymorphism (does not work yet)
-		typars : ref MiniTypeParMap,
-
 		// We keep a cache of constraints to avoid infinite loops
 		constraintCache : ref Set<Pair<MiniType, MiniType>>,
 
 		// To report errors
 		onError : (string) -> void,
 	);
-
-	MiniTypeParMap(
-		// Map from type par to type var id
-		typars : Tree<string, int>,
-		// From type var id to type par
-		tyvars : Tree<int, string>
-	);	
 }

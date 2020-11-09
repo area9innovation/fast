@@ -1,3 +1,5 @@
+native println : io (?) -> void = Native.println;
+
 a : double;
 foo(a : double) -> int;
 
@@ -10,5 +12,7 @@ bar(a : ?) -> ? {
 a = 10.65;
 
 main() {
-	bar(a);
+	f = bar;
+	println(f(a));
+	println(f(1));
 }
