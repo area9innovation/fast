@@ -271,6 +271,40 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			);
 		}),
 
+		Pair("splitargs", \stack -> {
+			// [ a: type1, b : type2]  --> [a, b]  [ type1, type]
+			funargs = popMStack(stack);
+			fargs = getMiniArray(funargs.first);
+
+			names = map(fargs, \arg -> {
+				// :(name, type)
+				switch (arg) {
+					MiniCall(__, args, __): {
+						args[0];
+					}
+					default: arg;
+				}
+			});
+
+			types = map(fargs, \arg -> {
+				// :(name, type)
+				switch (arg) {
+					MiniCall(__, args, __): {
+						args[1];
+					}
+					default: arg;
+				}
+			});
+
+			a2list = \ar -> {
+				fold(ar, MiniCall(MiniVar("nil", 0), [], 0), \acc, a -> {
+					MiniCall(MiniVar("cons", 0), [a, acc], 0)
+				})
+			}
+
+			s1 = pushMStack(funargs.second, a2list(names));
+			pushMStack(s1, a2list(types));
+		}),
 
 		//
 		// List

@@ -1,5 +1,4 @@
 // TODO: We should probably set some marker that a new file is started, instead of immediately adding the parse
-// TODO: We should probably set some marker that a new file is started, instead of immediately adding the parse
 flow = '\uFEFF'? ws importExport* toplevelDeclaration* $"popfile";
 
 importExport = import
@@ -12,6 +11,7 @@ import = "import" s $path ws ';' ws $$".flow" $"changeFileExt" $"parsefile";
 dynamicImport = "require" s $path ws ';' ws; // TODO: AST
 
 // TODO: AST. We could set some marker that the following are exported.
+// Unfortuately, setannotation can not be used, since all setannotations are processed before defines
 export = "export" ws '{' ws toplevelDeclaration+ '}' ws; 
 forbid = "forbid" s $path ws ';' ws; // TODO: AST
 	path = bid ('/' bid)*;
@@ -38,10 +38,10 @@ functionOrStruct =
 	  id '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
 	| id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
 
-	// TODO: We should keep the fn type in the next 3
-	| id '(' ws funargs ')' ws returnType $"drop" brace $"lambda" $"define"
-	| id '(' ws funargs ')' ws brace $"lambda" $"define"
-	| id '(' ws funargs ')' ws exp ';'? ws $"lambda" $"define"
+	// This form makes both a forward-type declaration as well as the definition
+	| id '(' ws $"dup" funargs ')' ws $"splitargs" returnType $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
+	| id '(' ws $"dup" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
+	| id '(' ws $"dup" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" exp ';'? ws $"lambda" $"define"
 
 	// Forward type declarations
 	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
@@ -52,9 +52,7 @@ functionOrStruct =
 
 	// listof(funarg, ",")
 	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)? | $"nil";
-	// This is what we want:
-	// funarg = id ':' ws type $$":" $"binop";
-	funarg = id (':' ws type $"drop")?;
+	funarg = id ':' ws type $$":" $"binop";
 
 	// listof(structarg, ",")
 	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
