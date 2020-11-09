@@ -21,10 +21,10 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 	} else if (command == "popfile") {
 		pushMiniCommand(db, MiniPopFile(file));
 	} else if (command == "setannotation") {
-		// MiniSetAnnotation(annotation : string, scope : string, value : MiniExp);
+		// MiniSetAnnotation(scope : string, annotation : string, value : MiniExp);
 		value = popMiniValue(db);
-		scope = popMiniValue(value.second);
-		annotation = popMiniValue(scope.second);
+		annotation = popMiniValue(value.second);
+		scope = popMiniValue(annotation.second);
 		scopes = getMiniString(scope.first);
 		annotations = getMiniString(annotation.first);
 
@@ -33,7 +33,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		} else {
 			// println("Defined " + names);
 		};
-		pushMiniCommand(annotation.second, MiniSetAnnotation(annotations, scopes, value.first));
+		pushMiniCommand(scope.second, MiniSetAnnotation(scopes, annotations, value.first));
 	} else if (command == "typedef") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);

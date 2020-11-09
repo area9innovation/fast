@@ -49,14 +49,14 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 		// When we do, then constraint it, but keep it as the type of this id
 		constrainMiniType(env0, inferredType, mforward) ;
 
-
 		if (false) {
 			// If this is polymorphic, we could probably resolve it immediately?
 			typars = extractMiniTypePars(makeSet(), mforward);
 			if (!isEmptySet(typars)) {
+				println(id);
 				println(typars);
 			}
-		}
+		};
 
 		env0
 	} : {

@@ -295,6 +295,9 @@ value, and then use "define" to commit the definition to the compile server.
 
 	<e1> <e2> <op> binop    - push call(var(op), cons(e2, cons(e1, nil))
 
+	<scope> <annotation> <value> 
+			setannotation   - defines an annotation of the id in the scope
+
 ### Forth Evaluation
 
 	<string> evallines  	- evaluates each line in this string as a separate command

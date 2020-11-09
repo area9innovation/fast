@@ -83,10 +83,11 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				db;
 			}
 		}
-		MiniSetAnnotation(annotation, scope, value): {
-			ann = MiniAnnotation(annotation, scope, value);
+		MiniSetAnnotation(scope, annotation, value): {
+			ann = MiniAnnotation(scope, annotation, value);
 
 			annotations = getTreeArrayValue(db.program.unprocessedAnnotations, scope);
+
 			keep = filter(annotations, \a -> {
 				a.annotation != annotation
 			});
