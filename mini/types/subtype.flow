@@ -9,7 +9,9 @@ export {
 
 
 constrainMiniTypeCalls(env : MiniTypeEnv, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
-	if (isMiniTypeNameIncluded(env.ast, lhs.id, rhs.id)) {
+	if (lhs.id == "auto" || rhs.id == "auto") {
+		// OK, nothing to do.
+	} else if (isMiniTypeNameIncluded(env.ast, lhs.id, rhs.id)) {
 		// TODO: Figure out how the type-pars align with each other
 		if (lhs.typars != [] || rhs.typars != []) {
 			println("TODO: Constrain typars of " + miniType2string(lhs) + " vs " + miniType2string(rhs));
@@ -21,19 +23,15 @@ constrainMiniTypeCalls(env : MiniTypeEnv, lhs : MiniTypeCall, rhs : MiniTypeCall
 
 // Check if this left name is inside the typename on the right
 isMiniTypeNameIncluded(env : MiniAst, left : string, right : string) -> bool {
-	if (left == "auto" || right == "auto") {
-		true
-	} else {
-		munion = lookupTree(env.unions, right);
-		switch (munion) {
-			None(): {
-				left == right;
-			}
-			Some(uniondef): {
-				fold(uniondef.typenames, false, \acc, type -> {
-					acc || isMiniTypeNameIncluded(env, left, getMiniTypeName(type))
-				});
-			}
+	munion = lookupTree(env.unions, right);
+	switch (munion) {
+		None(): {
+			left == right;
+		}
+		Some(uniondef): {
+			fold(uniondef.typenames, false, \acc, type -> {
+				acc || isMiniTypeNameIncluded(env, left, getMiniTypeName(type))
+			});
 		}
 	}
 }
