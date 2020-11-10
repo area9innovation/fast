@@ -12,9 +12,9 @@ prettyBProgram(p : BProgram) -> string {
 prettyBDeclaration(b : BDeclaration) -> string {
 	switch (b) {
 		BFunction(name, args, body, tc, type): {
-			(if (tc) "tailcall " else "") + name + "(" + superglue(args, \a -> a.name , ", ") + ") {\n"
+			(if (tc) "tailcall " else "") + name + "(" + superglue(args, \a -> a.name , ", ") + ") : " + miniType2string(type) + " {\n"
 			+ prettyBStatement(body)
-			+ "\n}" + ":" + miniType2string(type)
+			+ "\n}"
 		}
 		BGlobalVar(name, body, type): {
 			name + "=" + prettyBExp(body) + ":" + miniType2string(type);
