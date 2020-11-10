@@ -40,7 +40,7 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 	pairs2tree([
 		Pair("__ifte", MiniTypeFunction([b, ta, ta], ta)),
-		Pair("__ift", MiniTypeFunction([b, v, v], v)),
+		Pair("__ift", MiniTypeFunction([b, v], v)),
 
 		Pair(";", MiniTypeFunction([ta, tb], tb)),
 

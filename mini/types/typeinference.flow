@@ -183,22 +183,28 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 		error = \ -> {
 			env.onError("Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
 		};
-
-		rightTyVar = \rid -> {
-			addMiniLowerBound(env, rid, lhs);
-			constrainUpperBounds(env, rid, lhs);
-		};
-
-		todo = \ -> {
-			println("TODO: Implement constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
-		};
+		right = \ -> {
+			switch (rhs) {
+				MiniTypeVar(rid): {
+					addMiniLowerBound(env, rid, lhs);
+					constrainUpperBounds(env, rid, lhs);
+				}
+				MiniTypeCall(rid, rtypars): {
+					if (rid == "auto" && rtypars == []) {
+						// This is fine
+					} else if (rid == "flow"  && rtypars == []) {
+						// This is fine
+					} else error();
+				}
+				default: error();
+			}
+		}
 
 		switch (lhs) {
 			MiniTypeInt(lbits): {
 				switch (rhs) {
 					MiniTypeInt(rbits): if (lbits != rbits) error();
-					MiniTypeVar(rid): rightTyVar(rid);
-					default: error();
+					default: right();
 				}
 			}
 			MiniTypeFunction(largs, lreturnType): {
@@ -214,18 +220,21 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 							constrainMiniType(env, lreturnType, rreturnType);
 						}
 					}
-					MiniTypeVar(rid): rightTyVar(rid);
-					default: error();
+					default: right();
 				}
 			}
-
 			MiniTypeCall(lid, ltypars): {
 				switch (rhs) {
 					MiniTypeCall(rid, rtypars): {
 						constrainMiniTypeCalls(env, constrainMiniType, lhs, rhs);
 					}
-					MiniTypeVar(rid): rightTyVar(rid);
-					default: error();
+					default: {
+						if (lid == "auto" && ltypars == []) {
+							// This is fine
+						} else {
+							right();
+						}
+					}
 				}
 			}
 			MiniTypeVar(lid): {
@@ -236,7 +245,6 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 
 				switch (rhs) {
 					MiniTypeVar(rid): if (lid != rid) {
-//						rightTyVar(rid);
 						def();
 					};
 					default: def();
@@ -249,8 +257,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 							error();
 						}
 					}
-					MiniTypeVar(rid): rightTyVar(rid);
-					default: error();
+					default: right();
 				}
 			}
 			MiniTypeRecord(fields): {
@@ -264,7 +271,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 							}
 					}
 				*/
-				todo();
+				println("TODO: Implement constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
 			}
 		}
 	}

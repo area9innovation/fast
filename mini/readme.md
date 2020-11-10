@@ -113,8 +113,6 @@ the development, we have defined some milestones.
 	- Consider to make // and /* an operator in some contexts to capture them
 
 - Get type inference to work: 
-  - Type declarations are ignored
-  - Fix polymorphism recovery
   - Fields, struct and unions
   - Improve type inference
 
@@ -124,6 +122,11 @@ the development, we have defined some milestones.
    - Check imports/exports, undefined names
 
 - Get error messages with locations to work
+
+- Introduce "options" for strict polymorphism, flow-type, etc. for language variations
+
+- Mark code in the compiler that is specific to flow somehow, so we can abstract the core
+  out of the main part.
 
 - Add jupyter-style notebook feature and "resident" icon for the compiler
 
