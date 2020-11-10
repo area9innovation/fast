@@ -98,8 +98,6 @@ the development, we have defined some milestones.
 - Get euler examples to compile and run in JS.
   - euler10: We end up with the wrong addition due to type checking problems
 
-  - Make sure natives end up in types
-
   - Figure out natives from runtime & linking
 
 - Parse all of flow syntax. Missing:

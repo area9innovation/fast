@@ -103,10 +103,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			// We just do it, no questions asked
 
 			// TODO: Maybe we have to refine this later for incremental
-			MiniDb(
-				db with
-				program = MiniAst(db.program with types = setTree(db.program.types, name, type))
-			);
+			defineMiniType(db, name, type)
 		}
 		MiniDefine(file, id, body): {
 			// OK, extract annotations - TODO: Decide whether this is the time to do it or not
@@ -202,6 +199,12 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string) -> MiniDb {
 	if (isEmptySet(newDeps)) db else pushMiniCommand(db, MiniTypeInfer(newDeps));
 }
 
+defineMiniType(db : MiniDb, name : string, type : MiniType) -> MiniDb {
+	MiniDb(
+		db with
+		program = MiniAst(db.program with types = setTree(db.program.types, name, type))
+	);
+}
 
 defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -> MiniDb {
 	ast = db.program;
@@ -218,14 +221,27 @@ defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -
 	MiniDb(db2 with program = nast);
 }
 
-processMiniAnnotation(db : MiniDb, file : string, annotation : MiniAnnotation) -> MiniDb {
+
+
+processMiniAnnotation(db0 : MiniDb, file : string, annotation : MiniAnnotation) -> MiniDb {
 	if (annotation.annotation == "native") {
+		// Register the type
+		etype = switch (annotation.value) {
+			MiniCall(fn, args, tyvar): {
+				args[1];
+			}
+			default: annotation.value;
+		};
+		type = convertMiniExp2Type(etype);
+		db = defineMiniType(db0, annotation.scope, type);
+
+		// Merge any fallback we might have
 		mfallback = lookupTree(db.program.declarations, annotation.scope);
 		mfallback ?? {
 			// OK, we have a fallback, so merge that into
 			combined = switch (annotation.value) {
-				MiniCall(fn, args, type): {
-					MiniCall(fn, arrayPush(args, mfallback), type);
+				MiniCall(fn, args, tyvar): {
+					MiniCall(fn, arrayPush(args, mfallback), tyvar);
 				}
 				default: annotation.value;
 			};
@@ -237,6 +253,6 @@ processMiniAnnotation(db : MiniDb, file : string, annotation : MiniAnnotation) -
 	} else {
 		println("Unhandled annotation:");
 		println(annotation);
-		db;
+		db0;
 	}
 }
