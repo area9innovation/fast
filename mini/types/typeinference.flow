@@ -5,7 +5,6 @@ import mini/types/type_ast;
 import mini/types/subtype;
 import mini/types/polymorphism;
 import mini/types/debug;
-import net/url_parameter;
 import ds/treeutils;
 
 export {
@@ -223,20 +222,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 			MiniTypeCall(lid, ltypars): {
 				switch (rhs) {
 					MiniTypeCall(rid, rtypars): {
-						if (lid != rid) {
-							constrainMiniTypeCalls(env, lhs, rhs);
-						} else {
-							if (isUrlParameterTrue("strict") && length(ltypars) != length(rtypars)) {
-								// We do not allow "implicit" type parameters when strict
-								error();
-							} else {
-								iteri(ltypars, \i, larg -> {
-									if (i < length(rtypars)) {
-										constrainMiniType(env, rtypars[i], larg);
-									}
-								});
-							}
-						}
+						constrainMiniTypeCalls(env, constrainMiniType, lhs, rhs);
 					}
 					MiniTypeVar(rid): rightTyVar(rid);
 					default: error();

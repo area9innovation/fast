@@ -1,39 +1,80 @@
 import mini/types/typeenv;
 import mini/types/pretty;
+import mini/types/util;
+import net/url_parameter;
 
 export {
 	// Given these two type calls, constrain them against each other
 	// Notice this is also used array<?>, ref<?> and such.
-	constrainMiniTypeCalls(env : MiniTypeEnv, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void;
+	constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void;
 }
 
-
-constrainMiniTypeCalls(env : MiniTypeEnv, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
+constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
 	if (lhs.id == "auto" || rhs.id == "auto") {
 		// OK, nothing to do.
-	} else if (isMiniTypeNameIncluded(env.ast, lhs.id, rhs.id)) {
+	} else if (lhs.id == rhs.id) {
 		// TODO: Figure out how the type-pars align with each other
-		if (lhs.typars != [] || rhs.typars != []) {
-			println("TODO: Constrain typars of " + miniType2string(lhs) + " vs " + miniType2string(rhs));
+		if (isUrlParameterTrue("strict") && length(lhs.typars) != length(rhs.typars)) {
+			env.onError("Expected typars to match " + miniType2string(lhs) + " vs  " + miniType2string(rhs));
+		} else {
+			iteri(lhs.typars, \i, larg -> {
+				if (i < length(rhs.typars)) {
+					rec(env, rhs.typars[i], larg);
+				}
+			});
 		}
 	} else {
-		env.onError("Type " + lhs.id + " is not part of type " + rhs.id);
+		munion = findMiniUnion(env.ast, lhs.id, rhs.id, rhs.typars);
+		munion ?? {
+			rec(env, lhs, munion);
+		} : {
+			env.onError("Type " + lhs.id + " is not part of type " + rhs.id);
+		}
 	}
 }
 
-// Check if this left name is inside the typename on the right
-isMiniTypeNameIncluded(env : MiniAst, left : string, right : string) -> bool {
+// Check if this left name is inside the typename on the right, and if so, return the applied struct
+findMiniUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]) -> Maybe<MiniType> {
 	munion = lookupTree(env.unions, right);
 	switch (munion) {
 		None(): {
-			left == right;
+			None();
 		}
 		Some(uniondef): {
-			fold(uniondef.typenames, false, \acc, type -> {
-				acc || isMiniTypeNameIncluded(env, left, getMiniTypeName(type))
+			fold(uniondef.typenames, None(), \macc : Maybe<MiniType>, type -> {
+				switch (macc) {
+					None(): {
+						rname = getMiniTypeName(type);
+						rinstantiated = instantiateTypars(uniondef.typars, rtypars, type);
+						if (rname == left) {
+							// OK, instantiate the union typars into this struct
+							Some(rinstantiated);
+						} else {
+							switch (rinstantiated) {
+								MiniTypeCall(riname, riargs): {
+									// OK, check this one
+									findMiniUnion(env, left, riname, riargs)
+								}
+								default: {
+									// Error: Expected a type call
+									macc;
+								}
+							}
+						}
+					}
+					Some(__): macc;
+				}
 			});
 		}
 	}
+}
+
+instantiateTypars(typars : [MiniType], args : [MiniType], e : MiniType) -> MiniType {
+	foldi(typars, e, \i, acc, typar -> {
+		if (i < length(args)) {
+			replaceMiniType(typar, args[i], acc)
+		} else acc
+	});
 }
 
 getMiniTypeName(m : MiniType) -> string {
