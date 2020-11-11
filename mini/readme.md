@@ -95,7 +95,15 @@ dependents on that id. This should hopefully speed things up.
 The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
-- Get euler examples to compile and run in JS.
+- Get tools/flowc/tests examples to compile and run in JS.
+  - Add mode which runs all
+    - 5, 7: intersection typing
+	- 6, 28: ? and ??
+	- 8, 13, 14: intersection and union typing galore
+	- 9, 24: double vs ?
+	- 9: Implicit polymorphism for maybeMap
+	- 17: mutable struct fields
+	- 26, 27, 30: __construct5 is unknown
   - Figure out natives from runtime & linking
 
 - Parse all of flow syntax. Missing:

@@ -76,11 +76,11 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 		// switch
 		Pair("__switch", MiniTypeFunction([ta, tb], tb)),
-		Pair("__switchvalue", MiniTypeFunction([ta], tb)),
+			Pair("__switchvalue", MiniTypeFunction([ta], i)),
+			Pair("__caseid", MiniTypeFunction([ta], i)),
 		Pair("__case", MiniTypeFunction([ta, tb], tb)),
 		Pair("__defaultcase", MiniTypeFunction([ta], ta)),
 			Pair("__or", MiniTypeFunction([ta, ta], ta)),
-		Pair("__caseid", MiniTypeFunction([ta], tb)),
 		Pair("__casebody", MiniTypeFunction([ta, tb, tc], tc)),
 
 		Pair("__maybe", MiniTypeFunction([ta, tb, tb], tb)),
