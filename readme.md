@@ -1292,3 +1292,16 @@ Another idea is to consider these as graph structures, and implement graph algor
 Combine this with CRDTs, and maybe we can get to a place where we have fundamental support for offline-first, 
 collaborative data exchange. See https://github.com/turtle-DB/turtleDB where they have a offline library which 
 provides CRUD operations with conflict resolution.
+
+Use cases to handle:
+- mapFoldMax : a map with fold, where we find the running biggest number.
+- In AST processing, there we want to do a switch on two similar structurs: switch (a * b)
+- For editor DSL, we need identifiers for specific elements, and then insert/update/delete operations
+  - Selections
+  - Undo/redo
+  - Serialization/deserialization
+  - Compression/decompression
+  - Partial bijective mapping to representation on the screen and back. I.e. the screen might not display
+    all, but what is displayed, we should be able to map back to the data structure
+	The screen can be modelled as a layers of 2d boxes. The position might change dynamically according
+	to resizing. In general, the layout language could be CSS grid + paragraph.
