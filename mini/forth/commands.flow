@@ -5,6 +5,7 @@ import mini/exp/value;
 import mini/exp/pretty;
 import mini/types/type_ast;
 import mini/types/polymorphism;
+import mini/types/subtypegraph;
 
 export {
 	// Eval this Forth command as mini, in case it is. If not, just return the same db
@@ -22,6 +23,9 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		pushMiniCommand(db, MiniPopFile(file));
 	} else if (command == "setannotation") {
 		// MiniSetAnnotation(scope : string, annotation : string, value : MiniExp);
+
+		// TODO: Consider to change this to be eager instead of a command
+
 		value = popMiniValue(db);
 		annotation = popMiniValue(value.second);
 		scope = popMiniValue(annotation.second);
@@ -70,9 +74,14 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			// println("Defined " + names);
 		};
 		// TODO: This might be wrong in incremental?
+		union = MiniUnion(names, typarss, structss);
+		ast = name.second.program;
 		MiniDb(
 			name.second with
-			program = MiniAst(name.second.program with unions = setTree(name.second.program.unions, names, MiniUnion(names, typarss, structss)))
+			program = MiniAst(ast with 
+				unions = setTree(ast.unions, names, union), 
+				subtypeGraph = updateMiniUnionSubGraph(ast.subtypeGraph, union)
+			)
 		);
 	} else if (command == "structdef") {
 		// 	<id> <args> structdef	- push a constructor for a struct type on the stack

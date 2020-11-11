@@ -7,6 +7,12 @@ export {
 	// Given these two type calls, constrain them against each other
 	// Notice this is also used array<?>, ref<?> and such.
 	constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void;
+
+	// Check if this left name is inside the typename on the right, and if so, return the applied struct in the union
+	findMiniStructInUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
+
+	// Check if this left name is inside the typename on the right, and if so, lift the left type to the applied union type
+	findMiniUnionFromStruct(env : MiniAst, left : string, ltypars : [MiniType], right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
 }
 
 constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
@@ -24,7 +30,7 @@ constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType
 			});
 		}
 	} else {
-		munion = findMiniUnion(env.ast, lhs.id, rhs.id, rhs.typars);
+		munion = findMiniStructInUnion(env.ast, lhs.id, rhs.id, rhs.typars);
 		munion ?? {
 			rec(env, lhs, munion);
 		} : {
@@ -34,12 +40,10 @@ constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType
 }
 
 // Check if this left name is inside the typename on the right, and if so, return the applied struct
-findMiniUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]) -> Maybe<MiniType> {
+findMiniStructInUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]) -> Maybe<MiniType> {
 	munion = lookupTree(env.unions, right);
 	switch (munion) {
-		None(): {
-			None();
-		}
+		None(): None();
 		Some(uniondef): {
 			fold(uniondef.typenames, None(), \macc : Maybe<MiniType>, type -> {
 				switch (macc) {
@@ -53,13 +57,50 @@ findMiniUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]
 							switch (rinstantiated) {
 								MiniTypeCall(riname, riargs): {
 									// OK, check this one
-									findMiniUnion(env, left, riname, riargs)
+									findMiniStructInUnion(env, left, riname, riargs)
 								}
 								default: {
 									// Error: Expected a type call
 									macc;
 								}
 							}
+						}
+					}
+					Some(__): macc;
+				}
+			});
+		}
+	}
+}
+
+// Check if this left name is inside the typename on the right, and if so, lift the left type to the applied union
+// 	findMiniUnionFromStruct(Some<int>, Maybe<?>) -> Maybe<int>
+findMiniUnionFromStruct(env : MiniAst, left : string, ltypars : [MiniType], right : string, rtypars : [MiniType]) -> Maybe<MiniType> {
+	munion = lookupTree(env.unions, right);
+	switch (munion) {
+		None(): None();
+		Some(uniondef): {
+			fold(uniondef.typenames, None(), \macc : Maybe<MiniType>, type -> {
+				switch (macc) {
+					None(): {
+						rname = getMiniTypeName(type);
+						if (rname == left) {
+							// OK, instantiate the union typars into this struct
+							linstantiated = if (length(ltypars) == 1 && length(uniondef.typars) <= 1) {
+									MiniTypeCall(right, ltypars);
+								} else if (length(ltypars) <= 1 && length(uniondef.typars) == 1 && length(rtypars) == 1) {
+									MiniTypeCall(right, rtypars);
+								} else {
+									println("TODO: Figure out how this type parameter mapping works between " + miniType2string(MiniTypeCall(left, ltypars)) + " and " + miniType2string(MiniTypeCall(right, uniondef.typars)));
+									MiniTypeCall(right, ltypars)
+								};
+							Some(linstantiated);
+						} else {
+							// OK, we have to recurse
+							// TODO: OK, if both are structs, we might be able to find a union
+							// where both are inside
+							// println("Check to see if " + left + " is " + rname);
+							findMiniUnionFromStruct(env, left, ltypars, rname, rtypars);
 						}
 					}
 					Some(__): macc;
@@ -77,9 +118,3 @@ instantiateTypars(typars : [MiniType], args : [MiniType], e : MiniType) -> MiniT
 	});
 }
 
-getMiniTypeName(m : MiniType) -> string {
-	switch (m) {
-		MiniTypeCall(id, __): id;
-		default: "";
-	}
-}

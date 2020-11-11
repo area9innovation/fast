@@ -1,0 +1,20 @@
+import mini/exp/ast;
+import mini/types/util;
+
+export {
+	// Update the subtype graph with this union def
+	updateMiniUnionSubGraph(acc : MiniSubtypeGraph, union : MiniUnion) -> MiniSubtypeGraph;
+}
+
+updateMiniUnionSubGraph(acc : MiniSubtypeGraph, union : MiniUnion) -> MiniSubtypeGraph {
+	// TODO: OK, first remove the links from any previous union
+
+	// Then add the links from struct to union
+	fold(union.typenames, acc, \acc2, type -> {
+		typename = getMiniTypeName(type);
+		MiniSubtypeGraph(
+			acc2 with 
+			supertypes = addSimpleEdge(acc2.supertypes, union.name, typename, true, 1)
+		)
+	});
+}

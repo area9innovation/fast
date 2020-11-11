@@ -1,6 +1,8 @@
 import mini/types/restype;
 import mini/types/debug;
 import mini/types/type;
+import mini/types/subtype;
+import net/url_parameter;
 
 export {
 	// Simplifies the res types to mini types
@@ -93,15 +95,10 @@ evalResSet(env : MiniTypeEnv, types : Set<MiniType>, combine : (MiniType, MiniTy
 	}
 }
 
-unionTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
-	// println("Can we join these? " + miniType2string(left) + " and " + miniType2string(right));
-	None();
-}
-
 // autofold: structural pairs
-intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
+unionTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
 	todo = \ -> {
-		// println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+		println("Can we join these? " + miniType2string(left) + " and " + miniType2string(right));
 		None();
 	}
 	if (left == right) Some(left)
@@ -119,6 +116,68 @@ intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<Mi
 					MiniTypeFunction(rargs, rreturnType): {
 						if (length(largs) == length(rargs)) {
 							iargs = filtermapi(largs, \i, larg -> {
+								// TODO: Should we intersect the args?
+								unionTypes(acc, larg, rargs[i])
+							});
+							irt = unionTypes(acc, lreturnType, rreturnType);
+							irt ?? {
+								if (length(iargs) == length(largs)) {
+									Some(MiniTypeFunction(iargs, irt));
+								} else None();
+							} : None();
+						} else None();
+					}
+					default: rightFn();
+				}
+			}
+			MiniTypeCall(lid, ltypars): {
+				switch (right) {
+					MiniTypeCall(rid, rtypars): {
+						unionMiniTypecalls(acc, left, right);
+					}
+					default: {
+						if (lid == "flow") Some(left)
+						else rightFn();
+					}
+				}
+			}
+			MiniTypeVar(lid): {
+				if (containsSet(acc.recursive, lid)) {
+					Some(right);
+				} else rightFn();
+			}
+			MiniTypePar(id): {
+				rightFn();
+			}
+			MiniTypeRecord(fields): {
+				rightFn();
+			}
+		}
+	}
+}
+
+// autofold: structural pairs
+intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
+	todo = \ -> {
+		println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+		None();
+	}
+	if (left == right) Some(left)
+	else {
+		rightFn = \ -> {
+			switch (right) {
+				MiniTypeVar(id): if (containsSet(acc.recursive, id)) Some(left) else None();
+				default: todo();
+			}
+		}
+		switch (left) {
+			MiniTypeInt(lbits): rightFn();
+			MiniTypeFunction(largs, lreturnType): {
+				switch (right) {
+					MiniTypeFunction(rargs, rreturnType): {
+						if (length(largs) == length(rargs)) {
+							iargs = filtermapi(largs, \i, larg -> {
+								// TODO: Should we union the args?
 								intersectTypes(acc, larg, rargs[i])
 							});
 							irt = intersectTypes(acc, lreturnType, rreturnType);
@@ -133,7 +192,15 @@ intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<Mi
 				}
 			}
 			MiniTypeCall(lid, ltypars): {
-				rightFn();
+				switch (right) {
+					MiniTypeCall(rid, rtypars): {
+						intersectMiniTypecalls(acc, left, right);
+					}
+					default: {
+						if (lid == "flow") Some(right)
+						else rightFn();
+					}
+				}
 			}
 			MiniTypeVar(lid): {
 				if (containsSet(acc.recursive, lid)) {
@@ -145,6 +212,91 @@ intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<Mi
 			}
 			MiniTypeRecord(fields): {
 				rightFn();
+			}
+		}
+	}
+}
+
+// Should this be moved to subtype.flow?
+unionMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)  -> Maybe<MiniType> {
+	if (left.id == right.id) {
+		if (isUrlParameterTrue("strict") && length(left.typars) != length(right.typars)) {
+			None();
+		} else {
+			len = max(length(left.typars), length(right.typars));
+			itypars = generate(0, len, \i -> {
+				ltypar = if (i < length(left.typars)) {
+					left.typars[i];
+				} else right.typars[i];
+				rtypar = if (i < length(right.typars)) {
+					right.typars[i];
+				} else left.typars[i];
+				unionTypes(acc, ltypar, rtypar);
+			});
+			otypars = filtermap(itypars, idfn);
+			if (length(otypars) == len) {
+				Some(MiniTypeCall(left.id, otypars));
+			} else None();
+		}
+	} else if (left.id == "flow") {
+		Some(left)
+	} else if (right.id == "flow") {
+		Some(right);
+	} else {
+		mlstruct = findMiniUnionFromStruct(acc.env.ast, left.id, left.typars, right.id, right.typars);
+		mlstruct ?? {
+			// OK, we lifted to a union
+			unionTypes(acc, mlstruct, right)
+		} : {
+			mrstruct = findMiniUnionFromStruct(acc.env.ast, right.id, right.typars, left.id, left.typars);
+			mrstruct ?? {
+				// OK, we lifted to a union
+				unionTypes(acc, left, mrstruct)
+			} : {
+				println("Can we union these? " + miniType2string(left) + " and " + miniType2string(right));
+				None();
+			}
+		}
+	}
+}
+
+intersectMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)  -> Maybe<MiniType> {
+	if (left.id == right.id) {
+		if (isUrlParameterTrue("strict") && length(left.typars) != length(right.typars)) {
+			None();
+		} else {
+			len = max(length(left.typars), length(right.typars));
+			itypars = generate(0, len, \i -> {
+				ltypar = if (i < length(left.typars)) {
+					left.typars[i];
+				} else right.typars[i];
+				rtypar = if (i < length(right.typars)) {
+					right.typars[i];
+				} else left.typars[i];
+				intersectTypes(acc, ltypar, rtypar);
+			});
+			otypars = filtermap(itypars, idfn);
+			if (length(otypars) == len) {
+				Some(MiniTypeCall(left.id, otypars));
+			} else None();
+		}
+	} else if (left.id == "flow") {
+		Some(right)
+	} else if (right.id == "flow") {
+		Some(left);
+	} else {
+		mlstruct = findMiniStructInUnion(acc.env.ast, left.id, right.id, right.typars);
+		mlstruct ?? {
+			// OK, we found the struct in the right hand side. Intersect with that
+			intersectTypes(acc, left, mlstruct)
+		} : {
+			mrstruct = findMiniStructInUnion(acc.env.ast, right.id, left.id, left.typars);
+			mrstruct ?? {
+				// OK, we found the struct in the right hand side. Intersect with that
+				intersectTypes(acc, right, mrstruct)
+			} : {
+				println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+				None();
 			}
 		}
 	}

@@ -173,7 +173,9 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 }
 
 constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
-	if (containsSet(^(env.constraintCache), Pair(lhs, rhs))) {
+	if (containsSet(^(env.constraintCache), Pair(lhs, rhs))
+		|| lhs == MiniTypeCall("auto", [])
+		|| rhs == MiniTypeCall("auto", [])) {
 		// OK, already handled
 	} else {
 		env.constraintCache := insertSet(^(env.constraintCache), Pair(lhs, rhs));
@@ -190,9 +192,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 					constrainUpperBounds(env, rid, lhs);
 				}
 				MiniTypeCall(rid, rtypars): {
-					if (rid == "auto" && rtypars == []) {
-						// This is fine
-					} else if (rid == "flow"  && rtypars == []) {
+					if (rid == "flow"  && rtypars == []) {
 						// This is fine
 					} else error();
 				}
@@ -228,13 +228,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 					MiniTypeCall(rid, rtypars): {
 						constrainMiniTypeCalls(env, constrainMiniType, lhs, rhs);
 					}
-					default: {
-						if (lid == "auto" && ltypars == []) {
-							// This is fine
-						} else {
-							right();
-						}
-					}
+					default: right();
 				}
 			}
 			MiniTypeVar(lid): {

@@ -3,6 +3,7 @@ import mini/backends/bprogram;
 import mini/exp/exp;
 import mini/exp/dependent;
 import ds/set;
+import ds/simplegraph;
 
 export {
 	// A consistent set of declarations
@@ -36,11 +37,23 @@ export {
 		// Definitions of structs
 		structs : Tree<string, MiniStruct>,
 
+		// Keep track of the struct/union subtyping graph
+		subtypeGraph : MiniSubtypeGraph,
+
 		// Typed versions of our declarations.
 		typedDeclarations : Tree<string, BExp>,
 
 		// What ids are pure?
 		pureIds : Set<string>,
+	);
+
+	MiniSubtypeGraph(
+		// From name to supertypes names
+		supertypes : SimpleGraph<string, bool>,
+		// From field name to supertypes. The field names have a "." in front
+		// fieldSupertypes : SimpleGraph<string, bool>,
+		// From union to structs
+		// subtypes : SimpleGraph<string, bool>
 	);
 
 	MiniAnnotation(
