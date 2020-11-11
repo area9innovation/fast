@@ -1,14 +1,17 @@
 import mini/exp/pretty_typed;
 
 export {
-	debugMiniTypeEnv(env : MiniTypeEnv) -> void;
+	debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void;
 
 	debugMiniType(env : MiniTypeEnv, type : MiniType) -> string;
+
+	// Gets the lower+upper bounds for the tyvar
+	debugBounds(env : MiniTypeEnv, tyvarid : int) -> string;
 
 	resType2string(r : ResType) -> string;
 }
 
-debugMiniTypeEnv(env : MiniTypeEnv) -> void {
+debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void {
 	if (false && !isEmptyTree(env.ast.types)) {
 		println("Top-level types:");
 		traverseInOrder(env.ast.types, \name, type -> {
@@ -26,21 +29,25 @@ debugMiniTypeEnv(env : MiniTypeEnv) -> void {
 	if (^(env.tyvarId) > 1) {
 		println("Type vars:");
 		generate(1, ^(env.tyvarId), \id -> {
-			println(miniPrettyTypeVar(env, id));
+			decor = if (verbose) {
+				debugBounds(env, id);
+			} else "";
+			println(miniPrettyTypeVar(env, id) + decor);
 
-			if (false) {
-				lower = lookupMultimap(^(env.tyvarLowerBounds), id);
-				upper = lookupMultimap(^(env.tyvarLowerBounds), id);
-				if (!isEmptySet(lower)) {
-					println("    Lower: " + superglue(set2array(lower), miniType2string, ", "));
-				}
-				if (!isEmptySet(upper)) {
-					println("    Upper: " + superglue(set2array(upper), miniType2string, ", "));
-				}
-			}
 		});
 		{}
 	}
+}
+
+debugBounds(env : MiniTypeEnv, id : int) -> string {
+	lower = lookupMultimap(^(env.tyvarLowerBounds), id);
+	upper = lookupMultimap(^(env.tyvarLowerBounds), id);
+	(if (!isEmptySet(lower)) {
+		"    Lower: " + superglue(set2array(lower), miniType2string, ", ");
+	} else "")
+	+ (if (!isEmptySet(upper)) {
+		"    Upper: " + superglue(set2array(upper), miniType2string, ", ");
+	} else "")
 }
 
 debugMiniType(env : MiniTypeEnv, type : MiniType) -> string {

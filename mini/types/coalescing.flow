@@ -17,19 +17,13 @@ CoalesceAcc(
 );
 
 coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType> {
+	// OK, the question is whether we should build a dependency graph of the tyvars and do it in
+	// topological order?
 	cenv = CoalesceAcc(env, ref makeTree(), makeSet());
 	foldRange(1, ^(env.tyvarId) - 1, makeTree(), \acc, tv -> {
 		restype = goCoalesce(cenv, MiniTypeVar(tv), true);
 		setTree(acc, tv, restype);
 	});
-}
-
-coalesceMiniType(env : MiniTypeEnv, type : MiniType) -> ResType {
-	goCoalesce(
-		CoalesceAcc(env, ref makeTree(), makeSet()), 
-		type,
-		true
-	);
 }
 
 goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
@@ -83,8 +77,9 @@ goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 				// If this exist in the recursive map, return a recursive type
 				mrecid = lookupTree(^(env.recursive), vspol);
 				mrecid ?? {
-					// ResRecursiveType(mrecid.id, res)
-					res;
+					// println("Recursive " + i2s(mrecid.id));
+					// res;
+					ResRecursiveType(mrecid.id, res)
 				} : res;
 			}
 		}

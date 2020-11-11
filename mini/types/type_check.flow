@@ -54,10 +54,10 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	});
 
 	if (false) {
-		println("\nBefore resolution:");
-		debugMiniTypeEnv(tenv2);
+		// println("\nBefore resolution:");
+		debugMiniTypeEnv(tenv2, true);
 
-		println("\nMini exp declarations before:");
+		println("\nMini exp declarations before coalescing:");
 		iter(order, \id -> {
 			mfn = lookupTree(ast.declarations, id);
 			mfn ?? {
@@ -68,12 +68,17 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 
 	// OK, resolve the constraints
 	resTypes = coalesceMiniTypeVars(tenv2);
-//	println("Resolutions");
-	traverseInOrder(resTypes, \tv, restype -> {
-		resolved = simplifyResType(resTypes, restype);
-		tenv2.tyvars := setTree(^(tenv2.tyvars), tv, resolved);
-//		println("a"  + i2s(tv) + " = " + miniType2string(resolved));
-	});
+	simplifyResTypes(tenv2, resTypes);
+
+	if (false) {
+		println("\nMini exp declarations after:");
+		iter(order, \id -> {
+			mfn = lookupTree(ast.declarations, id);
+			mfn ?? {
+				println(id + " = " + miniPrettyTyped(tenv2, mfn));
+			} : {}
+		});
+	};
 
 	// OK, remove the current set of ids from the pure set
 	past = MiniAst(tenv2.ast with pureIds = differenceSets(tenv2.ast.pureIds, ids));

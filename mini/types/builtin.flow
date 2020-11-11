@@ -83,14 +83,9 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		Pair("__caseid", MiniTypeFunction([ta], tb)),
 		Pair("__casebody", MiniTypeFunction([ta, tb, tc], tc)),
 
-		Pair("__pattern0", MiniTypeFunction([s], ta)),
-		// For patterns with arguments
-		Pair("__pattern1", MiniTypeFunction([s,ta], tb)),
+		Pair("__maybe", MiniTypeFunction([ta, tb, tb], tb)),
 
-		Pair("__maybe", MiniTypeFunction([ta,tb,tb], tb)),
-
-		//  __with  __mutassign   __withassign
-
+		// TODO: I guess the type checker should check this
 		Pair("__cast", MiniTypeFunction([ta, tb], tb)),
 
 		// References
@@ -103,6 +98,7 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		// special
 		Pair("__native", MiniTypeFunction([i, ta, s], ta)),
 
+		// TODO: This requires more work
 		Pair(".", MiniTypeFunction([ta, s], tb)),
 
 		//
@@ -111,6 +107,7 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		//
 
 		// Forth "structdef" uses this to build the constructor
+		// TODO: This requires more work
 		Pair("__construct0", MiniTypeFunction([s], ta)),
 		Pair("__construct1", MiniTypeFunction([s, ta], tb)),
 		Pair("__construct2", MiniTypeFunction([s, ta, tb], tc)),

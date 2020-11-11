@@ -25,9 +25,9 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 			  "body", miniPrettyTyped(env, body)]
 		);
 		MiniLambda(args, body, tv): blueprint("
-			\\%args% -> {
+			\\%args% %type% {
 				%body%
-			}%type%",
+			}",
 			[ "args", strGlue(args, ", "),
 			  "body", miniPrettyTyped(env, body),
 			  "type", type(tv),

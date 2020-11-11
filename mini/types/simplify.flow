@@ -3,63 +3,109 @@ import mini/types/debug;
 import mini/types/type;
 
 export {
-	// Convert from the restype to the MiniType. Requires a full map of all resolved tyvars
-	simplifyResType(tyvars : Tree<int, ResType>, r : ResType) -> MiniType;
+	// Simplifies the res types to mini types
+	simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void;
 }
 
-simplifyResType(tyvars : Tree<int, ResType>, r : ResType) -> MiniType {
+simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void {
+	acc = SimplifyAcc(env, env.tyvars, makeSet(), resTypes);
+
+	traverseInOrder(resTypes, \tv, restype -> {
+		resolved = simplifyResType(acc, restype);
+		if (true) {
+			println("a"  + i2s(tv) + " = " + miniType2string(resolved) + " from " + debugBounds(env, tv) + "   giving restype: " + resType2string(restype));
+		};
+		
+	});
+}
+
+SimplifyAcc(
+	env : MiniTypeEnv,
+	tyvars : ref Tree<int, MiniType>,
+	recursive : Set<int>,
+	resTypes : Tree<int, ResType>
+);
+
+simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 	todo = \ -> {
 		println("Can not convert " + resType2string(r));
 		MiniTypeCall("flow", []);
 	};
 	switch (r) {
 		ResUnion(types): {
-			stypes = mapSet(types, \t -> simplifyResType(tyvars, t));
-			mpop = popMinSet(stypes);
-			mpop ?? {
-				if (isEmptySet(mpop.rest)) {
-					mpop.value;
-				} else {
-					todo();
-				}
-			} : {
-				MiniTypeCall("⊥", []);
-			}
+			stypes = mapSet(types, \t -> simplifyResType(acc, t));
+			evalResSet(acc.env, stypes, unionTypes, MiniTypeCall("⊥", []));
 		}
 		ResIntersection(types): {
-			stypes = mapSet(types, \t -> simplifyResType(tyvars, t));
-			mpop : Maybe<PopSetResult<MiniType>> = popMinSet(stypes);
-			mpop ?? {
-				if (isEmptySet(mpop.rest)) {
-					mpop.value;
-				} else {
-					todo();
-				}
-			} : {
-				MiniTypeCall("⊤", []);
-			}
+			stypes = mapSet(types, \t -> simplifyResType(acc, t));
+			evalResSet(acc.env, stypes, intersectTypes, MiniTypeCall("⊤", []));
 		}
-		ResRecursiveType(id, type): simplifyResType(tyvars, type);
-		ResFunctionType(args, rhs): MiniTypeFunction(map(args, \a -> simplifyResType(tyvars, a)), simplifyResType(tyvars, rhs));
+		ResRecursiveType(id, type): {
+			nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id));
+			simplifyResType(nacc, type);
+		}
+		ResFunctionType(args, rhs): MiniTypeFunction(map(args, \a -> simplifyResType(acc, a)), simplifyResType(acc, rhs));
 		ResTypeRecord(fields): todo();
 		ResTypeVar(id): {
-			mrestype = lookupTree(tyvars, id);
-			switch (mrestype) {
-				None(): todo();
-				Some(rt): {
-					// TODO: We could probably cache the results
-					switch (rt) {
-						ResTypeVar(tv): {
-							// What are you going to do?
-							MiniTypeVar(id);
+			mtype = lookupTree(^(acc.tyvars), id);
+			switch (mtype) {
+				None(): {
+					mrestype = lookupTree(acc.resTypes, id);
+					switch (mrestype) {
+						None(): {
+							if (containsSet(acc.recursive, id)) {
+								MiniTypeVar(id);
+							} else {
+								todo();
+							}
 						}
-						default: simplifyResType(tyvars, rt);
+						Some(rt): {
+							nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id));
+							rtype = simplifyResType(nacc, rt);
+							acc.tyvars := setTree(^(acc.tyvars), id, rtype);
+							rtype;
+						}
 					}
 				}
+				Some(t): t;
 			}
 		}
 		ResIntType(bits): MiniTypeInt(bits);
-		ResTypeCall(id, typars): MiniTypeCall(id, map(typars, \t -> simplifyResType(tyvars, t)));
-		ResTypePar(id): MiniTypeCall(id, []);
+		ResTypeCall(id, typars): MiniTypeCall(id, map(typars, \t -> simplifyResType(acc, t)));
+		ResTypePar(id): MiniTypePar(id);
+	}
+}
+
+evalResSet(env : MiniTypeEnv, types : Set<MiniType>, combine : (MiniType, MiniType) -> Maybe<MiniType>, def : MiniType) -> MiniType {
+	mtype = foldSet(types, None(), \acc : Maybe<MiniType>, type -> {
+		switch (acc) {
+			None(): Some(type);
+			Some(l): combine(l, type);
+		}
+	});
+	mtype ?? {
+		mtype
+	} : {
+		def
+	}
+}
+
+unionTypes(t1 : MiniType, t2 : MiniType) -> Maybe<MiniType> {
+	println("Can we join these?");
+	None();
+}
+
+intersectTypes(left : MiniType, right : MiniType) -> Maybe<MiniType> {
+	todo = \ -> {
+		println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+		None();
+	}
+	switch (left) {
+		MiniTypeInt(bits): todo();
+		MiniTypeFunction(args, returnType): todo();
+		MiniTypeCall(id, typars): todo();
+		MiniTypeVar(id): todo();
+		MiniTypePar(id): todo();
+		MiniTypeRecord(fields): todo();
 	}
 }
