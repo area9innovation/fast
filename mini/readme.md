@@ -96,8 +96,6 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get euler examples to compile and run in JS.
-  - euler10: We end up with the wrong addition due to type checking problems
-
   - Figure out natives from runtime & linking
 
 - Parse all of flow syntax. Missing:
