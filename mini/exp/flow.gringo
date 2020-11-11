@@ -74,7 +74,7 @@ exp =
 	 	| id ":" ws type "=" ws exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
 	)
 	|> exp ":=" ws exp $$":=" $"binop"
-	|> exp "|>" ws exp $"swap" $"list1" $"call" // We desugar it here immediately
+	|> exp < ("|>" ws exp $"swap" $"list1" $"call")* // We desugar it here immediately
 	|> exp "||" ws exp $$"||" $"binop"
 	|> exp "&&" ws exp $$"&&" $"binop"
 	|> (
