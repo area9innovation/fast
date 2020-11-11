@@ -11,11 +11,10 @@ simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void {
 	acc = SimplifyAcc(env, env.tyvars, makeSet(), resTypes);
 
 	traverseInOrder(resTypes, \tv, restype -> {
-		resolved = simplifyResType(acc, restype);
-		if (true) {
+		resolved = simplifyResType(acc, ResTypeVar(tv));
+		if (false) {
 			println("a"  + i2s(tv) + " = " + miniType2string(resolved) + " from " + debugBounds(env, tv) + "   giving restype: " + resType2string(restype));
 		};
-		
 	});
 }
 
@@ -34,11 +33,11 @@ simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 	switch (r) {
 		ResUnion(types): {
 			stypes = mapSet(types, \t -> simplifyResType(acc, t));
-			evalResSet(acc.env, stypes, unionTypes, MiniTypeCall("⊥", []));
+			evalResSet(acc.env, stypes, \l, ri -> unionTypes(acc, l, ri), MiniTypeCall("⊥", []));
 		}
 		ResIntersection(types): {
 			stypes = mapSet(types, \t -> simplifyResType(acc, t));
-			evalResSet(acc.env, stypes, intersectTypes, MiniTypeCall("⊤", []));
+			evalResSet(acc.env, stypes, \l, ri -> intersectTypes(acc, l, ri), MiniTypeCall("⊤", []));
 		}
 		ResRecursiveType(id, type): {
 			nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id));
@@ -60,10 +59,14 @@ simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 							}
 						}
 						Some(rt): {
-							nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id));
-							rtype = simplifyResType(nacc, rt);
-							acc.tyvars := setTree(^(acc.tyvars), id, rtype);
-							rtype;
+							if (containsSet(acc.recursive, id)) {
+								MiniTypeVar(id);
+							} else {
+								nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id));
+								rtype = simplifyResType(nacc, rt);
+								acc.tyvars := setTree(^(acc.tyvars), id, rtype);
+								rtype;
+							}
 						}
 					}
 				}
@@ -90,22 +93,59 @@ evalResSet(env : MiniTypeEnv, types : Set<MiniType>, combine : (MiniType, MiniTy
 	}
 }
 
-unionTypes(t1 : MiniType, t2 : MiniType) -> Maybe<MiniType> {
-	println("Can we join these?");
+unionTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
+	// println("Can we join these? " + miniType2string(left) + " and " + miniType2string(right));
 	None();
 }
 
-intersectTypes(left : MiniType, right : MiniType) -> Maybe<MiniType> {
+// autofold: structural pairs
+intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
 	todo = \ -> {
-		println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+		// println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
 		None();
 	}
-	switch (left) {
-		MiniTypeInt(bits): todo();
-		MiniTypeFunction(args, returnType): todo();
-		MiniTypeCall(id, typars): todo();
-		MiniTypeVar(id): todo();
-		MiniTypePar(id): todo();
-		MiniTypeRecord(fields): todo();
+	if (left == right) Some(left)
+	else {
+		rightFn = \ -> {
+			switch (right) {
+				MiniTypeVar(id): if (containsSet(acc.recursive, id)) Some(left) else None();
+				default: todo();
+			}
+		}
+		switch (left) {
+			MiniTypeInt(lbits): rightFn();
+			MiniTypeFunction(largs, lreturnType): {
+				switch (right) {
+					MiniTypeFunction(rargs, rreturnType): {
+						if (length(largs) == length(rargs)) {
+							iargs = filtermapi(largs, \i, larg -> {
+								intersectTypes(acc, larg, rargs[i])
+							});
+							irt = intersectTypes(acc, lreturnType, rreturnType);
+							irt ?? {
+								if (length(iargs) == length(largs)) {
+									Some(MiniTypeFunction(iargs, irt));
+								} else None();
+							} : None();
+						} else None();
+					}
+					default: rightFn();
+				}
+			}
+			MiniTypeCall(lid, ltypars): {
+				rightFn();
+			}
+			MiniTypeVar(lid): {
+				if (containsSet(acc.recursive, lid)) {
+					Some(right);
+				} else rightFn();
+			}
+			MiniTypePar(id): {
+				rightFn();
+			}
+			MiniTypeRecord(fields): {
+				rightFn();
+			}
+		}
 	}
 }
