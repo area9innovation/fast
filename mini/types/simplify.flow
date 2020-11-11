@@ -2,6 +2,7 @@ import mini/types/restype;
 import mini/types/debug;
 import mini/types/type;
 import mini/types/subtype;
+import mini/types/subtypegraph;
 import net/url_parameter;
 
 export {
@@ -253,8 +254,39 @@ unionMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)
 				// OK, we lifted to a union
 				unionTypes(acc, left, mrstruct)
 			} : {
-				println("Can we union these? " + miniType2string(left) + " and " + miniType2string(right));
-				None();
+				// OK, neither is a subtype of the other. See if they have a common supertype
+				lsupers = findMiniSuperTypes(acc.env.ast.subtypeGraph, left.id);
+				rsupers = findMiniSuperTypes(acc.env.ast.subtypeGraph, right.id);
+				commonSupers = intersectSets(lsupers, rsupers);
+
+				supers = set2array(commonSupers);
+				if (length(supers) == 1) {
+					// OK, we found a unique supertype we can use
+					if (left.typars == []) {
+						runion = findMiniUnionFromStruct(acc.env.ast, right.id, right.typars, supers[0], []);
+						runion ?? {
+							unionTypes(acc, left, runion);
+						} : {
+							println("Can we union these 3? " + miniType2string(left) + " and " + miniType2string(right));
+							println(set2array(commonSupers));
+							None();
+						}
+					} else {
+						lunion = findMiniUnionFromStruct(acc.env.ast, left.id, left.typars, supers[0], []);
+						lunion ?? {
+							unionTypes(acc, lunion, right);
+						} : {
+							println("Can we union these 2? " + miniType2string(left) + " and " + miniType2string(right));
+							println(set2array(commonSupers));
+							None();
+						}
+
+					}
+				} else {
+					println("Can we union these? " + miniType2string(left) + " and " + miniType2string(right));
+					println(set2array(commonSupers));
+					None();
+				}
 			}
 		}
 	}

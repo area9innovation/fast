@@ -4,6 +4,9 @@ import mini/types/util;
 export {
 	// Update the subtype graph with this union def
 	updateMiniUnionSubGraph(acc : MiniSubtypeGraph, union : MiniUnion) -> MiniSubtypeGraph;
+
+	// All super-types of this type (not including the name itself)
+	findMiniSuperTypes(acc : MiniSubtypeGraph, name : string) -> Set<string>;
 }
 
 updateMiniUnionSubGraph(acc : MiniSubtypeGraph, union : MiniUnion) -> MiniSubtypeGraph {
@@ -14,7 +17,21 @@ updateMiniUnionSubGraph(acc : MiniSubtypeGraph, union : MiniUnion) -> MiniSubtyp
 		typename = getMiniTypeName(type);
 		MiniSubtypeGraph(
 			acc2 with 
-			supertypes = addSimpleEdge(acc2.supertypes, union.name, typename, true, 1)
+			supertypes = addSimpleEdge(acc2.supertypes, typename, union.name, true, 1)
 		)
+	});
+}
+
+findMiniSuperTypes(acc : MiniSubtypeGraph, name : string) -> Set<string> {
+	supergraph = acc.supertypes;
+	node = getSimpleNodeId(supergraph, name);
+	reachable = reachableClosureFromNode(supergraph.graph, node);
+
+	mapSet(reachable, \id : int -> {
+		mnode = lookupTree(supergraph.graph.nodes, id);
+		switch (mnode) {
+			None(): "";
+			Some(n): n.data;
+		}
 	});
 }
