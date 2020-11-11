@@ -50,7 +50,7 @@ functionOrStruct =
 	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
 	| id ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
 	// Struct
-	| id ':' ws '(' ws structargs ')' ws ';' ws $$"structdef"
+	| id ':' ws '(' ws structargs ')' ws ';' ws $"structdef"
 	;
 
 	// listof(funarg, ",")
