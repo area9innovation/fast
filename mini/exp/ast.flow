@@ -45,6 +45,9 @@ export {
 
 		// What ids are pure?
 		pureIds : Set<string>,
+
+		// What compile options are we using?
+		options : MiniOptions,
 	);
 
 	MiniSubtypeGraph(
@@ -63,5 +66,10 @@ export {
 		annotation : string,
 		// What is the value of the annotation
 		value : MiniExp
+	);
+
+	MiniOptions(
+		verbose : int,
+		strict : bool,
 	);
 }

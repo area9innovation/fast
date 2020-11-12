@@ -15,7 +15,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		makeMiniFileCache(),
 		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), MiniDependent(makeTree(), makeTree()), 
 			getBuiltinMiniTypes(), makeTree(), makeTree(), MiniSubtypeGraph(makeSimpleGraph()),
-			makeTree(), getBuiltinPureNames()),
+			makeTree(), getBuiltinPureNames(), MiniOptions(s2i(getUrlParameter("verbose")), isUrlParameterTrue("strict"))),
 		makeMiniForth(),
 		makeTree(),
 		makeTree(),

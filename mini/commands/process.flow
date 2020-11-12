@@ -83,22 +83,6 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				db;
 			}
 		}
-		MiniSetAnnotation(scope, annotation, value): {
-			ann = MiniAnnotation(scope, annotation, value);
-
-			annotations = getTreeArrayValue(db.program.unprocessedAnnotations, scope);
-
-			keep = filter(annotations, \a -> {
-				a.annotation != annotation
-			});
-			withnew = arrayPush(keep, ann);
-			newAnnotations = setTree(db.program.unprocessedAnnotations, scope, withnew);
-
-			MiniDb(
-				db with
-				program = MiniAst(db.program with unprocessedAnnotations = newAnnotations)
-			);
-		}
 		MiniTypeDefine(file, name, type): {
 			// We just do it, no questions asked
 
@@ -153,10 +137,18 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		}
 		MiniCompileTime(names): {
 			interpreter = makeMiniInterpreter(db.program);
+			verbose = s2i(getUrlParameter("verbose")) > 0;
+			if (verbose) {
+				println("After compile time:");
+			}
 			decls = foldSet(names, db.program.declarations, \acc, name -> {
 				mex = lookupTree(acc, name);
 				mex ?? {
-					setTree(acc, name, partialMiniExp(interpreter, mex));
+					pexp = partialMiniExp(interpreter, mex);
+					if (verbose) {
+						println(name + " = "+ miniPretty(pexp));
+					};
+					setTree(acc, name, pexp);
 				} : acc
 			});
 			ast = MiniAst(db.program with declarations = decls);

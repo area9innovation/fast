@@ -5,15 +5,10 @@ import algorithms;
 
 export {
 	// These are the commands that the underlying compiler understands
-	MiniCommand ::= MiniProcessFile, MiniSetAnnotation, MiniTypeDefine, MiniDefine, MiniPopFile, MiniCompileTime, MiniTypeInfer;
+	MiniCommand ::= MiniProcessFile, MiniTypeDefine, MiniDefine, MiniPopFile, MiniCompileTime, MiniTypeInfer;
 
 		// Read a file and if changed, run this Forth command on it. Notice this is async
 		MiniProcessFile(usedByFile : string, name : string, asyncCommand : string);
-
-		// Set an annotation for a given scope (id). If scope is "", then it is all ids in the file.
-		// Annotations include: "native" for native declarations
-		// "export" for the export section (not done yet)
-		MiniSetAnnotation(scope : string, annotation : string, value : MiniExp);
 
 		// Define a type. Used for forward declarations
 		MiniTypeDefine(file : string, name : string, type : MiniType);
@@ -47,23 +42,21 @@ export {
 getMiniCommandPriority(c : MiniCommand) -> int {
 	switch (c) {
 		MiniProcessFile(__, name, command): 0;
-		MiniSetAnnotation(annotation, scope, value): 1;
-		MiniTypeDefine(file, name, type): 2;
-		MiniDefine(file, name, value): 3;
-		MiniPopFile(file): 4;
-		MiniCompileTime(name): 5;
-		MiniTypeInfer(ids): 6;
+		MiniTypeDefine(file, name, type): 1;
+		MiniDefine(file, name, value): 2;
+		MiniPopFile(file): 3;
+		MiniCompileTime(name): 4;
+		MiniTypeInfer(ids): 5;
 	}
 }
 
 getMiniCommandFromPriority(p : int) -> string {
-	["Files", "Annotations", "Type defs", "Defines", "Finish files", "Compile time", "Typechecks"][p]
+	["Files", "Type defs", "Defines", "Finish files", "Compile time", "Typechecks"][p]
 }
 
 miniCommand2string(c : MiniCommand) -> string {
 	switch (c) {
 		MiniProcessFile(__, name, command): "Process file '" + name + "' with '" + command + "'";
-		MiniSetAnnotation(annotation, scope, value): "Set annotation " + annotation + " with scope " + scope;
 		MiniTypeDefine(file, name, type): "Type define " + name;
 		MiniDefine(file, name, value): "Define " + name;
 		MiniPopFile(file): "Pop file " + file;
@@ -78,7 +71,6 @@ combineMiniCommands(ms : [MiniCommand]) -> [MiniCommand] {
 		first = ms[0];
 		switch (first) {
 			MiniProcessFile(__, __, command): uniq(ms);
-			MiniSetAnnotation(__, __, __): ms;
 			MiniTypeDefine(__, __, __): ms;
 			MiniDefine(__, __, __): ms;
 			MiniPopFile(__): ms;

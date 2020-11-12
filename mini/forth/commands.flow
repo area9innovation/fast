@@ -37,7 +37,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		} else {
 			// println("Defined " + names);
 		};
-		pushMiniCommand(scope.second, MiniSetAnnotation(scopes, annotations, value.first));
+		setMiniAnnotation(scope.second, scopes, annotations, value.first);
 	} else if (command == "typedef") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);
@@ -163,4 +163,21 @@ unwrapStructArg(arg : MiniExp) -> Triple<string, bool, MiniExp> {
 		}
 		default: Triple("", false, arg);
 	}
+}
+
+setMiniAnnotation(db : MiniDb, scope : string, annotation : string, value : MiniExp) -> MiniDb {
+	ann = MiniAnnotation(scope, annotation, value);
+
+	annotations = getTreeArrayValue(db.program.unprocessedAnnotations, scope);
+
+	keep = filter(annotations, \a -> {
+		a.annotation != annotation
+	});
+	withnew = arrayPush(keep, ann);
+	newAnnotations = setTree(db.program.unprocessedAnnotations, scope, withnew);
+
+	MiniDb(
+		db with
+		program = MiniAst(db.program with unprocessedAnnotations = newAnnotations)
+	);
 }

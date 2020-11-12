@@ -1,4 +1,4 @@
-native println : io (flow) -> void = Native.println;
+native println : io (?) -> void = Native.println;
 
 native trunc : (d : double) -> int = Native.trunc;
 trunc(d) cast(d : double -> int);
