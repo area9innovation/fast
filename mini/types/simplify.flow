@@ -29,7 +29,7 @@ SimplifyAcc(
 
 simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 	todo = \ -> {
-		println("Can not convert " + resType2string(r));
+		acc.env.onError("Can not convert " + resType2string(r));
 		MiniTypeCall("flow", []);
 	};
 	switch (r) {
@@ -64,7 +64,11 @@ simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 							if (containsSet(acc.recursive, id)) {
 								MiniTypeVar(id);
 							} else {
-								nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id));
+								// Update onError to know about the tyvar
+								nenv = MiniTypeEnv(acc.env with onError = \e -> {
+									println("Tyvar " + i2s(id) + ": " + e);
+								});
+								nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id), env = nenv);
 								rtype = simplifyResType(nacc, rt);
 								acc.tyvars := setTree(^(acc.tyvars), id, rtype);
 								rtype;
@@ -98,7 +102,7 @@ evalResSet(env : MiniTypeEnv, types : Set<MiniType>, combine : (MiniType, MiniTy
 // autofold: structural pairs
 unionTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
 	todo = \ -> {
-		println("Can we join these? " + miniType2string(left) + " and " + miniType2string(right));
+		acc.env.onError("Can we join these? " + miniType2string(left) + " and " + miniType2string(right));
 		None();
 	}
 	if (left == right) Some(left)
@@ -159,7 +163,7 @@ unionTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniTy
 // autofold: structural pairs
 intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<MiniType> {
 	todo = \ -> {
-		println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+		acc.env.onError("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
 		None();
 	}
 	if (left == right) Some(left)
@@ -266,8 +270,8 @@ unionMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)
 						runion ?? {
 							unionTypes(acc, left, runion);
 						} : {
-							println("Can we union these 3? " + miniType2string(left) + " and " + miniType2string(right));
-							println(set2array(commonSupers));
+							acc.env.onError("Can we union these 3? " + miniType2string(left) + " and " + miniType2string(right));
+							acc.env.onError(strGlue(set2array(commonSupers), ", "));
 							None();
 						}
 					} else {
@@ -275,15 +279,14 @@ unionMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)
 						lunion ?? {
 							unionTypes(acc, lunion, right);
 						} : {
-							println("Can we union these 2? " + miniType2string(left) + " and " + miniType2string(right));
-							println(set2array(commonSupers));
+							acc.env.onError("Can we union these 2? " + miniType2string(left) + " and " + miniType2string(right));
+							acc.env.onError(strGlue(set2array(commonSupers), ", "));
 							None();
 						}
-
 					}
 				} else {
-					println("Can we union these? " + miniType2string(left) + " and " + miniType2string(right));
-					println(set2array(commonSupers));
+					acc.env.onError("Can we union these? " + miniType2string(left) + " and " + miniType2string(right));
+					acc.env.onError(strGlue(set2array(commonSupers), ", "));
 					None();
 				}
 			}
@@ -326,7 +329,7 @@ intersectMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeC
 				// OK, we found the struct in the right hand side. Intersect with that
 				intersectTypes(acc, right, mrstruct)
 			} : {
-				println("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+				acc.env.onError("Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
 				None();
 			}
 		}

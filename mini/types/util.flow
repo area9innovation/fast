@@ -1,0 +1,32 @@
+import mini/types/type;
+import ds/array;
+
+export {
+	getMiniTypeName(m : MiniType) -> string;
+	replaceMiniType(search : MiniType, replace : MiniType, e : MiniType) -> MiniType;
+}
+
+replaceMiniType(search : MiniType, replace : MiniType, e : MiniType) -> MiniType {
+	if (e == search) {
+		replace
+	} else {
+		rec = \tt -> replaceMiniType(search, replace, tt);
+		switch (e) {
+			MiniTypeInt(bits): e;
+			MiniTypeFunction(args, returnType): MiniTypeFunction(map(args, rec), rec(returnType));
+			MiniTypeCall(id, typars): MiniTypeCall(id, map(typars, rec));
+			MiniTypeVar(id): e;
+			MiniTypePar(id): e;
+			MiniTypeRecord(fields): MiniTypeRecord(map(fields, \f -> {
+				MiniTypeField(f.name, f.isMutable, rec(f.type))
+			}));
+		}
+	}
+}
+
+getMiniTypeName(m : MiniType) -> string {
+	switch (m) {
+		MiniTypeCall(id, __): id;
+		default: "";
+	}
+}

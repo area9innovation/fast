@@ -29,7 +29,8 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 
 typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
 	env0 = MiniTypeEnv(env with onError = \e -> {
-		println(id + ": " + e)
+		file = lookupTreeDef(env.ast.declarationFile, id, "<unknown>");
+		println(file + ":" + id + ": " + e)
 	});
 
 	inferredType = if (recursive) {
@@ -156,7 +157,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 						type = convertMiniExp2Type(args[1]);
 						switch (args[0]) {
 							MiniInt(__, __): {
-								// This is fine
+								// This is fine nomatter what, since it is the official way to declare other int types
 							}
 							default: {
 								// For the rest, check the type
@@ -164,7 +165,10 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 							}
 						};
 						setMiniTypeVar(env, ex, type);
-					} else def();
+					} else {
+						// TODO: Downcast could be handled here?
+						def();
+					}
 				}
 				default: def();
 			}
@@ -329,4 +333,3 @@ constrainUpperBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 		constrainMiniType(env, type, utype)
 	})
 }
-

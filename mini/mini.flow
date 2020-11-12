@@ -6,19 +6,18 @@ import mini/backends/js;
 import mini/backends/pretty;
 
 main() {
-	//file = getUrlParameterDef("file", "mini/tests/assoc.flow");
-	file0 = getUrlParameterDef("file", "demos/euler/euler10.flow");
-	file = if (fileExists(file0)) file0 else changeFileExt(file0, ".flow");
+	files = getFilesToCompile();
+
 	output = getUrlParameterDef("output", "output");
 
 	verbose = s2i(getUrlParameterDef("verbose", "0"));
 
-	db0 = makeMiniDb([".","c:\\flow9\\lib\\", "c:\\flow9"], println);
+	db0 = makeMiniDb(["", ".","c:\\flow9\\lib\\", "c:\\flow9"], println);
 
 	db = miniEvalForths("", db0, ["prepflow"]);
 
 	miniProcessCommand(db, make(""), \fdb -> {
-		cdb = miniEvalForths(file, fdb, [toString(file), "parsefile"]);
+		cdb = fold(files, fdb, \acc, file -> miniEvalForths(file, acc, [toString(file), "parsefile"]));
 
 		miniProcessCommand(cdb, make(""), \tdb -> {
 			program = miniAst2BProgram(tdb.program);
@@ -80,4 +79,36 @@ main() {
 		});
 
 	});
+}
+
+getFilesToCompile() -> [string] {
+	//file = getUrlParameterDef("file", "mini/tests/assoc.flow");
+	file0 = getUrlParameterDef("file", "demos/euler/euler10.flow");
+
+	// We support test=1-5, test=6, test=-10  and such to compile flowc test cases
+	test = getUrlParameter("test");
+	bounds = parseNumberBound(test);
+
+	files0 = if (test != "") {
+		folder = if (bounds != Pair(0,0)) "c:/flow9/tools/flowc/tests" else test;
+		filtermap(readDirectory(folder), \file -> {
+			fileno = s2i(strRight(file, 4));
+			if (endsWith(file, ".flow") && (bounds == Pair(0, 0) || (fileno != 0 && bounds.first <= fileno && fileno <= bounds.second))) {
+				Some(pathCombine(folder, file))
+			} else None();
+		})
+	} else [file0];
+
+	map(files0, \file -> {
+		if (fileExists(file)) file else changeFileExt(file, ".flow")
+	})
+}
+
+parseNumberBound(s : string) -> Pair<int, int> {
+	if (strContains(s, "-")) {
+		numbers = strSplit(s, "-");
+		Pair(s2i(numbers[0]), if (length(numbers) < 2) 1000000 else s2i(numbers[1]));
+	} else if (i2s(s2i(s)) == s) {
+		Pair(s2i(s), s2i(s))
+	} else Pair(0, 0)
 }

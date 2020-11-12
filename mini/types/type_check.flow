@@ -44,9 +44,12 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	tenv2 = fold(order, tenv, \acc, id -> {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
+			// println(id + " starts at " + i2s(^(tenv.tyvarId)));
 			recursive = containsSet(lookupMultimap(ast.idDependents.dependencies, id), id);
 			// OK, find the type of this
-			typeInferenceMiniDeclaration(acc, id, recursive, mfn);
+			r = typeInferenceMiniDeclaration(acc, id, recursive, mfn);
+
+			r;
 		} : {
 			println("Unknown name when type checking " + id);
 			acc;
@@ -66,28 +69,30 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		});
 	};
 
+	cenv = MiniTypeEnv(tenv2 with onError = \e -> println("<unknown>: " + e));
+
 	// OK, resolve the constraints
-	resTypes = coalesceMiniTypeVars(tenv2);
-	simplifyResTypes(tenv2, resTypes);
+	resTypes = coalesceMiniTypeVars(cenv);
+	simplifyResTypes(cenv, resTypes);
 
 	if (false) {
 		println("\nMini exp declarations after:");
 		iter(order, \id -> {
 			mfn = lookupTree(ast.declarations, id);
 			mfn ?? {
-				println(id + " = " + miniPrettyTyped(tenv2, mfn));
+				println(id + " = " + miniPrettyTyped(cenv, mfn));
 			} : {}
 		});
 	};
 
 	// OK, remove the current set of ids from the pure set
-	past = MiniAst(tenv2.ast with pureIds = differenceSets(tenv2.ast.pureIds, ids));
+	past = MiniAst(cenv.ast with pureIds = differenceSets(cenv.ast.pureIds, ids));
 
 	// OK, now lower these ids to the backend representation
 	nast = fold(order, past, \acc, id -> {
 		mfn = lookupTree(acc.declarations, id);
 		mfn ?? {
-			bdecl = miniExp2BExp(tenv2, mfn);
+			bdecl = miniExp2BExp(cenv, mfn);
 
 			// This is the pipeline of optimizations:
 			un = unfoldBExp(bdecl);

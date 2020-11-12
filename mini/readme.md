@@ -96,7 +96,7 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get tools/flowc/tests examples to compile and run in JS.
-  - Add mode which runs all
+  - Add mode which compiles all test case
     - Change __casebody to be expanded to a down-type cast in switch?
     - Redo __construct to be more like record construction?
       -   makerecord(), setrecord(record, id, val)?
