@@ -1,0 +1,15 @@
+import mini/types/typeenv;
+
+export {
+	findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string;
+}
+
+findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string {
+
+	mid = treeIntervalSearch(^(env.tyvar2Id), tyvar);
+
+	(mid ?? {
+		file = lookupTreeDef(env.ast.declarationFile, mid, "<unknown>");
+		file + ": " + mid
+	} : i2s(tyvar)) + ": ";
+}

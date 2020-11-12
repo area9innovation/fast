@@ -44,12 +44,13 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	tenv2 = fold(order, tenv, \acc, id -> {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
-			// println(id + " starts at " + i2s(^(tenv.tyvarId)));
-			recursive = containsSet(lookupMultimap(ast.idDependents.dependencies, id), id);
-			// OK, find the type of this
-			r = typeInferenceMiniDeclaration(acc, id, recursive, mfn);
+			// Update the tyvar map
+			tenv.tyvar2Id := setTree(^(tenv.tyvar2Id), ^(tenv.tyvarId), id);
 
-			r;
+			recursive = containsSet(lookupMultimap(ast.idDependents.dependencies, id), id);
+
+			// OK, find the type of this
+			typeInferenceMiniDeclaration(acc, id, recursive, mfn);
 		} : {
 			println("Unknown name when type checking " + id);
 			acc;

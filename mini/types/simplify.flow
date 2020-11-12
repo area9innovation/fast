@@ -3,6 +3,7 @@ import mini/types/debug;
 import mini/types/type;
 import mini/types/subtype;
 import mini/types/subtypegraph;
+import mini/types/tyvarinfo;
 
 export {
 	// Simplifies the res types to mini types
@@ -66,7 +67,7 @@ simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 							} else {
 								// Update onError to know about the tyvar
 								nenv = MiniTypeEnv(acc.env with onError = \e -> {
-									println("Tyvar " + i2s(id) + ": " + e);
+									println(findMiniTyvarInfo(acc.env, id) + e);
 								});
 								nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id), env = nenv);
 								rtype = simplifyResType(nacc, rt);

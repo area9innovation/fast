@@ -24,6 +24,9 @@ export {
 		// We keep a cache of constraints to avoid infinite loops
 		constraintCache : ref Set<Pair<MiniType, MiniType>>,
 
+		// What tyvar number does this id start with? Used to map back from tyvars to ids
+		tyvar2Id : ref Tree<int, string>,
+
 		// To report errors
 		onError : (string) -> void,
 	);

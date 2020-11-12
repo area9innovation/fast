@@ -23,6 +23,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ref 1,
 		ref makeTree(),
 		ref makeSet(),
+		ref makeTree(),
 		\e -> println(e)
 	);
 }
@@ -30,7 +31,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
 	env0 = MiniTypeEnv(env with onError = \e -> {
 		file = lookupTreeDef(env.ast.declarationFile, id, "<unknown>");
-		println(file + ":" + id + ": " + e)
+		println(file + ": " + id + ": " + e)
 	});
 
 	inferredType = if (recursive) {
