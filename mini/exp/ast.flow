@@ -70,6 +70,8 @@ export {
 
 	MiniOptions(
 		verbose : int,
-		strict : bool,
+		// Are implicit type-parameters OK?
+		implicitTypePars : bool,
+		// TODO: Add #defines
 	);
 }

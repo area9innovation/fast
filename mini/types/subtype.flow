@@ -1,7 +1,6 @@
 import mini/types/typeenv;
 import mini/types/pretty;
 import mini/types/util;
-import net/url_parameter;
 
 export {
 	// Given these two type calls, constrain them against each other
@@ -20,7 +19,7 @@ constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType
 		// OK, nothing to do.
 	} else if (lhs.id == rhs.id) {
 		// TODO: Figure out how the type-pars align with each other
-		if (isUrlParameterTrue("strict") && length(lhs.typars) != length(rhs.typars)) {
+		if (!env.ast.options.implicitTypePars && length(lhs.typars) != length(rhs.typars)) {
 			env.onError("Expected typars to match " + miniType2string(lhs) + " vs  " + miniType2string(rhs));
 		} else {
 			iteri(lhs.typars, \i, larg -> {

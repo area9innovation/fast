@@ -3,7 +3,6 @@ import mini/types/debug;
 import mini/types/type;
 import mini/types/subtype;
 import mini/types/subtypegraph;
-import net/url_parameter;
 
 export {
 	// Simplifies the res types to mini types
@@ -221,7 +220,7 @@ intersectTypes(acc : SimplifyAcc, left : MiniType, right : MiniType) -> Maybe<Mi
 // Should this be moved to subtype.flow?
 unionMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)  -> Maybe<MiniType> {
 	if (left.id == right.id) {
-		if (isUrlParameterTrue("strict") && length(left.typars) != length(right.typars)) {
+		if (!acc.env.ast.options.implicitTypePars && length(left.typars) != length(right.typars)) {
 			None();
 		} else {
 			len = max(length(left.typars), length(right.typars));
@@ -294,7 +293,7 @@ unionMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)
 
 intersectMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeCall)  -> Maybe<MiniType> {
 	if (left.id == right.id) {
-		if (isUrlParameterTrue("strict") && length(left.typars) != length(right.typars)) {
+		if (!acc.env.ast.options.implicitTypePars && length(left.typars) != length(right.typars)) {
 			None();
 		} else {
 			len = max(length(left.typars), length(right.typars));

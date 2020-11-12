@@ -8,6 +8,12 @@ export {
 }
 
 makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
+	strict = isUrlParameterTrue("strict");
+	options = MiniOptions(
+		s2i(getUrlParameter("verbose")), 
+		// Implicit type pars
+		!strict
+	);
 	db = MiniDb(
 		includes, 
 		makeTree(), 
@@ -15,7 +21,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		makeMiniFileCache(),
 		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), MiniDependent(makeTree(), makeTree()), 
 			getBuiltinMiniTypes(), makeTree(), makeTree(), MiniSubtypeGraph(makeSimpleGraph()),
-			makeTree(), getBuiltinPureNames(), MiniOptions(s2i(getUrlParameter("verbose")), isUrlParameterTrue("strict"))),
+			makeTree(), getBuiltinPureNames(), options),
 		makeMiniForth(),
 		makeTree(),
 		makeTree(),
