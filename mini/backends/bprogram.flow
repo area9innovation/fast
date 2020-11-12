@@ -31,6 +31,7 @@ export {
 		BTailCall(fn : string, args : [string], values : [BExp], type : MiniType);
 
 		BSwitchStatement(expr : BExp, cases : [BCaseStatement], type : MiniType);
+			// TODO: We should arguably add a downcast type here
 			BCaseStatement(value : BExp, body : BStatement);
 
 	BExp ::= BValue, BVar, BLet, BLambda, BCall, BIf, BSequence, BSwitch;
@@ -45,6 +46,7 @@ export {
 		BIf(cond : BExp, then : BExp, else_ : BExp, type : MiniType);
 		BSequence(exps : [BExp], type : MiniType);
 		BSwitch(val : BExp, cases : [BCase], type : MiniType);
+			// TODO: We should arguably add a downcast type here
 			BCase(value : BExp, body : BExp);
 
 	// The backends get this language

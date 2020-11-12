@@ -97,6 +97,7 @@ the development, we have defined some milestones.
 
 - Get tools/flowc/tests examples to compile and run in JS.
   - Add mode which runs all
+    - Change __casebody to be expanded to a down-type cast in switch?
     - 5, 7: intersection typing
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore

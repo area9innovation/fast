@@ -62,7 +62,14 @@ prettyBStatement(b : BStatement) -> string {
 				} : %type%", [
 					"val", prettyBExp(val),
 					"cases", superglue(cases, \c -> {
-						prettyBExp(c.value) + ": " + prettyBStatement(c.body) + ";"
+						blueprint("
+							%value%: {
+								%body%
+							}
+							",
+							["value", prettyBExp(c.value),
+							"body", prettyBStatement(c.body)
+						])
 					}, ""),
 					"type", miniType2string(type),
 			])
@@ -113,7 +120,14 @@ prettyBExp(b : BExp) -> string {
 				} : %type%", [
 					"val", prettyBExp(val),
 					"cases", superglue(cases, \c -> {
-						prettyBExp(c.value) + ": " + prettyBExp(c.body) + ";"
+						blueprint("
+							%value%: {
+								%body%
+							}
+							",
+							["value", prettyBExp(c.value),
+							"body", prettyBExp(c.body)
+						])
 					}, ""),
 					"type", miniType2string(type),
 			])
