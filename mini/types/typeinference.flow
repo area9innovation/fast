@@ -1,6 +1,7 @@
 import mini/types/typeenv;
 import mini/types/pretty;
 import mini/types/pretty;
+import mini/types/tyvarinfo;
 import mini/types/type_ast;
 import mini/types/subtype;
 import mini/types/polymorphism;
@@ -30,8 +31,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 
 typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
 	env0 = MiniTypeEnv(env with onError = \e -> {
-		file = lookupTreeDef(env.ast.declarationFile, id, "<unknown>");
-		println(file + ": " + id + ": " + e)
+		println(findMiniIdInfo(env, id) + e)
 	});
 
 	inferredType = if (recursive) {
