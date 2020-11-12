@@ -12,12 +12,17 @@ prettyBProgram(p : BProgram) -> string {
 prettyBDeclaration(b : BDeclaration) -> string {
 	switch (b) {
 		BFunction(name, args, body, tc, type): {
-			(if (tc) "tailcall " else "") + name + "(" + superglue(args, \a -> a.name , ", ") + ") : " + miniType2string(type) + " {\n"
-			+ prettyBStatement(body)
-			+ "\n}"
+			blueprint("
+				%header% {
+					%body%
+				}
+			", [
+				"header", (if (tc) "tailcall " else "") + name + "(" + superglue(args, \a -> a.name , ", ") + ") : " + miniType2string(type),
+				"body", prettyBStatement(body)
+			])
 		}
 		BGlobalVar(name, body, type): {
-			name + "=" + prettyBExp(body) + ":" + miniType2string(type);
+			name + " : " + miniType2string(type) + " = " + prettyBExp(body);
 		}
 		BNative(name, isio, type, nativeName, mfallback): {
 			"native " + name + " : " + (if (isio) "io" else "") + miniType2string(type) + " = " + nativeName
