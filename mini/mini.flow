@@ -82,8 +82,8 @@ main() {
 }
 
 getFilesToCompile() -> [string] {
-	//file = getUrlParameterDef("file", "mini/tests/assoc.flow");
-	file0 = getUrlParameterDef("file", "demos/euler/euler10.flow");
+	file0 = getUrlParameterDef("file", "mini/tests/error.flow");
+	//file0 = getUrlParameterDef("file", "demos/euler/euler10.flow");
 
 	// We support test=1-5, test=6, test=-10  and such to compile flowc test cases
 	test = getUrlParameter("test");

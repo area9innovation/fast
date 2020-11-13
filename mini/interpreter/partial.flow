@@ -74,7 +74,7 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 						MiniVar(struct, 0),
 					], 0
 				),
-				// TODO: This implies a downcast in the body of __switchvar
+				// This implies a downcast in the body of __switchvar
 				MiniCall(MiniVar("__casebody", 0), [
 					MiniVar("__switchvar", 0),
 					miniType2Exp(MiniTypeCall(struct, [])),

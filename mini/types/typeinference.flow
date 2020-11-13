@@ -142,6 +142,11 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 			};
 			switch (fn) {
 				MiniVar(fname, __): {
+					/*
+					 *
+					 * Here we handle special functions that have special typing rules
+					 *
+					 */
 					if (fname == "__type" || fname == "__fntype"|| fname == "__uniontype" || fname == "__recordtype") {
 						type = convertMiniExp2Type(ex);
 
@@ -166,6 +171,24 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 							}
 						};
 						setMiniTypeVar(env, ex, type);
+					} else if (fname == "__casebody") {
+						// This is downcast "id : type in body"
+						name = getMiniVar(args[0]);
+						type = convertMiniExp2Type(args[1]);
+						body = args[2];
+					
+						nenv = setMiniLocalType(env, name, type);
+						setMiniTypeVar(nenv, ex, typeInferenceMini(nenv, body));
+					} else if (fname == ".") {
+						argType = typeInferenceMini(env, args[0]);
+						field = getMiniString(args[1]);
+
+						fieldType = makeMiniTypeVar(env);
+						rec = MiniTypeRecord([MiniTypeField(field, false, fieldType)]);
+
+						constrainMiniType(env, argType, rec);
+
+						fieldType;
 					} else {
 						// TODO: Downcast could be handled here?
 						def();

@@ -145,7 +145,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		}
 		MiniCompileTime(names): {
 			interpreter = makeMiniInterpreter(db.program);
-			verbose = db.program.options.verbose > 0;
+			verbose = db.program.options.verbose > 1;
 			if (verbose) {
 				println("After compile time:");
 			}
