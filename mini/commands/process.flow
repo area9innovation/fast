@@ -109,8 +109,16 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 
 			mexisting ?? {
 				if (isSameMiniExp(mexisting, body)) {
-					// It is the same. Nothing to do except for the annotations
-					db0;
+
+					deffile = lookupTreeDef(ast.declarationFile, id, file);
+					if (deffile == file) {
+						// It is the same. Nothing to do except for the annotations
+						db0;
+					} else {
+						// In a new file. Hm, we have a conflict
+						println(id + " is in " + file + " and " + deffile);
+						db0;
+					}
 				} else {
 					// OK, it is new. We should put it in and process it
 					def();
