@@ -256,6 +256,14 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 					MiniTypeCall(rid, rtypars): {
 						constrainMiniTypeCalls(env, constrainMiniType, lhs, rhs);
 					}
+					MiniTypeRecord(rfields): {
+						mrecord = typeCall2MiniRecord(env.ast, lhs);
+						mrecord ?? {
+							constrainMiniType(env, mrecord, rhs);
+						} : {
+							error();
+						}
+					}
 					default: right();
 				}
 			}
@@ -282,18 +290,33 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 					default: right();
 				}
 			}
-			MiniTypeRecord(fields): {
-				/*
-				(Record(fs0), Record(fs1)) =>
-					fs1.foreach { 
-						case (n1, t1) =>
-							fs0.find(_._1 == n1) match {
-								None => err("missing field: " + n1 + " in " + lhs);
-								Some((_, t0)) => constrain(t0, t1) 
+			MiniTypeRecord(lfields): {
+				switch (rhs) {
+					MiniTypeRecord(rfields): {
+						iteri(rfields, \i, fs1 : MiniTypeField -> {
+							lfield = find(lfields, \lf : MiniTypeField -> lf.name == fs1.name);
+							lfield ?? {
+								if (lfield.isMutable && !fs1.isMutable) {
+									env.onError("Field " + fs1.name + " should be mutable in " + miniType2string(rhs));
+								} 
+								constrainMiniType(env, lfield.type, fs1.type);
+							} : {
+								env.onError("Expected field " + fs1.name + " in " + miniType2string(lhs));
 							}
+						});
+						/*
+						(Record(fs0), Record(fs1)) =>
+							fs1.foreach { 
+								case (n1, t1) =>
+									fs0.find(_._1 == n1) match {
+										None => err("missing field: " + n1 + " in " + lhs);
+										Some((_, t0)) => constrain(t0, t1) 
+									}
+							}
+						*/
 					}
-				*/
-				println("TODO: Implement constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
+					default: right();
+				}
 			}
 		}
 	}

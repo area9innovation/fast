@@ -12,6 +12,8 @@ export {
 
 	// Check if this left name is inside the typename on the right, and if so, lift the left type to the applied union type
 	findMiniUnionFromStruct(env : MiniAst, left : string, ltypars : [MiniType], right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
+
+	typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniTypeRecord>;
 }
 
 constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
@@ -117,3 +119,22 @@ instantiateTypars(typars : [MiniType], args : [MiniType], e : MiniType) -> MiniT
 	});
 }
 
+
+
+typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniTypeRecord> {
+	mstruct = lookupTree(env.structs, tc.id);
+	mstruct ?? {
+		rec = MiniTypeRecord(mstruct.fields);
+		Some(foldi(tc.typars, rec, \i, acc, arg -> {
+			tp = MiniTypePar(strLeft("???????????????", i + 1));
+
+			MiniTypeRecord(map(acc.fields, \f -> {
+				MiniTypeField(f.name, f.isMutable, 
+					replaceMiniType(tp, f.type, acc)
+				)
+			}));
+		}));
+	} : {
+		None();
+	}
+}

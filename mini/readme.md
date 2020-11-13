@@ -103,7 +103,7 @@ the development, we have defined some milestones.
     - 5, 7: intersection typing
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore
-	- 9, 24: double vs ?
+	- 9, 24: double vs ?, . typing
 	- 9: Implicit polymorphism for maybeMap
 	- 17: mutable struct fields
 	- 26, 27, 30: __construct5 is unknown
