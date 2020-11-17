@@ -18,7 +18,7 @@ resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType {
 			miniTypeVoid
 		} else {
 			lower = lookupMultimap(^(env.tyvarLowerBounds), tyvarId);
-			upper = lookupMultimap(^(env.tyvarLowerBounds), tyvarId);
+			upper = lookupMultimap(^(env.tyvarUpperBounds), tyvarId);
 			fn = \l -> "{" + superglue(set2array(l), miniType2string, ", ") + "}";
 			env.onError("Could not resolve tyvar " + i2s(tyvarId) + " with " + fn(lower) + ".." + fn(upper));
 			MiniTypeVar(tyvarId);

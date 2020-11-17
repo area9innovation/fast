@@ -41,7 +41,7 @@ debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void {
 
 debugBounds(env : MiniTypeEnv, id : int) -> string {
 	lower = lookupMultimap(^(env.tyvarLowerBounds), id);
-	upper = lookupMultimap(^(env.tyvarLowerBounds), id);
+	upper = lookupMultimap(^(env.tyvarUpperBounds), id);
 	(if (!isEmptySet(lower)) {
 		"    Lower: " + superglue(set2array(lower), miniType2string, ", ");
 	} else "")

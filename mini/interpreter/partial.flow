@@ -93,7 +93,12 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 				body;
 			}
 			Some(uniondef): {
+				/*
+				We should construct or(case) for each missing case in the switch
+				but we might introduce redundant ones, so probably better to do it elsewhere
+				*/
 				println("TODO: Implement expansion of union case in switch: " + struct);
+				println(uniondef);
 				body;
 			}
 		}

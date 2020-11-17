@@ -100,7 +100,7 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		Pair("__native", MiniTypeFunction([i, ta, s], ta)),
 
 		// TODO: This requires more work
-		Pair(".", MiniTypeFunction([ta, s], tb)),
+//		Pair(".", MiniTypeFunction([ta, s], tb)),
 
 		//
 		// The following special functions are all constructed

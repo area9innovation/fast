@@ -1,5 +1,7 @@
 import mini/types/typeenv;
 import mini/types/restype;
+import mini/types/unify_restype;
+import mini/types/debug;
 import ds/tuples;
 import ds/treeutils;
 
@@ -20,8 +22,20 @@ coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType> {
 	// OK, the question is whether we should build a dependency graph of the tyvars and do it in
 	// topological order?
 	cenv = CoalesceAcc(env, ref makeTree(), makeSet());
+
+	resenv = ResTypeEnv(ref makeTree(), \tv -> {
+		restype1 = goCoalesce(cenv, MiniTypeVar(tv), true);
+		restype2 = goCoalesce(cenv, MiniTypeVar(tv), false);
+		Pair(restype1, restype2)
+	}, env.onError);
+
 	foldRange(1, ^(env.tyvarId) - 1, makeTree(), \acc, tv -> {
-		restype = goCoalesce(cenv, MiniTypeVar(tv), true);
+		restype1 = goCoalesce(cenv, MiniTypeVar(tv), true);
+		restype2 = goCoalesce(cenv, MiniTypeVar(tv), false);
+
+		restype = unifyResTypes(resenv, makeSet1(tv), restype1, restype2);
+		resenv.types := setTree(^(resenv.types), tv, restype);
+
 		setTree(acc, tv, restype);
 	});
 }

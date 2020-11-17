@@ -15,7 +15,7 @@ simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void {
 
 	traverseInOrder(resTypes, \tv, restype -> {
 		resolved = simplifyResType(acc, ResTypeVar(tv));
-		if (false) {
+		if (true) {
 			println("a"  + i2s(tv) + " = " + miniType2string(resolved) + " from " + debugBounds(env, tv) + "   giving restype: " + resType2string(restype));
 		};
 	});
