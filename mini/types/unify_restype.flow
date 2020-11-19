@@ -1,0 +1,147 @@
+import mini/types/restype;
+import mini/types/typeenv;
+import mini/types/debug;
+
+export {
+	unifyResTypes(env : ResTypeEnv, recTyvars : Set<int>, lower : ResType, upper : ResType) -> ResType;
+
+	ResTypeEnv(
+		types : ref Tree<int, ResType>,
+		getBounds : (int) -> Pair<ResType, ResType>,
+		onError : (string) -> void
+	);
+}
+
+
+// This is probably similar to what GBounds does in GType
+// TODO: Change to give an array of results, because sometimes there are multiple solutions?
+unifyResTypes(env : ResTypeEnv, recTyvars : Set<int>, lower : ResType, upper : ResType) -> ResType {
+	if (lower == upper) lower
+	else {
+		todo = \ -> {
+			switch (upper) {
+				ResTypeVar(id): {
+					utype = unifyResTyvar(env, recTyvars, id);
+					if (utype != upper) {
+						unifyResTypes(env, recTyvars, lower, utype)
+					} else {
+						switch (utype) {
+							ResTypeVar(uid): {
+								// println("Figure out how to combine 1 " + resType2string(lower) + " and " + resType2string(utype));
+								lower;
+							}
+							default: {
+								utype;
+							}
+						}
+					}
+				}
+				default: {
+					// TODO: OK, here, we have cases where there are multiple solutions.
+					// We should probably do prolog-style
+					// println("Figure out how to combine 2 " + resType2string(lower) + " and " + resType2string(upper));
+					lower;
+				}
+			}
+		}
+		switch (lower) {
+			ResUnion(types): todo();
+			ResIntersection(types): todo();
+			ResRecursiveType(id, type): todo();
+			ResFunctionType(largs, lrhs): {
+				switch (upper) {
+					ResFunctionType(rargs, rrhs): {
+						uargs = mapi(largs, \i, larg -> {
+							unifyResTypes(env, recTyvars, rargs[i], larg)
+						});
+						ResFunctionType(
+							uargs,
+							unifyResTypes(env, recTyvars, lrhs, rrhs)
+						);
+					}
+					default: todo();
+				}
+			}
+			ResTypeRecord(fields): todo();
+			ResTypeVar(lid): {
+				ltype = unifyResTyvar(env, recTyvars, lid);
+				if (ltype != lower) {
+					unifyResTypes(env, recTyvars, ltype, upper)
+				} else {
+					switch (upper) {
+						ResTypeVar(rid): {
+							utype = unifyResTyvar(env, recTyvars, rid);
+							if (utype != upper) {
+								unifyResTypes(env, recTyvars, lower, utype)
+							} else {
+								todo();
+							}
+						}
+						default: upper;
+					}
+				}
+			}
+			ResIntType(bits): todo();
+			ResTypeCall(lid, ltypars): {
+				switch (upper) {
+					ResTypeCall(rid, rtypars): {
+						if (lid == rid) {
+							uargs = mapi(ltypars, \i, larg -> {
+								if (i < length(rtypars)) {
+									unifyResTypes(env, recTyvars, larg, rtypars[i])
+								} else larg;
+							});
+							ResTypeCall(lid, uargs);
+						} else todo();
+					}
+					default: todo();
+				}
+			}
+			ResTypePar(id): {
+				switch (upper) {
+					ResTypeVar(rid): todo();
+					ResTypePar(uid): {
+						if (id == uid) lower
+						else {
+							env.onError("Expected type par " + id + " and " + uid + " to match");
+							lower;
+						}
+					}
+					default: {
+						env.onError("Expected type par " + id);
+						lower;
+					}
+				}
+			}
+		}
+	}
+}
+
+unifyResTyvar(env : ResTypeEnv, recTyvars : Set<int>, id : int) -> ResType {
+	rtype = lookupTree(^(env.types), id);
+	rtype ?? {
+		rtype
+	} : {				
+		if (containsSet(recTyvars, id)) {
+			ResTypeVar(id)
+		} else {
+			b = env.getBounds(id);
+			ut = unifyResTypes(env, insertSet(recTyvars, id), b.first, b.second);
+			ft = ut;
+			/*
+			ft = switch (ut) {
+				ResTypeVar(nid): {
+					if (nid == id) {
+						ut;
+					} else {
+						println("Trail");
+						unifyResTyvar(env, insertSet(recTyvars, id), nid);
+					}
+				}
+				default: ut;
+			}*/
+			env.types := setTree(^(env.types), id, ft);
+			ft;
+		}
+	}
+}

@@ -1,6 +1,7 @@
 import mini/interpreter/interpreter;
 import mini/exp/value;
 import mini/types/type_ast;
+import mini/types/util;
 
 export {
 	partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
@@ -28,6 +29,8 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 						processMiniCase(env, args);
 					} else if (fname == "__ctmaybe") {
 						processMiniMaybe(env, args);
+					} else if (fname == "__switch") {
+						processMiniSwitch(env, args);
 					} else if (fname == "__compiletime") {
 						interpretMiniExp(env, e);
 					} else {
@@ -84,23 +87,89 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 			0
 		);
 	} : {
-		muniondef = lookupTree(env.env.unions, struct);
-		switch (muniondef) {
-			None(): {
-				// OK, we have a problem if we import none, and that means it is
-				// not known at this point.
-				println("Unknown case in switch " + struct);
-				body;
+		// We assume this is a union, which will be expanded by processMiniSwitch
+		MiniCall(MiniVar("__case", 0),
+			[
+				MiniCall(
+					MiniVar("__caseid", 0),
+					[
+						MiniVar(struct, 0),
+					], 0
+				),
+				body
+			], 0
+		)
+	}
+}
+
+processMiniSwitch(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
+	// The cases
+	cases = extractMiniCases([], args[1]);
+
+	// Extract the names of each case
+	names : [string] = map(cases, \c -> {
+		// MiniCall(MiniVar("__case", 0), [MiniCall(MiniVar("__caseid", 0), [MiniVar("None", 0)], 0), 
+		// MiniCall(MiniVar("__defaultcase", 0), [MiniCall(MiniVar("None", 0), [], 0)], 0)
+		// MiniCall(MiniVar("__case", 0), [MiniCall(MiniVar("__caseid", 0), [MiniVar("Maybe", 0)], 0), MiniCall(MiniVar("None", 0), [], 0)], 0)
+		switch (c) {
+			MiniCall(fn, fargs, __): {
+				switch (fn) {
+					MiniVar(name, __): {
+						if (name == "__defaultcase") name
+						else {
+							switch (fargs[0]) {
+								MiniCall(fn2, args2, __): {
+									getMiniVar(args2[0]);
+								}
+								default: "TODO";
+							}
+						}
+					}
+					default: "TODO";
+				}
 			}
-			Some(uniondef): {
-				/*
-				We should construct or(case) for each missing case in the switch
-				but we might introduce redundant ones, so probably better to do it elsewhere
-				*/
-				println("TODO: Implement expansion of union case in switch: " + struct);
-				println(uniondef);
-				body;
+			default: "TODO";
+		}
+	});
+
+	structs = filter(names, \name -> containsKeyTree(env.env.structs, name));
+	hasDefault = contains(names, "__defaultcase");
+
+	expandUnions = map(names, \name -> {
+		udef = lookupTree(env.env.unions, name);
+		switch (udef) {
+			None(): [];
+			Some(def): {
+				map(def.typenames, getMiniTypeName);
 			}
+		}
+	});
+	println(expandUnions);
+
+	MiniCall(MiniVar("__switch", 0), args, 0)
+}
+
+extractMiniCases(acc : [MiniExp], e : MiniExp) -> [MiniExp] {
+	switch (e) {
+		MiniCall(fn, args,__): {
+			switch (fn) {
+				MiniVar(name, __): {
+					if (name == "__or") {
+						nacc = extractMiniCases(acc, args[0]);
+						extractMiniCases(nacc, args[1]);
+					} else {
+						arrayPush(acc, e);
+					}
+				}
+				default: {
+					println("Expected case in switch");
+					acc;
+				}
+			}
+		}
+		default: {
+			println("Expected case in switch");
+			acc;
 		}
 	}
 }

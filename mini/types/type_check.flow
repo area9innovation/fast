@@ -76,7 +76,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	resTypes = coalesceMiniTypeVars(cenv);
 	simplifyResTypes(cenv, resTypes);
 
-	if (true) {
+	if (false) {
 		println("\nMini exp declarations after:");
 		iter(order, \id -> {
 			mfn = lookupTree(ast.declarations, id);

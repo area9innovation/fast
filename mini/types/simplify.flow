@@ -13,9 +13,13 @@ export {
 simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void {
 	acc = SimplifyAcc(env, env.tyvars, makeSet(), resTypes);
 
+	if (env.ast.options.verbose > 1) {
+		println("Simplify restypes:");
+	}
+
 	traverseInOrder(resTypes, \tv, restype -> {
 		resolved = simplifyResType(acc, ResTypeVar(tv));
-		if (true) {
+		if (env.ast.options.verbose > 1) {
 			println("a"  + i2s(tv) + " = " + miniType2string(resolved) + " from " + debugBounds(env, tv) + "   giving restype: " + resType2string(restype));
 		};
 	});
