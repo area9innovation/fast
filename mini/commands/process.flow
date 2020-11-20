@@ -116,7 +116,8 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 						db0;
 					} else {
 						// In a new file. Hm, we have a conflict
-						println(id + " is in " + file + " and " + deffile);
+						println(deffile + ": Defines " + id);
+						println(file + ": ...redefined here");
 						db0;
 					}
 				} else {
