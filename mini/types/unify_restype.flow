@@ -108,7 +108,7 @@ unifyResTypes(env : ResTypeEnv, recTyvars : Set<int>, lower : ResType, upper : R
 						}
 					}
 					default: {
-						env.onError("Expected type par " + id);
+						env.onError("Expected type par " + id + ", got " + resType2string(upper)); 
 						lower;
 					}
 				}
