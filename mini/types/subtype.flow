@@ -1,6 +1,7 @@
 import mini/types/typeenv;
 import mini/types/pretty;
 import mini/types/util;
+import mini/types/debug;
 
 export {
 	// Given these two type calls, constrain them against each other
@@ -13,7 +14,7 @@ export {
 	// Check if this left name is inside the typename on the right, and if so, lift the left type to the applied union type
 	findMiniUnionFromStruct(env : MiniAst, left : string, ltypars : [MiniType], right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
 
-	typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniTypeRecord>;
+	typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniType>;
 }
 
 constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
@@ -121,19 +122,21 @@ instantiateTypars(typars : [MiniType], args : [MiniType], e : MiniType) -> MiniT
 
 
 
-typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniTypeRecord> {
+typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniType> {
 	mstruct = lookupTree(env.structs, tc.id);
 	mstruct ?? {
 		rec = MiniTypeRecord(mstruct.fields);
-		Some(foldi(tc.typars, rec, \i, acc, arg -> {
+		inst = foldi(tc.typars, rec, \i, acc, arg -> {
 			tp = MiniTypePar(strLeft("???????????????", i + 1));
+			replaceMiniType(tp, arg, acc)
+		});
 
-			MiniTypeRecord(map(acc.fields, \f -> {
-				MiniTypeField(f.name, f.isMutable, 
-					replaceMiniType(tp, f.type, acc)
-				)
-			}));
-		}));
+/*		println("We need to instantiate");
+		println(miniType2string(tc));
+		println(miniType2string(rec));
+		println(miniType2string(inst));
+*/
+		Some(inst);
 	} : {
 		None();
 	}

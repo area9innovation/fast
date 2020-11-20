@@ -208,7 +208,7 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 	} else {
 		env.constraintCache := insertSet(^(env.constraintCache), Pair(lhs, rhs));
 		
-		// println("Constrain " + miniType2string(lhs) + " <: " + miniType2string(rhs));
+		// println("Constrain " + debugMiniType(env, lhs) + " <: " + debugMiniType(env, rhs));
 
 		error = \ -> {
 			env.onError("Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));

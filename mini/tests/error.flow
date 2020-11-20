@@ -1,0 +1,7 @@
+Pair(first : ?, second : ??);
+
+main() {
+	p = Pair(1, 2.0);
+	b = p.first;
+	b;
+}
