@@ -4,6 +4,9 @@ import mini/types/type_ast;
 import mini/types/util;
 
 export {
+	// This does a few desugaring things:
+	// - Expand switch and cases to the correct form with variable bindings
+	// - "m ?? t : e" is expanded
 	partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
 }
 
@@ -27,10 +30,10 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 				MiniVar(fname, __): {
 					if (fname == "__ctcase") {
 						processMiniCase(env, args);
-					} else if (fname == "__ctmaybe") {
-						processMiniMaybe(env, args);
 					} else if (fname == "__switch") {
 						processMiniSwitch(env, args);
+					} else if (fname == "__ctmaybe") {
+						processMiniMaybe(env, args);
 					} else if (fname == "__compiletime") {
 						interpretMiniExp(env, e);
 					} else {
@@ -104,49 +107,54 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 
 processMiniSwitch(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 	// The cases
-	cases = extractMiniCases([], args[1]);
+	cases : [MiniExp] = extractMiniCases([], args[1]);
 
-	// Extract the names of each case
-	names : [string] = map(cases, \c -> {
-		// MiniCall(MiniVar("__case", 0), [MiniCall(MiniVar("__caseid", 0), [MiniVar("None", 0)], 0), 
-		// MiniCall(MiniVar("__defaultcase", 0), [MiniCall(MiniVar("None", 0), [], 0)], 0)
-		// MiniCall(MiniVar("__case", 0), [MiniCall(MiniVar("__caseid", 0), [MiniVar("Maybe", 0)], 0), MiniCall(MiniVar("None", 0), [], 0)], 0)
+	// Find and expand all unions
+	expanded = concatA(map(cases, \c -> {
 		switch (c) {
 			MiniCall(fn, fargs, __): {
 				switch (fn) {
 					MiniVar(name, __): {
-						if (name == "__defaultcase") name
+						if (name == "__defaultcase") [c]
 						else {
 							switch (fargs[0]) {
 								MiniCall(fn2, args2, __): {
-									getMiniVar(args2[0]);
+									cname = getMiniVar(args2[0]);
+									udef = lookupTree(env.env.unions, cname);
+									switch (udef) {
+										None(): [c];
+										Some(def): {
+											map(def.typenames, \tn -> {
+												sname = getMiniTypeName(tn);
+												sbody = fargs[1];
+												MiniCall(MiniVar("__case", 0), [MiniCall(MiniVar("__caseid", 0), [MiniVar(sname, 0)], 0), sbody], 0)
+											});
+										}
+									}
 								}
-								default: "TODO";
+								default: [c];
 							}
 						}
 					}
-					default: "TODO";
+					default: [c];
 				}
 			}
-			default: "TODO";
+			default: [c];
 		}
-	});
+	}));
 
-	structs = filter(names, \name -> containsKeyTree(env.env.structs, name));
-	hasDefault = contains(names, "__defaultcase");
+	nargs = if (expanded != []) {
+		[
+			args[0],
+			fold(tail(expanded), expanded[0], \acc, c -> {
+				MiniCall(MiniVar("__or", 0), [acc, c], 0)
+			})
+		]
+	} else {
+		args;
+	};
 
-	expandUnions = map(names, \name -> {
-		udef = lookupTree(env.env.unions, name);
-		switch (udef) {
-			None(): [];
-			Some(def): {
-				map(def.typenames, getMiniTypeName);
-			}
-		}
-	});
-	println(expandUnions);
-
-	MiniCall(MiniVar("__switch", 0), args, 0)
+	MiniCall(MiniVar("__switch", 0), nargs, 0)
 }
 
 extractMiniCases(acc : [MiniExp], e : MiniExp) -> [MiniExp] {
