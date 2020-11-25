@@ -97,7 +97,7 @@ the development, we have defined some milestones.
 
 - Get tools/flowc/tests examples to compile and run in JS.
   - Add mode which compiles all test case
-    - Change __casebody to be expanded to a down-type cast in switch?
+    - Rename __casebody to down-cast
     - Redo __construct to be more like record construction?
       -   makerecord(), setrecord(record, id, val)?
     - 5, 7: intersection typing
@@ -113,13 +113,15 @@ the development, we have defined some milestones.
 
   - string-include, quoting, string-escapes in AST
   - require, forbid
-  - Optimizations possible in parser: 
+  - Optimizations possible in generated Gringo parser: 
     - Use && instead of nested ifs
     - Change NOT to be a sequence
 	- Epsilon is probably correctly compiled to TRUE
 	- Add a BExp backend for DOpCode, and add a C++ or Rust backend for BExp
       and try to use Wasm
 	- Consider to make // and /* an operator in some contexts to capture them
+
+- Get sandbox/hello.flow to parse
 
 - Get type inference to work: 
   - Fields, struct and unions

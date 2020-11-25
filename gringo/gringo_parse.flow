@@ -29,7 +29,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		GChoice(left, right): {
 			lenv = gringoParse(env, left);
 			if (lenv.fail) {
-				gringoParse(env, right);
+				gringoParse(grabMaxi(env, lenv), right);
 			} else lenv
 		}
 		GSeq(left, right): {
@@ -40,7 +40,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		GStar(term): {
 			senv = gringoParse(env, term);
 			if (senv.fail) {
-				env;
+				grabMaxi(env, senv);
 			} else {
 				gringoParse(senv, gterm);
 			}
@@ -56,7 +56,7 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		GOpt(term): {
 			senv = gringoParse(env, term);
 			if (senv.fail) {
-				env;
+				grabMaxi(env, senv);
 			} else {
 				senv;
 			}
@@ -136,6 +136,11 @@ gringoParse(env : GringoEnv<?>, gterm : GTerm) -> GringoEnv<?> {
 		}
 		GEpsilon(): env;
 	}
+}
+
+// OK, to keep the max parsing length relevant, we have this helper
+grabMaxi(env : GringoEnv<?>, env2 : GringoEnv<?>) -> GringoEnv<?> {
+	GringoEnv(env with maxi = max(env2.maxi, env.maxi));
 }
 
 unquoteGTerm(env : GringoEnv, term : GTerm) -> GringoEnv {
