@@ -2,9 +2,15 @@
 
 - [Mini](#mini)
 	- [Mini Server](#mini-server)
-	- [Pipeline](#pipeline)
+	- [Running the compiler](#running-the-compiler)
 	- [Milestones](#milestones)
 	- [Known syntaxs differences](#known-syntaxs-differences)
+	- [Backends](#backends)
+		- [JS](#js)
+		- [Flow](#flow)
+- [Internals](#internals)
+	- [Pipeline](#pipeline)
+	- [Gringo](#gringo)
 	- [Mini Commands](#mini-commands)
 	- [Mini Forth](#mini-forth)
 		- [Values](#values)
@@ -19,26 +25,23 @@
 		- [Gringo grammars](#gringo-grammars)
 		- [Async and the Forth standard library](#async-and-the-forth-standard-library)
 		- [TODO Forth primitives](#todo-forth-primitives)
-	- [AST representation of various constructs](#ast-representation-of-various-constructs)
-	- [Backends](#backends)
-		- [JS](#js)
-		- [Flow](#flow)
+	- [AST representation of control flow](#ast-representation-of-control-flow)
+	- [Native fallbacks](#native-fallbacks)
+	- [Switch](#switch)
+	- [Switch backend](#switch-backend)
+	- [How to handle types in the AST](#how-to-handle-types-in-the-ast)
 - [Optimizations](#optimizations)
+	- [JS runtime](#js-runtime)
 - [Appendix](#appendix)
 	- [Last known good idea](#last-known-good-idea)
 	- [Inspiration](#inspiration)
 		- [Query based compilers](#query-based-compilers)
 		- [Datalog for typechecking](#datalog-for-typechecking)
 		- [Salsa](#salsa)
-- [How to handle types in the AST](#how-to-handle-types-in-the-ast)
-- [Native fallbacks](#native-fallbacks)
 - [Deleted ids](#deleted-ids)
-- [Switch](#switch)
-- [Switch backend](#switch-backend)
-- [Native runtime](#native-runtime)
 - [Polymorphism](#polymorphism)
 
-This is an experiment to build a queue-based, always live compiler.
+This is an effort to build a queue-based, always live compiler.
 
 It takes commands, and compiles the result into valid programs.
 
@@ -53,42 +56,29 @@ The compile server is based on these different languages:
 
 - Commands: These provide the interface to the compiler itself to support compiles,
   reading files, and such. This exposes the low-level compilation and dependency handling engine.
+  See `mini/commands/command.flow`.
 - Forth: This is a Forth interpreter used by the server to construct and manipulate ASTs.
   Since the grammar DSL Gringo is based on a Forth-language, this is a good fit to allow 
-  interfacing the parser with the compile server.
+  interfacing the parser with the compile server. See `mini/forth/`.
   Think of this as the Language Server Protocol language to interface with the compiler.
 - Exp: This is the AST for the program we are compiling. This is an extremely minimal
   AST, in order to keep the compiler as simple as possible. This expresses the programs
-  we compile.
-- Types: The language comes with type inference for a Flow-like type system.
+  we compile. See `mini/exp/exp.flow`
+- Types: The language comes with type inference for a Flow-like type system. See `mini/types/type.flow`.
 - BProgram: This is the fully-typed statement-based backend AST suitable for lots of backends.
-- Back: A mini-DSL used by the backends to produce tight object code
-- Gringo: This is used to define the syntax of languages we compile
+  See `mini/backends/bprogram.flow`.
+- Back: A mini-DSL used by the backends to produce tight object code. See `mini/backends/back_ast.flow`.
+- Gringo: This is used to define the syntax of languages we compile. See `gringo/readme.md`.
 
-At the moment, the Mini server is a GUI program found in `mini/mini_gui.flow`.
+At the moment, the Mini server is a GUI program found in `mini/mini_gui.flow`, and there is a
+command line version in `mini/mini.flow`.
 
 TODO:
-- Add a more traditional Mini server, with a web-based interface.
+- Add a more traditional Mini server, with a HTTP-based interface.
 
-## Pipeline
+## Running the compiler
 
-This diagram illustrates the processing pipeline:
-
-	Source file in flow or other high level language
-	-> This file is read by Mini if changed
-	-> This is parsed by a Gringo parser for Flow
-	-> This results in a bunch of Forth commands evaluated in Mini
-	-> This leads to commands that set definitions of ids in Mini (declarations, unprocessedAnnotations)
-	-> Thus, we build the AST for the parsed program in the exp language (MiniPopFile updates annotations)
-	-> These definitions are typed by the type inference and checker in topological order
-	-> We run optimizations of the AST
-	-> We lower the AST to BProgram for the backends
-	-> We generate code in the backends
-	-> The result is written as files, linked and processed for the final output
-
-The key point is that we are incremental at the id level, so if there is no
-change in an id, even if we parse the file again, we do not have to redo all
-dependents on that id. This should hopefully speed things up.
+	flowcpp mini/mini.flow -- file=myprogram.flow
 
 ## Milestones
 
@@ -96,10 +86,11 @@ The compiler is still in development, and a lot of work remains. To help guide
 the development, we have defined some milestones.
 
 - Get tools/flowc/tests examples to compile and run in JS.
-  - Add mode which compiles all test case
-    - Rename __casebody to down-cast
+  - You can run a set of tests using `flowcpp mini/mini.flow -- test=1-10`
+    - Rename __casebody to __downcast?
     - Redo __construct to be more like record construction?
-      -   makerecord(), setrecord(record, id, val)?
+      - makerecord(), setrecord(record, id, val)?
+	- Specific todos for test cases:
     - 5, 7: intersection typing
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore
@@ -121,7 +112,7 @@ the development, we have defined some milestones.
       and try to use Wasm
 	- Consider to make // and /* an operator in some contexts to capture them
 
-- Get sandbox/hello.flow to parse
+- Get sandbox/hello.flow to type
 
 - Get type inference to work: 
   - Fields, struct and unions
@@ -166,7 +157,7 @@ And after local lambdas:
 
 Parenthesis around types are not supported:
 
-	a : (int); 	// a : int;
+	nop : (() -> void); 	// nop : () -> void;
 
 Functions with only some args named is not supported. 
 We want all args to have names:
@@ -196,6 +187,78 @@ We do not support multi-strings:'
 TODO:
 - Add a mode which adds the missing semi-colons based on the error-recovery in the grammar
 
+## Backends
+
+The backends are based on the BProgram representation, which makes them minimal.
+
+Besides working on a suitably, fully-typed AST, we also provide a mini-DSL called
+Back, which can be used to implement the basic operators and simple natives.
+
+TODO:
+- Prefix operators with precedence and limited overloading
+- Types
+- Keyword renaming, namespace for languages that need that
+- Constant propagation
+- Dead-code elimination
+- Lift first-order functions to top-level?
+- Have first-order representation ready for C, Java, Wasm where they are needed
+- Inlining
+- Mangling of overloading?
+- Specialization of polymorphism
+- Linking
+- Running the output
+- Cross-calls
+
+Languages to add:
+- Java
+- C
+- C++
+- Rust
+- Wasm
+
+### JS
+
+We have a JS backend.
+
+TODO:
+- Constant lifting (JSON-like values for JS in particular to help reduce memory and startup)
+- Move builtin natives to a .js file with comments, or something, which is the processed to define
+  the backends - stripping newlines and stuff?
+- Add compiling & linking with Haxe runtime
+
+### Flow
+
+We have a minimal Flow backend. This is mostly for testing. Does not really work.
+
+# Internals
+
+## Pipeline
+
+This diagram illustrates the processing pipeline in the compiler:
+
+	Source file in flow (later, hopefully also other high level languages)
+	-> This file content is read by Mini (if changed)
+	-> This is parsed by a Gringo parser for Flow defined in `exp/flow.gringo` 
+	-> This results in a bunch of Forth commands evaluated in Mini to build the AST
+	-> These leads to commands that set definitions of ids in Mini (declarations, unprocessedAnnotations)
+	-> Thus, we build the AST for the parsed program in the exp language (MiniPopFile updates annotations, result is `mini/exp/ast.flow`)
+	-> Once all dependent files of a file are parsed, we partially evaluate all ids at compile time `mini/interpreter/partial.flow`
+	-> The resulting definitions are typed by the type inference and checker in topological order (typecheckMiniTypes in `types/type_check.flow`)
+	-> We lower the program to a fully typed BExp representation
+	-> We run optimizations of the AST
+	-> We lower this to BProgram with statments for the backends
+	-> We generate code in the backends
+	-> The result is written as files for the final output
+
+The key point is that we are incremental at the id level, so if there is no
+change in an id, even if we parse the file again, we do not have to redo all
+dependents on that id. This should hopefully speed things up.
+
+## Gringo
+
+Gringo is a new parser, similar to Lingo, just with better performance, easier handling
+of associativity and precedence. See `gringo/readme.md` for now info.
+
 ## Mini Commands
 
 The compiler internally supports a range of commands (see `commands/command.flow`)
@@ -220,14 +283,14 @@ commands, so we will not do type inference if there are pending files to be
 read and parsed.
 
 TODO:
-- Add ""export" checking phase
+- Add "export" checking phase
 - Command to define what files to compile to what, with what options
 - Command to run executables we have constructed
 - Run the commands in the queue in parallel
 
 ## Mini Forth
 
-Mini Forth is primarily used to construct the AST. The semantic actions in Gringo grammar
+Mini Forth is used to construct the AST. The semantic actions in Gringo grammar
 files are written in Mini Forth.
 
 The values in this Forth correspond to the values in the Mini expression language.
@@ -330,6 +393,7 @@ value, and then use "define" to commit the definition to the compile server.
 	<name> <val> define		    - define a top-level name in the program
 
 ### Gringo grammars
+
 	<id> <grammar> prepare
     	- prepares the given Gringo grammar as a new builtin which can parse files with that grammar
 
@@ -355,16 +419,19 @@ Both of these are async, so only use them in the interactive context, or with ca
 
 ### TODO Forth primitives
 
+We could add more Forth primitives if we wanted to do more advanced AST manipulation.
+
 - uncons, comparisons, and, or, not
 - ifte, while, eval, map, quoting
 
-## AST representation of various constructs
+## AST representation of control flow
 
-We use calls to special functions to represent various semantic constructs in Mini. The benefit of this
-approach is that the MiniExp is minimal, and type inference does not need to know anything special about 
-these. That makes the compiler infrastructure easier and smaller.
+We use the `MiniCall` AST type which correspond to calls to special functions to represent various semantic 
+constructs such as switch, cases, if-statements and so forth in Mini. The benefit of this approach is that 
+the MiniExp is minimal, and type inference does not need to know anything special about these constructs. 
+That makes the compiler infrastructure much smaller.
 
-See `types/builtins.flow` for the list.
+See `interpreter/partial.flow` and `types/builtins.flow` for the list.
 
 The following are converted to more natural constructs by the lowering phase, so backends do not have to know 
 about them:
@@ -397,12 +464,8 @@ These have to be implemented in the backends to do the right thing:
 	__structname to extract the id of a struct to be able to "switch" from
 
 TODO:
-	__switch 
-	__case 
-	__pattern  
-	__default  
-	__with  
-	__fieldassign
+	__with & __withassign
+	__mutassign
 
 Struct definitions are represented by constructing a constructor function by the Forth
 builtin structdef, that uses __construct0, ... to construct the value.
@@ -410,53 +473,106 @@ builtin structdef, that uses __construct0, ... to construct the value.
 Union definitions are represented by a function, which extract the id field to switch from.
 This is done by the uniondef Forth builtin.
 
-The __type function is handled by the type inference explicitly to extract the type.
+## Native fallbacks
 
-## Backends
+Natives are registered as annotations while parsing. At post-file processing, we check
+if the natives have a fallback. If so, we wrap the native definition with the fallback.
+If not, we just keep the native definition.
 
-The backends are based on the BProgram representation, which makes them minimal.
+	native i2s : (int) -> string = Native.i2s;
+	i2s(i) { cast(i : int -> string); }
 
-Besides working on a suitably, fully-typed AST, we also provide a mini-DSL called
-Back, which can be used to implement the basic operators and simple natives.
+The backends can then provide a native implementation, and automatically pick whether to
+use one of the other.
+
+## Switch
+
+We expand let-bindings in cases in the compile-time step by partially evaluating the __ctcase
+functino accordingly.
+
+Similarly, we expand a ?? b : c to a switch at compile time to a switch.
 
 TODO:
-- Prefix operators with precedence and limited overloading
-- Types
-- Keyword renaming, namespace for languages that need that
-- Constant propagation
-- Dead-code elimination
-- Lift first-order functions to top-level?
-- Have first-order representation ready for C, Java, Wasm where they are needed
-- Inlining
-- Mangling of overloading?
-- Specialization of polymorphism
-- Linking
-- Running the output
-- Cross-calls
+- Union-match: This requires knowing the unions, as well as the entire scope of the switch
+- Exaustiveness check
 
-Languages to add:
-- Java
-- C
-- C++
-- Rust
-- Wasm
+## Switch backend
 
-### JS
+This part is done. This is what is produced in JS by flowc:
 
-We have a minimal JS backend.
+	function(){
+		var s$;
+		if (s._id==0){
+			s$=0
+		} else {
+			s$=(function(){
+				var v=s.value;
+				return v;
+			}())
+		}
+		return s$;
+	}()
 
-- Constant lifting (JSON-like values for JS in particular to help reduce memory and startup)
-- Move natives to a .js file with comments, or something, which is the processed to define
-  the backends - stripping newlines and stuff?
+Using `BSwitch`, we produce this in Mini:
 
-### Flow
+	switch(s._id) {
+		case "None": return 0;
+		case "Some": return s.value;
+	}
 
-We have a minimal Flow backend.
+## How to handle types in the AST
+
+The "__type" function is used to represent types in the AST. This is explicitly converted to
+types by the type inference as required in the ast. Type annotations are defined using the
+":" function that takes a type on the right-hand side.
+
+We express types as expressions like this:
+
+- void  	__type("void")
+- bool		__type("bool")
+- int		__type("int")
+- double	__type("double")
+- string	__type("string")
+- flow		__type("flow")
+- native	__type("native")
+- ref T		__type("ref", T)
+- [T]		__type("array", T)
+- ?			__type("?")
+- S<T, T>	__type(S(T, T))
+- () -> T	__fntype(T)
+- (T) -> R	__fntype(R, T)
+
+See `types/type_ast.flow` for the details.
+
+Unions are stored in the AST in the unions field.
+
+  a : T		 __fieldtype(a, 0, T)
+  mutable a : T	__fieldtype(a, 1, T)
+  { ... }    __recordtype(,,,)
+
+The use in the grammar is isolated to a few areas:
+- The ":" operator	-> :(exp, __type())
+- Forward declarations of globals and functions -> Forward declarations to types in AST
+- Lambda arguments   -> a ":" on the lambda
+- Cast				 -> a call and ":" on the right hand side.
+- Structs            -> Structs are considered as constructor function declaration.
+- Unions			 -> Unions to be modelled as forward type declarations. 
+					    Consider to have a function which takes a union and returns the id?
+
+Forwards declarations can be stored in the MiniAst.types field.
+
+We have a function, which converts an MiniExp to a type in the types/type_ast.flow file.
+This encodes the convention for how to represent types as values.
+
+Plan:
+- Use "forward" in the grammar and check that it works
 
 # Optimizations
 
-Memory is the most important one, it seems:
+Memory is the most important one, it seems. Therefore, we would like to add some special things
+to help optimize this.
 
+TODO:
 Add a warning to the compiler if we capture too big a closure. I.e.
 
 	Foo(a : [int], b : bool);
@@ -471,7 +587,23 @@ Add a warning to the compiler if we capture too big a closure. I.e.
 		foo(Foo(generate(0, 1000000), false));
 	}
 
-Use typed arrays for ints?
+- Use typed arrays for arrays of ints?
+
+## JS runtime
+
+According to this benchmark:
+
+https://jsben.ch/wY5fo
+
+This is the fastest way to iterate an array in JS:
+
+	var x = 0, l = arr.length;
+	while (x < l) {
+		dosmth = arr[x];
+		++x;
+	}
+
+Consider to add `while` and mutable variables to BExp, so we could explicitly represent this.
 
 # Appendix
 
@@ -560,59 +692,6 @@ Query:
 Database:
 - All the internal state
 
-# How to handle types in the AST
-
-We express types as expressions like this:
-
-- void  	__type("void")
-- bool		__type("bool")
-- int		__type("int")
-- double	__type("double")
-- string	__type("string")
-- flow		__type("flow")
-- native	__type("native")
-- ref T		__type("ref", T)
-- [T]		__type("array", T)
-- ?			__type("?")
-- S<T, T>	__type(S(T, T))
-- () -> T	__fntype(T)
-- (T) -> R	__fntype(R, T)
-
-Unions are stored in the AST in the unions field.
-
-  a : T		 __fieldtype(a, 0, T)
-  mutable a : T	__fieldtype(a, 1, T)
-  { ... }    __recordtype(,,,)
-
-The use in the grammar is isolated to a few areas:
-- The ":" operator	-> :(exp, __type())
-- Forward declarations of globals and functions -> Forward declarations to types in AST
-- Lambda arguments   -> a ":" on the lambda
-- Cast				 -> a call and ":" on the right hand side.
-- Structs            -> Structs are considered as constructor function declaration.
-- Unions			 -> Unions to be modelled as forward type declarations. 
-					    Consider to have a function which takes a union and returns the id?
-
-Forwards declarations can be stored in the MiniAst.types field.
-
-We have a function, which converts an MiniExp to a type in the types/type_ast.flow file.
-This encodes the convention for how to represent types as values.
-
-Plan:
-- Use "forward" in the grammar and check that it works
-
-# Native fallbacks
-
-Natives are registered as annotations while parsing. At post-file processing, we check
-if the natives have a fallback. If so, we wrap the native definition with the fallback.
-If not, we just keep the native definition.
-
-	native i2s : (int) -> string = Native.i2s;
-	i2s(i) { cast(i : int -> string); }
-
-The backends can then provide a native implementation, and automatically pick whether to
-use one of the other.
-
 # Deleted ids
 
 How to handle deleted ids and updated annotations?
@@ -624,62 +703,11 @@ annotations.
 TODO: How to keep track of the annotations on an id, when we need to compare?
 Should we have a "final" map of annotations on an id when we define it? Yeah, probably we should.
 
-# Switch
-
-We expand let-bindings in cases in the compile-time step by partially evaluating the __ctcase
-functino accordingly.
-
-Similarly, we expand a ?? b : c to a switch at compile time to a switch.
-
-TODO:
-- Union-match: This requires knowing the unions, as well as the entire scope of the switch
-- Exaustiveness check
-
-# Switch backend
-
-This part is done. This is what is produced in JS by flowc:
-
-	function(){
-		var s$;
-		if (s._id==0){
-			s$=0
-		} else {
-			s$=(function(){
-				var v=s.value;
-				return v;
-			}())
-		}
-		return s$;
-	}()
-
-With the BSwitch, we can produce this:
-
-	switch(s._id) {
-		case "None": println("None"); break;
-		case "Some": println("Some"); break;
-	}
-
-# Native runtime
-
-According to this benchmark:
-
-https://jsben.ch/wY5fo
-
-This is the fastest way to iterate an array in JS:
-
-	var x = 0, l = arr.length;
-	while (x < l) {
-		dosmth = arr[x];
-		++x;
-	}
-
-
 # Polymorphism
 
 When we have top-level polymorphism, it is tracked by 
 having a type declaration in the types with typars.
 
-When we do inference of such a thing, we should probably
-keep them as ?.
+When we do inference of such a thing, we keep them as ?.
 
 When we reference a polymorphic name, it should be instantiated.

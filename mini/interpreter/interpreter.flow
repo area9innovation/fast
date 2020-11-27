@@ -1,8 +1,7 @@
 import mini/exp/ast;
 
 export {
-	// TODO: Add builtins for switch and case handling
-	// into the declarations, so we only expand those parts
+	// This inlines calls and let-bindings
 	makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter;
 
 	MiniInterpreter(env : MiniAst);
