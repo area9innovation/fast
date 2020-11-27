@@ -68,6 +68,9 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 	switch (command) {
 		MiniProcessFile(usedByFile, name, evalcommand): {
 			path = fastPath2path(db.includes, name);
+			if (containsSet(db.program.options.debugIds, changeFileExt(name, ""))) {
+				println("Resolve " + changeFileExt(name, "") + " as file " + path);
+			}
 			if (shouldReadFile(db.fileCache, path)) {
 				// TODO: Push some token about this file, so we can keep track of when we start a new one
 				// and get rid of old ids and annotations
@@ -76,6 +79,11 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				// TODO: Update deps: We have to collect all of them from each file
 				ndb = pushMiniValue(db, MiniString(content));
 				ndb2 = MiniDb(ndb with fileStack = Cons(name, ndb.fileStack));
+
+				if (containsSet(db.program.options.debugIds, changeFileExt(name, ""))) {
+					println("Parsing " + changeFileExt(name, "") + " with " + i2s(strlen(content)) + " chars");
+				}
+
 				// println("Parsing " + path);
 				miniEvalForth(name, ndb2, evalcommand);
 			} else {
@@ -200,8 +208,8 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string) -> MiniDb {
 }
 
 defineMiniType(db : MiniDb, file : string, name : string, type : MiniType) -> MiniDb {
-	if (name == db.program.options.displayPhases) {
-		println(file + ":" + name + " is defined as type " + miniType2string(type));
+	if (containsSet(db.program.options.debugIds, name)) {
+		println(file + ": Parser defines " + name + " as type " + miniType2string(type));
 	}
 
 	MiniDb(
@@ -217,8 +225,8 @@ defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -
 	npr = MiniAst(ast with idDependents = updateMiniDependent(ast.idDependents, id, deps));
 	db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
 
-	if (id == db.program.options.displayPhases) {
-		println(file + ":" + id + " is defined as\n" + miniPretty(body));
+	if (containsSet(db.program.options.debugIds, id)) {
+		println(file + ": Parser defines " + id + " as\n" + miniPretty(body));
 	}
 
 	// OK, this is a new definition
@@ -228,8 +236,6 @@ defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -
 	);
 	MiniDb(db2 with program = nast);
 }
-
-
 
 processMiniAnnotation(db0 : MiniDb, file : string, annotation : MiniAnnotation) -> MiniDb {
 	if (annotation.annotation == "native") {

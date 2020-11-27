@@ -78,7 +78,23 @@ TODO:
 
 ## Running the compiler
 
+Run with
+
 	flowcpp mini/mini.flow -- file=myprogram.flow
+
+will compile myprogram to js and flow files called out.js and out.flow.
+
+This
+
+	flowcpp mini/mini.flow -- file=myprogram.flow debug=main
+
+will produce a debug trace of how "main" goes through the compiler.
+
+This
+
+	flowcpp mini/mini.flow -- file=myprogram.flow debug=myprogram,main
+
+will debug both main as above, but also how we parse the file "myprogram".
 
 ## Milestones
 
