@@ -69,7 +69,10 @@ export {
 	);
 
 	MiniOptions(
+		// What level of debugging
 		verbose : int,
+		// Display compile phases for this id
+		displayPhases : string,
 		// Are implicit type-parameters OK?
 		implicitTypePars : bool,
 		// TODO: Add #defines

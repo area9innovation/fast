@@ -85,9 +85,8 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		}
 		MiniTypeDefine(file, name, type): {
 			// We just do it, no questions asked
-
 			// TODO: Maybe we have to refine this later for incremental
-			defineMiniType(db, name, type)
+			defineMiniType(db, file, name, type)
 		}
 		MiniDefine(file, id, body): {
 			// OK, extract annotations - TODO: Decide whether this is the time to do it or not
@@ -200,7 +199,11 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string) -> MiniDb {
 	if (isEmptySet(newDeps)) db else pushMiniCommand(db, MiniTypeInfer(newDeps));
 }
 
-defineMiniType(db : MiniDb, name : string, type : MiniType) -> MiniDb {
+defineMiniType(db : MiniDb, file : string, name : string, type : MiniType) -> MiniDb {
+	if (name == db.program.options.displayPhases) {
+		println(file + ":" + name + " is defined as type " + miniType2string(type));
+	}
+
 	MiniDb(
 		db with
 		program = MiniAst(db.program with types = setTree(db.program.types, name, type))
@@ -213,6 +216,10 @@ defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -
 	deps = extractMiniDeps(body, makeSet(), makeSet());
 	npr = MiniAst(ast with idDependents = updateMiniDependent(ast.idDependents, id, deps));
 	db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
+
+	if (id == db.program.options.displayPhases) {
+		println(file + ":" + id + " is defined as\n" + miniPretty(body));
+	}
 
 	// OK, this is a new definition
 	nast = MiniAst(npr with 
@@ -234,7 +241,7 @@ processMiniAnnotation(db0 : MiniDb, file : string, annotation : MiniAnnotation) 
 			default: annotation.value;
 		};
 		type = convertMiniExp2Type(etype);
-		db = defineMiniType(db0, annotation.scope, type);
+		db = defineMiniType(db0, file, annotation.scope, type);
 
 		// Merge any fallback we might have
 		mfallback = lookupTree(db.program.declarations, annotation.scope);

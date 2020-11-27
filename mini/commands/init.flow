@@ -11,6 +11,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 	strict = isUrlParameterTrue("strict");
 	options = MiniOptions(
 		s2i(getUrlParameter("verbose")), 
+		getUrlParameter("debug"),
 		// Implicit type pars
 		!strict
 	);
