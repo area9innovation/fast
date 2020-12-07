@@ -1275,8 +1275,9 @@ https://www.prisma.io/blog/prisma-raises-series-a-saks1zr7kip6
 
 We would like to have a way to produce this family with arbitray combinations of structures:
 
-	 hash, map, fold, iter, filter, filtermap, find, forall, exists, serialization, deserialization, 
-	 conversions, math operations, reflection of types, reflection of code…
+	map, fold, iter, filter, filtermap,
+	hash, find, forall, exists, serialization, deserialization, 
+	conversions, math operations, reflection of types, reflection of code…
 
   This can arguably be done with transducers:
 	https://medium.com/javascript-scene/transducers-efficient-data-processing-pipelines-in-javascript-7985330fe73d
