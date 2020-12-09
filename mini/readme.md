@@ -40,6 +40,7 @@
 		- [Salsa](#salsa)
 - [Deleted ids](#deleted-ids)
 - [Polymorphism](#polymorphism)
+- [Editor DSL](#editor-dsl)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -728,3 +729,59 @@ having a type declaration in the types with typars.
 When we do inference of such a thing, we keep them as ?.
 
 When we reference a polymorphic name, it should be instantiated.
+
+# Editor DSL
+
+Idea:
+
+DataStructure -> SDF for structure and SDF for editing
+SDF for structre -> DataStructure
+
+Thus, the general editor is implemented to work with a pair of SDFs.
+One for the view on the screen, and another for the logical structure of
+the document.
+
+Needs:
+- Convert XY coordinates to logical placements.
+- Move elements as sizes change.
+
+Idea:
+Make the placements expressions, and do calculations. So we have "lazy" variables
+that can be calculated when needed.
+
+OK, so the challenge is to map XYZ coordinates with variables inside to logical structures.
+
+Use cases:
+
+Prime:
+Layers <-> max(circle, box)		<->  [0]
+	Circle <-> x,y, radius, z
+	Box <-> x,y, w,h, z
+		Text <-> (parent.x + parent.w) / 2 - width(text) / 2,
+				(parent.y + parent.h) / 2 - height(text) / 2, z
+
+Flow:
+Let
+	a
+	1
+	+		
+		var
+			a
+		int
+			5
+
+OK, so constraint expressions can model the coordinates.
+
+Figure out how to model the hierarchy better, since there is a general pattern there.
+
+http://citeseer.ist.psu.edu/viewdoc/download;jsessionid=7A46C494B2AD29E41B6E718CBE5741F0?doi=10.1.1.101.4819&rep=rep1&type=pdf
+
+Insight: Instead of modelling each component separately, have the entire tuple as one expression.
+
+Next insight: We can collect these in a data structure with bounds. There is a library here:
+
+https://github.com/mourner/rbush/blob/master/index.js
+
+TODO:
+- Add hierarchy to allow decomposition. I guess we can have recursive trees.
+- Make coordinates lazy somehow
