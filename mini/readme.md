@@ -41,6 +41,7 @@
 - [Deleted ids](#deleted-ids)
 - [Polymorphism](#polymorphism)
 - [Editor DSL](#editor-dsl)
+- [ICFP inspiration](#icfp-inspiration)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -783,5 +784,63 @@ Next insight: We can collect these in a data structure with bounds. There is a l
 https://github.com/mourner/rbush/blob/master/index.js
 
 TODO:
-- Add hierarchy to allow decomposition. I guess we can have recursive trees.
-- Make coordinates lazy somehow
+- Add hierarchy to allow decomposition. I guess we can have recursive trees, and get it that way.
+- Make bounds lazy somehow
+- How to use:
+  - Port to flow, and compile to WASM? A lot of JS voodoo is used, so not easy
+  - Wrap as natives - much easier
+
+
+So we have an efficient way to just send in a bunch of rectangles, and get only those visible rendered.
+
+
+Next idea:
+
+- Using LValues and reducers, we can maybe use that as the interface for a common editor.
+
+# ICFP inspiration
+
+Partially invertible programs:
+- Try to define a DSL of partially invertible functions, which can be used by reducers,
+  and then we have invertible reducers. TODO: Figure out what constructs these are.
+https://www.youtube.com/watch?v=J2zBTIvCt5U&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=3
+
+Holes in programs:
+- Using "holes" in program, or data, maybe we can express editors with this construct.
+- Holes can be filled out from examples.
+https://www.youtube.com/watch?v=WQ1qkrbzLfM&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=43
+Use: Holes seem to be relevant to an editor of strongly typed data, where we have missing
+data in constructs.
+
+Demand-driven evaluation:
+- A kind of "backwards" evaluation which can construct a "slice" of a program by evaluation
+  from the result backwards.
+https://www.youtube.com/watch?v=r0VCdof0tnU&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=2
+Potential use: Maybe this can be used to only evaluate the parts of the document view that are required?
+A different way of doing lazy evaluation.
+
+Linear types and kinds:
+https://www.youtube.com/watch?v=YD7ONuMyoyk&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=9
+Potential use: How to mix GC and linear memory management in the type system. This would
+allow us to define types and functions are linear, and thus have explicit, but automatically
+inferred memory management.
+Requires that we use explicit memory management in JS for data there for the data of these
+types. The umbrella repo has some code to help support that.
+
+
+Halide-style rewriting rules:
+https://www.youtube.com/watch?v=ixuPI6PCTTU&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=7
+- Defines two languages for high-performance code. One for calculations, and another for
+  rewriting optimizations.
+https://dl.acm.org/doi/pdf/10.1145/3408974
+Potential use: Optimize reducers using something like this.
+- Figure out what relation between reducers and RISE is. RISE compiles to MLIR, and maybe
+  there is a way to bind these things together.
+
+https://www.youtube.com/watch?v=kIHt_xoFh74&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=15
+How to automatically splice a program into client/server parts, and handle communication
+automatically. Links uses server/client annotations. This is similar to Fastlåst.
+
+https://www.youtube.com/watch?v=rQ3XeBh54zQ&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=18
+Data structure for trees with N elements based on a binary decomposition of N, where each
+bit gets a corresponding tree with that number of elements.
