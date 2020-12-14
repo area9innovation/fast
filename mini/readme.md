@@ -844,3 +844,9 @@ automatically. Links uses server/client annotations. This is similar to Fastlås
 https://www.youtube.com/watch?v=rQ3XeBh54zQ&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=18
 Data structure for trees with N elements based on a binary decomposition of N, where each
 bit gets a corresponding tree with that number of elements.
+
+https://www.youtube.com/watch?v=MUcG9LwQrJA&list=PLyrlk8Xaylp6vEeTa5x55uTH7HjowtGkR&index=26
+CRDT DSL: Using distributive laws to fix conflicts. Result is compositional CRDTs.
+https://crdt.tech/
+https://arxiv.org/pdf/2004.04303.pdf
+

@@ -1,0 +1,93 @@
+import ds/reducer;
+import material/material;
+import material/material2tropic;
+
+/*
+TODO:
+- The editor has cursor RLValue, selection
+- Document is [RAssign] or maybe Vector?
+- Send in function which converts an RAssign to a Material to edit it?
+- Update the RAssign. Should we use a Vector for the document to have more efficient updates?
+*/
+
+REditor(
+	document : Behaviour<[RAssign<?>]>,
+	cursor : Behaviour<[RLValue]>,
+	selected : Behaviour<[RLValue]>,
+	collapsed : Behaviour<[RLValue]>,
+	editValue : (e : RAssign<?>, cursor : bool, selected : bool) -> Material,
+);
+
+makeView(e : REditor<?>) -> Material {
+	MSelect3(
+		e.document, e.cursor, e.selected,
+		\assigns : [RAssign<?>], cursor, selected -> {
+			MLines(
+				map(
+					assigns,
+					\a -> {
+						e.editValue(a, contains(cursor, a.lvalue), contains(selected, a.lvalue))
+					}
+				)
+			)
+		}
+	);
+}
+
+makeREditor(doc : [RAssign<?>], editFn : (e : RAssign<?>, cursor : bool, selected : bool) -> Material) -> REditor {
+	REditor(
+		make(doc),
+		make(if (doc != []) [doc[0].lvalue] else []),
+		make([]),
+		make([]),
+		editFn
+	);
+}
+
+
+viewRAssignJson(l : RAssign<Json>, cursor : bool, selected : bool) -> Material {
+	todo = \ -> MText("todo", []);
+	MBaselineCols([
+		viewRLValue(l.lvalue),
+		switch (l.value : Json) {
+			JsonObject(members): todo();
+			JsonArray(value): todo();
+			JsonNull(): MText("null", []);
+			JsonBool(v): MCheckBox(MText("bool",[]), make(v), []);
+			JsonString(s): MTextInput(make(s), [], []);
+			JsonDouble(value): MTextInput(make(d2s(value)), [], []);
+		}
+	])
+}
+
+viewRLValue(l : RLValue) -> Material {
+	switch (l) {
+		RLeaf(): MText(": ", []);
+		RLObject(key, rvalue): MCols([MText(key + ".", []), viewRLValue(rvalue)]);
+		RLArray(rvalue): MCols([MText("[]", []), viewRLValue(rvalue)]);
+	}
+}
+
+main() {
+	json1 = parseJson("
+		{
+			a: 0,
+			b: [
+				1,
+				2,
+				3
+			],
+			c: {
+				d: true,
+				e: null
+			}
+		}
+	");
+
+	editor = makeREditor(rreduceJson(json1, rarray()), viewRAssignJson);
+
+	mrender(
+		makeMaterialManager([]), true,
+		makeView(editor)
+	);
+}
