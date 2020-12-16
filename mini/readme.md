@@ -42,6 +42,7 @@
 - [Polymorphism](#polymorphism)
 - [Editor DSL](#editor-dsl)
 - [ICFP inspiration](#icfp-inspiration)
+- [LValue-based HTML](#lvalue-based-html)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -850,3 +851,33 @@ CRDT DSL: Using distributive laws to fix conflicts. Result is compositional CRDT
 https://crdt.tech/
 https://arxiv.org/pdf/2004.04303.pdf
 
+
+# LValue-based HTML
+
+  html.body.p = "Hello world";
+  html.body.p.style = "Bold";
+
+Comapping:
+
+RAssigns(
+	assignments : [RAssign]
+)
+
+renderComap(p : Topic) -> RAssigns {
+	html.body.p = renderTopic(p);
+}
+
+renderTopic(p : Topic) -> RAssigns {
+	RAssigns(
+		[
+			table.tr[0] = RAssigns([
+				td[0] = p.topic;
+				rowspan = length(p.children());
+				yalign = center;
+			]),
+			mapi(p.children(), \i, child -> {
+				table.tr[i].td[1] = renderTopic(child);
+			})
+		]
+	)
+}

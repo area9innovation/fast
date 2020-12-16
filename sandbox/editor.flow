@@ -4,17 +4,26 @@ import material/material2tropic;
 
 /*
 TODO:
-- The editor has cursor RLValue, selection
-- Document is [RAssign] or maybe Vector?
-- Send in function which converts an RAssign to a Material to edit it?
-- Update the RAssign. Should we use a Vector for the document to have more efficient updates?
+- Update the RAssign. Have a wrapper which uses behaviours?
+- Try a version using HTML. Can we express a reducer for HTML?
+
+  html.body.p = "Hello world";
+  html.body.p.style = "Bold";
+
+- Figure out how assignments can be compositional
 */
 
 REditor(
 	document : Behaviour<[RAssign<?>]>,
+	// Where are the cursors?
 	cursor : Behaviour<[RLValue]>,
+	// What leading path are we focusing on?
+	focus : Behaviour<RLValue>,
+	// What elements are selected?
 	selected : Behaviour<[RLValue]>,
+	// What elements are collapsed?
 	collapsed : Behaviour<[RLValue]>,
+	// How to edit a given value
 	editValue : (e : RAssign<?>, cursor : bool, selected : bool) -> Material,
 );
 
@@ -38,6 +47,7 @@ makeREditor(doc : [RAssign<?>], editFn : (e : RAssign<?>, cursor : bool, selecte
 	REditor(
 		make(doc),
 		make(if (doc != []) [doc[0].lvalue] else []),
+		make(RLeaf()),
 		make([]),
 		make([]),
 		editFn
@@ -91,3 +101,39 @@ main() {
 		makeView(editor)
 	);
 }
+
+
+/*
+RAssigns(
+	assignments : [RAssign]
+)
+
+renderComap(p : Topic) -> RAssigns {
+	html.body.p = renderTopic(p);
+}
+
+renderComap(Reducer<Topic>) -> Reducer<Html>;
+
+Curator:
+
+
+renderTopic(p : Topic) -> RAssigns {
+	RAssigns(
+		[
+			table.tr[0] = RAssigns([
+				td[0] = p.topic;
+				rowspan = length(p.children());
+				yalign = center;
+			]),
+			mapi(p.children(), \i, child -> {
+				table.tr[i].td[1] = renderTopic(child);
+			})
+		]
+	)
+}
+
+htmlRAssign(acc : MHTMLStage, assign : RAssign<string>) -> MHTMLStage {
+
+}
+
+*/
