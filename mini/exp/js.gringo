@@ -1,0 +1,57 @@
+// https://github.com/pegjs/pegjs/blob/master/examples/javascript.pegjs
+
+js = ws statement*;
+
+statement = block;
+
+
+string = '"' $(onechar_)* '"' ws
+	| "'" $(onechar2_)* "'" ws;
+
+onechar_ = backslash "u" hexdigit hexdigit hexdigit hexdigit
+	| backslash "X" hexdigit hexdigit hexdigit hexdigit
+	| backslash "x" hexdigit hexdigit
+	| backslash escapedchar_
+	| !'"' !backslash anychar;
+
+onechar2_ = backslash "u" hexdigit hexdigit hexdigit hexdigit
+	| backslash "X" hexdigit hexdigit hexdigit hexdigit
+	| backslash "x" hexdigit hexdigit
+	| backslash escapedchar_
+	| !"'" !backslash anychar;
+
+hexdigit = '0'-'9'
+	| 'a'-'f'
+	| 'A'-'F';
+
+escapedchar_ = backslash | '"' | "n" | "t" | "r";
+
+anychar = '0x0000'-'0xffff';
+
+id = $bid ws;
+
+// !reserved
+// reserved = 
+
+bid = ('a'-'z' | 'A'-'Z' | '_') (letterOrDigit)*;
+
+letterOrDigit = 'a'-'z'
+	| 'A'-'Z'
+	| '_'
+	| '0'-'9';
+
+int = $'0'-'9'+;
+
+backslash = '\';
+
+ws = cs*;
+
+s = cs+;
+
+// We do not have \n and \t and such, so these are here verbatim
+cs = " " | "	" | "
+" | "//" (!"
+" anychar)* "
+" | "/*" (!"*/" anychar)* "*/";
+
+js
