@@ -43,6 +43,9 @@
 - [Editor DSL](#editor-dsl)
 - [ICFP inspiration](#icfp-inspiration)
 - [LValue-based HTML](#lvalue-based-html)
+- [Bijection between union and lvalues](#bijection-between-union-and-lvalues)
+- [HTML](#html)
+- [Types for lvalues](#types-for-lvalues)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -881,3 +884,40 @@ renderTopic(p : Topic) -> RAssigns {
 		]
 	)
 }
+
+# Bijection between union and lvalues
+
+Figure out the systematic conversion between types and lvalues 
+conversion and updating functions.
+
+Use this to generalize unions to FRP automatically.
+
+Maybe lvalues can be used to wrap any static structure as a fake
+FRP value?
+
+# HTML
+
+Introduce HTML union similar to Material, just with direct
+HTML constructs. 
+
+We have inca/editor/dialects/dom_i.flow and friends, including
+lowering to HTML.
+
+Take these, and make a renderHtml with binding to FRP.
+With this, we can also convert to/from a sequence of lvalues.
+
+# Types for lvalues
+
+To help automatically construct editors for each place in the
+lvalues, types could be helpful. But instead of reflecting the
+general type-system of flow, maybe we should have a union of
+various editors.
+
+	bool: checkbox, toggle
+	int: textinput, slider
+	double: textinput, slider
+	string: textinput, autocomplete
+	structs: form, table
+	array: table
+	union: dropdown, autocomplete
+
