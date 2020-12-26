@@ -46,6 +46,7 @@
 - [Bijection between union and lvalues](#bijection-between-union-and-lvalues)
 - [HTML](#html)
 - [Types for lvalues](#types-for-lvalues)
+- [Speedrun editor:](#speedrun-editor)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -900,8 +901,7 @@ FRP value?
 Introduce HTML union similar to Material, just with direct
 HTML constructs. 
 
-We have inca/editor/dialects/dom_i.flow and friends, including
-lowering to HTML.
+This exists in formats/dom/ now, including lowering to HTML.
 
 Take these, and make a renderHtml with binding to FRP.
 With this, we can also convert to/from a sequence of lvalues.
@@ -921,3 +921,11 @@ various editors.
 	array: table
 	union: dropdown, autocomplete
 
+# Speedrun editor:
+
+1) Change editor.flow to use HTML instead of Material.
+2) Add RAssigns
+3) Finish HTML types sufficiently
+4) Do first JSON lvalues to HTML conversion for read-only view
+5) Implement "update lvalue" operations for JSON and figure out how to use that
+6) Finish to/from lvalue for HTML

@@ -1,6 +1,7 @@
 import ds/reducer;
 import material/material;
 import material/material2tropic;
+import formats/dom/render;
 
 /*
 TODO:
@@ -10,7 +11,7 @@ TODO:
   html.body.p = "Hello world";
   html.body.p.style = "Bold";
 
-- Figure out how assignments can be compositional
+- Figure out how assignments can be compositional: Introduce RAssigns
 */
 
 REditor(
@@ -70,6 +71,37 @@ viewRAssignJson(l : RAssign<Json>, cursor : bool, selected : bool) -> Material {
 	])
 }
 
+// This is called for all leafs
+viewRAssignHtml(l : RAssign<Json>, cursor : bool, selected : bool) -> IXmlNode {
+	dom2ixml(switch (l.value) {
+		JsonObject(members): eP("Object");
+		JsonArray(value): eP("Array");
+		JsonNull(): eP("null");
+		JsonBool(v): eP(b2s(v));
+		JsonDouble(v): eP(d2s(v));
+		JsonString(s): eP(escapeHtml(s));
+	});
+}
+
+jsonAssign2htmlAssign(l : RAssign<Json>, cursor : bool, selected : bool) -> RAssign<IXmlNode> {
+	RAssign(
+		jsonLValue2HtmlLValue(l.lvalue),
+		viewRAssignHtml(l, cursor, selected)
+	)
+}
+
+jsonLValue2HtmlLValue(l : RLValue) -> RLValue {
+	switch (l) {
+		RLeaf(): RLeaf();
+		RLObject(key, lvalue): {
+			RLArray(
+				RLObject("div", jsonLValue2HtmlLValue(lvalue)) // TODO: What about the key?
+			);
+		}
+		RLArray(rvalue): RLArray(jsonLValue2HtmlLValue(rvalue));
+	}
+}
+
 viewRLValue(l : RLValue) -> Material {
 	switch (l) {
 		RLeaf(): MText(": ", []);
@@ -94,12 +126,37 @@ main() {
 		}
 	");
 
+/*
+a = 0
+b[] = 1
+b[] = 2
+b[] = 3
+c.d = true
+c.e = null
+
+	<div>  a  0 </div>
+	<div>  b 
+			<div>1</div>
+			<div>2</div>
+			<div>3</div>
+	</div>
+	<div>  c
+		<div> d  true </div>
+		<div> e  null </div>
+	<div>
+*/
 	editor = makeREditor(rreduceJson(json1, rarray()), viewRAssignJson);
 
-	mrender(
+	assigns = getValue(editor.document);
+
+	htmlAssigns = map(assigns, \a -> jsonAssign2htmlAssign(a, false, false));
+	iter(htmlAssigns, println);
+
+/*	mrender(
 		makeMaterialManager([]), true,
 		makeView(editor)
-	);
+	);*/
+	quit(0);
 }
 
 
@@ -115,7 +172,6 @@ renderComap(p : Topic) -> RAssigns {
 renderComap(Reducer<Topic>) -> Reducer<Html>;
 
 Curator:
-
 
 renderTopic(p : Topic) -> RAssigns {
 	RAssigns(
