@@ -3,6 +3,7 @@ import mini/types/pretty;
 
 export {
 	prettyBProgram(p : BProgram) -> string;
+	prettyBExp(b : BExp) -> string;
 }
 
 prettyBProgram(p : BProgram) -> string {

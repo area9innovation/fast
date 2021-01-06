@@ -59,10 +59,10 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 	} else {
 		mtype = lookupTree(^(env.tyvars), tv);
 		mtype ?? {
-			if (true) {
-				" :  α" + i2s(tv) + "≔ " + miniType2string(mtype)
+			" : " + miniType2string(mtype) + if (true) {
+				 "[=α" + i2s(tv) + "]"
 			} else {
-				" : " + miniType2string(mtype)
+				""
 			}
 		} : {
 			lower = lookupMultimap(^(env.tyvarLowerBounds), tv);

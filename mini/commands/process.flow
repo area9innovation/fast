@@ -70,8 +70,8 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 	switch (command) {
 		MiniProcessFile(usedByFile, name, evalcommand): {
 			path = fastPath2path(db.includes, name);
-			if (isDebuggingId(db.program, changeFileExt(name, ""))) {
-				println("Resolve '" + changeFileExt(name, "") + "' as file " + path);
+			if (db.program.options.verbose > 0 && isDebuggingId(db.program, changeFileExt(name, ""))) {
+				println("Resolve '" + changeFileExt(name, "") + "' as file '" + path + "'");
 			}
 			if (shouldReadFile(db.fileCache, path)) {
 				// TODO: Push some token about this file, so we can keep track of when we start a new one
@@ -83,7 +83,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				ndb2 = MiniDb(ndb with fileStack = Cons(name, ndb.fileStack));
 
 				if (isDebuggingId(db.program, changeFileExt(name, ""))) {
-					println("Parsing '" + changeFileExt(name, "") + "' with " + i2s(strlen(content)) + " chars");
+					println("Parsing '" + changeFileExt(name, "") + "' with " + i2s(strlen(content)) + " chars from file '" + path +"'");
 				}
 
 				// println("Parsing " + path);
@@ -137,7 +137,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		}
 		MiniPopFile(file): {
 			if (isDebuggingId(db.program, changeFileExt(file, ""))) {
-				println(file + ": Finished parsing '" + file + "'. Processing " + i2s(sizeTree(db.program.unprocessedAnnotations)) + " natives without fallbacks");
+				println("\nFinished parsing '" + file + "'. Processing " + i2s(sizeTree(db.program.unprocessedAnnotations)) + " natives without fallbacks");
 			}
 
 			// OK, we have finished parsing the file.
@@ -159,7 +159,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		}
 		MiniCompileTime(names): {
 			if (isDebuggingIds(db.program, names)) {
-				println("\nCompile time evaluation of: " + strGlue(set2array(names), ", "));
+				println("\nStage: Compile time evaluation of: " + strGlue(set2array(names), ", "));
 			}
 			interpreter = makeMiniInterpreter(db.program);
 			verbose = db.program.options.verbose > 1;
@@ -181,7 +181,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 		}
 		MiniTypeInfer(ids): {
 			if (isDebuggingIds(db.program, ids)) {
-				println("\nInfer types of: " + strGlue(set2array(ids), ", "));
+				println("\nStage: Infer types of MiniExp representations of: " + strGlue(set2array(ids), ", "));
 			}
 			// OK, what types do we have for these ids now?
 			lids = set2array(ids);
@@ -240,7 +240,7 @@ defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -
 	db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
 
 	if (isDebuggingId(db.program, id)) {
-		println(file + ": Parser defines '" + id + "' as\n" + miniPretty(body));
+		println(file + ": Parser declares '" + id + "' as\n" + miniPretty(body));
 	}
 
 	// OK, this is a new definition

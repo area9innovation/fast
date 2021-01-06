@@ -6,6 +6,7 @@ import mini/exp/topological;
 import mini/exp/pretty_typed;
 import mini/backends/bprogram_lower;
 import mini/backends/flow;
+import mini/backends/pretty;
 import mini/semantics/unfold;
 import mini/semantics/simplify;
 import mini/types/debug;
@@ -99,6 +100,10 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	// OK, remove the current set of ids from the pure set
 	past = MiniAst(cenv.ast with pureIds = differenceSets(cenv.ast.pureIds, ids));
 
+	if (isDebuggingIds(cenv.ast, buildSet(order))) {
+		println("\nStage: Lower to BExp and optimize: " + strGlue(order, ", "));
+	}
+
 	// OK, now lower these ids to the backend representation
 	nast = fold(order, past, \acc, id -> {
 		mfn = lookupTree(acc.declarations, id);
@@ -108,6 +113,10 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 			// This is the pipeline of optimizations:
 			un = unfoldBExp(bdecl);
 			opt = simplifyBExp(acc.pureIds, un);
+
+			if (isDebuggingId(cenv.ast, id)) {
+				println(id + " = " + prettyBExp(opt));
+			}
 
 			// Check if we are pure and keep that up to date
 			isPure = isBExpPure(acc.pureIds, opt);
