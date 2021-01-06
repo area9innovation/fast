@@ -1,0 +1,10 @@
+import mini/exp/ast;
+
+export {
+	// Are we debugging this id? Can be a program id, or a file.
+	isDebuggingId(ast : MiniAst, id : string) -> bool;
+}
+
+isDebuggingId(ast : MiniAst, id : string) -> bool {
+	containsSet(ast.options.debugIds, id) || containsSet(ast.options.debugIds, "1");
+}

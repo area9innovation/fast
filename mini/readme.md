@@ -42,11 +42,6 @@
 - [Polymorphism](#polymorphism)
 - [Editor DSL](#editor-dsl)
 - [ICFP inspiration](#icfp-inspiration)
-- [LValue-based HTML](#lvalue-based-html)
-- [Bijection between union and lvalues](#bijection-between-union-and-lvalues)
-- [HTML](#html)
-- [Types for lvalues](#types-for-lvalues)
-- [Speedrun editor:](#speedrun-editor)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -62,19 +57,23 @@ efficiently update only the parts that need it.
 The compile server is based on these different languages:
 
 - Commands: These provide the interface to the compiler itself to support compiles,
-  reading files, and such. This exposes the low-level compilation and dependency handling engine.
-  See `mini/commands/command.flow`.
+  reading files, and such. This exposes the low-level compilation and dependency 
+  handling engine. See `mini/commands/command.flow`. These commands enter a queue
+  and are handled in a prioritized way to ensure the correct "threading" of each
+  action.
 - Forth: This is a Forth interpreter used by the server to construct and manipulate ASTs.
-  Since the grammar DSL Gringo is based on a Forth-language, this is a good fit to allow 
-  interfacing the parser with the compile server. See `mini/forth/`.
+  Since the grammar DSL called Gringo is based on a Forth-language, this is a good fit to 
+  allow interfacing the parser with the compile server. See `mini/forth/`.
   Think of this as the Language Server Protocol language to interface with the compiler.
+  This is how we can construct, query and manipulate the AST.
 - Exp: This is the AST for the program we are compiling. This is an extremely minimal
   AST, in order to keep the compiler as simple as possible. This expresses the programs
-  we compile. See `mini/exp/exp.flow`
+  we compile. See `mini/exp/exp.flow`. It is basically the lambda calculus.
 - Types: The language comes with type inference for a Flow-like type system. See `mini/types/type.flow`.
 - BProgram: This is the fully-typed statement-based backend AST suitable for lots of backends.
-  See `mini/backends/bprogram.flow`.
+  See `mini/backends/bprogram.flow`. This is what comes out of the type checker.
 - Back: A mini-DSL used by the backends to produce tight object code. See `mini/backends/back_ast.flow`.
+  This is a helping DSL to help manage things like precedence, expressions vs statements, and such.
 - Gringo: This is used to define the syntax of languages we compile. See `gringo/readme.md`.
 
 At the moment, the Mini server is a GUI program found in `mini/mini_gui.flow`, and there is a
@@ -93,11 +92,17 @@ will compile myprogram to js and flow files called out.js and out.flow.
 
 This
 
-	flowcpp mini/mini.flow -- file=myprogram.flow debug=main
+	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=1
 
-will produce a debug trace of how "main" goes through the compiler.
+will produce a debug trace of how this file goes through the compiler.
 
-This
+If you are interested in only one function, you can use this:
+
+	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=main
+
+to get a trace of how "main" goes through the compiler.
+
+Similarly, this
 
 	flowcpp mini/mini.flow -- file=myprogram.flow debug=myprogram,main
 
@@ -855,77 +860,3 @@ CRDT DSL: Using distributive laws to fix conflicts. Result is compositional CRDT
 https://crdt.tech/
 https://arxiv.org/pdf/2004.04303.pdf
 
-
-# LValue-based HTML
-
-  html.body.p = "Hello world";
-  html.body.p.style = "Bold";
-
-Comapping:
-
-RAssigns(
-	assignments : [RAssign]
-)
-
-renderComap(p : Topic) -> RAssigns {
-	html.body.p = renderTopic(p);
-}
-
-renderTopic(p : Topic) -> RAssigns {
-	RAssigns(
-		[
-			table.tr[0] = RAssigns([
-				td[0] = p.topic;
-				rowspan = length(p.children());
-				yalign = center;
-			]),
-			mapi(p.children(), \i, child -> {
-				table.tr[i].td[1] = renderTopic(child);
-			})
-		]
-	)
-}
-
-# Bijection between union and lvalues
-
-Figure out the systematic conversion between types and lvalues 
-conversion and updating functions.
-
-Use this to generalize unions to FRP automatically.
-
-Maybe lvalues can be used to wrap any static structure as a fake
-FRP value?
-
-# HTML
-
-Introduce HTML union similar to Material, just with direct
-HTML constructs. 
-
-This exists in formats/dom/ now, including lowering to HTML.
-
-Take these, and make a renderHtml with binding to FRP.
-With this, we can also convert to/from a sequence of lvalues.
-
-# Types for lvalues
-
-To help automatically construct editors for each place in the
-lvalues, types could be helpful. But instead of reflecting the
-general type-system of flow, maybe we should have a union of
-various editors.
-
-	bool: checkbox, toggle
-	int: textinput, slider
-	double: textinput, slider
-	string: textinput, autocomplete
-	structs: form, table
-	array: table
-	union: dropdown, autocomplete
-
-# Speedrun editor:
-
-1) Change editor.flow to use HTML instead of Material.
-2) Add RAssigns
-3) Finish HTML types sufficiently
-4) Do first JSON lvalues to HTML conversion for read-only view
-5) Implement "update lvalue" operations for JSON and figure out how to use that
-6) Finish to/from lvalue for HTML
