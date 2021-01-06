@@ -136,6 +136,10 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			} : def();
 		}
 		MiniPopFile(file): {
+			if (isDebuggingId(db.program, changeFileExt(file, ""))) {
+				println(file + ": Finished parsing '" + file + "'. Processing " + i2s(sizeTree(db.program.unprocessedAnnotations)) + " natives without fallbacks");
+			}
+
 			// OK, we have finished parsing the file.
 			// Now it is time to handle these things:
 			// natives without fallbacks.
@@ -154,6 +158,9 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			MiniDb(ndb2 with program = fast);
 		}
 		MiniCompileTime(names): {
+			if (isDebuggingIds(db.program, names)) {
+				println("\nCompile time evaluation of: " + strGlue(set2array(names), ", "));
+			}
 			interpreter = makeMiniInterpreter(db.program);
 			verbose = db.program.options.verbose > 1;
 			if (verbose) {
@@ -163,7 +170,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				mex = lookupTree(acc, name);
 				mex ?? {
 					pexp = partialMiniExp(interpreter, mex);
-					if (verbose) {
+					if ((verbose || isDebuggingId(db.program, name)) && pexp != mex) {
 						println(name + " = "+ miniPretty(pexp));
 					};
 					setTree(acc, name, pexp);
@@ -173,6 +180,9 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			MiniDb(db with program = ast);
 		}
 		MiniTypeInfer(ids): {
+			if (isDebuggingIds(db.program, ids)) {
+				println("\nInfer types of: " + strGlue(set2array(ids), ", "));
+			}
 			// OK, what types do we have for these ids now?
 			lids = set2array(ids);
 			origTypes : [Maybe<MiniType>]= map(lids, \id -> {
@@ -186,7 +196,9 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			// and check if there is a change, and if so, request re-typecheck
 			// of dependent ids
 			foldi(lids, MiniDb(db with program = nast), \i, acc, id -> {
-				update = \ -> { updateMiniType(acc, ids, id) };
+				update = \ -> { 
+					updateMiniType(acc, ids, id) 
+				};
 
 				origType = origTypes[i];
 				origType ?? {

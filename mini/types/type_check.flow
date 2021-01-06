@@ -1,6 +1,7 @@
 import mini/types/typeinference;
 import mini/types/coalescing;
 import mini/types/simplify;
+import mini/util/trace;
 import mini/exp/topological;
 import mini/exp/pretty_typed;
 import mini/backends/bprogram_lower;
@@ -75,6 +76,15 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	// OK, resolve the constraints
 	resTypes = coalesceMiniTypeVars(cenv);
 	simplifyResTypes(cenv, resTypes);
+
+	iter(order, \id -> {
+		if (isDebuggingId(ast, id)) {
+			mfn = lookupTree(ast.declarations, id);
+			mfn ?? {
+				println(id + " = " + miniPrettyTyped(cenv, mfn));
+			} : {}
+		}
+	});
 
 	if (false) {
 		println("\nMini exp declarations after:");

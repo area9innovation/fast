@@ -3,8 +3,16 @@ import mini/exp/ast;
 export {
 	// Are we debugging this id? Can be a program id, or a file.
 	isDebuggingId(ast : MiniAst, id : string) -> bool;
+
+	isDebuggingIds(ast : MiniAst, ids : Set<string>) -> bool;
+
 }
 
 isDebuggingId(ast : MiniAst, id : string) -> bool {
 	containsSet(ast.options.debugIds, id) || containsSet(ast.options.debugIds, "1");
+}
+
+
+isDebuggingIds(ast : MiniAst, ids : Set<string>) -> bool {
+	!isEmptySet(intersectSets(ast.options.debugIds, ids)) || containsSet(ast.options.debugIds, "1");
 }

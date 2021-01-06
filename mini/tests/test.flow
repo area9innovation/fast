@@ -17,5 +17,5 @@ a = 10.65;
 main() {
 	f = bar;
 	println(f(a));
-	println(f(1));
+	println(f(1.2));
 }
