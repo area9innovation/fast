@@ -2,11 +2,13 @@ import mini/interpreter/interpreter;
 import mini/exp/value;
 import mini/types/type_ast;
 import mini/types/util;
+import mini/types/polymorphism;
 
 export {
 	// This does a few desugaring things:
 	// - Expand switch and cases to the correct form with variable bindings
 	// - "m ?? t : e" is expanded
+	// - Make implicit type parameters explicit. Maybe -> Maybe<?>. TODO: Should this be Maybe<auto> instead?
 	partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
 }
 
@@ -36,6 +38,8 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 						processMiniMaybe(env, args);
 					} else if (fname == "__compiletime") {
 						interpretMiniExp(env, e);
+					} else if (fname == "__type") {
+						interpretMiniType(env, def());
 					} else {
 						// if fname is a type, we could evaluate it now if we had some way of representing the result
 						def();
@@ -270,5 +274,16 @@ replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
 				MiniCall(rec(fn), map(args, rec), tyvar)
 			}
 		}
+	}
+}
+
+// Here, we should ensure that typenames have the correct number of typars
+interpretMiniType(e : MiniInterpreter, calltype : MiniExp) -> MiniExp {
+	type = convertMiniExp2Type(calltype);
+	explicitTypars = resolveImplicitTypePars(e.env, type);
+	if (explicitTypars != type) {
+		miniType2Exp(explicitTypars);
+	} else {
+		calltype;
 	}
 }

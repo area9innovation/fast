@@ -112,7 +112,7 @@ miniType2Exp(t : MiniType) -> MiniExp {
 			MiniCall(MiniVar("__fntype", 0), concat([miniType2Exp(returnType)], map(args, miniType2Exp)), 0)
 		}
 		MiniTypeCall(id, typars): ty(id, typars);
-		MiniTypeVar(id): error();
+		MiniTypeVar(id): error(); // TODO: We could probably just go with "auto" here
 		MiniTypePar(id): ty(id, []);
 		MiniTypeRecord(fields): {
 			MiniCall(MiniVar("__recordtype", 0), map(fields, \f -> {
@@ -123,7 +123,6 @@ miniType2Exp(t : MiniType) -> MiniExp {
 		}
 	}
 }
-
 
 getMiniVar(m : MiniExp) -> string {
 	switch (m) {

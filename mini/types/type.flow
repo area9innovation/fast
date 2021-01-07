@@ -7,7 +7,7 @@ export {
 
 		MiniTypeFunction(args : [MiniType], returnType : MiniType);
 
-		// double, string, array, ref, structs, unions are all calls
+		// double, string, array, ref, structs, unions are all calls. Also "auto"
 		MiniTypeCall(id : string, typars : [MiniType]);
 
 		// Used internally in the inference

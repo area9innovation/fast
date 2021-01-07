@@ -1,11 +1,11 @@
 import mini/exp/ast;
 
 export {
-	// This inlines calls and let-bindings
 	makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter;
 
 	MiniInterpreter(env : MiniAst);
 
+	// This inlines calls and let-bindings
 	interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
 }
 

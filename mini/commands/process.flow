@@ -161,6 +161,10 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			if (isDebuggingIds(db.program, names)) {
 				println("\nStage: Compile time evaluation of: " + strGlue(set2array(names), ", "));
 			}
+
+			// TODO: Lift implicit type-parameterized structs in polymorphic unions to have type pars
+			// Maybe<?> ::= Some<?>, None; Here None should be promoted to be None<?>.
+
 			interpreter = makeMiniInterpreter(db.program);
 			verbose = db.program.options.verbose > 1;
 			if (verbose) {
