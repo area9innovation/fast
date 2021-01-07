@@ -3,6 +3,10 @@ import text/blueprint;
 
 export {
 	miniType2string(t : MiniType) -> string;
+
+	miniStruct2string(t : MiniStruct) -> string;
+
+	miniUnion2string(t : MiniUnion) -> string;
 }
 
 miniType2string(t : MiniType) -> string {
@@ -16,4 +20,15 @@ miniType2string(t : MiniType) -> string {
 			"{" + superglue(fields, \field -> (if (field.isMutable) "mutable " else "") + field.name + ":" + miniType2string(field.type), ", ") + "}";
 		}
 	}
+}
+
+miniStruct2string(t : MiniStruct) -> string {
+	t.name + "(" + superglue(t.fields, \mtf : MiniTypeField -> {
+		(if (mtf.isMutable) "mutable " else "")
+		+ mtf.name + " : " + miniType2string(mtf.type)
+	}, ", ") + ")";
+}
+
+miniUnion2string(u : MiniUnion) -> string {
+	miniType2string(MiniTypeCall(u.name, u.typars)) + " ::= " + superglue(u.typenames, miniType2string, ", ")
 }

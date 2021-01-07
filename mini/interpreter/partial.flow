@@ -81,7 +81,7 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 					], 0
 				),
 				// This implies a downcast in the body of __switchvar
-				MiniCall(MiniVar("__casebody", 0), [
+				MiniCall(MiniVar("__downcast", 0), [
 					MiniVar("__switchvar", 0),
 					miniType2Exp(MiniTypeCall(struct, [])),
 					bodyLet,
@@ -192,7 +192,7 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 		__or(
 			__case(
 				__caseid(Some), 
-				__casebody(
+				__downcast(
 					__switchvar, 
 					__type("Some"), 
 					(
@@ -203,7 +203,7 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 			), 
 			__case(
 				__caseid(None), 
-				__casebody(
+				__downcast(
 					__switchvar, 
 					__type("None"), 
 					%c%
@@ -223,7 +223,7 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 					MiniCall(MiniVar("__caseid", 0), [
 						MiniVar("Some", 0)
 					], 0),
-					MiniCall(MiniVar("__casebody", 0), [
+					MiniCall(MiniVar("__downcast", 0), [
 						MiniVar("__switchvar", 0),
 						MiniCall(MiniVar("__type", 0), [MiniString("Some")], 0),
 						MiniLet(
@@ -240,7 +240,7 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 					MiniCall(MiniVar("__caseid", 0), [
 						MiniVar("None", 0)
 					], 0),
-					MiniCall(MiniVar("__casebody", 0), [
+					MiniCall(MiniVar("__downcast", 0), [
 						MiniVar("__switchvar", 0),
 						MiniCall(MiniVar("__type", 0), [MiniString("None")], 0),
 						args[2]

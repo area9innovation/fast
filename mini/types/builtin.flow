@@ -83,7 +83,7 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 			Pair("__or", MiniTypeFunction([ta, ta], ta)),
 
 		// This is downcast of the switch var to the case type
-		Pair("__casebody", MiniTypeFunction([ta, tb, tc], tc)),
+		Pair("__downcast", MiniTypeFunction([ta, tb, tc], tc)),
 
 		Pair("__maybe", MiniTypeFunction([ta, tb, tb], tb)),
 

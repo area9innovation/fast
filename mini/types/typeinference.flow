@@ -171,7 +171,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 							}
 						};
 						setMiniTypeVar(env, ex, type);
-					} else if (fname == "__casebody") {
+					} else if (fname == "__downcast") {
 						// This is downcast "id : type in body"
 						name = getMiniVar(args[0]);
 						type = convertMiniExp2Type(args[1]);

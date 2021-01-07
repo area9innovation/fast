@@ -134,7 +134,7 @@ jsBackend() -> Backend {
 			// Used in switch
 			BackGen("__switchvalue", miniTypeVoid, BackBinOp(".", 60, BackArg(0), BackText("_id"))),
 			BackGen("__caseid", miniTypeVoid, BackConcat([BackText("\""), BackArg(0), BackText("\"")])),
-			BackGen("__casebody", miniTypeVoid, BackArg(2)),
+			BackGen("__downcast", miniTypeVoid, BackArg(2)),
 
 			// Inlined natives
 			BackGen("Native.println", miniTypeVoid, BackText("console.log")),

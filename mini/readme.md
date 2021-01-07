@@ -115,10 +115,10 @@ the development, we have defined some milestones.
 
 - Get tools/flowc/tests examples to compile and run in JS.
   - You can run a set of tests using `flowcpp mini/mini.flow -- test=1-10`
-    - Rename __casebody to __downcast?
     - Redo __construct to be more like record construction?
       - makerecord(), setrecord(record, id, val)?
 	- Specific todos for test cases:
+	- 1: Implicit polymorphism for Maybe should be made explicit
     - 5, 7: intersection typing
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore
