@@ -95,7 +95,7 @@ convertMiniExp2Field(e : MiniExp) -> MiniTypeField {
 }
 
 miniType2Exp(t : MiniType) -> MiniExp {
-	ty = \s,a : [MiniType] -> MiniCall(MiniVar("__type", 0), concat([MiniString(s)], map(a, miniType2Exp)), 0);
+	ty = \s,a : [MiniType] -> MiniCall(MiniVar("__type", 0), concat([MiniString(s, -1)], map(a, miniType2Exp)), 0);
 	error = \ -> { 
 		println("Cannot convert type to exp:");
 		println(t);
@@ -117,7 +117,7 @@ miniType2Exp(t : MiniType) -> MiniExp {
 		MiniTypeRecord(fields): {
 			MiniCall(MiniVar("__recordtype", 0), map(fields, \f -> {
 				MiniCall(MiniVar("__field", 0), [
-					MiniString(f.name), MiniInt(b2i(f.isMutable), 0), miniType2Exp(f.type)
+					MiniString(f.name, -1), MiniInt(b2i(f.isMutable), 0), miniType2Exp(f.type)
 				], 0);
 			}), 0)
 		}

@@ -13,8 +13,8 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 	type = \tv -> miniPrettyTypeVar(env, tv);
 	switch (m) {
 		MiniInt(value, tv): i2s(value) + type(tv);
-		MiniDouble(value): d2s(value);
-		MiniString(value): toString(value);
+		MiniDouble(value, __): d2s(value);
+		MiniString(value, __): toString(value);
 		MiniVar(name, tv): name + type(tv);
 		MiniLet(name, value, body, tv): blueprint("
 			%name%%type% = %value%;

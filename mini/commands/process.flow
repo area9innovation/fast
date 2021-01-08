@@ -80,7 +80,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 
 				content = getFileContent(path);
 				// TODO: Update deps: We have to collect all of them from each file
-				ndb = pushMiniValue(db, MiniString(content));
+				ndb = pushMiniValue(db, MiniString(content, -1));
 				ndb2 = MiniDb(ndb with fileStack = Cons(name, ndb.fileStack));
 
 				if (isDebuggingId(db.program, changeFileExt(name, ""))) {

@@ -126,7 +126,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 						MiniCall(MiniVar("__construct" + i2s(cardinality), 0), concat(
 							[
 								id.first,
-							], map(args, \a -> MiniString(a.first))
+							], map(args, \a -> MiniString(a.first, -1))
 						), 0), 0
 					), 
 					constructorTypeAsExp

@@ -8,8 +8,8 @@ export {
 miniPretty(m : MiniExp) -> string {
 	switch (m) {
 		MiniInt(value, __): i2s(value);
-		MiniDouble(value): d2s(value);
-		MiniString(value): toString(value);
+		MiniDouble(value, __): d2s(value);
+		MiniString(value, __): toString(value);
 		MiniVar(name, __): name;
 		MiniLet(name, value, body, __): blueprint("
 			%name% = %value%;

@@ -1,5 +1,6 @@
 import mini/interpreter/interpreter;
 import mini/exp/value;
+import mini/exp/compare;
 import mini/types/type_ast;
 import mini/types/util;
 import mini/types/implicit_polymorphism;
@@ -72,7 +73,10 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 		*/
 		bodyLet = foldi(vars, body, \i, acc, var -> {
 						if (var != "__") {
-							MiniLet(var, MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString(mstructdef.fields[i].name)], 0), acc, 0)
+							MiniLet(var, MiniCall(MiniVar(".", 0), [
+								MiniVar("__switchvar", 0), 
+								MiniString(mstructdef.fields[i].name, -1)
+							], 0), acc, 0)
 						} else acc
 					});
 
@@ -229,10 +233,10 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 					], 0),
 					MiniCall(MiniVar("__downcast", 0), [
 						MiniVar("__switchvar", 0),
-						MiniCall(MiniVar("__type", 0), [MiniString("Some")], 0),
+						MiniCall(MiniVar("__type", 0), [MiniString("Some", -1)], 0),
 						MiniLet(
 							"__maybeval",
-							MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString("value")], 0),
+							MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString("value", -1)], 0),
 							// Replace "args[0]" with MiniVar("__maybeval")
 							replaceMiniExp(args[1], args[0], MiniVar("__maybeval", 0)),
 							0
@@ -246,7 +250,7 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 					], 0),
 					MiniCall(MiniVar("__downcast", 0), [
 						MiniVar("__switchvar", 0),
-						MiniCall(MiniVar("__type", 0), [MiniString("None")], 0),
+						MiniCall(MiniVar("__type", 0), [MiniString("None", -1)], 0),
 						args[2]
 					], 0),
 				], 0)
@@ -256,13 +260,13 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 }
 
 replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
-	if (e == finde) replacee
+	if (isSameMiniExp(e, finde)) replacee
 	else {
 		rec = \v -> replaceMiniExp(v, finde, replacee);
 		switch (e) {
 			MiniInt(value, tyvar): e;
-			MiniDouble(value): e;
-			MiniString(value): e;
+			MiniDouble(value, __): e;
+			MiniString(value, __): e;
 			MiniVar(name, tyvar): e;
 			MiniLet(name, value, body, tyvar): {
 				MiniLet(name, rec(value), rec(body), tyvar)

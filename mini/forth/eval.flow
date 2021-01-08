@@ -71,14 +71,14 @@ miniEvalForth(file : string, db0 : MiniDb, command : string) -> MiniDb {
 							Some(\forth -> {
 								// MiniString(value : string);
 								str = deserializeString(command);
-								pushMStack(forth, MiniString(str.first));
+								pushMStack(forth, MiniString(str.first, -1));
 							})
 						} else if (("0" <= fchar && fchar <= "9") || fchar == ".") {
 							Some(\forth -> {
 								if (strContains(command, ".") || strContains(command, "e")) {
 									// MiniDouble(value : double);
 									d = s2d(command);
-									pushMStack(forth, MiniDouble(d));
+									pushMStack(forth, MiniDouble(d, -1));
 								} else {
 									// MiniInt(value : int);
 									i = s2i(command);
@@ -122,7 +122,7 @@ gringoForthAction(file : string) -> GringoAction<MiniDb> {
 			miniEvalForth(head, db, command);
 		},
 		\acc : MiniDb, token -> {
-			pushMiniValue(acc, MiniString(token));
+			pushMiniValue(acc, MiniString(token, -1));
 		}
 	)
 }

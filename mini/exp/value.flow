@@ -21,14 +21,14 @@ getMiniInt(m : MiniExp) -> int {
 
 getMiniDouble(m : MiniExp) -> double {
 	switch (m) {
-		MiniDouble(d): d;
+		MiniDouble(d, __): d;
 		default: 0.0;
 	}
 }
 
 getMiniString(m : MiniExp) -> string {
 	switch (m) {
-		MiniString(s): s;
+		MiniString(s, __): s;
 		default: "";
 	}
 }
@@ -63,14 +63,14 @@ isMiniInt(m : MiniExp) -> bool {
 
 isMiniDouble(m : MiniExp) -> bool {
 	switch (m) {
-		MiniDouble(d): true;
+		MiniDouble(d, __): true;
 		default: false;
 	}
 }
 
 isMiniString(m : MiniExp) -> bool {
 	switch (m) {
-		MiniString(i): true;
+		MiniString(i, __): true;
 		default: false;
 	}
 }

@@ -14,8 +14,18 @@ isSameMiniExp(a : MiniExp, b : MiniExp) -> bool {
 				default: false;
 			}
 		}
-		MiniDouble(value): a == b;
-		MiniString(value): a == b;
+		MiniDouble(avalue, __): {
+			switch (b) {
+				MiniDouble(bvalue, __): avalue == bvalue;
+				default: false;
+			}
+		}
+		MiniString(avalue, __): {
+			switch (b) {
+				MiniString(bvalue, __): avalue == bvalue;
+				default: false;
+			}
+		}
 		MiniVar(aname, __): {
 			switch (b) {
 				MiniVar(bname, __): aname == bname;

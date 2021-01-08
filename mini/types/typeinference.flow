@@ -94,8 +94,8 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 		MiniInt(value, tv): {
 			setMiniTypeVar(env, ex, MiniTypeInt(32));
 		}
-		MiniDouble(value): MiniTypeCall("double", []);
-		MiniString(value): MiniTypeCall("string", []);
+		MiniDouble(value, __): MiniTypeCall("double", []);
+		MiniString(value, __): MiniTypeCall("string", []);
 		MiniVar(name, __): {
 			mlocal = lookupTree(env.localTypes, name);
 
@@ -338,8 +338,8 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 				MiniLambda(args, body, tyvar): ex.tyvar ::= ttv.id;
 				MiniCall(fn, args, tyvar): ex.tyvar ::= ttv.id;
 
-				MiniDouble(value): {};
-				MiniString(value): {};
+				MiniDouble(value, __): {};
+				MiniString(value, __): {};
 			};
 			ttv.id;
 		} else tv;
@@ -354,8 +354,8 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 		MiniLambda(args, body, tyvar): def(tyvar);
 		MiniCall(fn, args, tyvar): def(tyvar);
 
-		MiniDouble(value): type;
-		MiniString(value): type;
+		MiniDouble(value, __): type;
+		MiniString(value, __): type;
 	}
 }
 

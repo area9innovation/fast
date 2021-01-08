@@ -3,6 +3,7 @@ import mini/forth/stack;
 import mini/exp/value;
 import mini/exp/pretty;
 import mini/types/type_ast;
+import mini/util/position;
 import ds/tree;
 import string;
 import math/math;
@@ -98,9 +99,11 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			if (isMiniInt(x.first) && isMiniInt(y.first)) {
 				pushMStack(x.second, MiniInt(getMiniInt(x.first) + getMiniInt(y.first), 0));
 			} else if (isMiniDouble(x.first) && isMiniDouble(y.first)) {
-				pushMStack(x.second, MiniDouble(getMiniDouble(x.first) + getMiniDouble(y.first)));
+				pos = getMiniPos(x.first);
+				pushMStack(x.second, MiniDouble(getMiniDouble(x.first) + getMiniDouble(y.first), pos));
 			} else if (isMiniString(x.first) && isMiniString(y.first)) {
-				pushMStack(x.second, MiniString(getMiniString(x.first) + getMiniString(y.first)));
+				pos = getMiniPos(x.first);
+				pushMStack(x.second, MiniString(getMiniString(x.first) + getMiniString(y.first), pos));
 			} else {
 				println("Can only add ints and strings");
 				stack;
@@ -151,7 +154,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			i = popMStack(stack);
 			x = popMStack(i.second);
 			st = getMiniString(x.first);
-			pushMStack(x.second, MiniString(getCharAt(st, getMiniInt(i.first))));
+			pushMStack(x.second, MiniString(getCharAt(st, getMiniInt(i.first)), getMiniPos(x.first)));
 		}),
 
 		// <string> <int> getcode -> <int>
@@ -173,21 +176,21 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		Pair("i2s", \stack -> {
 			x = popMStack(stack);
 			st = getMiniInt(x.first);
-			pushMStack(x.second, MiniString(i2s(st)));
+			pushMStack(x.second, MiniString(i2s(st), getMiniPos(x.first)));
 		}),
 
 		// <string> s2d -> <double>
 		Pair("s2d", \stack -> {
 			x = popMStack(stack);
 			st = getMiniString(x.first);
-			pushMStack(x.second, MiniDouble(s2d(st)));
+			pushMStack(x.second, MiniDouble(s2d(st), getMiniPos(x.first)));
 		}),
 
 		// <double> d2s -> <string>
 		Pair("d2s", \stack -> {
 			x = popMStack(stack);
 			st = getMiniDouble(x.first);
-			pushMStack(x.second, MiniString(d2s(st)));
+			pushMStack(x.second, MiniString(d2s(st), getMiniPos(x.first)));
 		}),
 
 		// <string> parsehex -> <int>
@@ -212,7 +215,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			i = popMStack(l.second);
 			x = popMStack(i.second);
 			st = getMiniString(x.first);
-			pushMStack(x.second, MiniString(substring(st, getMiniInt(i.first), getMiniInt(l.first))));
+			pushMStack(x.second, MiniString(substring(st, getMiniInt(i.first), getMiniInt(l.first)), getMiniPos(x.first)));
 		}),
 
 		// <string> <string> changeFileExt -> <string>
@@ -221,7 +224,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			f = popMStack(e.second);
 			ext = getMiniString(e.first);
 			file = getMiniString(f.first);
-			pushMStack(f.second, MiniString(changeFileExt(file, ext)));
+			pushMStack(f.second, MiniString(changeFileExt(file, ext), getMiniPos(f.first)));
 		}),
 
 		//
