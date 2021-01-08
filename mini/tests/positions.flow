@@ -3,3 +3,25 @@ i = 1;
 d = 1.0;
 s = "1";
 
+t = true;
+f = false;
+
+v = i;
+h = 0xdead;
+
+e0 = !false;
+e1 = -1;
+r = ref 0;
+d = ^r;
+a0 = [];
+a1 = [1];
+
+None();
+
+n = None();
+
+s = switch(n) {
+	None(): 0;
+	default: 1;
+};
+

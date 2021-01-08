@@ -100,8 +100,8 @@ exp =
 		exp "??" ws <exp $"list2" ":" ws exp $"cons" $$"__ctmaybe" $"var" $"swap" $"call"
 	)
 	|> (
-		'!' ws exp $$"!" $"unop"
-		| '-' ws exp $$"__neg" $"unop"
+		$$pos '!' ws exp $$"!" $"unop"
+		| $$pos '-' ws exp $$"__neg" $"unop"
 		| backslash ws lambdaargs "->" ws exp "" $"lambda"	// The "" makes right-recursion disappear
 		| exp 
 			(
@@ -112,24 +112,24 @@ exp =
 			| "[" ws exp "]" ws $$"__index" $"binop"
 			)*
 	)
-	|> '^' ws exp $$"__deref" $"unop"
+	|> $$pos '^' ws exp $$"__deref" $"unop"
 	|> (
 		"if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" "else" ws exp $"cons" $$"__ifte" $"var" $"swap" $"call"
 		| "if" !letterOrDigit ws "(" ws $"nil" exp $"cons" ")" ws exp $"cons" $$"__ift" $"var" $"swap" $"call"
 		| "(" ws exp #")" ws 
-		| "ref" !letterOrDigit ws exp $$"__ref" $"unop"
+		| $$pos "ref" !letterOrDigit ws exp $$"__ref" $"unop"
 		| switch
-		| "cast" !letterOrDigit ws $$"__cast" $"var" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
-		| "true" !letterOrDigit ws $"1" $$"bool" $"type0" $$":" $"binop"
-		| "false" !letterOrDigit ws $"0" $$"bool" $"type0" $$":" $"binop"
-		| id $"var"
-		| "0x" $(hexdigit+) ws $"parsehex"
+		| $$pos "cast" !letterOrDigit ws $$"__cast" $"var" $"setpos" $"nil" '(' ws exp $"cons" "->" ws type $"cons" ')' ws $"call"
+		| $$pos "true" !letterOrDigit ws $"1" $"setpos" $$"bool" $"type0" $$":" $"binop"
+		| $$pos "false" !letterOrDigit ws $"0" $"setpos" $$"bool" $"type0" $$":" $"binop"
+		| $$pos id $"var" $"setpos"
+		| $$pos "0x" $(hexdigit+) ws $"parsehex" $"setpos"
 		| $$pos $('0'-'9'+ "." '0'-'9'*) ws $"s2d" $"setpos"
 		| $$pos $("." '0'-'9'+) ws $"s2d" $"setpos"
 		| $$pos int ws $"s2i" $"setpos"
 		| brace
 		| string
-		| "[" ws expcommas "]" ws $$"[" $"unop"
+		| $$pos "[" ws expcommas "]" ws $$"[" $"unop"
 		| "[" ws "]" ws $$"__emptyarray" $"var" $"nil" $"call"
 	);
 
@@ -144,12 +144,12 @@ expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 
 semiexps = exp (";" ws exp $$";" $"binop")*;
 
-switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvar" $"swap" $$"__switchvar" $"var"  $$"__switchvalue" $"unop" ')' ws '{' ws cases #'}' ws $$"__switch" $"binop" $"let";
+switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvar" $"swap" $$"__switchvar" $"var" $$pos $$"swap" $$"__switchvalue"  $"unop" ')' ws '{' ws cases #'}' ws $$"__switch" $"binop" $"let";
 
 cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")* | $$"__void" $"var" $"nil" $"call";
 
 defaultOrNamedCase = 
-	"default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
+	$$pos "default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
 	// __ctcase(id, cons(args), body)
 	| $"nil" id $"var" $"cons" '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call";
 
