@@ -119,6 +119,8 @@ the development, we have defined some milestones.
       - makerecord(), setrecord(record, id, val)?
 	- Specific todos for test cases:
 	- 1: Generalize unbound tyvars to typars
+	  Should we define None and Some functions instead of using :? Probably not, since
+	  construct needs the type. OK, makerecord and setrecord could probably fix that
     - 5, 7: intersection typing
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore

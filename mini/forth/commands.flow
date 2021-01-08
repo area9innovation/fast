@@ -145,7 +145,8 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			println(file + ": Parser defines struct " + miniStruct2string(struct));
 		}
 		// In addition to the type, we also register the constructor function
-		pushMiniCommand(db2, MiniDefine(file, ids, lambda));
+		db3 = pushMiniCommand(db2, MiniDefine(file, ids, lambda));
+		pushMiniCommand(db3, MiniCompileTime(makeSet1(ids)));
 	} else if (command == "define") {
 		// MiniDefine(name : string, value : MiniExp);
 		value = popMiniValue(db);
