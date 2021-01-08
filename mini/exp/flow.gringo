@@ -130,7 +130,7 @@ exp =
 		| brace
 		| string
 		| $$pos "[" ws expcommas "]" ws $$"[" $"unop"
-		| "[" ws "]" ws $$"__emptyarray" $"var" $"nil" $"call"
+		| $$pos "[" ws "]" ws $$"__emptyarray" $"var" $"nil" $"call" $"setpos"
 	);
 
 	// listof(fieldassign, ",")

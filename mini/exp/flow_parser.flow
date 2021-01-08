@@ -3337,15 +3337,23 @@ parse_exp12(acc : DParseAcc) -> bool {
 																											} else {
 																												{
 																													pushDCheckpoint(acc);
-																													if (if (matchString(acc, "[")) {
-																														if (parse_ws(acc)) {
-																															if (matchString(acc, "]")) {
-																																if (parse_ws(acc)) {
-																																	if (addMatched(acc, "__emptyarray")) {
-																																		if (addVerbatim(acc, "var")) {
-																																			if (addVerbatim(acc, "nil")) {
-																																				if (addVerbatim(acc, "call")) {
-																																					discardDCheckpoint(acc)
+																													if (if (addVerbatim(acc, i2s(acc.i))) {
+																														if (matchString(acc, "[")) {
+																															if (parse_ws(acc)) {
+																																if (matchString(acc, "]")) {
+																																	if (parse_ws(acc)) {
+																																		if (addMatched(acc, "__emptyarray")) {
+																																			if (addVerbatim(acc, "var")) {
+																																				if (addVerbatim(acc, "nil")) {
+																																					if (addVerbatim(acc, "call")) {
+																																						if (addVerbatim(acc, "setpos")) {
+																																							discardDCheckpoint(acc)
+																																						} else {
+																																							restoreDCheckpoint(acc)
+																																						}
+																																					} else {
+																																						restoreDCheckpoint(acc)
+																																					}
 																																				} else {
 																																					restoreDCheckpoint(acc)
 																																				}

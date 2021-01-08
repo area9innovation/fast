@@ -1,4 +1,5 @@
 import mini/exp/exp;
+import ds/array;
 
 export {
 	getMiniPos(e : MiniExp) -> int;
@@ -12,9 +13,17 @@ getMiniPos(e : MiniExp) -> int {
 		MiniString(value, pos): pos;
 		MiniInt(value, pos, tyvar): pos;
 		MiniVar(name, pos, tyvar): pos;
-		MiniLet(name, value, body, pos, tyvar): pos;
-		MiniLambda(args, body, pos, tyvar): -1;
-		MiniCall(fn, args, pos, tyvar): -1;
+		MiniLet(name, value, body, pos, tyvar): if (pos == -1) getMiniPos(value) else pos;
+		MiniLambda(args, body, pos, tyvar): pos;
+		MiniCall(fn, args, pos, tyvar): {
+			if (pos != -1) {
+				pos
+			} else {
+				cpos = getMiniPos(fn);
+				if (cpos != -1) cpos
+				else fold(args, -1, \acc, arg -> if (acc != -1) acc else getMiniPos(arg))
+			}
+		}
 	}
 }
 

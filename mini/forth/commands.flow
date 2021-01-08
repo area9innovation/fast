@@ -8,6 +8,7 @@ import mini/types/polymorphism;
 import mini/types/subtypegraph;
 import mini/types/pretty;
 import mini/util/trace;
+import mini/util/position;
 
 export {
 	// Eval this Forth command as mini, in case it is. If not, just return the same db
@@ -162,6 +163,8 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		} else {
 			// println("Defined " + names);
 		};
+		// To debug positions:
+		// println(names + " " + i2s(getMiniPos(value.first)) + " " + miniPretty(value.first));
 		ndb = pushMiniCommand(name.second, MiniDefine(file, names, value.first));
 		pushMiniCommand(ndb, MiniCompileTime(makeSet1(names)));
 	} else db;
