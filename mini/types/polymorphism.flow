@@ -8,9 +8,6 @@ export {
 	makeMiniTypeVar(env : MiniTypeEnv) -> MiniTypeVar;
 
 	extractMiniTypePars(acc : Set<MiniTypePar>, e : MiniType) -> Set<MiniTypePar>;
-
-	// Any implicit type parameters are expanded here
-	resolveImplicitTypePars(env : MiniAst, e : MiniType) -> MiniType;
 }
 
 instantiateTypePars2TypeVars(env : MiniTypeEnv, e : MiniType) -> MiniType {
@@ -71,50 +68,3 @@ extractMiniTypePars(acc : Set<MiniTypePar>, e : MiniType) -> Set<MiniTypePar> {
 	}	
 }
 
-resolveImplicitTypePars(env : MiniAst, t : MiniType) -> MiniType {
-	rec = \tt -> resolveImplicitTypePars(env, tt);
-	switch (t) {
-		MiniTypeInt(bits): t;
-		MiniTypeFunction(args, returnType): MiniTypeFunction(map(args, rec), rec(returnType));
-		MiniTypeCall(id, typars): {
-			mstruct = lookupTree(env.structs, id);
-			fix = \tps -> {
-				if (length(typars) > length(tps)) {
-					println("Too many type parameters for " + id);
-				}
-				mapi(tps, \i, tp0 -> {
-					tp = elementAt(typars, i, {
-						// TODO: When we make implicit typepars, we should probably convert them to "auto"
-	/*					switch (tp0) {
-							MiniTypePar(__): {
-								MiniTypeCall("auto", []);
-							}
-							default: tp0;
-						}*/
-						tp0;
-					});
-
-					resolveImplicitTypePars(env, tp);
-				});
-			}
-
-			mstruct ?? {
-				MiniTypeCall(id, fix(map(mstruct.fields, \a -> a.type)));
-			} : {
-				munion = lookupTree(env.unions, id);
-				switch (munion) {
-					None(): {
-						println("Unknown typename " + id);
-						t;
-					}
-					Some(union): {
-						MiniTypeCall(id, fix(union.typars));
-					}
-				}
-			}
-		}
-		MiniTypeVar(id): t;
-		MiniTypePar(id): t;
-		MiniTypeRecord(fields): MiniTypeRecord(map(fields, \f -> MiniTypeField(f with type = rec(f.type))));
-	}
-}

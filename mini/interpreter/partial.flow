@@ -2,7 +2,7 @@ import mini/interpreter/interpreter;
 import mini/exp/value;
 import mini/types/type_ast;
 import mini/types/util;
-import mini/types/polymorphism;
+import mini/types/implicit_polymorphism;
 
 export {
 	// This does a few desugaring things:

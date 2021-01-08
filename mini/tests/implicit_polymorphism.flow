@@ -1,0 +1,6 @@
+None();
+Some(v : ?);
+
+a = 1;
+
+Maybe<?> ::= None, Some<?>;

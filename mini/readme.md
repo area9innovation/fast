@@ -118,7 +118,7 @@ the development, we have defined some milestones.
     - Redo __construct to be more like record construction?
       - makerecord(), setrecord(record, id, val)?
 	- Specific todos for test cases:
-	- 1: Implicit polymorphism for Maybe should be made explicit
+	- 1: Generalize unbound tyvars to typars
     - 5, 7: intersection typing
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore

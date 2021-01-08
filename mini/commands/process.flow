@@ -14,6 +14,7 @@ import mini/forth/stack;
 import mini/types/type_check;
 import mini/types/resolve;
 import mini/types/pretty;
+import mini/types/implicit_polymorphism;
 
 import mini/util/trace;
 
@@ -162,10 +163,11 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				println("\nStage: Compile time evaluation of: " + strGlue(set2array(names), ", "));
 			}
 
-			// TODO: Lift implicit type-parameterized structs in polymorphic unions to have type pars
+			// Lift implicit type-parameterized structs in polymorphic unions to have type pars
 			// Maybe<?> ::= Some<?>, None; Here None should be promoted to be None<?>.
+			nast = liftImplicitStructs(db.program);
 
-			interpreter = makeMiniInterpreter(db.program);
+			interpreter = makeMiniInterpreter(nast);
 			verbose = db.program.options.verbose > 1;
 			if (verbose) {
 				println("After compile time:");
@@ -180,7 +182,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 					setTree(acc, name, pexp);
 				} : acc
 			});
-			ast = MiniAst(db.program with declarations = decls);
+			ast = MiniAst(nast with declarations = decls);
 			MiniDb(db with program = ast);
 		}
 		MiniTypeInfer(ids): {

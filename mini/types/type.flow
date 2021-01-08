@@ -25,5 +25,5 @@ export {
 	MiniUnion(name : string, typars : [MiniType], typenames : [MiniType]);
 
 	// The definition of a struct
-	MiniStruct(name : string, fields : [MiniTypeField]);
+	MiniStruct(name : string, typars : [MiniType], fields : [MiniTypeField]);
 }

@@ -133,7 +133,8 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 				], 0
 			);
 
-		struct = MiniStruct(ids, fields);
+		// TODO: Figure out the number of type-parameters? We could do it at compile time
+		struct = MiniStruct(ids, [], fields);
 
 		// TODO: This might be wrong in incremental?
 		db2 = MiniDb(

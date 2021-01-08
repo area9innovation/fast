@@ -1,0 +1,123 @@
+import mini/types/type;
+import mini/types/pretty;
+import mini/types/polymorphism;
+import mini/exp/ast;
+import mini/util/trace;
+
+export {
+	// Lift implicit type-parameterized structs in polymorphic unions to have type pars
+	// Maybe<?> ::= Some<?>, None; Here None should be promoted to be None<?>.
+	liftImplicitStructs(env : MiniAst) -> MiniAst;
+
+	// Any implicit type parameters are expanded here
+	resolveImplicitTypePars(env : MiniAst, e : MiniType) -> MiniType;
+}
+
+liftImplicitStructs(env : MiniAst) -> MiniAst {
+	// Run through all unions and figure out the max arity of all names
+	nameArity = foldTree(env.unions, makeTree(), \__, un, acc -> {
+		set = \acc0, name, arity -> {
+			a = lookupTreeDef(acc0, name, arity);
+			setTree(acc0, name, max(arity, a));
+		};
+		arity = length(un.typars);
+		acc1 = set(acc, un.name, arity);
+		fold(un.typenames, acc1, \acc2, tn -> {
+			switch (tn) {
+				MiniTypeCall(id, tp): {
+					if (length(tp) > arity) {
+						println("Missing type parameter in union '" + un.name + "' due to " + miniType2string(tn));
+					}
+					set(acc2, id, max(length(tp), arity));
+				}
+				default: acc2;
+			}
+		});
+	});
+
+	// Check that all unions have the correct arity
+	traverseInOrder(env.unions, \name, union -> {
+		arity = lookupTreeDef(nameArity, name, 0);
+		if (arity != length(union.typars)) {
+			println("Union '" + name + "' expects " + i2s(length(union.typars)) + " type pars, but is used in some union with " + i2s(arity));
+		}
+	});
+
+	// Now expand the arity of structs
+	nstructs = mapTree2(env.structs, \name, struct -> {
+		// Figure out how many type pars are in the fields
+		typars = extractMiniTypePars(makeSet(), MiniTypeCall(name, map(struct.fields, \f -> f.type)));
+		ntypars = max(length(struct.typars), sizeSet(typars));
+
+		// How many are used in unions?
+		usedArity = lookupTreeDef(nameArity, name, ntypars);
+		arity = max(usedArity, ntypars);
+		if (usedArity < arity) {
+			println("Struct '" + name + "' is referenced in a union with too few type parameters");
+			// TODO: Include the name of that union
+		}
+		if (length(struct.typars) < arity) {
+			// OK, we should expand it
+			atypars = generate(0, arity, \i -> {
+				def = MiniTypePar(strLeft("??????????", i + 1));
+				elementAt(struct.typars, i, def);
+			});
+			nstruct = MiniStruct(struct with typars = atypars);
+			if (isDebuggingId(env, name)) {
+				println("Type parameters updated for " + miniStruct2string(nstruct));
+			}
+			nstruct;
+		} else {
+			struct;
+		}
+	});
+	MiniAst(env with structs = nstructs);
+}
+
+resolveImplicitTypePars(env : MiniAst, t : MiniType) -> MiniType {
+	rec = \tt -> resolveImplicitTypePars(env, tt);
+	switch (t) {
+		MiniTypeInt(bits): t;
+		MiniTypeFunction(args, returnType): MiniTypeFunction(map(args, rec), rec(returnType));
+		MiniTypeCall(id, typars): {
+			mstruct = lookupTree(env.structs, id);
+			fix = \tps -> {
+				if (length(typars) > length(tps)) {
+					println("Too many type parameters for " + id);
+				}
+				mapi(tps, \i, tp0 -> {
+					tp = elementAt(typars, i, {
+						// TODO: When we make implicit typepars, we should probably convert them to "auto"
+	/*					switch (tp0) {
+							MiniTypePar(__): {
+								MiniTypeCall("auto", []);
+							}
+							default: tp0;
+						}*/
+						tp0;
+					});
+
+					resolveImplicitTypePars(env, tp);
+				});
+			}
+
+			mstruct ?? {
+				MiniTypeCall(id, fix(mstruct.typars));
+			} : {
+				munion = lookupTree(env.unions, id);
+				switch (munion) {
+					None(): {
+						println("Unknown typename " + id);
+						t;
+					}
+					Some(union): {
+						MiniTypeCall(id, fix(union.typars));
+					}
+				}
+			}
+		}
+		MiniTypeVar(id): t;
+		MiniTypePar(id): t;
+		MiniTypeRecord(fields): MiniTypeRecord(map(fields, \f -> MiniTypeField(f with type = rec(f.type))));
+	}
+}

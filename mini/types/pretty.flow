@@ -23,7 +23,8 @@ miniType2string(t : MiniType) -> string {
 }
 
 miniStruct2string(t : MiniStruct) -> string {
-	t.name + "(" + superglue(t.fields, \mtf : MiniTypeField -> {
+	miniType2string(MiniTypeCall(t.name, t.typars)) 
+	+ "(" + superglue(t.fields, \mtf : MiniTypeField -> {
 		(if (mtf.isMutable) "mutable " else "")
 		+ mtf.name + " : " + miniType2string(mtf.type)
 	}, ", ") + ")";
