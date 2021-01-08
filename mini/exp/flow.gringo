@@ -144,9 +144,16 @@ expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 
 semiexps = exp (";" ws exp $$";" $"binop")*;
 
-switch = "switch" !letterOrDigit ws '(' ws exp $$"__switchvar" $"swap" $$"__switchvar" $"var" $$pos $$"swap" $$"__switchvalue"  $"unop" ')' ws '{' ws cases #'}' ws $$"__switch" $"binop" $"let";
+switch = $$pos "switch" !letterOrDigit ws '(' ws 
+			$$"__switchvar" exp 
+			// __switchvalue(__switchvar)
+			$$"__switchvalue" $"var" $$"__switchvar" $"var" $"list1" $"call" 
+		')' ws '{' ws cases #'}' ws $$"__switch" $"binop" 
+		$"let"
+		$"setpos";
 
-cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")* | $$"__void" $"var" $"nil" $"call";
+cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")* 
+		| $$"__void" $"var" $"nil" $"call";
 
 defaultOrNamedCase = 
 	$$pos "default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"

@@ -3743,29 +3743,29 @@ parse_semiexps(acc : DParseAcc) -> bool {
 parse_switch(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
-		if (matchString(acc, "switch")) {
-			{
-				pushDCheckpoint(acc);
-				if (if (parse_letterOrDigit(acc)) {
-					restoreDCheckpoint(acc)
-				} else {
-					{
-						restoreDCheckpoint(acc);
-						true
-					}
-				}) {
-					if (parse_ws(acc)) {
-						if (matchString(acc, "(")) {
-							if (parse_ws(acc)) {
-								if (parse_exp(acc)) {
+		if (addVerbatim(acc, i2s(acc.i))) {
+			if (matchString(acc, "switch")) {
+				{
+					pushDCheckpoint(acc);
+					if (if (parse_letterOrDigit(acc)) {
+						restoreDCheckpoint(acc)
+					} else {
+						{
+							restoreDCheckpoint(acc);
+							true
+						}
+					}) {
+						if (parse_ws(acc)) {
+							if (matchString(acc, "(")) {
+								if (parse_ws(acc)) {
 									if (addMatched(acc, "__switchvar")) {
-										if (addVerbatim(acc, "swap")) {
-											if (addMatched(acc, "__switchvar")) {
+										if (parse_exp(acc)) {
+											if (addMatched(acc, "__switchvalue")) {
 												if (addVerbatim(acc, "var")) {
-													if (addVerbatim(acc, i2s(acc.i))) {
-														if (addMatched(acc, "swap")) {
-															if (addMatched(acc, "__switchvalue")) {
-																if (addVerbatim(acc, "unop")) {
+													if (addMatched(acc, "__switchvar")) {
+														if (addVerbatim(acc, "var")) {
+															if (addVerbatim(acc, "list1")) {
+																if (addVerbatim(acc, "call")) {
 																	if (matchString(acc, ")")) {
 																		if (parse_ws(acc)) {
 																			if (matchString(acc, "{")) {
@@ -3783,7 +3783,11 @@ parse_switch(acc : DParseAcc) -> bool {
 																								if (addMatched(acc, "__switch")) {
 																									if (addVerbatim(acc, "binop")) {
 																										if (addVerbatim(acc, "let")) {
-																											discardDCheckpoint(acc)
+																											if (addVerbatim(acc, "setpos")) {
+																												discardDCheckpoint(acc)
+																											} else {
+																												restoreDCheckpoint(acc)
+																											}
 																										} else {
 																											restoreDCheckpoint(acc)
 																										}
@@ -3850,9 +3854,9 @@ parse_switch(acc : DParseAcc) -> bool {
 					} else {
 						restoreDCheckpoint(acc)
 					}
-				} else {
-					restoreDCheckpoint(acc)
 				}
+			} else {
+				restoreDCheckpoint(acc)
 			}
 		} else {
 			restoreDCheckpoint(acc)
