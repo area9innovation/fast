@@ -7,7 +7,7 @@ export {
 
 miniPretty(m : MiniExp) -> string {
 	switch (m) {
-		MiniInt(value, __): i2s(value);
+		MiniInt(value, __, __): i2s(value);
 		MiniDouble(value, __): d2s(value);
 		MiniString(value, __): toString(value);
 		MiniVar(name, __): name;

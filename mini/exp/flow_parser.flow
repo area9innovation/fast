@@ -3205,10 +3205,18 @@ parse_exp12(acc : DParseAcc) -> bool {
 																					} else {
 																						{
 																							pushDCheckpoint(acc);
-																							if (if (parse_int(acc)) {
-																								if (parse_ws(acc)) {
-																									if (addVerbatim(acc, "s2i")) {
-																										discardDCheckpoint(acc)
+																							if (if (addVerbatim(acc, i2s(acc.i))) {
+																								if (parse_int(acc)) {
+																									if (parse_ws(acc)) {
+																										if (addVerbatim(acc, "s2i")) {
+																											if (addVerbatim(acc, "setpos")) {
+																												discardDCheckpoint(acc)
+																											} else {
+																												restoreDCheckpoint(acc)
+																											}
+																										} else {
+																											restoreDCheckpoint(acc)
+																										}
 																									} else {
 																										restoreDCheckpoint(acc)
 																									}

@@ -91,7 +91,7 @@ https://github.com/LPTK/simple-sub
 */
 typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 	switch (ex) {
-		MiniInt(value, tv): {
+		MiniInt(value, __, tv): {
 			setMiniTypeVar(env, ex, MiniTypeInt(32));
 		}
 		MiniDouble(value, __): MiniTypeCall("double", []);
@@ -162,7 +162,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 						argType = typeInferenceMini(env, args[0]);
 						type = convertMiniExp2Type(args[1]);
 						switch (args[0]) {
-							MiniInt(__, __): {
+							MiniInt(__, __, __): {
 								// This is fine nomatter what, since it is the official way to declare other int types
 							}
 							default: {
@@ -332,7 +332,7 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 		id = if (tv == 0) {
 			ttv = makeMiniTypeVar(env);
 			switch (ex) {
-				MiniInt(value, tyvar): ex.tyvar ::= ttv.id;
+				MiniInt(value, __, tyvar): ex.tyvar ::= ttv.id;
 				MiniVar(name, tyvar): ex.tyvar ::= ttv.id;
 				MiniLet(name, value, body, tyvar): ex.tyvar ::= ttv.id;
 				MiniLambda(args, body, tyvar): ex.tyvar ::= ttv.id;
@@ -348,7 +348,7 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 		type;
 	};
 	switch (ex) {
-		MiniInt(value, tyvar): def(tyvar);
+		MiniInt(value, __, tyvar): def(tyvar);
 		MiniVar(name, tyvar): def(tyvar);
 		MiniLet(name, value, body, tyvar): def(tyvar);
 		MiniLambda(args, body, tyvar): def(tyvar);

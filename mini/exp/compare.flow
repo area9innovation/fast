@@ -8,9 +8,9 @@ export {
 
 isSameMiniExp(a : MiniExp, b : MiniExp) -> bool {
 	switch (a) {
-		MiniInt(avalue, __): {
+		MiniInt(avalue, __, __): {
 			switch (b) {
-				MiniInt(bvalue, __): avalue == bvalue;
+				MiniInt(bvalue, __, __): avalue == bvalue;
 				default: false;
 			}
 		}

@@ -126,7 +126,7 @@ exp =
 		| "0x" $(hexdigit+) ws $"parsehex"
 		| $$pos $('0'-'9'+ "." '0'-'9'*) ws $"s2d" $"setpos"
 		| $$pos $("." '0'-'9'+) ws $"s2d" $"setpos"
-		| int ws $"s2i"
+		| $$pos int ws $"s2i" $"setpos"
 		| brace
 		| string
 		| "[" ws expcommas "]" ws $$"[" $"unop"

@@ -264,7 +264,7 @@ replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
 	else {
 		rec = \v -> replaceMiniExp(v, finde, replacee);
 		switch (e) {
-			MiniInt(value, tyvar): e;
+			MiniInt(value, __, tyvar): e;
 			MiniDouble(value, __): e;
 			MiniString(value, __): e;
 			MiniVar(name, tyvar): e;

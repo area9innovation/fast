@@ -12,7 +12,7 @@ export {
 miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 	type = \tv -> miniPrettyTypeVar(env, tv);
 	switch (m) {
-		MiniInt(value, tv): i2s(value) + type(tv);
+		MiniInt(value, __, tv): i2s(value) + type(tv);
 		MiniDouble(value, __): d2s(value);
 		MiniString(value, __): toString(value);
 		MiniVar(name, tv): name + type(tv);

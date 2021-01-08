@@ -14,7 +14,7 @@ export {
 
 getMiniInt(m : MiniExp) -> int {
 	switch (m) {
-		MiniInt(i, __): i;
+		MiniInt(i, __, __): i;
 		default: 0;
 	}
 }
@@ -56,7 +56,7 @@ miniArray2list(acc : List<MiniExp>, m : MiniExp) -> List<MiniExp> {
 
 isMiniInt(m : MiniExp) -> bool {
 	switch (m) {
-		MiniInt(i, __): true;
+		MiniInt(i, __, __): true;
 		default: false;
 	}
 }

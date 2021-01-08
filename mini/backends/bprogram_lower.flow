@@ -203,7 +203,7 @@ miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 
 miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
 	switch (v) {
-		MiniInt(value, tv): BInt(value, resolveMiniTypeVar(env, tv));
+		MiniInt(value, __, tv): BInt(value, resolveMiniTypeVar(env, tv));
 		MiniDouble(value, __): BDouble(value);
 		MiniString(value, __): BString(value);
 	}

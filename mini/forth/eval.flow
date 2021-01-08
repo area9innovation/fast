@@ -82,7 +82,7 @@ miniEvalForth(file : string, db0 : MiniDb, command : string) -> MiniDb {
 								} else {
 									// MiniInt(value : int);
 									i = s2i(command);
-									pushMStack(forth, MiniInt(i, 0));
+									pushMStack(forth, MiniInt(i, -1, 0));
 								}
 							})
 						} else lookupTree(db.forth.definitions, command);

@@ -1,6 +1,6 @@
 export {
 	MiniValue ::= MiniInt, MiniDouble, MiniString;
-		MiniInt(value : int, mutable tyvar : int);
+		MiniInt(value : int, pos : int, mutable tyvar : int);
 		MiniDouble(value : double, pos : int);
 		MiniString(value : string, pos : int);
 

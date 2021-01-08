@@ -15,7 +15,7 @@ pushMStack(f : MiniForth, val : MiniExp) -> MiniForth {
 
 popMStack(f : MiniForth) -> Pair<MiniExp, MiniForth> {
 	switch (f.stack) {
-		EmptyList(): Pair(MiniInt(-1, 0), f)
+		EmptyList(): Pair(MiniInt(-1, -1, 0), f)
 		Cons(h, t): {
 			Pair(h, MiniForth(f with stack = t))
 		}
@@ -29,7 +29,7 @@ pushMiniValue(db : MiniDb, val : MiniExp) -> MiniDb {
 
 popMiniValue(db : MiniDb) -> Pair<MiniExp, MiniDb> {
 	switch (db.forth.stack) {
-		EmptyList(): Pair(MiniInt(-1, 0), db)
+		EmptyList(): Pair(MiniInt(-1, -1, 0), db)
 		Cons(h, t): {
 			Pair(h, MiniDb(db with forth = MiniForth(db.forth with stack = t)))
 		}
