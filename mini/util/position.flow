@@ -1,0 +1,24 @@
+import mini/exp/exp;
+
+export {
+	getMiniPos(e : MiniExp) -> int;
+
+	setMiniPos(e : MiniExp, pos : int) -> MiniExp;
+}
+
+getMiniPos(e : MiniExp) -> int {
+	switch (e) {
+		MiniDouble(value, pos): pos;
+		MiniString(value, pos): pos;
+		default: -1; // TODO:
+	}
+}
+
+
+setMiniPos(e : MiniExp, pos : int) -> MiniExp {
+	switch (e) {
+		MiniDouble(v, __): MiniDouble(v, pos);
+		MiniString(v, __): MiniString(v, pos);
+		default: e;
+	}
+}

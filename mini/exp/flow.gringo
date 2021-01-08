@@ -28,7 +28,7 @@ native = "native" s id ':' $$"__native" $"var" ws $$"1" $"s2i" $"nil" ("io" ws $
 
 assign = id '=' ws exp ';'? ws $"define";
 
-union = id typars "::=" $$pos $"print" ws typenames ';' ws $"uniondef";
+union = id typars "::=" ws typenames ';' ws $"uniondef";
 
 	// listof(typename, ",")
 	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
@@ -124,8 +124,8 @@ exp =
 		| "false" !letterOrDigit ws $"0" $$"bool" $"type0" $$":" $"binop"
 		| id $"var"
 		| "0x" $(hexdigit+) ws $"parsehex"
-		| $('0'-'9'+ "." '0'-'9'*) ws $"s2d" // TODO: Add pos
-		| $("." '0'-'9'+) ws $"s2d" // TODO: Add pos
+		| $$pos $('0'-'9'+ "." '0'-'9'*) ws $"s2d" $"setpos"
+		| $$pos $("." '0'-'9'+) ws $"s2d" $"setpos"
 		| int ws $"s2i"
 		| brace
 		| string
@@ -200,7 +200,7 @@ exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";
 
 
 string = '"' "#inc" "lude" s path '"' ws   // TODO: AST
-	| '"' $(onechar_)* '"' ws // TODO: Add pos
+	| '"' $$pos $(onechar_)* '"' ws $"setpos"
 // 	| $"nil" (singlestring $"cons")+ $"concatStrings"
 	;
 
