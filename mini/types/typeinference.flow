@@ -96,7 +96,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 		}
 		MiniDouble(value, __): MiniTypeCall("double", []);
 		MiniString(value, __): MiniTypeCall("string", []);
-		MiniVar(name, __): {
+		MiniVar(name, __, __): {
 			mlocal = lookupTree(env.localTypes, name);
 
 			type = mlocal ?? mlocal : {
@@ -115,12 +115,12 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 
 			setMiniTypeVar(env, ex, itype);
 		}
-		MiniLet(name, value, body, tv): {
+		MiniLet(name, value, body, __, tv): {
 			vtype = typeInferenceMini(env, value);
 			nenv = setMiniLocalType(env, name, vtype);
 			setMiniTypeVar(nenv, ex, typeInferenceMini(nenv, body));
 		}
-		MiniLambda(args, body, __): {
+		MiniLambda(args, body, __, __): {
 			argTypes = map(args, \arg -> makeMiniTypeVar(env));
 			nenv = foldi(args, env, \i, acc, arg -> {
 				setMiniLocalType(acc, arg, argTypes[i])
@@ -129,7 +129,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 			fnType = MiniTypeFunction(argTypes, retType);
 			setMiniTypeVar(nenv, ex, fnType);
 		}
-		MiniCall(fn, args, __): {
+		MiniCall(fn, args, __, __): {
 			def = \ -> {
 				resType = makeMiniTypeVar(env);
 				fnType = typeInferenceMini(env, fn);
@@ -141,7 +141,7 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 				setMiniTypeVar(env, ex, resType);
 			};
 			switch (fn) {
-				MiniVar(fname, __): {
+				MiniVar(fname, __, __): {
 					/*
 					 *
 					 * Here we handle special functions that have special typing rules
@@ -333,10 +333,10 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 			ttv = makeMiniTypeVar(env);
 			switch (ex) {
 				MiniInt(value, __, tyvar): ex.tyvar ::= ttv.id;
-				MiniVar(name, tyvar): ex.tyvar ::= ttv.id;
-				MiniLet(name, value, body, tyvar): ex.tyvar ::= ttv.id;
-				MiniLambda(args, body, tyvar): ex.tyvar ::= ttv.id;
-				MiniCall(fn, args, tyvar): ex.tyvar ::= ttv.id;
+				MiniVar(name, __, tyvar): ex.tyvar ::= ttv.id;
+				MiniLet(name, value, body, __, tyvar): ex.tyvar ::= ttv.id;
+				MiniLambda(args, body, __, tyvar): ex.tyvar ::= ttv.id;
+				MiniCall(fn, args, __, tyvar): ex.tyvar ::= ttv.id;
 
 				MiniDouble(value, __): {};
 				MiniString(value, __): {};
@@ -349,10 +349,10 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 	};
 	switch (ex) {
 		MiniInt(value, __, tyvar): def(tyvar);
-		MiniVar(name, tyvar): def(tyvar);
-		MiniLet(name, value, body, tyvar): def(tyvar);
-		MiniLambda(args, body, tyvar): def(tyvar);
-		MiniCall(fn, args, tyvar): def(tyvar);
+		MiniVar(name, __, tyvar): def(tyvar);
+		MiniLet(name, value, body, __, tyvar): def(tyvar);
+		MiniLambda(args, body, __, tyvar): def(tyvar);
+		MiniCall(fn, args, __, tyvar): def(tyvar);
 
 		MiniDouble(value, __): type;
 		MiniString(value, __): type;

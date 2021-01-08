@@ -4,6 +4,7 @@ import mini/exp/compare;
 import mini/types/type_ast;
 import mini/types/util;
 import mini/types/implicit_polymorphism;
+import mini/util/position;
 
 export {
 	// This does a few desugaring things:
@@ -16,25 +17,25 @@ export {
 partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 	switch (e) {
 		MiniValue(): e;
-		MiniVar(name, tyvar): e;
-		MiniLet(name, value, body, tyvar): {
-			MiniLet(name, partialMiniExp(env, value), partialMiniExp(env, body), tyvar);
+		MiniVar(name, __, tyvar): e;
+		MiniLet(name, value, body, pos, tyvar): {
+			MiniLet(name, partialMiniExp(env, value), partialMiniExp(env, body), pos, tyvar);
 		}
-		MiniLambda(args, body, tyvar): {
-			MiniLambda(args, partialMiniExp(env, body), tyvar);
+		MiniLambda(args, body, pos, tyvar): {
+			MiniLambda(args, partialMiniExp(env, body), pos, tyvar);
 		}
-		MiniCall(ofn, oargs, tyvar): {
+		MiniCall(ofn, oargs, pos, tyvar): {
 			fn = partialMiniExp(env, ofn);
 			args = map(oargs, \a -> partialMiniExp(env, a));
 			def = \ -> {
-				MiniCall(fn, args, tyvar);
+				MiniCall(fn, args, pos, tyvar);
 			};
 			switch (fn) {
-				MiniVar(fname, __): {
+				MiniVar(fname, vpos, __): {
 					if (fname == "__ctcase") {
-						processMiniCase(env, args);
+						processMiniCase(env, vpos, args);
 					} else if (fname == "__switch") {
-						processMiniSwitch(env, args);
+						processMiniSwitch(env, pos, args);
 					} else if (fname == "__ctmaybe") {
 						processMiniMaybe(env, args);
 					} else if (fname == "__compiletime") {
@@ -54,7 +55,7 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 
 // This expands switch cases correctly
 // __ctcase(id, __cons("a", "b"), body)
-processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
+processMiniCase(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp {
 	struct : string = getMiniVar(args[0]);
 	vars : [string] = map(getMiniArray(args[1]), getMiniString);
 	body = partialMiniExp(env, args[2]);
@@ -73,60 +74,61 @@ processMiniCase(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 		*/
 		bodyLet = foldi(vars, body, \i, acc, var -> {
 						if (var != "__") {
-							MiniLet(var, MiniCall(MiniVar(".", 0), [
-								MiniVar("__switchvar", 0), 
+							MiniLet(var, MiniCall(MiniVar(".", -1, 0), [
+								MiniVar("__switchvar", -1, 0), 
 								MiniString(mstructdef.fields[i].name, -1)
-							], 0), acc, 0)
+							], -1, 0), acc, pos, 0)
 						} else acc
 					});
 
-		MiniCall(MiniVar("__case", 0), 
+		MiniCall(MiniVar("__case", -1, 0), 
 			[
 				MiniCall(
-					MiniVar("__caseid", 0),
+					MiniVar("__caseid", -1, 0),
 					[
-						MiniVar(struct, 0),
-					], 0
+						MiniVar(struct, pos, 0),
+					], -1, 0
 				),
 				// This implies a downcast in the body of __switchvar
-				MiniCall(MiniVar("__downcast", 0), [
-					MiniVar("__switchvar", 0),
+				MiniCall(MiniVar("__downcast", -1, 0), [
+					MiniVar("__switchvar", -1, 0),
 					miniType2Exp(MiniTypeCall(struct, [])),
 					bodyLet,
-				], 0),
+				], -1, 0),
 			], 
+			-1,
 			0
 		);
 	} : {
 		// We assume this is a union, which will be expanded by processMiniSwitch
-		MiniCall(MiniVar("__case", 0),
+		MiniCall(MiniVar("__case", -1, 0),
 			[
 				MiniCall(
-					MiniVar("__caseid", 0),
+					MiniVar("__caseid", -1, 0),
 					[
-						MiniVar(struct, 0),
-					], 0
+						MiniVar(struct, -1, 0),
+					], -1, 0
 				),
 				body
-			], 0
+			], -1, 0
 		)
 	}
 }
 
-processMiniSwitch(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
+processMiniSwitch(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp {
 	// The cases
 	cases : [MiniExp] = extractMiniCases([], args[1]);
 
 	// Find and expand all unions
 	expanded = concatA(map(cases, \c -> {
 		switch (c) {
-			MiniCall(fn, fargs, __): {
+			MiniCall(fn, fargs, __, __): {
 				switch (fn) {
-					MiniVar(name, __): {
+					MiniVar(name, __, __): {
 						if (name == "__defaultcase") [c]
 						else {
 							switch (fargs[0]) {
-								MiniCall(fn2, args2, __): {
+								MiniCall(fn2, args2, __, __): {
 									cname = getMiniVar(args2[0]);
 									udef = lookupTree(env.env.unions, cname);
 									switch (udef) {
@@ -135,7 +137,9 @@ processMiniSwitch(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 											map(def.typenames, \tn -> {
 												sname = getMiniTypeName(tn);
 												sbody = fargs[1];
-												MiniCall(MiniVar("__case", 0), [MiniCall(MiniVar("__caseid", 0), [MiniVar(sname, 0)], 0), sbody], 0)
+												MiniCall(MiniVar("__case", -1, 0), [
+													MiniCall(MiniVar("__caseid", -1, 0), [MiniVar(sname, -1, 0)], -1, 0), sbody
+												], -1, 0)
 											});
 										}
 									}
@@ -155,21 +159,21 @@ processMiniSwitch(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 		[
 			args[0],
 			fold(tail(expanded), expanded[0], \acc, c -> {
-				MiniCall(MiniVar("__or", 0), [acc, c], 0)
+				MiniCall(MiniVar("__or", -1, 0), [acc, c], -1, 0)
 			})
 		]
 	} else {
 		args;
 	};
 
-	MiniCall(MiniVar("__switch", 0), nargs, 0)
+	MiniCall(MiniVar("__switch", -1, 0), nargs, pos, 0)
 }
 
 extractMiniCases(acc : [MiniExp], e : MiniExp) -> [MiniExp] {
 	switch (e) {
-		MiniCall(fn, args,__): {
+		MiniCall(fn, args, __, __): {
 			switch (fn) {
-				MiniVar(name, __): {
+				MiniVar(name, __, __): {
 					if (name == "__or") {
 						nacc = extractMiniCases(acc, args[0]);
 						extractMiniCases(nacc, args[1]);
@@ -221,41 +225,43 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 	)
 	*/
 
+	pos = map(args, getMiniPos);
+
 	MiniLet("__switchvar", args[0], 
-		MiniCall(MiniVar("__switch", 0), [
-			MiniCall(MiniVar("__switchvalue", 0), [
-				MiniVar("__switchvar", 0)
-			], 0),
-			MiniCall(MiniVar("__or", 0), [
-				MiniCall(MiniVar("__case", 0), [
-					MiniCall(MiniVar("__caseid", 0), [
-						MiniVar("Some", 0)
-					], 0),
-					MiniCall(MiniVar("__downcast", 0), [
-						MiniVar("__switchvar", 0),
-						MiniCall(MiniVar("__type", 0), [MiniString("Some", -1)], 0),
+		MiniCall(MiniVar("__switch", -1, 0), [
+			MiniCall(MiniVar("__switchvalue", -1, 0), [
+				MiniVar("__switchvar", -1, 0)
+			], -1, 0),
+			MiniCall(MiniVar("__or", -1, 0), [
+				MiniCall(MiniVar("__case", pos[1], 0), [
+					MiniCall(MiniVar("__caseid", -1, 0), [
+						MiniVar("Some", -1, 0)
+					], -1, 0),
+					MiniCall(MiniVar("__downcast", -1, 0), [
+						MiniVar("__switchvar", -1, 0),
+						MiniCall(MiniVar("__type", -1, 0), [MiniString("Some", -1)], -1, 0),
 						MiniLet(
 							"__maybeval",
-							MiniCall(MiniVar(".", 0), [MiniVar("__switchvar", 0), MiniString("value", -1)], 0),
+							MiniCall(MiniVar(".", -1, 0), [MiniVar("__switchvar", -1, 0), MiniString("value", -1)], -1, 0),
 							// Replace "args[0]" with MiniVar("__maybeval")
-							replaceMiniExp(args[1], args[0], MiniVar("__maybeval", 0)),
+							replaceMiniExp(args[1], args[0], MiniVar("__maybeval", -1, 0)),
+							-1,
 							0
 						)
-					], 0),
-
-				], 0),
-				MiniCall(MiniVar("__case", 0), [
-					MiniCall(MiniVar("__caseid", 0), [
-						MiniVar("None", 0)
-					], 0),
-					MiniCall(MiniVar("__downcast", 0), [
-						MiniVar("__switchvar", 0),
-						MiniCall(MiniVar("__type", 0), [MiniString("None", -1)], 0),
+					], -1, 0),
+				], -1, 0),
+				MiniCall(MiniVar("__case", pos[2], 0), [
+					MiniCall(MiniVar("__caseid", -1, 0), [
+						MiniVar("None", -1, 0)
+					], -1, 0),
+					MiniCall(MiniVar("__downcast", -1, 0), [
+						MiniVar("__switchvar", -1, 0),
+						MiniCall(MiniVar("__type", -1, 0), [MiniString("None", -1)], -1, 0),
 						args[2]
-					], 0),
-				], 0)
-			], 0)
-		], 0), 0
+					], -1, 0),
+				], -1, 0)
+			], -1, 0)
+		], -1, 0), pos[0], 0
 	);
 }
 
@@ -267,15 +273,15 @@ replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
 			MiniInt(value, __, tyvar): e;
 			MiniDouble(value, __): e;
 			MiniString(value, __): e;
-			MiniVar(name, tyvar): e;
-			MiniLet(name, value, body, tyvar): {
-				MiniLet(name, rec(value), rec(body), tyvar)
+			MiniVar(name, __, tyvar): e;
+			MiniLet(name, value, body, pos, tyvar): {
+				MiniLet(name, rec(value), rec(body), pos, tyvar)
 			}
-			MiniLambda(args, body, tyvar): {
-				MiniLambda(args, rec(body), tyvar);
+			MiniLambda(args, body, pos, tyvar): {
+				MiniLambda(args, rec(body), pos, tyvar);
 			}
-			MiniCall(fn, args, tyvar): {
-				MiniCall(rec(fn), map(args, rec), tyvar)
+			MiniCall(fn, args, pos, tyvar): {
+				MiniCall(rec(fn), map(args, rec), pos, tyvar)
 			}
 		}
 	}

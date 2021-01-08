@@ -19,9 +19,9 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 		miniTypeVoid;
 	};
 	switch (e) {
-		MiniCall(fn, args, tv): {
+		MiniCall(fn, args, __, tv): {
 			switch (fn) {
-				MiniVar(fname, __): {
+				MiniVar(fname, __, __): {
 					if (fname == "__type") {
 						name = getMiniString(args[0]);
 						if (name == "void") {
@@ -37,7 +37,7 @@ convertMiniExp2Type(e : MiniExp) -> MiniType {
 							if (length(args) == 1) {
 								// Typename<typars>
 								switch (args[0]) {
-									MiniCall(tfn, nargs, __): {
+									MiniCall(tfn, nargs, __, __): {
 										tname = getMiniVar(tfn);
 										targs = map(nargs, convertMiniExp2Type);
 										MiniTypeCall(tname, targs);
@@ -77,9 +77,9 @@ convertMiniExp2Field(e : MiniExp) -> MiniTypeField {
 		MiniTypeField("", false, miniTypeVoid)
 	};
 	switch (e) {
-		MiniCall(fn, args, __): {
+		MiniCall(fn, args, __, __): {
 			switch (fn) {
-				MiniVar(fname, __): {
+				MiniVar(fname, __, __): {
 					if (fname == "__field") {
 						name = getMiniString(args[0]);
 						isMutable = i2b(getMiniInt(args[1]));
@@ -95,7 +95,7 @@ convertMiniExp2Field(e : MiniExp) -> MiniTypeField {
 }
 
 miniType2Exp(t : MiniType) -> MiniExp {
-	ty = \s,a : [MiniType] -> MiniCall(MiniVar("__type", 0), concat([MiniString(s, -1)], map(a, miniType2Exp)), 0);
+	ty = \s,a : [MiniType] -> MiniCall(MiniVar("__type", -1, 0), concat([MiniString(s, -1)], map(a, miniType2Exp)), -1, 0);
 	error = \ -> { 
 		println("Cannot convert type to exp:");
 		println(t);
@@ -109,24 +109,24 @@ miniType2Exp(t : MiniType) -> MiniExp {
 			else error();
 		}
 		MiniTypeFunction(args, returnType): {
-			MiniCall(MiniVar("__fntype", 0), concat([miniType2Exp(returnType)], map(args, miniType2Exp)), 0)
+			MiniCall(MiniVar("__fntype", -1, 0), concat([miniType2Exp(returnType)], map(args, miniType2Exp)), -1, 0)
 		}
 		MiniTypeCall(id, typars): ty(id, typars);
 		MiniTypeVar(id): error(); // TODO: We could probably just go with "auto" here
 		MiniTypePar(id): ty(id, []);
 		MiniTypeRecord(fields): {
-			MiniCall(MiniVar("__recordtype", 0), map(fields, \f -> {
-				MiniCall(MiniVar("__field", 0), [
+			MiniCall(MiniVar("__recordtype", -1, 0), map(fields, \f -> {
+				MiniCall(MiniVar("__field", -1, 0), [
 					MiniString(f.name, -1), MiniInt(b2i(f.isMutable), -1, 0), miniType2Exp(f.type)
-				], 0);
-			}), 0)
+				], -1, 0);
+			}), -1, 0)
 		}
 	}
 }
 
 getMiniVar(m : MiniExp) -> string {
 	switch (m) {
-		MiniVar(s, __): s;
+		MiniVar(s, __, __): s;
 		default: "";
 	}
 }

@@ -8,16 +8,16 @@ export {
 extractMiniDeps(m : MiniExp, acc : Set<string>, locals : Set<string>) -> Set<string> {
 	switch (m) {
 		MiniValue(): acc;
-		MiniVar(name, __): if (containsSet(locals, name)) acc else insertSet(acc, name);
-		MiniLet(name, value, body, __): {
+		MiniVar(name, __, __): if (containsSet(locals, name)) acc else insertSet(acc, name);
+		MiniLet(name, value, body, __, __): {
 			nacc = extractMiniDeps(value, acc, locals);
 			extractMiniDeps(body, nacc, insertSet(locals, name));
 		}
-		MiniLambda(args, body, __): {
+		MiniLambda(args, body, __, __): {
 			nlocals = fold(args, locals, insertSet);
 			extractMiniDeps(body, acc, nlocals);
 		}
-		MiniCall(fn, args, __): {
+		MiniCall(fn, args, __, __): {
 			nacc = extractMiniDeps(fn, acc, locals);
 			fold(args, nacc, \acc1, arg -> {
 				extractMiniDeps(arg, acc1, locals)

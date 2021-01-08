@@ -165,15 +165,15 @@ bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailca
 miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
 	switch (e) {
 		MiniValue(): miniValue2BValue(env, e);
-		MiniVar(name, tv): BVar(name, resolveMiniTypeVar(env, tv));
-		MiniLet(name, value, body, tv): BLet(name, miniExp2BExp(env, value), miniExp2BExp(env, body), resolveMiniTypeVar(env, tv));
-		MiniLambda(args, body, tv): {
+		MiniVar(name, __, tv): BVar(name, resolveMiniTypeVar(env, tv));
+		MiniLet(name, value, body, __, tv): BLet(name, miniExp2BExp(env, value), miniExp2BExp(env, body), resolveMiniTypeVar(env, tv));
+		MiniLambda(args, body, __, tv): {
 			bbody = miniExp2BExp(env, body);
 			BLambda(map(args, \a -> BFunArg(a)), bbody, resolveMiniTypeVar(env, tv));
 		}
-		MiniCall(fn, args, tv): {
+		MiniCall(fn, args, __, tv): {
 			switch (fn) {
-				MiniVar(fname, __): {
+				MiniVar(fname, __, __): {
 					if (fname == "__ifte") {
 						BIf(miniExp2BExp(env, args[0]), miniExp2BExp(env, args[1]), miniExp2BExp(env, args[2]), resolveMiniTypeVar(env, tv));
 					} else if (fname == "__ift") {
@@ -211,9 +211,9 @@ miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
 
 miniExp2BCases(env : MiniTypeEnv, arg : MiniExp) -> [BCase] {
 	switch (arg) {
-		MiniCall(fn, args, tv): {
+		MiniCall(fn, args, __, tv): {
 			switch (fn) {
-				MiniVar(fname, vtv): {
+				MiniVar(fname, __, vtv): {
 					if (fname == "__or") {
 						concat(miniExp2BCases(env, args[0]), miniExp2BCases(env, args[1]));
 					} else if (fname == "__case") {

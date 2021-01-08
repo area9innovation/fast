@@ -261,7 +261,7 @@ processMiniAnnotation(db0 : MiniDb, file : string, annotation : MiniAnnotation) 
 	if (annotation.annotation == "native") {
 		// Register the type
 		etype = switch (annotation.value) {
-			MiniCall(fn, args, tyvar): {
+			MiniCall(fn, args, __, tyvar): {
 				args[1];
 			}
 			default: annotation.value;
@@ -274,8 +274,8 @@ processMiniAnnotation(db0 : MiniDb, file : string, annotation : MiniAnnotation) 
 		mfallback ?? {
 			// OK, we have a fallback, so merge that into
 			combined = switch (annotation.value) {
-				MiniCall(fn, args, tyvar): {
-					MiniCall(fn, arrayPush(args, mfallback), tyvar);
+				MiniCall(fn, args, pos, tyvar): {
+					MiniCall(fn, arrayPush(args, mfallback), pos, tyvar);
 				}
 				default: annotation.value;
 			};

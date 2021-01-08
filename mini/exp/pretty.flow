@@ -10,21 +10,21 @@ miniPretty(m : MiniExp) -> string {
 		MiniInt(value, __, __): i2s(value);
 		MiniDouble(value, __): d2s(value);
 		MiniString(value, __): toString(value);
-		MiniVar(name, __): name;
-		MiniLet(name, value, body, __): blueprint("
+		MiniVar(name, __, __): name;
+		MiniLet(name, value, body, __, __): blueprint("
 			%name% = %value%;
 			%body%",
 			[ "name", name,
 			  "value", miniPretty(value),
 			  "body", miniPretty(body)]
 		);
-		MiniLambda(args, body, __): blueprint("
+		MiniLambda(args, body, __, __): blueprint("
 			\\%args% -> {
 				%body%
 			}",
 			[ "args", strGlue(args, ", "),
 			  "body", miniPretty(body)]
 		);
-		MiniCall(fn, args, __): miniPretty(fn) + "(" + superglue(args, miniPretty, ", ") + ")";
+		MiniCall(fn, args, __, __): miniPretty(fn) + "(" + superglue(args, miniPretty, ", ") + ")";
 	}
 }

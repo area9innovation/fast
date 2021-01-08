@@ -16,35 +16,35 @@ makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter {
 interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 	switch (e) {
 		MiniValue(): e;
-		MiniVar(name, tyvar): {
+		MiniVar(name, __, tyvar): {
 			lookupTreeDef(env.env.declarations, name, e);
 		}
-		MiniLet(name, value, body, tyvar): {
+		MiniLet(name, value, body, __, tyvar): {
 			evalue = interpretMiniExp(env, value);
 			nenv = setMiniInterpreterVar(env, name, evalue);
 			interpretMiniExp(nenv, body);
 		}
-		MiniLambda(args, body, tyvar): {
+		MiniLambda(args, body, __, tyvar): {
 			// TODO: Grab closure?
 			e;
 		}
-		MiniCall(fn, args, tyvar): {
+		MiniCall(fn, args, pos, tyvar): {
 			efn = interpretMiniExp(env, fn);
 			eargs = map(args, \a -> interpretMiniExp(env, a));
-			interpretMiniCall(env, efn, eargs, tyvar)
+			interpretMiniCall(env, efn, eargs, pos, tyvar)
 		}
 	}
 }
 
-interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], tyvar : int) -> MiniExp {
+interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
 	switch (fn) {
-		MiniLambda(largs, body, __): {
+		MiniLambda(largs, body, __, __): {
 			nenv = foldi(largs, env, \i, acc, arg -> {
 				setMiniInterpreterVar(acc, arg, args[i])
 			});
 			interpretMiniExp(nenv, body)
 		}
-		default: MiniCall(fn, args, tyvar);
+		default: MiniCall(fn, args, pos, tyvar);
 	}
 }
 

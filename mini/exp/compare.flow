@@ -26,15 +26,15 @@ isSameMiniExp(a : MiniExp, b : MiniExp) -> bool {
 				default: false;
 			}
 		}
-		MiniVar(aname, __): {
+		MiniVar(aname, __, __): {
 			switch (b) {
-				MiniVar(bname, __): aname == bname;
+				MiniVar(bname, __, __): aname == bname;
 				default: false;
 			}
 		}
-		MiniLet(aname, avalue, abody, __): {
+		MiniLet(aname, avalue, abody, __, __): {
 			switch (b) {
-				MiniLet(bname, bvalue, bbody, __): {
+				MiniLet(bname, bvalue, bbody, __, __): {
 					aname == bname 
 					&& isSameMiniExp(avalue, bvalue)
 					&& isSameMiniExp(abody, bbody)
@@ -42,18 +42,18 @@ isSameMiniExp(a : MiniExp, b : MiniExp) -> bool {
 				default: false;
 			}
 		}
-		MiniLambda(aargs, abody, __): {
+		MiniLambda(aargs, abody, __, __): {
 			switch (b) {
-				MiniLambda(bargs, bbody, __): {
+				MiniLambda(bargs, bbody, __, __): {
 					aargs == bargs
 					&& isSameMiniExp(abody, bbody)
 				}
 				default: false;
 			}
 		}
-		MiniCall(afn, aargs, __): {
+		MiniCall(afn, aargs, __, __): {
 			switch (b) {
-				MiniCall(bfn, bargs, __): {
+				MiniCall(bfn, bargs, __, __): {
 					isSameMiniExp(afn, bfn)
 					&& length(aargs) == length(bargs) 
 					&& forall(mapi(aargs, \i, arg -> isSameMiniExp(arg, bargs[i])), \i->i)

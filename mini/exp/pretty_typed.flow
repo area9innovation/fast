@@ -15,8 +15,8 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 		MiniInt(value, __, tv): i2s(value) + type(tv);
 		MiniDouble(value, __): d2s(value);
 		MiniString(value, __): toString(value);
-		MiniVar(name, tv): name + type(tv);
-		MiniLet(name, value, body, tv): blueprint("
+		MiniVar(name, __, tv): name + type(tv);
+		MiniLet(name, value, body, __, tv): blueprint("
 			%name%%type% = %value%;
 			%body%",
 			[ "name", name,
@@ -24,7 +24,7 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 			  "value", miniPrettyTyped(env, value),
 			  "body", miniPrettyTyped(env, body)]
 		);
-		MiniLambda(args, body, tv): blueprint("
+		MiniLambda(args, body, __, tv): blueprint("
 			\\%args% %type% {
 				%body%
 			}",
@@ -33,10 +33,10 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 			  "type", type(tv),
 		   ]
 		);
-		MiniCall(fn, args, tv): {
+		MiniCall(fn, args, __, tv): {
 			def = \ -> miniPrettyTyped(env, fn) + "(" + superglue(args, \a -> miniPrettyTyped(env, a), ", ") + ")" + type(tv);
 			switch (fn) {
-				MiniVar(fname, __): {
+				MiniVar(fname, __, __): {
 					if (fname == "__ifte") {
 						def();
 					} else if (fname == "__ift") {

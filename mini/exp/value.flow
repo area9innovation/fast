@@ -39,9 +39,9 @@ getMiniArray(m : MiniExp) -> [MiniExp] {
 
 miniArray2list(acc : List<MiniExp>, m : MiniExp) -> List<MiniExp> {
 	switch (m) {
-		MiniCall(fn, args, __): {
+		MiniCall(fn, args, __, __): {
 			switch (fn) {
-				MiniVar(id, __): {
+				MiniVar(id, __, __): {
 					if (id == "nil") acc
 					else if (id == "cons") {
 						miniArray2list(Cons(args[0], acc), args[1])

@@ -11,22 +11,21 @@ getMiniPos(e : MiniExp) -> int {
 		MiniDouble(value, pos): pos;
 		MiniString(value, pos): pos;
 		MiniInt(value, pos, tyvar): pos;
-		MiniVar(name, tyvar): -1;
-		MiniLet(name, value, body, tyvar): -1;
-		MiniLambda(args, body, tyvar): -1;
-		MiniCall(fn, args, tyvar): -1;
+		MiniVar(name, pos, tyvar): pos;
+		MiniLet(name, value, body, pos, tyvar): pos;
+		MiniLambda(args, body, pos, tyvar): -1;
+		MiniCall(fn, args, pos, tyvar): -1;
 	}
 }
-
 
 setMiniPos(e : MiniExp, pos : int) -> MiniExp {
 	switch (e) {
 		MiniDouble(v, __): MiniDouble(v, pos);
 		MiniString(v, __): MiniString(v, pos);
 		MiniInt(value, __, tyvar): MiniInt(value, pos, tyvar);
-		MiniVar(name, tyvar): e;
-		MiniLet(name, value, body, tyvar): e;
-		MiniLambda(args, body, tyvar): e;
-		MiniCall(fn, args, tyvar): e;
+		MiniVar(name, __, tyvar): MiniVar(name, pos, tyvar);
+		MiniLet(name, value, body, __, tyvar): MiniLet(name, value, body, pos, tyvar);
+		MiniLambda(args, body, __, tyvar): MiniLambda(args, body, pos, tyvar);
+		MiniCall(fn, args, __, tyvar): MiniCall(fn, args, pos, tyvar);
 	}
 }

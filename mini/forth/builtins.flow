@@ -244,7 +244,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		Pair("var", \stack -> {
 			// MiniVar(name : string);
 			var = popMStack(stack);
-			pushMStack(var.second, MiniVar(getMiniString(var.first), 0));
+			pushMStack(var.second, MiniVar(getMiniString(var.first), -1, 0));
 		}),
 
 		Pair("let", \stack -> {
@@ -252,7 +252,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			body = popMStack(stack);
 			value = popMStack(body.second);
 			name = popMStack(value.second);
-			pushMStack(name.second, MiniLet(getMiniString(name.first), value.first, body.first, 0));
+			pushMStack(name.second, MiniLet(getMiniString(name.first), value.first, body.first, -1, 0));
 		}),
 
 		Pair("lambda", \stack -> {
@@ -260,7 +260,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			body = popMStack(stack);
 			args = popMStack(body.second);
 			sargs = map(getMiniArray(args.first), getMiniString);
-			pushMStack(args.second, MiniLambda(sargs, body.first, 0));
+			pushMStack(args.second, MiniLambda(sargs, body.first, -1, 0));
 		}),
 
 		Pair("call", \stack -> {
@@ -268,7 +268,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			args = popMStack(stack);
 			fn = popMStack(args.second);
 			cargs = getMiniArray(args.first);
-			pushMStack(fn.second, MiniCall(fn.first, cargs, 0));
+			pushMStack(fn.second, MiniCall(fn.first, cargs, -1, 0));
 		}),
 
 		Pair("fntype", \stack -> {
@@ -278,9 +278,9 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			targs = getMiniArray(args.first);
 
 			pushMStack(args.second, 
-				MiniCall(MiniVar("__fntype", 0), concat(
+				MiniCall(MiniVar("__fntype", -1, 0), concat(
 					[rt.first], targs
-				), 0)
+				), -1, 0)
 			);
 		}),
 
@@ -292,7 +292,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			names = map(fargs, \arg -> {
 				// :(name, type)
 				switch (arg) {
-					MiniCall(__, args, __): {
+					MiniCall(__, args, __, __): {
 						args[0];
 					}
 					default: arg;
@@ -302,7 +302,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			types = map(fargs, \arg -> {
 				// :(name, type)
 				switch (arg) {
-					MiniCall(__, args, __): {
+					MiniCall(__, args, __, __): {
 						args[1];
 					}
 					default: arg;
@@ -310,8 +310,8 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			});
 
 			a2list = \ar -> {
-				fold(ar, MiniCall(MiniVar("nil", 0), [], 0), \acc, a -> {
-					MiniCall(MiniVar("cons", 0), [a, acc], 0)
+				fold(ar, MiniCall(MiniVar("nil", -1, 0), [], -1, 0), \acc, a -> {
+					MiniCall(MiniVar("cons", -1, 0), [a, acc], -1, 0)
 				})
 			}
 
@@ -334,16 +334,16 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		//
 
 		Pair("nil", \stack -> {
-			pushMStack(stack, MiniCall(MiniVar("nil", 0), [], 0));
+			pushMStack(stack, MiniCall(MiniVar("nil", -1, 0), [], -1, 0));
 		}),
 
 		Pair("cons", \stack -> {
 			val = popMStack(stack);
 			list = popMStack(val.second);
 			switch (list.first) {
-				MiniCall(fn, __, __): {
+				MiniCall(fn, __, __, __): {
 					switch (fn) {
-						MiniVar(n, __): {
+						MiniVar(n, __, __): {
 							if (n == "nil" || n == "cons") {
 
 							} else {
@@ -357,15 +357,15 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 					println("Expected list for cons, not " + toString(list.first));
 				}
 			};
-			pushMStack(list.second, MiniCall(MiniVar("cons", 0), [val.first, list.first], 0));
+			pushMStack(list.second, MiniCall(MiniVar("cons", -1, 0), [val.first, list.first], -1, 0));
 		}),
 
 		Pair("isnil", \stack -> {
 			list = popMStack(stack);
 			isnil = switch (list.first) {
-				MiniCall(fn, __, __): {
+				MiniCall(fn, __, __, __): {
 					switch (fn) {
-						MiniVar(n, __): n == "nil";
+						MiniVar(n, __, __): n == "nil";
 						default: false;
 					}
 				}

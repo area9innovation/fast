@@ -5,8 +5,8 @@ export {
 		MiniString(value : string, pos : int);
 
 	MiniExp ::= MiniValue, MiniVar, MiniLet, MiniLambda, MiniCall;
-		MiniVar(name : string, mutable tyvar : int);
-		MiniLet(name : string, value : MiniExp, body : MiniExp, mutable tyvar : int);
-		MiniLambda(args : [string], body : MiniExp, mutable tyvar : int);
-		MiniCall(fn : MiniExp, args : [MiniExp], mutable tyvar : int);
+		MiniVar(name : string, pos : int, mutable tyvar : int);
+		MiniLet(name : string, value : MiniExp, body : MiniExp, pos : int, mutable tyvar : int);
+		MiniLambda(args : [string], body : MiniExp, pos : int, mutable tyvar : int);
+		MiniCall(fn : MiniExp, args : [MiniExp], pos : int, mutable tyvar : int);
 }

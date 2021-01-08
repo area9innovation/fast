@@ -104,6 +104,9 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		ids = getMiniString(id.first);
 
+		// TODO
+		pos = -1;
+
 		args : [Triple<string, bool, MiniExp>] = map(ttypeargs, unwrapStructArg);
 		fields = map(args, \a -> {
 			MiniTypeField(a.first, a.second, convertMiniExp2Type(a.third))
@@ -117,20 +120,21 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		cardinality = length(fields);
 
+
 		lambda = 
 			MiniCall(
-				MiniVar(":", 0),
+				MiniVar(":", pos, 0),
 				[
 					MiniLambda(
 						map(args, \a -> a.first),
-						MiniCall(MiniVar("__construct" + i2s(cardinality), 0), concat(
+						MiniCall(MiniVar("__construct" + i2s(cardinality), pos, 0), concat(
 							[
 								id.first,
 							], map(args, \a -> MiniString(a.first, -1))
-						), 0), 0
+						), pos, 0), pos, 0
 					), 
 					constructorTypeAsExp
-				], 0
+				], pos, 0
 			);
 
 		// TODO: Figure out the number of type-parameters? We could do it at compile time
@@ -170,7 +174,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 
 unwrapStructArg(arg : MiniExp) -> Triple<string, bool, MiniExp> {
 	switch (arg) {
-		MiniCall(fn, args, __): {
+		MiniCall(fn, args, __, __): {
 			name = getMiniString(args[0]);
 			notmutable = i2b(getMiniInt(args[1]));
 			type = args[2];
