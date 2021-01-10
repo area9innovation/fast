@@ -15,6 +15,8 @@ The (simplified) grammar for Gringo is given here:
 		|> term "|" ws term 						$"GChoice"
 		|> term term								$"GSeq"
 		|> "$" ws term								$"GUnquote"
+		|> "<" ws term								$"GLower"
+		|> "#" ws term								$"GError"
 		|> term "*" ws								$"GStar"
 		|> term "+" ws								$"GPlus"
 		|> term "?" ws								$"GOpt"
@@ -32,7 +34,6 @@ See `gringo.gringo` for the real grammar.
 
 We might consider to add:
 
-		| expect term string	// Construct for error recovery?
 		| term(13) ":" type		// Type annotation
 
 ## Semantics

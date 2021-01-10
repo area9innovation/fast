@@ -17,7 +17,7 @@ makeDExpParser(g : GTerm, file : string) -> string {
 
 	main = mainRule(g);
 	blueprint("
-		// Produced by  flowcpp gringo/gringo.flow -- file=%file%.gringo compile=1
+		// Produced by  flowcpp gringo/gringo.flow -- file=%file% compile=1
 		import gringo/compiler/dcode_lib;
 		import string;
 		

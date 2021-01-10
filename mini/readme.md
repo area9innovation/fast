@@ -339,8 +339,15 @@ as the interface to the compile server itself through special commands.
 	x drop ->
 	x dup -> x x
 	x y swap -> y x
-	x y z rot -> y z x
+
+	x y z rot -> y z x   // p231
+	1 2 3 rot2 -> 3 1 2  // p312 or rot rot
+	1 2 3 4 p2134 -> 2 1 3 4 // Some nice permutation
+
 	x y dup2 -> x y x y
+	x y z dup3 -> x y z x y z
+	w x y z dup4 -> w x y z w x y z
+
 
 ### Misc
 

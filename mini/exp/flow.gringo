@@ -71,30 +71,30 @@ exp =
 		id "=" ws exp #";" ws semiexps $"let"
 	 	| id ":" ws type "=" ws exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
 	)
-	|> exp ":=" ws exp $$":=" $"binop"
+	|> exp $$pos ":=" ws exp $$":=" $"binopp"
 	|> exp < ("|>" ws exp $"swap" $"list1" $"call")* // We desugar it here immediately
-	|> exp "||" ws exp $$"||" $"binop"
-	|> exp "&&" ws exp $$"&&" $"binop"
+	|> exp $$pos "||" ws exp $$"||" $"binopp"
+	|> exp $$pos "&&" ws exp $$"&&" $"binopp"
 	|> (
-		exp "==" ws exp $$"==" $"binop"
-		| exp "!=" ws exp $$"!=" $"binop"
-		| exp "<=" ws exp $$"<=" $"binop"
-		| exp "<" ws exp $$"<" $"binop"
-		| exp ">=" ws exp $$">=" $"binop"
-		| exp ">" ws exp $$">" $"binop"
+		exp $$pos "==" ws exp $$"==" $"binopp"
+		| exp $$pos "!=" ws exp $$"!=" $"binopp"
+		| exp $$pos "<=" ws exp $$"<=" $"binopp"
+		| exp $$pos "<" ws exp $$"<" $"binopp"
+		| exp $$pos ">=" ws exp $$">=" $"binopp"
+		| exp $$pos ">" ws exp $$">" $"binopp"
 	)
 	|> exp < (
 			(
-			"+" ws exp $$"+" $"binop"
-			| "-" ws exp $$"-" $"binop"
+			$$pos "+" ws exp $$"+" $"binopp"
+			| $$pos "-" ws exp $$"-" $"binopp"
 			)*
 	)
-	|> (exp "*" ws exp $$"*" $"binop"
-		| exp "/" ws exp $$"/" $"binop"
-		| exp "%" ws exp $$"%" $"binop"
+	|> (exp $$pos "*" ws exp $$"*" $"binopp"
+		| exp $$pos "/" ws exp $$"/" $"binopp"
+		| exp $$pos "%" ws exp $$"%" $"binopp"
 	)
 	// To ensure that ?? does not consider the : as part of the type
-	|> exp (":" ws type $$":" $"binop")+
+	|> exp ($$pos ":" ws type $$":" $"binopp")+
 
 	|> (
 		exp "??" ws <exp $"list2" ":" ws exp $"cons" $$"__ctmaybe" $"var" $"swap" $"call"
@@ -207,7 +207,7 @@ exps = $"nil" exp $"cons" ("," ws exp $"cons")* ("," ws)? | $"nil";
 
 
 string = '"' "#inc" "lude" s path '"' ws   // TODO: AST
-	| '"' $$pos $(onechar_)* '"' ws $"setpos"
+	| $$pos '"' $(onechar_)* '"' ws $"setpos"
 // 	| $"nil" (singlestring $"cons")+ $"concatStrings"
 	;
 

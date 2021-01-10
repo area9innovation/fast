@@ -52,7 +52,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			pushMStack(ns1, elm1.first);
 		}),
 
-		// w x y z dup3 -> w x y z w x y z
+		// w x y z dup4 -> w x y z w x y z
 		Pair("dup4", \stack -> {
 			elm1 = popMStack(stack);
 			elm2 = popMStack(elm1.second);
@@ -72,6 +72,28 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			ns0 = pushMStack(x.second, y.first);
 			ns1 = pushMStack(ns0, z.first);
 			pushMStack(ns1, x.first);
+		}),
+
+		// 1 2 3 rot -> 3 1 2
+		Pair("rot2", \stack -> {
+			z = popMStack(stack);
+			y = popMStack(z.second);
+			x = popMStack(y.second);
+			ns0 = pushMStack(x.second, z.first);
+			ns1 = pushMStack(ns0, x.first);
+			pushMStack(ns1, y.first);
+		}),
+
+		// 1 2 3 4 p2134 -> 2 1 3 4
+		Pair("p2134", \stack -> {
+			elm4 = popMStack(stack);
+			elm3 = popMStack(elm4.second);
+			elm2 = popMStack(elm3.second);
+			elm1 = popMStack(elm2.second);
+			ns0 = pushMStack(elm1.second, elm2.first);
+			ns1 = pushMStack(ns0, elm1.first);
+			ns2 = pushMStack(ns1, elm3.first);
+			pushMStack(ns2, elm4.first);
 		}),
 
 		// x y swap -> y x

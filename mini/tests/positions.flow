@@ -1,13 +1,12 @@
-
+// Constants
 i = 1;
 d = 1.0;
 s = "1";
-
 t = true;
 f = false;
+h = 0xdead;
 
 v = i;
-h = 0xdead;
 
 e0 = !false;
 e1 = -1;
@@ -24,4 +23,21 @@ s = switch(n) {
 	None(): 0;
 	default: 1;
 };
+
+o = true || false;
+a = true && false;
+ceq = 0 == 0;
+cneq = 0 != 0;
+clt = 0 < 0;
+cle = 0 <= 0;
+cgt = 0 > 0;
+cge = 0 >= 0;
+
+plus = 1 + 1;
+minus = 1 - 1;
+mult = 1 * 1;
+divide = 1 / 1;
+modulo = 1 % 1;
+
+ty = 1 : int;
 

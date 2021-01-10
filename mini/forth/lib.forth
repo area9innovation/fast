@@ -25,10 +25,14 @@ def list2 swap nil swap cons swap cons
 def unop var swap list1 call setpos
 
 // <exp> <exp> <string>  -> <call>(var(string), [exp, exp])
-def binop var rot rot list2 call
+def binop var rot2 list2 call
+
+// <exp> <pos> <exp> <string> -> <call>(var(string), [exp, exp], pos)
+def binopp p2134 binop setpos
+// def binopp var rot setpos rot2 list2 call
 
 // Type name only
 def type0 "__type" var swap list1 call
 
 // Type with 1 type parameter
-def type1 "__type" var rot rot swap list2 call
+def type1 "__type" var rot2 swap list2 call
