@@ -28,6 +28,6 @@ export {
 		tyvar2Id : ref Tree<int, string>,
 
 		// To report errors
-		onError : (string) -> void,
+		onError : (name : string, pos : int, error : string) -> void,
 	);
 }

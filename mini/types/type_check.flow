@@ -54,7 +54,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 			// OK, find the type of this
 			typeInferenceMiniDeclaration(acc, id, recursive, mfn);
 		} : {
-			println("Unknown name when type checking " + id);
+			ast.onError(ast, id, -1, "Unknown name when type checking " + id);
 			acc;
 		}
 	});
@@ -72,7 +72,9 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		});
 	};
 
-	cenv = MiniTypeEnv(tenv2 with onError = \e -> println("<unknown>: " + e));
+	cenv = MiniTypeEnv(tenv2 with onError = {
+		\name, pos, e -> ast.onError(ast, name, pos, "<unknown>: " + e)
+	});
 
 	// OK, resolve the constraints
 	resTypes = coalesceMiniTypeVars(cenv);
@@ -108,7 +110,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	nast = fold(order, past, \acc, id -> {
 		mfn = lookupTree(acc.declarations, id);
 		mfn ?? {
-			bdecl = miniExp2BExp(cenv, mfn);
+			bdecl = miniExp2BExp(cenv, id, mfn);
 
 			// This is the pipeline of optimizations:
 			un = unfoldBExp(bdecl);

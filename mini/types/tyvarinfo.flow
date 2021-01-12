@@ -1,20 +1,14 @@
 import mini/types/typeenv;
 
 export {
-	findMiniIdInfo(env : MiniTypeEnv, id : string) -> string;
-
+	// What id does this tyvar correspond to?
 	findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string;
-}
-
-findMiniIdInfo(env : MiniTypeEnv, id : string) -> string {
-	// TODO: Keep track of line numbers and positions?
-	lookupTreeDef(env.ast.declarationFile, id, "<unknown>") + ": " + id + ": ";
 }
 
 findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string {
 	mid = treeIntervalSearch(^(env.tyvar2Id), tyvar);
 
 	mid ?? {
-		findMiniIdInfo(env, mid)
+		mid
 	} : ("a" + i2s(tyvar) + ": ");
 }

@@ -23,7 +23,8 @@ constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType
 	} else if (lhs.id == rhs.id) {
 		// TODO: Figure out how the type-pars align with each other
 		if (!env.ast.options.implicitTypePars && length(lhs.typars) != length(rhs.typars)) {
-			env.onError("Expected typars to match " + miniType2string(lhs) + " vs  " + miniType2string(rhs));
+			// TODO: Error
+			env.onError("", -1, "Expected typars to match " + miniType2string(lhs) + " vs  " + miniType2string(rhs));
 		} else {
 			iteri(lhs.typars, \i, larg -> {
 				if (i < length(rhs.typars)) {
@@ -36,7 +37,8 @@ constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType
 		munion ?? {
 			rec(env, lhs, munion);
 		} : {
-			env.onError("Type " + lhs.id + " is not part of type " + rhs.id);
+			// TODO: Error
+			env.onError("", -1, "Type " + lhs.id + " is not part of type " + rhs.id);
 		}
 	}
 }

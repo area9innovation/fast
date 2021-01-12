@@ -25,15 +25,11 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ref makeTree(),
 		ref makeSet(),
 		ref makeTree(),
-		\e -> println(e)
+		\name, pos, e -> ast.onError(ast, name, pos, e)
 	);
 }
 
-typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
-	env0 = MiniTypeEnv(env with onError = \e -> {
-		println(findMiniIdInfo(env, id) + e)
-	});
-
+typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
 	inferredType = if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
 		type = makeMiniTypeVar(env0);
@@ -48,7 +44,7 @@ typeInferenceMiniDeclaration(env : MiniTypeEnv, id : string, recursive : bool, e
 	};
 
 	// Check if we have a forward declaration, 
-	mforward = lookupTree(env.ast.types, id);
+	mforward = lookupTree(env0.ast.types, id);
 	mforward ?? {
 		// When we do, then constraint it, but keep it as the type of this id
 		constrainMiniType(env0, inferredType, mforward) ;
@@ -103,7 +99,8 @@ typeInferenceMini(env : MiniTypeEnv, ex : MiniExp) -> MiniType {
 				mglobal = lookupTree(env.ast.types, name);
 				switch (mglobal) {
 					None(): {
-						env.onError("Type inference: Does not know var " + name);
+						// TODO: Error
+						env.onError("", -1, "Type inference: Does not know var " + name);
 						makeMiniTypeVar(env);
 					}
 					Some(t): t;
@@ -211,7 +208,8 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 		// println("Constrain " + debugMiniType(env, lhs) + " <: " + debugMiniType(env, rhs));
 
 		error = \ -> {
-			env.onError("Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
+			// TODO: Error
+			env.onError("", -1, "Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
 		};
 		right = \ -> {
 			switch (rhs) {
@@ -297,11 +295,13 @@ constrainMiniType(env : MiniTypeEnv, lhs : MiniType, rhs : MiniType) -> void {
 							lfield = find(lfields, \lf : MiniTypeField -> lf.name == fs1.name);
 							lfield ?? {
 								if (lfield.isMutable && !fs1.isMutable) {
-									env.onError("Field " + fs1.name + " should be mutable in " + miniType2string(rhs));
+									// TODO: Error
+									env.onError("", -1, "Field " + fs1.name + " should be mutable in " + miniType2string(rhs));
 								} 
 								constrainMiniType(env, lfield.type, fs1.type);
 							} : {
-								env.onError("Expected field " + fs1.name + " in " + miniType2string(lhs));
+								// TODO: Error
+								env.onError("", -1, "Expected field " + fs1.name + " in " + miniType2string(lhs));
 							}
 						});
 						/*

@@ -13,8 +13,8 @@ import ds/arrayutils;
 export {
 	miniAst2BProgram(ast : MiniAst) -> BProgram;
 
-	// This lowers our program to BExp with types
-	miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp;
+	// This lowers our program to BExp with types. The name is used for error reporting
+	miniExp2BExp(env : MiniTypeEnv, name : string, e : MiniExp) -> BExp;
 
 	// And then lower to statement-based
 	bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration;
@@ -162,67 +162,87 @@ bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailca
 	}
 }
 
-miniExp2BExp(env : MiniTypeEnv, e : MiniExp) -> BExp {
+miniExp2BExp(env : MiniTypeEnv, ename : string, e : MiniExp) -> BExp {
 	switch (e) {
-		MiniValue(): miniValue2BValue(env, e);
-		MiniVar(name, __, tv): BVar(name, resolveMiniTypeVar(env, tv));
-		MiniLet(name, value, body, __, tv): BLet(name, miniExp2BExp(env, value), miniExp2BExp(env, body), resolveMiniTypeVar(env, tv));
-		MiniLambda(args, body, __, tv): {
-			bbody = miniExp2BExp(env, body);
-			BLambda(map(args, \a -> BFunArg(a)), bbody, resolveMiniTypeVar(env, tv));
+		MiniValue(): miniValue2BValue(env, ename, e);
+		MiniVar(name, pos, tv): BVar(name, resolveMiniTypeVar(env, ename, pos, tv));
+		MiniLet(name, value, body, pos, tv): BLet(name, 
+			miniExp2BExp(env, ename, value), 
+			miniExp2BExp(env, ename, body), 
+			resolveMiniTypeVar(env, ename, pos, tv)
+		);
+		MiniLambda(args, body, pos, tv): {
+			bbody = miniExp2BExp(env, ename, body);
+			BLambda(map(args, \a -> BFunArg(a)), bbody, resolveMiniTypeVar(env, ename, pos, tv));
 		}
-		MiniCall(fn, args, __, tv): {
+		MiniCall(fn, args, pos, tv): {
 			switch (fn) {
 				MiniVar(fname, __, __): {
 					if (fname == "__ifte") {
-						BIf(miniExp2BExp(env, args[0]), miniExp2BExp(env, args[1]), miniExp2BExp(env, args[2]), resolveMiniTypeVar(env, tv));
+						BIf(miniExp2BExp(env, ename, args[0]), 
+							miniExp2BExp(env, ename, args[1]), 
+							miniExp2BExp(env, ename, args[2]), 
+							resolveMiniTypeVar(env, ename, pos, tv)
+						);
 					} else if (fname == "__ift") {
-						BIf(miniExp2BExp(env, args[0]), miniExp2BExp(env, args[1]), BSequence([], resolveMiniTypeVar(env, tv)), resolveMiniTypeVar(env, tv));
+						BIf(miniExp2BExp(env, ename, args[0]), 
+							miniExp2BExp(env, ename, args[1]), 
+							BSequence([], resolveMiniTypeVar(env, ename, pos, tv)), 
+							resolveMiniTypeVar(env, ename, pos, tv)
+						);
 					} else if (fname == ";") {
 						n = length(args);
 						if (n == 1) {
-							miniExp2BExp(env, args[0]);
+							miniExp2BExp(env, ename, args[0]);
 						} else {
-							BSequence(map(args, \a -> miniExp2BExp(env, a)), resolveMiniTypeVar(env, tv));
+							BSequence(map(args, \a -> miniExp2BExp(env, ename, a)), resolveMiniTypeVar(env, ename, pos, tv));
 						}
 					} else if (fname == "__switch") {
 						BSwitch(
-							miniExp2BExp(env, args[0]),
-							miniExp2BCases(env, args[1]),
-							resolveMiniTypeVar(env, tv)
+							miniExp2BExp(env, ename, args[0]),
+							miniExp2BCases(env, ename, args[1]),
+							resolveMiniTypeVar(env, ename, pos, tv)
 						);
 					} else {
-						BCall(miniExp2BExp(env, fn), map(args, \a -> miniExp2BExp(env, a)), resolveMiniTypeVar(env, tv));
+						BCall(
+							miniExp2BExp(env, ename, fn), 
+							map(args, \a -> miniExp2BExp(env, ename, a)), 
+							resolveMiniTypeVar(env, ename, pos, tv)
+						);
 					}
 				}
-				default: BCall(miniExp2BExp(env, fn), map(args, \a -> miniExp2BExp(env, a)), resolveMiniTypeVar(env, tv));
+				default: BCall(
+					miniExp2BExp(env, ename, fn), 
+					map(args, \a -> miniExp2BExp(env, ename, a)), 
+					resolveMiniTypeVar(env, ename, pos, tv)
+				);
 			}
 		}
 	}
 }
 
-miniValue2BValue(env : MiniTypeEnv, v : MiniValue) -> BValue {
+miniValue2BValue(env : MiniTypeEnv, name : string, v : MiniValue) -> BValue {
 	switch (v) {
-		MiniInt(value, __, tv): BInt(value, resolveMiniTypeVar(env, tv));
+		MiniInt(value, pos, tv): BInt(value, resolveMiniTypeVar(env, name, pos, tv));
 		MiniDouble(value, __): BDouble(value);
 		MiniString(value, __): BString(value);
 	}
 }
 
-miniExp2BCases(env : MiniTypeEnv, arg : MiniExp) -> [BCase] {
+miniExp2BCases(env : MiniTypeEnv, name : string, arg : MiniExp) -> [BCase] {
 	switch (arg) {
 		MiniCall(fn, args, __, tv): {
 			switch (fn) {
-				MiniVar(fname, __, vtv): {
+				MiniVar(fname, pos, vtv): {
 					if (fname == "__or") {
-						concat(miniExp2BCases(env, args[0]), miniExp2BCases(env, args[1]));
+						concat(miniExp2BCases(env, name, args[0]), miniExp2BCases(env, name, args[1]));
 					} else if (fname == "__case") {
-						case = miniExp2BExp(env, args[0]);
-						body = miniExp2BExp(env, args[1]);
+						case = miniExp2BExp(env, name, args[0]);
+						body = miniExp2BExp(env, name, args[1]);
 						[BCase(case, body)];
 					} else if (fname == "__defaultcase") {
-						body = miniExp2BExp(env, args[0]);
-						[BCase(BVar("default", resolveMiniTypeVar(env, vtv)), body)];
+						body = miniExp2BExp(env, name, args[0]);
+						[BCase(BVar("default", resolveMiniTypeVar(env, name, pos, vtv)), body)];
 					} else {
 						println("TODO: Handle this case 1");
 						println(arg);

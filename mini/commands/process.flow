@@ -126,8 +126,9 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 						db0;
 					} else {
 						// In a new file. Hm, we have a conflict
-						println(deffile + ": Defines " + id);
-						println(file + ": ...redefined here");
+						// TODO: Error
+						db.program.onError(db.program, id, -1, "Defines " + id);
+						db.program.onError(db.program, "", -1, file + ": ...redefined here");
 						db0;
 					}
 				} else {

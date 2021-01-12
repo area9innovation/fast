@@ -5,10 +5,10 @@ import mini/types/builtin;
 
 export {
 	// Lookup the type
-	resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType;
+	resolveMiniTypeVar(env : MiniTypeEnv, name : string, pos : int,tyvarId : int) -> MiniType;
 }
 
-resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType {
+resolveMiniTypeVar(env : MiniTypeEnv, name : string, pos : int, tyvarId : int) -> MiniType {
 	mtype : Maybe<MiniType> = lookupTree(^(env.tyvars), tyvarId);
 
 	mtype ?? {
@@ -20,7 +20,7 @@ resolveMiniTypeVar(env : MiniTypeEnv, tyvarId : int) -> MiniType {
 			lower = lookupMultimap(^(env.tyvarLowerBounds), tyvarId);
 			upper = lookupMultimap(^(env.tyvarUpperBounds), tyvarId);
 			fn = \l -> "{" + superglue(set2array(l), miniType2string, ", ") + "}";
-			env.onError("Could not resolve tyvar " + i2s(tyvarId) + " with " + fn(lower) + ".." + fn(upper));
+			env.onError(name, pos, "Could not resolve tyvar " + i2s(tyvarId) + " with " + fn(lower) + ".." + fn(upper));
 			MiniTypeVar(tyvarId);
 		}
 	};

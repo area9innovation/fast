@@ -8,7 +8,7 @@ export {
 	ResTypeEnv(
 		types : ref Tree<int, ResType>,
 		getBounds : (int) -> Pair<ResType, ResType>,
-		onError : (string) -> void
+		onError : (string, int, string) -> void
 	);
 }
 
@@ -103,12 +103,14 @@ unifyResTypes(env : ResTypeEnv, recTyvars : Set<int>, lower : ResType, upper : R
 					ResTypePar(uid): {
 						if (id == uid) lower
 						else {
-							env.onError("Expected type par " + id + " and " + uid + " to match");
+							// TODO: Error
+							env.onError("", -1, "Expected type par " + id + " and " + uid + " to match");
 							lower;
 						}
 					}
 					default: {
-						env.onError("Expected type par " + id + ", got " + resType2string(upper)); 
+						// TODO: Error
+						env.onError("", -1, "Expected type par " + id + ", got " + resType2string(upper)); 
 						lower;
 					}
 				}
