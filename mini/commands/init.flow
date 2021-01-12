@@ -21,9 +21,16 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		makeTree(), 
 		MiniDependent(makeTree(), makeTree()),
 		makeMiniFileCache(),
-		MiniAst(makeTree(), makeTree(), makeTree(), makeTree(), MiniDependent(makeTree(), makeTree()), 
+		MiniAst(
+			makeTree(), makeTree(), makeTree(), makeTree(), MiniDependent(makeTree(), makeTree()), 
 			getBuiltinMiniTypes(), makeTree(), makeTree(), MiniSubtypeGraph(makeSimpleGraph()),
-			makeTree(), getBuiltinPureNames(), options),
+			makeTree(), getBuiltinPureNames(), options,
+			\env, name, pos, error -> {
+				file = lookupTreeDef(env.declarationFile, name, "<unknown>");
+				// TODO: Resolve position to line+col
+				onError(file + (if (pos != -1) ":" + i2s(pos) else "") + ": " + name + ": " + error);
+			}
+		),
 		makeMiniForth(),
 		makeTree(),
 		makeTree(),

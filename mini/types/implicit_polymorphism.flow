@@ -26,7 +26,8 @@ liftImplicitStructs(env : MiniAst) -> MiniAst {
 			switch (tn) {
 				MiniTypeCall(id, tp): {
 					if (length(tp) > arity) {
-						println("Missing type parameter in union '" + un.name + "' due to " + miniType2string(tn));
+						// TODO: Find the position of the union
+						env.onError(env, un.name, -1, "Missing type parameter in union '" + un.name + "' due to " + miniType2string(tn));
 					}
 					set(acc2, id, max(length(tp), arity));
 				}
@@ -39,7 +40,8 @@ liftImplicitStructs(env : MiniAst) -> MiniAst {
 	traverseInOrder(env.unions, \name, union -> {
 		arity = lookupTreeDef(nameArity, name, 0);
 		if (arity != length(union.typars)) {
-			println("Union '" + name + "' expects " + i2s(length(union.typars)) + " type pars, but is used in some union with " + i2s(arity));
+			// TODO: Find the position of the union
+			env.onError(env, name, -1, "Union '" + name + "' expects " + i2s(length(union.typars)) + " type pars, but is used in some union with " + i2s(arity));
 		}
 	});
 
@@ -53,7 +55,8 @@ liftImplicitStructs(env : MiniAst) -> MiniAst {
 		usedArity = lookupTreeDef(nameArity, name, ntypars);
 		arity = max(usedArity, ntypars);
 		if (usedArity < arity) {
-			println("Struct '" + name + "' is referenced in a union with too few type parameters");
+			// TODO: Find position of the struct
+			env.onError(env, name, -1, "Struct '" + name + "' is referenced in a union with too few type parameters");
 			// TODO: Include the name of that union
 		}
 		if (length(struct.typars) < arity) {
@@ -83,8 +86,9 @@ resolveImplicitTypePars(env : MiniAst, t : MiniType) -> MiniType {
 			mstruct = lookupTree(env.structs, id);
 			fix = \tps -> {
 				if (length(typars) > length(tps)) {
-					println("Too many type parameters for " + id);
-				}
+					// TODO: Find position of the struct
+					env.onError(env, id, -1, "Too many type parameters for " + id);
+				};
 				mapi(tps, \i, tp0 -> {
 					tp = elementAt(typars, i, {
 						// TODO: When we make implicit typepars, we should probably convert them to "auto"
@@ -107,7 +111,7 @@ resolveImplicitTypePars(env : MiniAst, t : MiniType) -> MiniType {
 				munion = lookupTree(env.unions, id);
 				switch (munion) {
 					None(): {
-						println("Unknown typename " + id);
+						env.onError(env, id, -1, "Unknown typename " + id);
 						t;
 					}
 					Some(union): {

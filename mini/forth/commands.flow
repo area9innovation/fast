@@ -89,8 +89,9 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			name.second with
 			program = MiniAst(ast with 
 				unions = setTree(ast.unions, names, union), 
-				subtypeGraph = updateMiniUnionSubGraph(ast.subtypeGraph, union)
-			)
+				subtypeGraph = updateMiniUnionSubGraph(ast.subtypeGraph, union),
+				declarationFile = setTree(ast.declarationFile, names, file),
+			),
 		);
 	} else if (command == "structdef") {
 		// 	<id> <args> structdef	- push a constructor for a struct type on the stack
@@ -144,7 +145,10 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		// TODO: This might be wrong in incremental?
 		db2 = MiniDb(
 				id.second with
-				program = MiniAst(id.second.program with structs = setTree(id.second.program.structs, ids, struct))
+				program = MiniAst(id.second.program with 
+					structs = setTree(id.second.program.structs, ids, struct),
+					declarationFile = setTree(id.second.program.declarationFile, ids, file),
+				)
 			);
 		if (isDebuggingId(db2.program, ids)) {
 			println(file + ": Parser defines struct " + miniStruct2string(struct));

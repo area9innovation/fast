@@ -48,6 +48,9 @@ export {
 
 		// What compile options are we using?
 		options : MiniOptions,
+
+		// On error reporting
+		onError : (env : MiniAst, name : string, pos : int, error : string) -> void
 	);
 
 	MiniSubtypeGraph(

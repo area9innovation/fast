@@ -133,6 +133,8 @@ the development, we have defined some milestones.
 - Parse all of flow syntax. Missing:
 
   - string-include, quoting, string-escapes in AST
+  - types for lambda args
+  - positions on if, types, ...
   - require, forbid
   - Optimizations possible in generated Gringo parser: 
     - Use && instead of nested ifs
@@ -216,6 +218,7 @@ We do not support multi-strings:'
 
 TODO:
 - Add a mode which adds the missing semi-colons based on the error-recovery in the grammar
+  Consider whether this should be a "warning" instead based on a lint-style flag?
 
 ## Backends
 
