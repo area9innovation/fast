@@ -120,6 +120,7 @@ the development, we have defined some milestones.
 	- Specific todos for test cases:
 	- 1: Generalize unbound tyvars to typars
 	  maybeBind has wrong type.
+	- lambdaarg does not capture type parameters defined in lambdas!
     - 5, 7: intersection typing
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore

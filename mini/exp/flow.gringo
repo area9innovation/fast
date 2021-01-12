@@ -63,13 +63,13 @@ functionOrStruct =
 
 	returnType = "->" ws type;
 
-vardecl = id ':' ws type '=' ws exp ';'? ws  $"swap" $$":" $"binop" $"define"
+vardecl = id ':' ws type '=' ws exp ';'? ws $"swap" $$":" $"binop" $"define"
 	| id ':' ws type ';'? ws $"typedef";
 
 exp = 
 	(
-		id "=" ws exp #";" ws semiexps $"let"
-	 	| id ":" ws type "=" ws exp ";" ws $"swap" $$":" $"binop" semiexps $"let"
+		$$pos id "=" ws exp #";" ws semiexps $"let" $"setpos"
+	 	| $$pos id ":" ws type "=" ws exp ";" ws $"swap" $$":" $"binop" semiexps $"let" $"setpos"
 	)
 	|> exp $$pos ":=" ws exp $$":=" $"binopp"
 	|> exp < ("|>" ws exp $"swap" $"list1" $"call")* // We desugar it here immediately
@@ -97,19 +97,19 @@ exp =
 	|> exp ($$pos ":" ws type $$":" $"binopp")+
 
 	|> (
-		exp "??" ws <exp $"list2" ":" ws exp $"cons" $$"__ctmaybe" $"var" $"swap" $"call"
+		exp $$pos $"swap" "??" ws <exp $"list2" ":" ws exp $"cons" $$"__ctmaybe" $"var" $"swap" $"call" $"setpos"
 	)
 	|> (
 		$$pos '!' ws exp $$"!" $"unop"
 		| $$pos '-' ws exp $$"__neg" $"unop"
-		| backslash ws lambdaargs "->" ws exp "" $"lambda"	// The "" makes right-recursion disappear
+		| $$pos backslash ws lambdaargs "->" ws exp "" $"lambda" $"setpos"	// The "" makes right-recursion disappear
 		| exp 
 			(
-			"(" ws exps ")" ws $"call"
-			| '(' ws exp "with" s $"list2" fields $"cons" ')' ws $$"__with" $"var" $"swap" $"call"
-			| "." ws id $"list2" "::=" ws exp $"cons" $$"__mutassign" $"swap" $"call"
-			| "." ws id $$"." $"binop"
-			| "[" ws exp "]" ws $$"__index" $"binop"
+			$$pos $"swap" "(" ws exps ")" ws $"call" $"setpos"
+			| $$pos $"swap" '(' ws exp "with" s $"list2" fields $"cons" ')' ws $$"__with" $"var" $"swap" $"call" $"setpos"
+			| $$pos $"swap" "." ws id $"list2" "::=" ws exp $"cons" $$"__mutassign" $"swap" $"call" $"setpos"
+			| $$pos "." ws id $$"." $"binopp"
+			| $$pos "[" ws exp "]" ws $$"__index" $"binopp"
 			)*
 	)
 	|> $$pos '^' ws exp $$"__deref" $"unop"

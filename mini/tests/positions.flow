@@ -1,4 +1,4 @@
-// Constants
+/*// Constants
 i = 1;
 d = 1.0;
 s = "1";
@@ -14,12 +14,15 @@ r = ref 0;
 d = ^r;
 a0 = [];
 a1 = [1];
-
+*/
 None();
+Some(value : ?);
+/*
+Maybe<?> ::= None, Some<?>;
 
 n = None();
 
-s = switch(n) {
+s0 = switch(n) {
 	None(): 0;
 	default: 1;
 };
@@ -41,3 +44,19 @@ modulo = 1 % 1;
 
 ty = 1 : int;
 
+a = {b = 1; b};
+at = {b : int = 1; b};
+mm = n ?? 0 : 1;
+
+l0 = \ -> 0;
+l1 = \__ : int -> 0;
+
+c0 = l0();
+
+d0 = { r = ref 0; r := 1; 0 };
+*/
+
+s = Some(1);
+f0 = s.value;
+
+i0 = [0][0];
