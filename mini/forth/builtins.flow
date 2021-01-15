@@ -281,8 +281,10 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 			// 	MiniLambda(args : [string], body : MiniExp);
 			body = popMStack(stack);
 			args = popMStack(body.second);
+			posp = popMStack(args.second);
 			sargs = map(getMiniArray(args.first), getMiniString);
-			pushMStack(args.second, MiniLambda(sargs, body.first, -1, 0));
+			pos = getMiniInt(posp.first);
+			pushMStack(posp.second, MiniLambda(sargs, body.first, pos, 0));
 		}),
 
 		Pair("call", \stack -> {
@@ -307,7 +309,7 @@ getForthBuiltins() -> Tree<string, (forth : MiniForth) -> MiniForth> {
 		}),
 
 		Pair("splitargs", \stack -> {
-			// [ a: type1, b : type2]  --> [a, b]  [ type1, type]
+			// [ a: type1, b : type2]  --> [a, b]  [ type1, type ]
 			funargs = popMStack(stack);
 			fargs = getMiniArray(funargs.first);
 

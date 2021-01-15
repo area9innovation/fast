@@ -39,12 +39,12 @@ functionOrStruct =
 	| $$pos id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
 
 	// This form makes both a forward-type declaration as well as the definition
-	| id '(' ws $"dup" funargs ')' ws $"splitargs" returnType $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
-	| id '(' ws $"dup" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
-	| id '(' ws $"dup" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" exp ';'? ws $"lambda" $"define"
+	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" returnType $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
+	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
+	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" exp ';'? ws $"lambda" $"define"
 
 	// When we only have names
-	| id '(' ws names ')' ws exp ';'? ws $"lambda" $"define"
+	| id $$pos '(' ws names ')' ws exp ';'? ws $"lambda" $"define"
 
 	// Forward type declarations
 	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
@@ -102,7 +102,7 @@ exp =
 	|> (
 		$$pos '!' ws exp $$"!" $"unop"
 		| $$pos '-' ws exp $$"__neg" $"unop"
-		| $$pos backslash ws lambdaargs "->" ws exp "" $"lambda" $"setpos"	// The "" makes right-recursion disappear
+		| $$pos backslash ws lambdaargs "->" ws exp "" $"lambda" // The "" makes right-recursion disappear
 		| exp 
 			(
 			$$pos $"swap" "(" ws exps ")" ws $"call" $"setpos"
