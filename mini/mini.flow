@@ -112,3 +112,10 @@ parseNumberBound(s : string) -> Pair<int, int> {
 		Pair(s2i(s), s2i(s))
 	} else Pair(0, 0)
 }
+
+printHelp() -> void {
+	println("mini file=filename.flow");
+	println("   debug=1                     Follow the compilation process for all ids");
+	println("   debug=id1,id2               Follow the compilation process for id1, id2");
+	println("   stages=parse,ct,type,lower  With debug, follow the compilation process for these stages");
+}

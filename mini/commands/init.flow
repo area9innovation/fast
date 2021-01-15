@@ -9,9 +9,21 @@ export {
 
 makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 	strict = isUrlParameterTrue("strict");
+	stagestr = getUrlParameterDef("stages", "parse,ct,type,lower");
+	stages = fold(strSplit(stagestr, ","), makeSet(), \acc, stage -> {
+		if (stage == "parse") insertSet(acc, StageParse())
+		else if (stage == "ct") insertSet(acc, StageCompileTime())
+		else if (stage == "type") insertSet(acc, StageTypeInference())
+		else if (stage == "lower") insertSet(acc, StageLower())
+		else {
+			println("Unknown stage: " + stage);
+			acc;
+		}
+	});
 	options = MiniOptions(
 		s2i(getUrlParameter("verbose")), 
 		buildSet(strSplit(getUrlParameter("debug"), ",")),
+		stages,
 		// Implicit type pars
 		!strict
 	);

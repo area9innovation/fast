@@ -76,8 +76,17 @@ export {
 		verbose : int,
 		// Display compile phases for this id
 		debugIds : Set<string>,
+		// What phases are we debugging?
+		debugStages : Set<CompileStage>,
 		// Are implicit type-parameters OK?
 		implicitTypePars : bool,
 		// TODO: Add #defines
 	);
+
+	CompileStage ::= StageParse, StageCompileTime, StageTypeInference, StageLower;
+		StageParse();
+		StageCompileTime();
+		StageTypeInference();
+		// Lower to BExp and optimize
+		StageLower();
 }
