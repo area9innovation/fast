@@ -6,7 +6,9 @@ import mini/types/type_ast;
 import mini/types/subtype;
 import mini/types/polymorphism;
 import mini/types/debug;
+import mini/exp/pretty;
 import mini/util/position;
+import mini/util/trace;
 import ds/treeutils;
 
 export {
@@ -33,6 +35,9 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 
 typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
 	pos = getMiniPos(ex);
+	if (isDebuggingId(env0.ast, id) && pos == -1) {
+		println("Could not find pos for " + miniPretty(ex));
+	}
 	inferredType = if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
 		type = makeMiniTypeVar(env0);
@@ -64,17 +69,16 @@ typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, 
 		env0
 	} : {
 		// No forward, so set the type
-		setMiniTypeDeclaration(env0, id, inferredType);
+		setMiniTypeDeclaration(env0, id, pos, inferredType);
 	};
 }
 
-setMiniTypeDeclaration(env : MiniTypeEnv, id : string, type : MiniType) -> MiniTypeEnv {
+setMiniTypeDeclaration(env : MiniTypeEnv, id : string, pos : int, type : MiniType) -> MiniTypeEnv {
 	// See if we already have a forward declaration. 
 	// If so, that should serve as a constraint.
 	mtype = lookupTree(env.ast.types, id);
 	mtype ?? {
-		// TODO: Find position
-		constrainMiniType(env, id, -1, type, mtype);
+		constrainMiniType(env, id, pos, type, mtype);
 	} : {};
 
 	MiniTypeEnv(
