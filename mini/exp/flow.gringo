@@ -36,7 +36,7 @@ union = id typars "::=" ws typenames ';' ws $"uniondef";
 functionOrStruct = 
 	// Forward declaration
 	  id '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
-	| id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
+	| $$pos id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
 
 	// This form makes both a forward-type declaration as well as the definition
 	| id '(' ws $"dup" funargs ')' ws $"splitargs" returnType $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
@@ -50,7 +50,7 @@ functionOrStruct =
 	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
 	| id ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
 	// Struct
-	| id ':' ws '(' ws structargs ')' ws ';' ws $"structdef"
+	| $$pos id ':' ws '(' ws structargs ')' ws ';' ws $"structdef"
 	;
 
 	// listof(funarg, ",")
@@ -137,8 +137,8 @@ exp =
 	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"nil";
 		fieldassign = id '=' ws exp $$"__withassign" $"binop";
 
-brace = "{" ws exp (#";" ws exp $$";" $"binop")* (";" ws)? #"}" ws 
-	| "{" ws "}" ws $$"__void" $"var" $"nil" $"call";
+brace = "{" ws $$pos exp (#";" ws exp $$";" $"binop")* (";" ws)? #"}" ws $"setpos"
+	| "{" ws $$pos "}" ws $$"__void" $"var" $"nil" $"call" $"setpos";
 
 expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 

@@ -94,7 +94,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 			),
 		);
 	} else if (command == "structdef") {
-		// 	<id> <args> structdef	- push a constructor for a struct type on the stack
+		// 	<pos> <id> <args> structdef	- push a constructor for a struct type on the stack
 		//   args is an array of __structarg(id, 0/1, type-exp)
 
 		// The result is a fn that builds a struct value of type
@@ -102,13 +102,12 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		typeargs = popMiniValue(db);
 		id = popMiniValue(typeargs.second);
+		posp = popMiniValue(id.second);
 		ttypeargs = getMiniArray(typeargs.first);
 
 		ids = getMiniString(id.first);
-
-		// TODO
-		pos = -1;
-
+		pos = getMiniInt(posp.first);
+		
 		args : [Triple<string, bool, MiniExp>] = map(ttypeargs, unwrapStructArg);
 		fields = map(args, \a -> {
 			MiniTypeField(a.first, a.second, convertMiniExp2Type(a.third))
@@ -121,7 +120,6 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		constructorTypeAsExp = miniType2Exp(constructorType);
 
 		cardinality = length(fields);
-
 
 		lambda = 
 			MiniCall(
@@ -144,10 +142,10 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 
 		// TODO: This might be wrong in incremental?
 		db2 = MiniDb(
-				id.second with
-				program = MiniAst(id.second.program with 
-					structs = setTree(id.second.program.structs, ids, struct),
-					declarationFile = setTree(id.second.program.declarationFile, ids, file),
+				posp.second with
+				program = MiniAst(posp.second.program with 
+					structs = setTree(posp.second.program.structs, ids, struct),
+					declarationFile = setTree(posp.second.program.declarationFile, ids, file),
 				)
 			);
 		if (isDebuggingId(db2.program, ids)) {

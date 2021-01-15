@@ -1,5 +1,6 @@
 import mini/exp/exp;
 import ds/array;
+import net/url_parameter;
 
 export {
 	getMiniPos(e : MiniExp) -> int;
@@ -13,10 +14,16 @@ getMiniPos(e : MiniExp) -> int {
 		MiniString(value, pos): pos;
 		MiniInt(value, pos, tyvar): pos;
 		MiniVar(name, pos, tyvar): pos;
-		MiniLet(name, value, body, pos, tyvar): if (pos == -1) getMiniPos(value) else pos;
-		MiniLambda(args, body, pos, tyvar): pos;
+		MiniLet(name, value, body, pos, tyvar): {
+			if (pos == -1 && !isUrlParameterTrue("strict")) getMiniPos(value) else pos;
+		}
+		MiniLambda(args, body, pos, tyvar): {
+			if (pos == -1 && !isUrlParameterTrue("strict")) {
+				getMiniPos(body)
+			} else pos;
+		}
 		MiniCall(fn, args, pos, tyvar): {
-			if (pos != -1) {
+			if (pos != -1 || isUrlParameterTrue("strict")) {
 				pos
 			} else {
 				cpos = getMiniPos(fn);
