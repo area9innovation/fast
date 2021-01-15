@@ -66,7 +66,7 @@ liftImplicitStructs(env : MiniAst) -> MiniAst {
 				elementAt(struct.typars, i, def);
 			});
 			nstruct = MiniStruct(struct with typars = atypars);
-			if (isDebuggingId(env, name)) {
+			if (isDebuggingId(env, StageCompileTime(), name)) {
 				println("Type parameters updated for " + miniStruct2string(nstruct));
 			}
 			nstruct;

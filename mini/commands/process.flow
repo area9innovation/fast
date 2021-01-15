@@ -71,7 +71,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 	switch (command) {
 		MiniProcessFile(usedByFile, name, evalcommand): {
 			path = fastPath2path(db.includes, name);
-			if (db.program.options.verbose > 0 && isDebuggingId(db.program, changeFileExt(name, ""))) {
+			if (db.program.options.verbose > 0 && isDebuggingId(db.program, StageParse(), changeFileExt(name, ""))) {
 				println("Resolve '" + changeFileExt(name, "") + "' as file '" + path + "'");
 			}
 			if (shouldReadFile(db.fileCache, path)) {
@@ -83,7 +83,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				ndb = pushMiniValue(db, MiniString(content, -1));
 				ndb2 = MiniDb(ndb with fileStack = Cons(name, ndb.fileStack));
 
-				if (isDebuggingId(db.program, changeFileExt(name, ""))) {
+				if (isDebuggingId(db.program, StageParse(), changeFileExt(name, ""))) {
 					println("Parsing '" + changeFileExt(name, "") + "' with " + i2s(strlen(content)) + " chars from file '" + path +"'");
 				}
 
@@ -138,7 +138,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			} : def();
 		}
 		MiniPopFile(file): {
-			if (isDebuggingId(db.program, changeFileExt(file, ""))) {
+			if (isDebuggingId(db.program, StageParse(), changeFileExt(file, ""))) {
 				println("\nFinished parsing '" + file + "'. Processing " + i2s(sizeTree(db.program.unprocessedAnnotations)) + " natives without fallbacks");
 			}
 
@@ -160,7 +160,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			MiniDb(ndb2 with program = fast);
 		}
 		MiniCompileTime(names): {
-			if (isDebuggingIds(db.program, names)) {
+			if (isDebuggingIds(db.program, StageCompileTime(), names)) {
 				println("\nStage: Compile time evaluation of: " + strGlue(set2array(names), ", "));
 			}
 
@@ -177,7 +177,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 				mex = lookupTree(acc, name);
 				mex ?? {
 					pexp = partialMiniExp(interpreter, mex);
-					if ((verbose || isDebuggingId(db.program, name)) && pexp != mex) {
+					if ((verbose || isDebuggingId(db.program, StageCompileTime(), name)) && pexp != mex) {
 						println(name + " = "+ miniPretty(pexp));
 					};
 					setTree(acc, name, pexp);
@@ -187,7 +187,7 @@ runMiniCommand(db : MiniDb, command : MiniCommand) -> MiniDb {
 			MiniDb(db with program = ast);
 		}
 		MiniTypeInfer(ids): {
-			if (isDebuggingIds(db.program, ids)) {
+			if (isDebuggingIds(db.program, StageTypeInference(), ids)) {
 				println("\nStage: Infer types of MiniExp representations of: " + strGlue(set2array(ids), ", "));
 			}
 			// OK, what types do we have for these ids now?
@@ -229,7 +229,7 @@ updateMiniType(db : MiniDb, updating : Set<string>, id : string) -> MiniDb {
 }
 
 defineMiniType(db : MiniDb, file : string, name : string, type : MiniType) -> MiniDb {
-	if (isDebuggingId(db.program, name)) {
+	if (isDebuggingId(db.program, StageParse(), name)) {
 		println(file + ": Parser defines '" + name + "' as type " + miniType2string(type));
 	}
 
@@ -246,7 +246,7 @@ defineMiniDeclaration(db : MiniDb, file : string, id : string, body : MiniExp) -
 	npr = MiniAst(ast with idDependents = updateMiniDependent(ast.idDependents, id, deps));
 	db2 = pushMiniCommand(db, MiniTypeInfer(makeSet1(id)));
 
-	if (isDebuggingId(db.program, id)) {
+	if (isDebuggingId(db.program, StageParse(), id)) {
 		println(file + ": Parser declares '" + id + "' as\n" + miniPretty(body));
 	}
 

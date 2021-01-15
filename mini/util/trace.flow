@@ -1,18 +1,25 @@
 import mini/exp/ast;
 
 export {
-	// Are we debugging this id? Can be a program id, or a file.
-	isDebuggingId(ast : MiniAst, id : string) -> bool;
+	CompileStage ::= StageParse, StageCompileTime, StageTypeInference, StageLower;
+		StageParse();
+		StageCompileTime();
+		StageTypeInference();
+		// Lower to BExp and optimize
+		StageLower();
 
-	isDebuggingIds(ast : MiniAst, ids : Set<string>) -> bool;
+	// Are we debugging this id? Can be a program id, or a file.
+	isDebuggingId(ast : MiniAst, stage : CompileStage, id : string) -> bool;
+
+	isDebuggingIds(ast : MiniAst, stage : CompileStage, ids : Set<string>) -> bool;
 
 }
 
-isDebuggingId(ast : MiniAst, id : string) -> bool {
+isDebuggingId(ast : MiniAst, stage : CompileStage, id : string) -> bool {
 	containsSet(ast.options.debugIds, id) || containsSet(ast.options.debugIds, "1");
 }
 
 
-isDebuggingIds(ast : MiniAst, ids : Set<string>) -> bool {
+isDebuggingIds(ast : MiniAst, stage : CompileStage, ids : Set<string>) -> bool {
 	!isEmptySet(intersectSets(ast.options.debugIds, ids)) || containsSet(ast.options.debugIds, "1");
 }

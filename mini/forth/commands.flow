@@ -81,7 +81,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 		union = MiniUnion(names, typarss, structss);
 		ast = name.second.program;
 
-		if (isDebuggingId(ast, names)) {
+		if (isDebuggingId(ast, StageParse(), names)) {
 			println(file + ": Parser defines union " + miniUnion2string(union));
 		}
 
@@ -148,7 +148,7 @@ forthMiniCommand(file : string, db : MiniDb, command : string) -> MiniDb {
 					declarationFile = setTree(posp.second.program.declarationFile, ids, file),
 				)
 			);
-		if (isDebuggingId(db2.program, ids)) {
+		if (isDebuggingId(db2.program, StageParse(), ids)) {
 			println(file + ": Parser defines struct " + miniStruct2string(struct));
 		}
 		// In addition to the type, we also register the constructor function

@@ -82,7 +82,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	simplifyResTypes(cenv, resTypes);
 
 	iter(order, \id -> {
-		if (isDebuggingId(ast, id)) {
+		if (isDebuggingId(ast, StageTypeInference(), id)) {
 			mfn = lookupTree(ast.declarations, id);
 			mfn ?? {
 				println(id + " = " + miniPrettyTyped(cenv, mfn));
@@ -103,7 +103,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	// OK, remove the current set of ids from the pure set
 	past = MiniAst(cenv.ast with pureIds = differenceSets(cenv.ast.pureIds, ids));
 
-	if (isDebuggingIds(cenv.ast, buildSet(order))) {
+	if (isDebuggingIds(cenv.ast, StageLower(), buildSet(order))) {
 		println("\nStage: Lower to BExp and optimize: " + strGlue(order, ", "));
 	}
 
@@ -117,7 +117,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 			un = unfoldBExp(bdecl);
 			opt = simplifyBExp(acc.pureIds, un);
 
-			if (isDebuggingId(cenv.ast, id)) {
+			if (isDebuggingId(cenv.ast, StageLower(), id)) {
 				println(id + " = " + prettyBExp(opt));
 			}
 

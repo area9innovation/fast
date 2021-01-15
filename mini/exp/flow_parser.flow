@@ -733,13 +733,9 @@ parse_functionOrStruct(acc : DParseAcc) -> bool {
 																			if (addVerbatim(acc, "swap")) {
 																				if (addVerbatim(acc, "typedef")) {
 																					if (parse_brace(acc)) {
-																						if (addVerbatim(acc, "dump")) {
-																							if (addVerbatim(acc, "lambda")) {
-																								if (addVerbatim(acc, "define")) {
-																									discardDCheckpoint(acc)
-																								} else {
-																									restoreDCheckpoint(acc)
-																								}
+																						if (addVerbatim(acc, "lambda")) {
+																							if (addVerbatim(acc, "define")) {
+																								discardDCheckpoint(acc)
 																							} else {
 																								restoreDCheckpoint(acc)
 																							}
@@ -815,13 +811,9 @@ parse_functionOrStruct(acc : DParseAcc) -> bool {
 																						if (addVerbatim(acc, "swap")) {
 																							if (addVerbatim(acc, "typedef")) {
 																								if (parse_brace(acc)) {
-																									if (addVerbatim(acc, "dump")) {
-																										if (addVerbatim(acc, "lambda")) {
-																											if (addVerbatim(acc, "define")) {
-																												discardDCheckpoint(acc)
-																											} else {
-																												restoreDCheckpoint(acc)
-																											}
+																									if (addVerbatim(acc, "lambda")) {
+																										if (addVerbatim(acc, "define")) {
+																											discardDCheckpoint(acc)
 																										} else {
 																											restoreDCheckpoint(acc)
 																										}
@@ -908,13 +900,9 @@ parse_functionOrStruct(acc : DParseAcc) -> bool {
 																													restoreDCheckpoint(acc)
 																												};
 																												if (parse_ws(acc)) {
-																													if (addVerbatim(acc, "dump")) {
-																														if (addVerbatim(acc, "lambda")) {
-																															if (addVerbatim(acc, "define")) {
-																																discardDCheckpoint(acc)
-																															} else {
-																																restoreDCheckpoint(acc)
-																															}
+																													if (addVerbatim(acc, "lambda")) {
+																														if (addVerbatim(acc, "define")) {
+																															discardDCheckpoint(acc)
 																														} else {
 																															restoreDCheckpoint(acc)
 																														}
