@@ -3,12 +3,18 @@ import mini/types/typeenv;
 export {
 	// What id does this tyvar correspond to?
 	findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string;
+
+	findMiniTyvarPos(env : MiniTypeEnv, tyvar : int) -> int;
 }
 
 findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string {
 	mid = treeIntervalSearch(^(env.tyvar2Id), tyvar);
 
-	mid ?? {
-		mid
-	} : ("a" + i2s(tyvar) + ": ");
+	mid ?? mid : ("a" + i2s(tyvar) + ": ");
+}
+
+findMiniTyvarPos(env : MiniTypeEnv, tyvar : int) -> int {
+	mid = treeIntervalSearch(^(env.tyvar2Pos), tyvar);
+
+	mid ?? mid : -1;
 }

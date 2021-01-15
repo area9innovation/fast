@@ -6,7 +6,7 @@ import mini/types/debug;
 export {
 	// Given these two type calls, constrain them against each other
 	// Notice this is also used array<?>, ref<?> and such.
-	constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void;
+	constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTypeEnv, string, int, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void;
 
 	// Check if this left name is inside the typename on the right, and if so, return the applied struct in the union
 	findMiniStructInUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
@@ -17,28 +17,26 @@ export {
 	typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniType>;
 }
 
-constrainMiniTypeCalls(env : MiniTypeEnv, rec : (MiniTypeEnv, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
+constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTypeEnv, string, int, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
 	if (lhs.id == "auto" || rhs.id == "auto") {
 		// OK, nothing to do.
 	} else if (lhs.id == rhs.id) {
 		// TODO: Figure out how the type-pars align with each other
 		if (!env.ast.options.implicitTypePars && length(lhs.typars) != length(rhs.typars)) {
-			// TODO: Error
-			env.onError("", -1, "Expected typars to match " + miniType2string(lhs) + " vs  " + miniType2string(rhs));
+			env.onError(id, pos, "Expected typars to match " + miniType2string(lhs) + " vs  " + miniType2string(rhs));
 		} else {
 			iteri(lhs.typars, \i, larg -> {
 				if (i < length(rhs.typars)) {
-					rec(env, rhs.typars[i], larg);
+					rec(env, id, pos, rhs.typars[i], larg);
 				}
 			});
 		}
 	} else {
 		munion = findMiniStructInUnion(env.ast, lhs.id, rhs.id, rhs.typars);
 		munion ?? {
-			rec(env, lhs, munion);
+			rec(env, id, pos, lhs, munion);
 		} : {
-			// TODO: Error
-			env.onError("", -1, "Type " + lhs.id + " is not part of type " + rhs.id);
+			env.onError(id, pos, "Type " + lhs.id + " is not part of type " + rhs.id);
 		}
 	}
 }

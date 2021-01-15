@@ -48,6 +48,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		mfn ?? {
 			// Update the tyvar map
 			tenv.tyvar2Id := setTree(^(tenv.tyvar2Id), ^(tenv.tyvarId), id);
+			tenv.tyvar2Pos := setTree(^(tenv.tyvar2Pos), ^(tenv.tyvarId), getMiniPos(mfn));
 
 			recursive = containsSet(lookupMultimap(ast.idDependents.dependencies, id), id);
 
