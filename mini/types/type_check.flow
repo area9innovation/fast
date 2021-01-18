@@ -60,7 +60,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		}
 	});
 
-	if (false) {
+	if (isDebuggingIds(ast, StageTypeCoalesce(), ids)) {
 		// println("\nBefore resolution:");
 		debugMiniTypeEnv(tenv2, true);
 

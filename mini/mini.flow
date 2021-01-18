@@ -7,6 +7,9 @@ import mini/backends/pretty;
 
 main() {
 	files = getFilesToCompile();
+	if (files == []) {
+		printHelp();
+	}
 
 	output = getUrlParameterDef("output", "output");
 
@@ -82,7 +85,7 @@ main() {
 }
 
 getFilesToCompile() -> [string] {
-	file0 = getUrlParameterDef("file", "mini/tests/error.flow");
+	file0 = getUrlParameter("file");
 	//file0 = getUrlParameterDef("file", "demos/euler/euler10.flow");
 
 	// We support test=1-5, test=6, test=-10  and such to compile flowc test cases
@@ -97,7 +100,8 @@ getFilesToCompile() -> [string] {
 				Some(pathCombine(folder, file))
 			} else None();
 		})
-	} else [file0];
+	} else if (file0 == "") []
+	else [file0];
 
 	map(files0, \file -> {
 		if (fileExists(file)) file else changeFileExt(file, ".flow")
@@ -117,5 +121,6 @@ printHelp() -> void {
 	println("mini file=filename.flow");
 	println("   debug=1                     Follow the compilation process for all ids");
 	println("   debug=id1,id2               Follow the compilation process for id1, id2");
-	println("   stages=parse,ct,type,lower  With debug, follow the compilation process for these stages");
+	println("   stages=parse,ct,type,coalesce,lower");
+	println("        With debug, follow the compilation process for these stages");
 }

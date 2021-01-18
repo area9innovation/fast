@@ -36,7 +36,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
 	pos = getMiniPos(ex);
 	if (isDebuggingId(env0.ast, StageTypeInference(), id)) {
-		println("Type inference for " + id);
+		println("Type inference for " + id + " starting at α" + i2s(^(env0.tyvarId)));
 		if (pos == -1) {
 			println("Could not find pos for " + miniPretty(ex));
 		}
