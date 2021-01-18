@@ -6,7 +6,7 @@ import mini/types/debug;
 export {
 	// Given these two type calls, constrain them against each other
 	// Notice this is also used array<?>, ref<?> and such.
-	constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTypeEnv, string, int, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void;
+	constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTypeEnv,  MiniTypePos, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void;
 
 	// Check if this left name is inside the typename on the right, and if so, return the applied struct in the union
 	findMiniStructInUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
@@ -17,7 +17,7 @@ export {
 	typeCall2MiniRecord(env : MiniAst, tc : MiniTypeCall) -> Maybe<MiniType>;
 }
 
-constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTypeEnv, string, int, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
+constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTypeEnv, MiniTypePos, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
 	if (lhs.id == "auto" || rhs.id == "auto") {
 		// OK, nothing to do.
 	} else if (lhs.id == rhs.id || (lhs.id == "" && rhs.id != "") || (rhs.id == "" && lhs.id != "")) {
@@ -27,14 +27,15 @@ constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTyp
 		} else {
 			iteri(lhs.typars, \i, larg -> {
 				if (i < length(rhs.typars)) {
-					rec(env, id, pos, rhs.typars[i], larg);
+					// TODO: The pos is the wrong one
+					rec(env, MiniTypePos(id, pos, rhs.typars[i]), larg);
 				}
 			});
 		}
 	} else {
 		munion = findMiniStructInUnion(env.ast, lhs.id, rhs.id, rhs.typars);
 		munion ?? {
-			rec(env, id, pos, lhs, munion);
+			rec(env, MiniTypePos(id, pos, lhs), munion);
 		} : {
 			env.onError(id, pos, "Type " + lhs.id + " is not part of type " + rhs.id);
 		}

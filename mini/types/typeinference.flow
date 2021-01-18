@@ -48,7 +48,7 @@ typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, 
 		rt = typeInferenceMini(nenv, id, ex);
 
 		// OK, we constrain the type
-		constrainMiniType(nenv, id, pos, rt, type);
+		constrainMiniType(nenv, MiniTypePos(id, pos, rt), type);
 		rt;
 	} else {
 		typeInferenceMini(env0, id, ex);
@@ -58,7 +58,7 @@ typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, 
 	mforward = lookupTree(env0.ast.types, id);
 	mforward ?? {
 		// When we do, then constraint it, but keep it as the type of this id
-		constrainMiniType(env0, id, pos, inferredType, mforward) ;
+		constrainMiniType(env0, MiniTypePos(id, pos, inferredType), mforward) ;
 
 		if (false) {
 			// If this is polymorphic, we could probably resolve it immediately?
@@ -81,7 +81,7 @@ setMiniTypeDeclaration(env : MiniTypeEnv, id : string, pos : int, type : MiniTyp
 	// If so, that should serve as a constraint.
 	mtype = lookupTree(env.ast.types, id);
 	mtype ?? {
-		constrainMiniType(env, id, pos, type, mtype);
+		constrainMiniType(env, MiniTypePos(id, pos, type), mtype);
 	} : {};
 
 	MiniTypeEnv(
@@ -129,7 +129,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					map(args, \a -> typeInferenceMini(env, id, a)),
 					resType
 				);
-				constrainMiniType(env, id, pos, fnType, callType);
+				constrainMiniType(env, MiniTypePos(id, pos, fnType), callType);
 				setMiniTypeVar(env, id, ex, resType);
 			};
 			switch (fn) {
@@ -152,7 +152,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 							}
 							default: {
 								// For the rest, check the type
-								constrainMiniType(env, id, pos, argType, type);
+								constrainMiniType(env, MiniTypePos(id, pos, argType), type);
 							}
 						};
 						setMiniTypeVar(env, id, args[1], type);
@@ -171,11 +171,11 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 								// Make a shell type call with the correct number of type pars
 								scalltype = MiniTypeCall("", map(stypars, \__ -> makeMiniTypeVar(env)));
 								// Relate this to the super-type
-								constrainMiniType(env, id, pos, stype, scalltype);
+								constrainMiniType(env, MiniTypePos(id, pos, stype), scalltype);
 
 								// and relate the typars to the typars of the subtype
 								iteri(scalltype.typars, \i, larg -> {
-									constrainMiniType(env, id, pos, stypars[i], larg);
+									constrainMiniType(env, MiniTypePos(id, pos, stypars[i]), larg);
 								});
 
 								// So construct a type-call with parameters for the type,
@@ -199,7 +199,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 						fieldType = makeMiniTypeVar(env);
 						rec = MiniTypeRecord([MiniTypeField(field, false, fieldType)]);
 
-						constrainMiniType(env, id, pos, argType, rec);
+						constrainMiniType(env, MiniTypePos(id, pos, argType), rec);
 
 						fieldType;
 					} else {
@@ -231,7 +231,8 @@ getMiniVarType(env : MiniTypeEnv, id : string, pos : int, name : string) -> Mini
 }
 
 // Extract constraints from this type pairing. lhs should be a subtype of rhs
-constrainMiniType(env : MiniTypeEnv, id : string, pos : int, lhs : MiniType, rhs : MiniType) -> void {
+constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void {
+	lhs = lhsp.type;
 	if (containsSet(^(env.constraintCache), Pair(lhs, rhs))
 		|| lhs == MiniTypeCall("auto", [])
 		|| rhs == MiniTypeCall("auto", [])) {
@@ -242,7 +243,7 @@ constrainMiniType(env : MiniTypeEnv, id : string, pos : int, lhs : MiniType, rhs
 		// println("Constrain " + debugMiniType(env, lhs) + " <: " + debugMiniType(env, rhs));
 
 		error = \ -> {
-			env.onError(id, pos, "Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
+			env.onError(lhsp.id, lhsp.pos, "Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
 		};
 		right = \ -> {
 			switch (rhs) {
@@ -274,9 +275,10 @@ constrainMiniType(env : MiniTypeEnv, id : string, pos : int, lhs : MiniType, rhs
 							error();
 						} else {
 							iteri(largs, \i, larg -> {
-								constrainMiniType(env, id, pos, rargs[i], larg);
+								// TODO: The pos is the wrong one once we have a r-pos as well
+								constrainMiniType(env, MiniTypePos(lhsp with type = rargs[i]), larg);
 							});
-							constrainMiniType(env, id, pos, lreturnType, rreturnType);
+							constrainMiniType(env, MiniTypePos(lhsp with type = lreturnType), rreturnType);
 						}
 					}
 					default: right();
@@ -285,12 +287,12 @@ constrainMiniType(env : MiniTypeEnv, id : string, pos : int, lhs : MiniType, rhs
 			MiniTypeCall(lid, ltypars): {
 				switch (rhs) {
 					MiniTypeCall(rid, rtypars): {
-						constrainMiniTypeCalls(env, id, pos, constrainMiniType, lhs, rhs);
+						constrainMiniTypeCalls(env, lhsp.id, lhsp.pos, constrainMiniType, lhs, rhs);
 					}
 					MiniTypeRecord(rfields): {
 						mrecord = typeCall2MiniRecord(env.ast, lhs);
 						mrecord ?? {
-							constrainMiniType(env, id, pos, mrecord, rhs);
+							constrainMiniType(env, MiniTypePos(lhsp with type = mrecord), rhs);
 						} : {
 							error();
 						}
@@ -328,11 +330,11 @@ constrainMiniType(env : MiniTypeEnv, id : string, pos : int, lhs : MiniType, rhs
 							lfield = find(lfields, \lf : MiniTypeField -> lf.name == fs1.name);
 							lfield ?? {
 								if (lfield.isMutable && !fs1.isMutable) {
-									env.onError(id, pos, "Field " + fs1.name + " should be mutable in " + miniType2string(rhs));
+									env.onError(lhsp.id, lhsp.pos, "Field " + fs1.name + " should be mutable in " + miniType2string(rhs));
 								} 
-								constrainMiniType(env, id, pos, lfield.type, fs1.type);
+								constrainMiniType(env, MiniTypePos(lhsp with type = lfield.type), fs1.type);
 							} : {
-								env.onError(id, pos, "Expected field " + fs1.name + " in " + miniType2string(lhs));
+								env.onError(lhsp.id, lhsp.pos, "Expected field " + fs1.name + " in " + miniType2string(lhs));
 							}
 						});
 						/*
@@ -419,7 +421,7 @@ constrainLowerBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \ltype -> {
-		constrainMiniType(env, id, pos, ltype, type)
+		constrainMiniType(env, MiniTypePos(id, pos, ltype), type)
 	})
 }
 
@@ -428,6 +430,6 @@ constrainUpperBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \utype -> {
-		constrainMiniType(env, id, pos, type, utype)
+		constrainMiniType(env, MiniTypePos(id, pos, type), utype)
 	})
 }

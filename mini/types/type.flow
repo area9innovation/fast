@@ -28,4 +28,13 @@ export {
 
 	// The definition of a struct
 	MiniStruct(name : string, typars : [MiniType], fields : [MiniTypeField]);
+
+	MiniTypePos(
+		// What global id is this type used in?
+		id : string,
+		// What position in that corresponding file?
+		pos : int,
+		// What type is it?
+		type : MiniType
+	);
 }
