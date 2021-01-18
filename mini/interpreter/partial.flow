@@ -81,6 +81,10 @@ processMiniCase(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp {
 						} else acc
 					});
 
+		typars = map(mstructdef.typars, \i -> {
+			MiniTypeCall("auto", [])
+		});
+
 		MiniCall(MiniVar("__case", -1, 0), 
 			[
 				MiniCall(
@@ -92,7 +96,7 @@ processMiniCase(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp {
 				// This implies a downcast in the body of __switchvar
 				MiniCall(MiniVar("__downcast", -1, 0), [
 					MiniVar("__switchvar", -1, 0),
-					miniType2Exp(MiniTypeCall(struct, [])),
+					miniType2Exp(MiniTypeCall(struct, typars)),
 					bodyLet,
 				], -1, 0),
 			], 

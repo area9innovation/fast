@@ -42,6 +42,7 @@
 - [Polymorphism](#polymorphism)
 - [Editor DSL](#editor-dsl)
 - [ICFP inspiration](#icfp-inspiration)
+- [__downcast](#__downcast)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -878,13 +879,6 @@ https://arxiv.org/pdf/2004.04303.pdf
 Make sure the downcast type have "auto" for type-pars for the structs in it.
 
 __downcast has to relate the type pars of switchvar with the case-type.
-
-Figure out a way to have a un-nmaed union name with typars.
-
-1. Make __downcast instantiate type vars for each type parameter
-2. Have __downcast check that type pars for structs vs. __switch var match
-
-We have to instantiate polymorphism always during type inference and check.
 
 Special case
 
