@@ -46,7 +46,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	tenv2 = fold(order, tenv, \acc, id -> {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
-			// Update the tyvar map
+			// Update the tyvar map so we know the position of the type-vars we construct
 			tenv.tyvar2Id := setTree(^(tenv.tyvar2Id), ^(tenv.tyvarId), id);
 			tenv.tyvar2Pos := setTree(^(tenv.tyvar2Pos), ^(tenv.tyvarId), getMiniPos(mfn));
 

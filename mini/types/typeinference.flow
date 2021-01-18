@@ -35,9 +35,12 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 
 typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, ex : MiniExp) -> MiniTypeEnv {
 	pos = getMiniPos(ex);
-	if (isDebuggingId(env0.ast, StageTypeInference(), id) && pos == -1) {
-		println("Could not find pos for " + miniPretty(ex));
-	}
+	if (isDebuggingId(env0.ast, StageTypeInference(), id)) {
+		println("Type inference for " + id);
+		if (pos == -1) {
+			println("Could not find pos for " + miniPretty(ex));
+		}
+	};
 	inferredType = if (recursive) {
 		// OK, we have to add a local variable of this name and constrain it
 		type = makeMiniTypeVar(env0);
@@ -100,24 +103,8 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 		}
 		MiniDouble(value, __): MiniTypeCall("double", []);
 		MiniString(value, __): MiniTypeCall("string", []);
-		MiniVar(name, __, __): {
-			mlocal = lookupTree(env.localTypes, name);
-
-			type = mlocal ?? mlocal : {
-				mglobal = lookupTree(env.ast.types, name);
-				switch (mglobal) {
-					None(): {
-						// TODO: Error
-						env.onError("", -1, "Type inference: Does not know var " + name);
-						makeMiniTypeVar(env);
-					}
-					Some(t): t;
-				}
-			};
-
-			// OK, we should instantiate this polymorphism
-			itype = instantiateTypePars2TypeVars(env, type);
-
+		MiniVar(name, pos, __): {
+			itype = getMiniVarType(env, id, pos, name);
 			setMiniTypeVar(env, ex, itype);
 		}
 		MiniLet(name, value, body, __, tv): {
@@ -181,7 +168,30 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 						name = getMiniVar(args[0]);
 						type = convertMiniExp2Type(args[1]);
 						body = args[2];
-					
+
+						// OK, relate the type-pars of the subtype to the type-pars of the super-type
+						switch (type) {
+							MiniTypeCall(subtype, stypars): {
+								// Relate type pars of the first name and the type here
+								stype = getMiniVarType(env, id, pos, name);
+								// Make a shell type call with the correct number of type pars
+								scalltype = MiniTypeCall("", map(stypars, \__ -> makeMiniTypeVar(env)));
+								// Relate this to the super-type
+								constrainMiniType(env, id, pos, stype, scalltype);
+								// and relate the typars to the typars of the subtype
+								iteri(scalltype.typars, \i, larg -> {
+									constrainMiniType(env, id, pos, stypars[i], larg);
+								});
+
+								// So construct a type-call with parameters for the type,
+								// and then relate stype with this new type-call?
+//								println("Relating type pars of " + miniType2string(stype) + " with " + miniType2string(type));
+							}
+							default: {
+								env.onError(id, pos, "Downcast only defined for type names, not " + miniType2string(type));
+							}
+						}
+
 						nenv = setMiniLocalType(env, name, type);
 						setMiniTypeVar(nenv, ex, typeInferenceMini(nenv, id, body));
 					} else if (fname == ".") {
@@ -205,6 +215,25 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 	}
 }
 
+getMiniVarType(env : MiniTypeEnv, id : string, pos : int, name : string) -> MiniType {
+	mlocal = lookupTree(env.localTypes, name);
+
+	type = mlocal ?? mlocal : {
+		mglobal = lookupTree(env.ast.types, name);
+		switch (mglobal) {
+			None(): {
+				env.onError(id, pos, "Type inference: Does not know var " + name);
+				makeMiniTypeVar(env);
+			}
+			Some(t): t;
+		}
+	};
+
+	// OK, we should instantiate this polymorphism
+	instantiateTypePars2TypeVars(env, type);
+}
+
+// Extract constraints from this type pairing. lhs should be a subtype of rhs
 constrainMiniType(env : MiniTypeEnv, id : string, pos : int, lhs : MiniType, rhs : MiniType) -> void {
 	if (containsSet(^(env.constraintCache), Pair(lhs, rhs))
 		|| lhs == MiniTypeCall("auto", [])

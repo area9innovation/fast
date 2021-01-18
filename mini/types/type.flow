@@ -8,6 +8,8 @@ export {
 		MiniTypeFunction(args : [MiniType], returnType : MiniType);
 
 		// double, string, array, ref, structs, unions are all calls. Also "auto"
+		// If the id is empty, this means the super-type of all structs. This is
+		// used in downcast to relate the super-type with the subtype
 		MiniTypeCall(id : string, typars : [MiniType]);
 
 		// Used internally in the inference

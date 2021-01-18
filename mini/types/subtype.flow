@@ -20,7 +20,7 @@ export {
 constrainMiniTypeCalls(env : MiniTypeEnv, id : string, pos : int, rec : (MiniTypeEnv, string, int, MiniType, MiniType) -> void, lhs : MiniTypeCall, rhs : MiniTypeCall) -> void {
 	if (lhs.id == "auto" || rhs.id == "auto") {
 		// OK, nothing to do.
-	} else if (lhs.id == rhs.id) {
+	} else if (lhs.id == rhs.id || (lhs.id == "" && rhs.id != "") || (rhs.id == "" && lhs.id != "")) {
 		// TODO: Figure out how the type-pars align with each other
 		if (!env.ast.options.implicitTypePars && length(lhs.typars) != length(rhs.typars)) {
 			env.onError(id, pos, "Expected typars to match " + miniType2string(lhs) + " vs  " + miniType2string(rhs));
