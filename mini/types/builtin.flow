@@ -64,9 +64,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		Pair("!", MiniTypeFunction([b], b)),
 		Pair("__neg", MiniTypeFunction([ta], ta)),
 
-		// : is special and should probably be grabbed by the type inference?
-		Pair(":", MiniTypeFunction([ta, tb], tb)),
-
 		// Array constructs
 		Pair("__emptyarray", MiniTypeFunction([], at(ta))),
 		Pair("[", MiniTypeFunction([ta], at(ta))),
@@ -82,9 +79,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 		Pair("__defaultcase", MiniTypeFunction([ta], ta)),
 			Pair("__or", MiniTypeFunction([ta, ta], ta)),
 
-		// This is downcast of the switch var to the case type
-		Pair("__downcast", MiniTypeFunction([ta, tb, tc], tc)),
-
 		Pair("__maybe", MiniTypeFunction([ta, tb, tb], tb)),
 
 		// TODO: I guess the type checker should check this
@@ -99,9 +93,6 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 		// special
 		Pair("__native", MiniTypeFunction([i, ta, s], ta)),
-
-		// TODO: This requires more work
-//		Pair(".", MiniTypeFunction([ta, s], tb)),
 
 		//
 		// The following special functions are all constructed

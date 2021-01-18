@@ -142,7 +142,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					if (fname == "__type" || fname == "__fntype"|| fname == "__uniontype" || fname == "__recordtype") {
 						type = convertMiniExp2TypeVar(env, ex);
 
-						// OK, we have to fix the type of the construct so the AST is still completely types
+						// OK, we have to fix the type of the construct so the AST is still completely typed
 						// even if the type is non-sense
 						set = \e -> {setMiniTypeVar(env, e, miniTypeVoid); {} };
 						set(fn);
@@ -205,7 +205,6 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 
 						fieldType;
 					} else {
-						// TODO: Downcast could be handled here?
 						def();
 					}
 				}
