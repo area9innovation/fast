@@ -1,4 +1,5 @@
 import mini/exp/pretty_typed;
+import mini/util/fileinfo;
 
 export {
 	debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void;
@@ -28,11 +29,17 @@ debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void {
 
 	if (^(env.tyvarId) > 1) {
 		println("Type vars:");
-		generate(1, ^(env.tyvarId), \id -> {
+		generate(1, ^(env.tyvarId), \tv -> {
 			decor = if (verbose) {
-				debugBounds(env, id);
+				debugBounds(env, tv);
 			} else "";
-			println(miniPrettyTypeVar(env, id) + decor);
+
+			name = findMiniTyvarId(env, tv);
+			pos = findMiniTyvarPos(env, tv);
+
+			fileinfo = getFileLineInfo(env.ast, name, pos);
+
+			println(fileinfo + strRight(miniPrettyTypeVar(env, tv), 3) + decor);
 		});
 		{}
 	}

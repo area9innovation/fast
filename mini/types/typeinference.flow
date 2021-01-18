@@ -379,7 +379,9 @@ setMiniTypeVar(env : MiniTypeEnv, global : string, ex : MiniExp, type : MiniType
 
 		pos = getMiniPos(ex);
 		if (pos == -1) {
-			// println("Could not find position for " + miniPretty(ex));
+			if (isUrlParameterTrue("strict")) {
+				println("Could not find position for " + miniPretty(ex));
+			}
 		} else {
 			setMiniTyvarInfo(env, id, global, pos);
 		}

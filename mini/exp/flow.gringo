@@ -145,11 +145,20 @@ expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
 semiexps = exp (";" ws exp $$";" $"binop")*;
 
 switch = $$pos "switch" !letterOrDigit ws '(' ws 
-			$$"__switchvar" exp 
+			$$"__switchvar" // The name for the let
+			$$pos
+			exp
+			$"swap"			
 			// __switchvalue(__switchvar)
-			$$"__switchvalue" $"var" $$"__switchvar" $"var" $"list1" $"call" 
+			$$"__switchvalue" $"var" 
+			$$"__switchvar" $"var" $"list1" 
+			$"call"
+
 		')' ws '{' ws cases #'}' ws $$"__switch" $"binop" 
-		$"let"
+
+		$"setpos"	// Set the position of the "switch" condition
+		// let __switchvar = exp in __switch(__switchvar(exp), cases)
+		$"let"	
 		$"setpos";
 
 cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")* 
@@ -158,7 +167,7 @@ cases = defaultOrNamedCase (defaultOrNamedCase $$"__or" $"binop")*
 defaultOrNamedCase = 
 	$$pos "default" !letterOrDigit ws ':' ws exp (';' ws)? $$"__defaultcase" $"unop"
 	// __ctcase(id, cons(args), body)
-	| $"nil" id $"var" $"cons" '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call";
+	| $$pos $"nil" id $"var" $"cons" '(' ws names $"cons" ')' ws ':' ws exp (';' ws)?  $"cons" $$"__ctcase" $"var" $"swap" $"call" $"setpos";
 
 names = $"nil" id $"cons" ("," ws id $"cons")* | $"nil";
 

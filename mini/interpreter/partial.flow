@@ -31,9 +31,9 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 				MiniCall(fn, args, pos, tyvar);
 			};
 			switch (fn) {
-				MiniVar(fname, vpos, __): {
+				MiniVar(fname, __, __): {
 					if (fname == "__ctcase") {
-						processMiniCase(env, vpos, args);
+						processMiniCase(env, pos, args);
 					} else if (fname == "__switch") {
 						processMiniSwitch(env, pos, args);
 					} else if (fname == "__ctmaybe") {
@@ -65,19 +65,19 @@ processMiniCase(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp {
 		/*
 		We turn "Some(v): body;" into the equivalent of this:
 		__case(Some, 
-			// Downcast
-			__switchvar = __switchvar : __type("Some");
-			// Index
-			v = __switchvar."value";
-			v;
+			__downcast(__switchvar, __type("Some", <>), 
+				// Index
+				v = __switchvar."value";
+				body;
+			)
 		)
 		*/
 		bodyLet = foldi(vars, body, \i, acc, var -> {
 						if (var != "__") {
-							MiniLet(var, MiniCall(MiniVar(".", -1, 0), [
-								MiniVar("__switchvar", -1, 0), 
-								MiniString(mstructdef.fields[i].name, -1)
-							], -1, 0), acc, pos, 0)
+							MiniLet(var, MiniCall(MiniVar(".", pos, 0), [
+								MiniVar("__switchvar", pos, 0), 
+								MiniString(mstructdef.fields[i].name, pos)
+							], pos, 0), acc, pos, 0)
 						} else acc
 					});
 
@@ -85,36 +85,36 @@ processMiniCase(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp {
 			MiniTypeCall("auto", [])
 		});
 
-		MiniCall(MiniVar("__case", -1, 0), 
+		MiniCall(MiniVar("__case", pos, 0), 
 			[
 				MiniCall(
-					MiniVar("__caseid", -1, 0),
+					MiniVar("__caseid", pos, 0),
 					[
 						MiniVar(struct, pos, 0),
-					], -1, 0
+					], pos, 0
 				),
 				// This implies a downcast in the body of __switchvar
-				MiniCall(MiniVar("__downcast", -1, 0), [
-					MiniVar("__switchvar", -1, 0),
+				MiniCall(MiniVar("__downcast", pos, 0), [
+					MiniVar("__switchvar", pos, 0),
 					miniType2Exp(MiniTypeCall(struct, typars)),
 					bodyLet,
-				], -1, 0),
+				], pos, 0),
 			], 
-			-1,
+			pos,
 			0
 		);
 	} : {
 		// We assume this is a union, which will be expanded by processMiniSwitch
-		MiniCall(MiniVar("__case", -1, 0),
+		MiniCall(MiniVar("__case", pos, 0),
 			[
 				MiniCall(
-					MiniVar("__caseid", -1, 0),
+					MiniVar("__caseid", pos, 0),
 					[
-						MiniVar(struct, -1, 0),
-					], -1, 0
+						MiniVar(struct, pos, 0),
+					], pos, 0
 				),
 				body
-			], -1, 0
+			], pos, 0
 		)
 	}
 }
@@ -123,14 +123,17 @@ processMiniSwitch(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp
 	// The cases
 	cases : [MiniExp] = extractMiniCases([], args[1]);
 
+	// __switch(var, cases)
+
 	// Find and expand all unions
 	expanded = concatA(map(cases, \c -> {
 		switch (c) {
 			MiniCall(fn, fargs, __, __): {
 				switch (fn) {
-					MiniVar(name, __, __): {
+					MiniVar(name, vpos, __): {
 						if (name == "__defaultcase") [c]
 						else {
+							// __case(__caseid(__switchvar), __downcast(bindings;body))
 							switch (fargs[0]) {
 								MiniCall(fn2, args2, __, __): {
 									cname = getMiniVar(args2[0]);
@@ -141,9 +144,9 @@ processMiniSwitch(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp
 											map(def.typenames, \tn -> {
 												sname = getMiniTypeName(tn);
 												sbody = fargs[1];
-												MiniCall(MiniVar("__case", -1, 0), [
-													MiniCall(MiniVar("__caseid", -1, 0), [MiniVar(sname, -1, 0)], -1, 0), sbody
-												], -1, 0)
+												MiniCall(MiniVar("__case", vpos, 0), [
+													MiniCall(MiniVar("__caseid", vpos, 0), [MiniVar(sname, vpos, 0)], -1, 0), sbody
+												], vpos, 0)
 											});
 										}
 									}
@@ -163,14 +166,14 @@ processMiniSwitch(env : MiniInterpreter, pos : int, args : [MiniExp]) -> MiniExp
 		[
 			args[0],
 			fold(tail(expanded), expanded[0], \acc, c -> {
-				MiniCall(MiniVar("__or", -1, 0), [acc, c], -1, 0)
+				MiniCall(MiniVar("__or", pos, 0), [acc, c], pos, 0)
 			})
 		]
 	} else {
 		args;
 	};
 
-	MiniCall(MiniVar("__switch", -1, 0), nargs, pos, 0)
+	MiniCall(MiniVar("__switch", pos, 0), nargs, pos, 0)
 }
 
 extractMiniCases(acc : [MiniExp], e : MiniExp) -> [MiniExp] {

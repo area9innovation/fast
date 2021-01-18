@@ -2,6 +2,7 @@ import mini/commands/db;
 import mini/forth/init;
 import mini/forth/eval;
 import mini/types/builtin;
+import mini/util/fileinfo;
 
 export {
 	makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb;
@@ -39,16 +40,7 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 			getBuiltinMiniTypes(), makeTree(), makeTree(), MiniSubtypeGraph(makeSimpleGraph()),
 			makeTree(), getBuiltinPureNames(), options,
 			\env, name, pos, error -> {
-				file = lookupTreeDef(env.declarationFile, name, "");
-				prefix = if (pos != -1) {
-					lineCol : LineColumn = findLineOneTime(getFileContent(file), pos);
-					i2s(lineCol.lineno) + ":" + i2s(lineCol.column) + ":"
-				} else {
-					// TODO: We could maybe find the position of name?
-					"";
-				};
-				prefix1 = (if (file != "") file + ":" else "") + prefix + (if (name != "") name + ":" else "");
-				onError((if (prefix1 != "") prefix1 + " " else "") + error);
+				onError(getFileLineInfo(env, name, pos) + error)
 			}
 		),
 		makeMiniForth(),

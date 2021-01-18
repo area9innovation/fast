@@ -3978,32 +3978,44 @@ parse_switch(acc : DParseAcc) -> bool {
 							if (matchString(acc, "(")) {
 								if (parse_ws(acc)) {
 									if (addMatched(acc, "__switchvar")) {
-										if (parse_exp(acc)) {
-											if (addMatched(acc, "__switchvalue")) {
-												if (addVerbatim(acc, "var")) {
-													if (addMatched(acc, "__switchvar")) {
+										if (addVerbatim(acc, i2s(acc.i))) {
+											if (parse_exp(acc)) {
+												if (addVerbatim(acc, "swap")) {
+													if (addMatched(acc, "__switchvalue")) {
 														if (addVerbatim(acc, "var")) {
-															if (addVerbatim(acc, "list1")) {
-																if (addVerbatim(acc, "call")) {
-																	if (matchString(acc, ")")) {
-																		if (parse_ws(acc)) {
-																			if (matchString(acc, "{")) {
+															if (addMatched(acc, "__switchvar")) {
+																if (addVerbatim(acc, "var")) {
+																	if (addVerbatim(acc, "list1")) {
+																		if (addVerbatim(acc, "call")) {
+																			if (matchString(acc, ")")) {
 																				if (parse_ws(acc)) {
-																					if (parse_cases(acc)) {
-																						if (if (matchString(acc, "}")) {
-																							true
-																						} else {
-																							{
-																								addError(acc, "Expected \"}\"");
-																								true
-																							}
-																						}) {
-																							if (parse_ws(acc)) {
-																								if (addMatched(acc, "__switch")) {
-																									if (addVerbatim(acc, "binop")) {
-																										if (addVerbatim(acc, "let")) {
-																											if (addVerbatim(acc, "setpos")) {
-																												discardDCheckpoint(acc)
+																					if (matchString(acc, "{")) {
+																						if (parse_ws(acc)) {
+																							if (parse_cases(acc)) {
+																								if (if (matchString(acc, "}")) {
+																									true
+																								} else {
+																									{
+																										addError(acc, "Expected \"}\"");
+																										true
+																									}
+																								}) {
+																									if (parse_ws(acc)) {
+																										if (addMatched(acc, "__switch")) {
+																											if (addVerbatim(acc, "binop")) {
+																												if (addVerbatim(acc, "setpos")) {
+																													if (addVerbatim(acc, "let")) {
+																														if (addVerbatim(acc, "setpos")) {
+																															discardDCheckpoint(acc)
+																														} else {
+																															restoreDCheckpoint(acc)
+																														}
+																													} else {
+																														restoreDCheckpoint(acc)
+																													}
+																												} else {
+																													restoreDCheckpoint(acc)
+																												}
 																											} else {
 																												restoreDCheckpoint(acc)
 																											}
@@ -4146,48 +4158,53 @@ parse_cases(acc : DParseAcc) -> bool {
 parse_defaultOrNamedCase(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
-		pushDCheckpoint(acc);
-		if (if (addVerbatim(acc, i2s(acc.i))) {
-			if (matchString(acc, "default")) {
-				{
-					pushDCheckpoint(acc);
-					if (if (parse_letterOrDigit(acc)) {
-						restoreDCheckpoint(acc)
-					} else {
-						{
-							restoreDCheckpoint(acc);
-							true
-						}
-					}) {
-						if (parse_ws(acc)) {
-							if (matchString(acc, ":")) {
-								if (parse_ws(acc)) {
-									if (parse_exp(acc)) {
-										{
-											pushDCheckpoint(acc);
-											pushDCheckpoint(acc);
-											if (if (matchString(acc, ";")) {
-												if (parse_ws(acc)) {
+		if (addVerbatim(acc, i2s(acc.i))) {
+			{
+				pushDCheckpoint(acc);
+				pushDCheckpoint(acc);
+				if (if (if (matchString(acc, "default")) {
+					{
+						pushDCheckpoint(acc);
+						if (if (parse_letterOrDigit(acc)) {
+							restoreDCheckpoint(acc)
+						} else {
+							{
+								restoreDCheckpoint(acc);
+								true
+							}
+						}) {
+							if (parse_ws(acc)) {
+								if (matchString(acc, ":")) {
+									if (parse_ws(acc)) {
+										if (parse_exp(acc)) {
+											{
+												pushDCheckpoint(acc);
+												pushDCheckpoint(acc);
+												if (if (matchString(acc, ";")) {
+													if (parse_ws(acc)) {
+														discardDCheckpoint(acc)
+													} else {
+														restoreDCheckpoint(acc)
+													}
+												} else {
+													restoreDCheckpoint(acc)
+												}) {
 													discardDCheckpoint(acc)
 												} else {
 													restoreDCheckpoint(acc)
-												}
-											} else {
-												restoreDCheckpoint(acc)
-											}) {
-												discardDCheckpoint(acc)
-											} else {
-												restoreDCheckpoint(acc)
-											};
-											if (addMatched(acc, "__defaultcase")) {
-												if (addVerbatim(acc, "unop")) {
-													discardDCheckpoint(acc)
+												};
+												if (addMatched(acc, "__defaultcase")) {
+													if (addVerbatim(acc, "unop")) {
+														discardDCheckpoint(acc)
+													} else {
+														restoreDCheckpoint(acc)
+													}
 												} else {
 													restoreDCheckpoint(acc)
 												}
-											} else {
-												restoreDCheckpoint(acc)
 											}
+										} else {
+											restoreDCheckpoint(acc)
 										}
 									} else {
 										restoreDCheckpoint(acc)
@@ -4201,55 +4218,59 @@ parse_defaultOrNamedCase(acc : DParseAcc) -> bool {
 						} else {
 							restoreDCheckpoint(acc)
 						}
-					} else {
-						restoreDCheckpoint(acc)
 					}
-				}
-			} else {
-				restoreDCheckpoint(acc)
-			}
-		} else {
-			restoreDCheckpoint(acc)
-		}) {
-			discardDCheckpoint(acc)
-		} else {
-			{
-				pushDCheckpoint(acc);
-				if (if (addVerbatim(acc, "nil")) {
-					if (parse_id(acc)) {
-						if (addVerbatim(acc, "var")) {
-							if (addVerbatim(acc, "cons")) {
-								if (matchString(acc, "(")) {
-									if (parse_ws(acc)) {
-										if (parse_names(acc)) {
-											if (addVerbatim(acc, "cons")) {
-												if (matchString(acc, ")")) {
-													if (parse_ws(acc)) {
-														if (matchString(acc, ":")) {
+				} else {
+					restoreDCheckpoint(acc)
+				}) {
+					discardDCheckpoint(acc)
+				} else {
+					{
+						pushDCheckpoint(acc);
+						if (if (addVerbatim(acc, "nil")) {
+							if (parse_id(acc)) {
+								if (addVerbatim(acc, "var")) {
+									if (addVerbatim(acc, "cons")) {
+										if (matchString(acc, "(")) {
+											if (parse_ws(acc)) {
+												if (parse_names(acc)) {
+													if (addVerbatim(acc, "cons")) {
+														if (matchString(acc, ")")) {
 															if (parse_ws(acc)) {
-																if (parse_exp(acc)) {
-																	{
-																		pushDCheckpoint(acc);
-																		pushDCheckpoint(acc);
-																		if (if (matchString(acc, ";")) {
-																			if (parse_ws(acc)) {
-																				discardDCheckpoint(acc)
-																			} else {
-																				restoreDCheckpoint(acc)
-																			}
-																		} else {
-																			restoreDCheckpoint(acc)
-																		}) {
-																			discardDCheckpoint(acc)
-																		} else {
-																			restoreDCheckpoint(acc)
-																		};
-																		if (addVerbatim(acc, "cons")) {
-																			if (addMatched(acc, "__ctcase")) {
-																				if (addVerbatim(acc, "var")) {
-																					if (addVerbatim(acc, "swap")) {
-																						if (addVerbatim(acc, "call")) {
-																							discardDCheckpoint(acc)
+																if (matchString(acc, ":")) {
+																	if (parse_ws(acc)) {
+																		if (parse_exp(acc)) {
+																			{
+																				pushDCheckpoint(acc);
+																				pushDCheckpoint(acc);
+																				if (if (matchString(acc, ";")) {
+																					if (parse_ws(acc)) {
+																						discardDCheckpoint(acc)
+																					} else {
+																						restoreDCheckpoint(acc)
+																					}
+																				} else {
+																					restoreDCheckpoint(acc)
+																				}) {
+																					discardDCheckpoint(acc)
+																				} else {
+																					restoreDCheckpoint(acc)
+																				};
+																				if (addVerbatim(acc, "cons")) {
+																					if (addMatched(acc, "__ctcase")) {
+																						if (addVerbatim(acc, "var")) {
+																							if (addVerbatim(acc, "swap")) {
+																								if (addVerbatim(acc, "call")) {
+																									if (addVerbatim(acc, "setpos")) {
+																										discardDCheckpoint(acc)
+																									} else {
+																										restoreDCheckpoint(acc)
+																									}
+																								} else {
+																									restoreDCheckpoint(acc)
+																								}
+																							} else {
+																								restoreDCheckpoint(acc)
+																							}
 																						} else {
 																							restoreDCheckpoint(acc)
 																						}
@@ -4259,12 +4280,12 @@ parse_defaultOrNamedCase(acc : DParseAcc) -> bool {
 																				} else {
 																					restoreDCheckpoint(acc)
 																				}
-																			} else {
-																				restoreDCheckpoint(acc)
 																			}
 																		} else {
 																			restoreDCheckpoint(acc)
 																		}
+																	} else {
+																		restoreDCheckpoint(acc)
 																	}
 																} else {
 																	restoreDCheckpoint(acc)
@@ -4298,18 +4319,20 @@ parse_defaultOrNamedCase(acc : DParseAcc) -> bool {
 							}
 						} else {
 							restoreDCheckpoint(acc)
+						}) {
+							discardDCheckpoint(acc)
+						} else {
+							restoreDCheckpoint(acc)
 						}
-					} else {
-						restoreDCheckpoint(acc)
 					}
-				} else {
-					restoreDCheckpoint(acc)
 				}) {
 					discardDCheckpoint(acc)
 				} else {
 					restoreDCheckpoint(acc)
 				}
 			}
+		} else {
+			restoreDCheckpoint(acc)
 		}
 	}
 }

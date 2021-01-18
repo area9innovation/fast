@@ -69,13 +69,8 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 	if (tv == 0) {
 		""
 	} else {
-		name = findMiniTyvarId(env, tv);
-		pos = findMiniTyvarPos(env, tv);
-		
 		mtype = lookupTree(^(env.tyvars), tv);
-
-		name + ":" + i2s(pos) 
-		+ mtype ?? {
+		mtype ?? {
 			" : " + miniType2string(mtype) + if (true) {
 				 "[=α" + i2s(tv) + "]"
 			} else {
