@@ -8,6 +8,9 @@ export {
 	makeMiniTypeVar(env : MiniTypeEnv) -> MiniTypeVar;
 
 	extractMiniTypePars(acc : Set<MiniTypePar>, e : MiniType) -> Set<MiniTypePar>;
+
+	// Change "auto" to type variables
+	instantiateTypeAuto(env : MiniTypeEnv, t : MiniType) -> MiniType;
 }
 
 instantiateTypePars2TypeVars(env : MiniTypeEnv, e : MiniType) -> MiniType {
@@ -68,3 +71,24 @@ extractMiniTypePars(acc : Set<MiniTypePar>, e : MiniType) -> Set<MiniTypePar> {
 	}	
 }
 
+instantiateTypeAuto(env : MiniTypeEnv, t : MiniType) -> MiniType {
+	rec = \tt -> instantiateTypeAuto(env, tt);
+	switch (t) {
+		MiniTypeInt(bits): t;
+		MiniTypeFunction(args, returnType): MiniTypeFunction(map(args, rec), rec(returnType));
+		MiniTypeCall(id, typars): {
+			if (id == "auto") {
+				makeMiniTypeVar(env)
+			} else {
+				MiniTypeCall(id, map(typars, rec));
+			}
+		}
+		MiniTypeVar(id): t;
+		MiniTypePar(id): t;
+		MiniTypeRecord(fields): {
+			MiniTypeRecord(map(fields, \f -> {
+				MiniTypeField(f.name, f.isMutable, rec(f.type))
+			}))
+		}
+	}
+}

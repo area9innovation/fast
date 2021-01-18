@@ -1,0 +1,8 @@
+foo(a) {
+	a;
+}
+
+bar() {
+	a : auto = 1;
+	foo(a);
+}

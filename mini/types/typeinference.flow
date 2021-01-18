@@ -140,7 +140,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					 *
 					 */
 					if (fname == "__type" || fname == "__fntype"|| fname == "__uniontype" || fname == "__recordtype") {
-						type = convertMiniExp2Type(ex);
+						type = convertMiniExp2TypeVar(env, ex);
 
 						// OK, we have to fix the type of the construct so the AST is still completely types
 						// even if the type is non-sense
@@ -152,7 +152,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					} else if (fname == ":") {
 						// This is special.
 						argType = typeInferenceMini(env, id, args[0]);
-						type = convertMiniExp2Type(args[1]);
+						type = convertMiniExp2TypeVar(env, args[1]);
 						switch (args[0]) {
 							MiniInt(__, __, __): {
 								// This is fine nomatter what, since it is the official way to declare other int types
@@ -166,7 +166,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					} else if (fname == "__downcast") {
 						// This is downcast "id : type in body"
 						name = getMiniVar(args[0]);
-						type = convertMiniExp2Type(args[1]);
+						type = convertMiniExp2TypeVar(env, args[1]);
 						body = args[2];
 
 						// OK, relate the type-pars of the subtype to the type-pars of the super-type
@@ -391,6 +391,12 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 		MiniDouble(value, __): type;
 		MiniString(value, __): type;
 	}
+}
+
+// Converts types from exp to types. Also handles auto
+convertMiniExp2TypeVar(env : MiniTypeEnv, e : MiniExp) -> MiniType {
+	t = convertMiniExp2Type(e);
+	instantiateTypeAuto(env, t)
 }
 
 addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {

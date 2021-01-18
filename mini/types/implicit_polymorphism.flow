@@ -111,7 +111,13 @@ resolveImplicitTypePars(env : MiniAst, t : MiniType) -> MiniType {
 				munion = lookupTree(env.unions, id);
 				switch (munion) {
 					None(): {
-						env.onError(env, id, -1, "Unknown typename " + id);
+						if (id == "auto") {
+							if (typars != []) {
+								env.onError(env, id, -1, "auto should not have type parameters");
+							}
+						} else {
+							env.onError(env, id, -1, "Unknown typename " + id);
+						}
 						t;
 					}
 					Some(union): {
