@@ -99,18 +99,18 @@ https://github.com/LPTK/simple-sub
 typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 	switch (ex) {
 		MiniInt(value, __, tv): {
-			setMiniTypeVar(env, ex, MiniTypeInt(32));
+			setMiniTypeVar(env, id, ex, MiniTypeInt(32));
 		}
 		MiniDouble(value, __): MiniTypeCall("double", []);
 		MiniString(value, __): MiniTypeCall("string", []);
 		MiniVar(name, pos, __): {
 			itype = getMiniVarType(env, id, pos, name);
-			setMiniTypeVar(env, ex, itype);
+			setMiniTypeVar(env, id, ex, itype);
 		}
 		MiniLet(name, value, body, __, tv): {
 			vtype = typeInferenceMini(env, id, value);
 			nenv = setMiniLocalType(env, name, vtype);
-			setMiniTypeVar(nenv, ex, typeInferenceMini(nenv, id, body));
+			setMiniTypeVar(nenv, id, ex, typeInferenceMini(nenv, id, body));
 		}
 		MiniLambda(args, body, __, __): {
 			argTypes = map(args, \arg -> makeMiniTypeVar(env));
@@ -119,7 +119,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 			});
 			retType = typeInferenceMini(nenv, id, body);
 			fnType = MiniTypeFunction(argTypes, retType);
-			setMiniTypeVar(nenv, ex, fnType);
+			setMiniTypeVar(nenv, id, ex, fnType);
 		}
 		MiniCall(fn, args, pos, __): {
 			def = \ -> {
@@ -130,7 +130,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					resType
 				);
 				constrainMiniType(env, id, pos, fnType, callType);
-				setMiniTypeVar(env, ex, resType);
+				setMiniTypeVar(env, id, ex, resType);
 			};
 			switch (fn) {
 				MiniVar(fname, __, __): {
@@ -141,7 +141,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					 */
 					if (fname == "__type" || fname == "__fntype"|| fname == "__uniontype" || fname == "__recordtype") {
 						type = convertMiniExpAsType(env, ex);
-						setMiniTypeVar(env, ex, type);
+						setMiniTypeVar(env, id, ex, type);
 					} else if (fname == ":") {
 						// This is special.
 						argType = typeInferenceMini(env, id, args[0]);
@@ -155,8 +155,8 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 								constrainMiniType(env, id, pos, argType, type);
 							}
 						};
-						setMiniTypeVar(env, args[1], type);
-						setMiniTypeVar(env, ex, type);
+						setMiniTypeVar(env, id, args[1], type);
+						setMiniTypeVar(env, id, ex, type);
 					} else if (fname == "__downcast") {
 						// This is downcast "id : type in body"
 						name = getMiniVar(args[0]);
@@ -181,7 +181,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 								// So construct a type-call with parameters for the type,
 								// and then relate stype with this new type-call?
 //								// println("Relating type pars of " + miniType2string(stype) + " with " + miniType2string(type));
-								setMiniTypeVar(env, args[0], scalltype);
+								setMiniTypeVar(env, id, args[0], scalltype);
 								{}
 							}
 							default: {
@@ -190,8 +190,8 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 						}
 
 						nenv1 = setMiniLocalType(env, name, type);
-						setMiniTypeVar(nenv1, args[1], type);
-						setMiniTypeVar(nenv1, ex, typeInferenceMini(nenv1, id, body));
+						setMiniTypeVar(nenv1, id, args[1], type);
+						setMiniTypeVar(nenv1, id, ex, typeInferenceMini(nenv1, id, body));
 					} else if (fname == ".") {
 						argType = typeInferenceMini(env, id, args[0]);
 						field = getMiniString(args[1]);
@@ -358,7 +358,7 @@ setMiniLocalType(env : MiniTypeEnv, id : string, type : MiniType) -> MiniTypeEnv
 	MiniTypeEnv(env with localTypes = setTree(env.localTypes, id, type));
 }
 
-setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
+setMiniTypeVar(env : MiniTypeEnv, global : string, ex : MiniExp, type : MiniType) -> MiniType {
 	def = \tv -> {
 		id = if (tv == 0) {
 			ttv = makeMiniTypeVar(env);
@@ -376,6 +376,14 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 		} else tv;
 		addMiniLowerBound(env, id, type);
 		addMiniUpperBound(env, id, type);
+
+		pos = getMiniPos(ex);
+		if (pos == -1) {
+			// println("Could not find position for " + miniPretty(ex));
+		} else {
+			setMiniTyvarInfo(env, id, global, pos);
+		}
+
 		type;
 	};
 	switch (ex) {
@@ -406,7 +414,7 @@ addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 
 constrainLowerBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 	types = lookupMultimap(^(env.tyvarLowerBounds), tyvar);
-	id = findMiniTyvarInfo(env, tyvar);
+	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \ltype -> {
 		constrainMiniType(env, id, pos, ltype, type)
@@ -415,7 +423,7 @@ constrainLowerBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 
 constrainUpperBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 	types = lookupMultimap(^(env.tyvarUpperBounds), tyvar);
-	id = findMiniTyvarInfo(env, tyvar);
+	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \utype -> {
 		constrainMiniType(env, id, pos, type, utype)

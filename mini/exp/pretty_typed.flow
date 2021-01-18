@@ -1,6 +1,7 @@
 import mini/exp/exp;
 import mini/types/typeenv;
 import mini/types/pretty;
+import mini/types/tyvarinfo;
 import text/blueprint;
 
 export {
@@ -68,8 +69,13 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 	if (tv == 0) {
 		""
 	} else {
+		name = findMiniTyvarId(env, tv);
+		pos = findMiniTyvarPos(env, tv);
+		
 		mtype = lookupTree(^(env.tyvars), tv);
-		mtype ?? {
+
+		name + ":" + i2s(pos) 
+		+ mtype ?? {
 			" : " + miniType2string(mtype) + if (true) {
 				 "[=α" + i2s(tv) + "]"
 			} else {

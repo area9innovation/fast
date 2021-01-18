@@ -72,7 +72,7 @@ simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 							} else {
 								// Update onError to know about the tyvar
 								nenv = MiniTypeEnv(acc.env with onError = \__, pos, e -> {
-									acc.env.onError(findMiniTyvarInfo(acc.env, id), pos, e)
+									acc.env.onError(findMiniTyvarId(acc.env, id), pos, e)
 								});
 								nacc = SimplifyAcc(acc with recursive = insertSet(acc.recursive, id), env = nenv);
 								rtype = simplifyResType(nacc, rt);

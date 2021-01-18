@@ -33,7 +33,6 @@ debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void {
 				debugBounds(env, id);
 			} else "";
 			println(miniPrettyTypeVar(env, id) + decor);
-
 		});
 		{}
 	}

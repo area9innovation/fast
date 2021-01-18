@@ -1,13 +1,14 @@
 import mini/types/typeenv;
 
 export {
-	// What id does this tyvar correspond to?
-	findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string;
+	setMiniTyvarInfo(env : MiniTypeEnv, tyvar : int, name : string, pos : int) -> void;
 
+	// What id does this tyvar correspond to?
+	findMiniTyvarId(env : MiniTypeEnv, tyvar : int) -> string;
 	findMiniTyvarPos(env : MiniTypeEnv, tyvar : int) -> int;
 }
 
-findMiniTyvarInfo(env : MiniTypeEnv, tyvar : int) -> string {
+findMiniTyvarId(env : MiniTypeEnv, tyvar : int) -> string {
 	mid = treeIntervalSearch(^(env.tyvar2Id), tyvar);
 
 	mid ?? mid : ("a" + i2s(tyvar) + ": ");
@@ -17,4 +18,9 @@ findMiniTyvarPos(env : MiniTypeEnv, tyvar : int) -> int {
 	mid = treeIntervalSearch(^(env.tyvar2Pos), tyvar);
 
 	mid ?? mid : -1;
+}
+
+setMiniTyvarInfo(tenv : MiniTypeEnv, tyvar : int, name : string, pos : int) -> void {
+	tenv.tyvar2Id := setTree(^(tenv.tyvar2Id), ^(tenv.tyvarId), name);
+	tenv.tyvar2Pos := setTree(^(tenv.tyvar2Pos), ^(tenv.tyvarId), pos);
 }

@@ -47,8 +47,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		mfn = lookupTree(ast.declarations, id);
 		mfn ?? {
 			// Update the tyvar map so we know the position of the type-vars we construct
-			tenv.tyvar2Id := setTree(^(tenv.tyvar2Id), ^(tenv.tyvarId), id);
-			tenv.tyvar2Pos := setTree(^(tenv.tyvar2Pos), ^(tenv.tyvarId), getMiniPos(mfn));
+			setMiniTyvarInfo(tenv, ^(tenv.tyvarId), id, getMiniPos(mfn));
 
 			recursive = containsSet(lookupMultimap(ast.idDependents.dependencies, id), id);
 
@@ -61,7 +60,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	});
 
 	if (isDebuggingIds(ast, StageTypeCoalesce(), ids)) {
-		// println("\nBefore resolution:");
+		println("\nStage: Coalesce the types:");
 		debugMiniTypeEnv(tenv2, true);
 
 		println("\nMini exp declarations before coalescing:");
@@ -81,14 +80,17 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	resTypes = coalesceMiniTypeVars(cenv);
 	simplifyResTypes(cenv, resTypes);
 
-	iter(order, \id -> {
-		if (isDebuggingId(ast, StageTypeInference(), id)) {
-			mfn = lookupTree(ast.declarations, id);
-			mfn ?? {
-				println(id + " = " + miniPrettyTyped(cenv, mfn));
-			} : {}
-		}
-	});
+	if (isDebuggingIds(ast, StageTypeInference(), ids)) {
+		println("Result of type inference:");
+		iter(order, \id -> {
+			if (isDebuggingId(ast, StageTypeInference(), id)) {
+				mfn = lookupTree(ast.declarations, id);
+				mfn ?? {
+					println(id + " = " + miniPrettyTyped(cenv, mfn));
+				} : {}
+			}
+		});
+	}
 
 	if (false) {
 		println("\nMini exp declarations after:");
