@@ -34,20 +34,31 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 		   ]
 		);
 		MiniCall(fn, args, __, tv): {
-			def = \ -> miniPrettyTyped(env, fn) + "(" + superglue(args, \a -> miniPrettyTyped(env, a), ", ") + ")" + type(tv);
+			def = \sep -> {
+				blueprint("
+				%fn%(
+					%args%
+				)%type%", [
+					"fn", miniPrettyTyped(env, fn),
+					"args", superglue(args, \a -> miniPrettyTyped(env, a), sep),
+					"type", type(tv)
+				]);
+			}
 			switch (fn) {
 				MiniVar(fname, __, __): {
 					if (fname == "__ifte") {
-						def();
+						def(", ");
 					} else if (fname == "__ift") {
-						def();
+						def(", ");
 					} else if (fname == ";") {
-						superglue(args, \a -> miniPrettyTyped(env, a), ";\n") + type(tv);
+						def(";\n");
+					} else if (contains(["__switch", "__or", "__case", "__downcast"], fname)) {
+						def(",\n");
 					} else {
-						def();
+						def(", ");
 					}
 				}
-				default: def();
+				default: def(", ");
 			}
 		}
 	}

@@ -140,19 +140,12 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					 *
 					 */
 					if (fname == "__type" || fname == "__fntype"|| fname == "__uniontype" || fname == "__recordtype") {
-						type = convertMiniExp2TypeVar(env, ex);
-
-						// OK, we have to fix the type of the construct so the AST is still completely typed
-						// even if the type is non-sense
-						set = \e -> {setMiniTypeVar(env, e, miniTypeVoid); {} };
-						set(fn);
-						iter(args, set);
-						// Set the real type;
+						type = convertMiniExpAsType(env, ex);
 						setMiniTypeVar(env, ex, type);
 					} else if (fname == ":") {
 						// This is special.
 						argType = typeInferenceMini(env, id, args[0]);
-						type = convertMiniExp2TypeVar(env, args[1]);
+						type = convertMiniExpAsType(env, args[1]);
 						switch (args[0]) {
 							MiniInt(__, __, __): {
 								// This is fine nomatter what, since it is the official way to declare other int types
@@ -162,11 +155,12 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 								constrainMiniType(env, id, pos, argType, type);
 							}
 						};
+						setMiniTypeVar(env, args[1], type);
 						setMiniTypeVar(env, ex, type);
 					} else if (fname == "__downcast") {
 						// This is downcast "id : type in body"
 						name = getMiniVar(args[0]);
-						type = convertMiniExp2TypeVar(env, args[1]);
+						type = convertMiniExpAsType(env, args[1]);
 						body = args[2];
 
 						// OK, relate the type-pars of the subtype to the type-pars of the super-type
@@ -178,6 +172,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 								scalltype = MiniTypeCall("", map(stypars, \__ -> makeMiniTypeVar(env)));
 								// Relate this to the super-type
 								constrainMiniType(env, id, pos, stype, scalltype);
+
 								// and relate the typars to the typars of the subtype
 								iteri(scalltype.typars, \i, larg -> {
 									constrainMiniType(env, id, pos, stypars[i], larg);
@@ -185,15 +180,18 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 
 								// So construct a type-call with parameters for the type,
 								// and then relate stype with this new type-call?
-//								println("Relating type pars of " + miniType2string(stype) + " with " + miniType2string(type));
+//								// println("Relating type pars of " + miniType2string(stype) + " with " + miniType2string(type));
+								setMiniTypeVar(env, args[0], scalltype);
+								{}
 							}
 							default: {
 								env.onError(id, pos, "Downcast only defined for type names, not " + miniType2string(type));
 							}
 						}
 
-						nenv = setMiniLocalType(env, name, type);
-						setMiniTypeVar(nenv, ex, typeInferenceMini(nenv, id, body));
+						nenv1 = setMiniLocalType(env, name, type);
+						setMiniTypeVar(nenv1, args[1], type);
+						setMiniTypeVar(nenv1, ex, typeInferenceMini(nenv1, id, body));
 					} else if (fname == ".") {
 						argType = typeInferenceMini(env, id, args[0]);
 						field = getMiniString(args[1]);
@@ -392,10 +390,10 @@ setMiniTypeVar(env : MiniTypeEnv, ex : MiniExp, type : MiniType) -> MiniType {
 	}
 }
 
-// Converts types from exp to types. Also handles auto
-convertMiniExp2TypeVar(env : MiniTypeEnv, e : MiniExp) -> MiniType {
+// Converts types from exp to types. Also handles auto, and updates the type of this expression
+convertMiniExpAsType(env : MiniTypeEnv, e : MiniExp) -> MiniType {
 	t = convertMiniExp2Type(e);
-	instantiateTypeAuto(env, t)
+	instantiateTypeAuto(env, t);
 }
 
 addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
