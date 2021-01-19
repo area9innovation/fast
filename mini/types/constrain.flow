@@ -2,6 +2,7 @@ import mini/types/typeenv;
 import mini/types/type_ast;
 import mini/types/polymorphism;
 import mini/util/position;
+import mini/util/trace;
 import mini/exp/pretty;
 import mini/types/tyvarinfo;
 import mini/types/pretty;
@@ -9,14 +10,15 @@ import mini/types/subtype;
 
 export {
 	// Extract constraints from this type pairing. lhs should be a subtype of rhs
-	constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void;
+	constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void;
 
 	addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void;
 	addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void;
 }
 
-constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void {
+constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void {
 	lhs = lhsp.type;
+	rhs = rhsp.type;
 	if (containsSet(^(env.constraintCache), Pair(lhs, rhs))
 		|| lhs == MiniTypeCall("auto", [])
 		|| rhs == MiniTypeCall("auto", [])) {
@@ -24,16 +26,27 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void
 	} else {
 		env.constraintCache := insertSet(^(env.constraintCache), Pair(lhs, rhs));
 		
-		// println("Constrain " + debugMiniType(env, lhs) + " <: " + debugMiniType(env, rhs));
+		if (isDebuggingId(env.ast, StageTypeConstrain(), lhsp.id) || isDebuggingId(env.ast, StageTypeConstrain(), rhsp.id)) {
+			fileinfo1 = getFileLineInfo(env.ast, lhsp.id, lhsp.pos);
+			fileinfo2 = getFileLineInfo(env.ast, rhsp.id, rhsp.pos);
+			println(
+				fileinfo1 + "Constrain " + reason + " " + debugMiniType(env, lhs) + " ≤ " + debugMiniType(env, rhs)
+				+ (if (fileinfo1 != fileinfo2) fileinfo2 else "")
+			);
+		}
 
 		error = \ -> {
 			env.onError(lhsp.id, lhsp.pos, "Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
+			if (lhsp.id == rhsp.id && lhsp.pos == rhsp.pos) {
+			} else {
+				env.onError(rhsp.id, rhsp.pos, "with here");
+			}
 		};
 		right = \ -> {
 			switch (rhs) {
 				MiniTypeVar(rid): {
 					addMiniLowerBound(env, rid, lhs);
-					constrainUpperBounds(env, rid, lhs);
+					constrainUpperBounds(env, rid, lhsp, reason);
 				}
 				MiniTypeCall(rid, rtypars): {
 					if (rid == "flow"  && rtypars == []) {
@@ -59,10 +72,17 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void
 							error();
 						} else {
 							iteri(largs, \i, larg -> {
-								// TODO: The pos is the wrong one once we have a r-pos as well
-								constrainMiniType(env, MiniTypePos(lhsp with type = rargs[i]), larg);
+								constrainMiniType(env, 
+									MiniTypePos(rhsp with type = rargs[i]), 
+									MiniTypePos(lhsp with type = larg), 
+									reason + " arg" + i2s(i)
+								);
 							});
-							constrainMiniType(env, MiniTypePos(lhsp with type = lreturnType), rreturnType);
+							constrainMiniType(env, 
+								MiniTypePos(lhsp with type = lreturnType), 
+								MiniTypePos(rhsp with type = rreturnType),
+								reason + " return"
+							);
 						}
 					}
 					default: right();
@@ -71,12 +91,12 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void
 			MiniTypeCall(lid, ltypars): {
 				switch (rhs) {
 					MiniTypeCall(rid, rtypars): {
-						constrainMiniTypeCalls(env, lhsp.id, lhsp.pos, constrainMiniType, lhs, rhs);
+						constrainMiniTypeCalls(env, lhsp.id, lhsp.pos, constrainMiniType, lhs, rhs, reason);
 					}
 					MiniTypeRecord(rfields): {
 						mrecord = typeCall2MiniRecord(env.ast, lhs);
 						mrecord ?? {
-							constrainMiniType(env, MiniTypePos(lhsp with type = mrecord), rhs);
+							constrainMiniType(env, MiniTypePos(lhsp with type = mrecord), rhsp, reason + " record");
 						} : {
 							error();
 						}
@@ -87,7 +107,7 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void
 			MiniTypeVar(lid): {
 				def = \ -> {
 					addMiniUpperBound(env, lid, rhs);
-					constrainLowerBounds(env, lid, rhs);
+					constrainLowerBounds(env, lid, rhsp, reason);
 				};
 
 				switch (rhs) {
@@ -116,7 +136,11 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhs : MiniType) -> void
 								if (lfield.isMutable && !fs1.isMutable) {
 									env.onError(lhsp.id, lhsp.pos, "Field " + fs1.name + " should be mutable in " + miniType2string(rhs));
 								} 
-								constrainMiniType(env, MiniTypePos(lhsp with type = lfield.type), fs1.type);
+								constrainMiniType(env, 
+									MiniTypePos(lhsp with type = lfield.type), 
+									MiniTypePos(rhsp with type = fs1.type),
+									reason + " ." + fs1.name
+								);
 							} : {
 								env.onError(lhsp.id, lhsp.pos, "Expected field " + fs1.name + " in " + miniType2string(lhs));
 							}
@@ -147,20 +171,20 @@ addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
 	env.tyvarUpperBounds := insertMultimap(^(env.tyvarUpperBounds), tyvar, type);
 }
 
-constrainLowerBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
+constrainLowerBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason : string) -> void {
 	types = lookupMultimap(^(env.tyvarLowerBounds), tyvar);
 	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \ltype -> {
-		constrainMiniType(env, MiniTypePos(id, pos, ltype), type)
+		constrainMiniType(env, MiniTypePos(id, pos, ltype), typep, reason + " lower-bound")
 	})
 }
 
-constrainUpperBounds(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
+constrainUpperBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason : string) -> void {
 	types = lookupMultimap(^(env.tyvarUpperBounds), tyvar);
 	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \utype -> {
-		constrainMiniType(env, MiniTypePos(id, pos, type), utype)
+		constrainMiniType(env, typep, MiniTypePos(id, pos, utype), reason + " upper-bound")
 	})
 }

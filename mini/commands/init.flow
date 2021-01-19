@@ -15,8 +15,9 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 		if (stage == "parse") insertSet(acc, StageParse())
 		else if (stage == "ct") insertSet(acc, StageCompileTime())
 		else if (stage == "type") insertSet(acc, StageTypeInference())
-		else if (stage == "lower") insertSet(acc, StageLower())
 		else if (stage == "coalesce") insertSet(acc, StageTypeCoalesce())
+		else if (stage == "constrain") insertSet(acc, StageTypeConstrain())
+		else if (stage == "lower") insertSet(acc, StageLower())
 		else {
 			println("Unknown stage: " + stage);
 			acc;

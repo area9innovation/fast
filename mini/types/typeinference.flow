@@ -51,7 +51,7 @@ typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, 
 		rt = typeInferenceMini(nenv, id, ex);
 
 		// OK, we constrain the type
-		constrainMiniType(nenv, MiniTypePos(id, pos, rt), type);
+		constrainMiniType(nenv, MiniTypePos(id, pos, rt), MiniTypePos(id, pos, type), "rec");
 		rt;
 	} else {
 		typeInferenceMini(env0, id, ex);
@@ -61,7 +61,11 @@ typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, 
 	mforward = lookupTree(env0.ast.types, id);
 	mforward ?? {
 		// When we do, then constraint it, but keep it as the type of this id
-		constrainMiniType(env0, MiniTypePos(id, pos, inferredType), mforward) ;
+		constrainMiniType(env0, 
+			MiniTypePos(id, pos, inferredType), 
+			MiniTypePos(id, pos, mforward), // TODO: Find the position of the existing definition?
+			"forward"
+		);
 
 		if (false) {
 			// If this is polymorphic, we could probably resolve it immediately?
@@ -84,7 +88,8 @@ setMiniTypeDeclaration(env : MiniTypeEnv, id : string, pos : int, type : MiniTyp
 	// If so, that should serve as a constraint.
 	mtype = lookupTree(env.ast.types, id);
 	mtype ?? {
-		constrainMiniType(env, MiniTypePos(id, pos, type), mtype);
+		// TODO: If we have it, find the existing position
+		constrainMiniType(env, MiniTypePos(id, pos, type), MiniTypePos(id, pos, mtype), "forward");
 	} : {};
 
 	MiniTypeEnv(
@@ -132,7 +137,8 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					map(args, \a -> typeInferenceMini(env, id, a)),
 					resType
 				);
-				constrainMiniType(env, MiniTypePos(id, pos, fnType), callType);
+				// TODO: We could separate the pos for the call to the fn, and the args in callType
+				constrainMiniType(env, MiniTypePos(id, pos, fnType), MiniTypePos(id, pos, callType), "call");
 				setMiniTypeVar(env, id, ex, resType);
 			};
 			switch (fn) {
@@ -155,7 +161,10 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 							}
 							default: {
 								// For the rest, check the type
-								constrainMiniType(env, MiniTypePos(id, pos, argType), type);
+								// Pick out the position for the type
+								typepos0 = getMiniPos(args[1]);
+								typepos = if (typepos0 == -1) pos else typepos0;
+								constrainMiniType(env, MiniTypePos(id, pos, argType), MiniTypePos(id, typepos, type), ":");
 							}
 						};
 						setMiniTypeVar(env, id, args[1], type);
@@ -170,20 +179,27 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 						switch (type) {
 							MiniTypeCall(subtype, stypars): {
 								// Relate type pars of the first name and the type here
-								stype = getMiniVarType(env, id, pos, name);
+								supertype = getMiniVarType(env, id, pos, name);
 								// Make a shell type call with the correct number of type pars
 								scalltype = MiniTypeCall("", map(stypars, \__ -> makeMiniTypeVar(env)));
 								// Relate this to the super-type
-								constrainMiniType(env, MiniTypePos(id, pos, stype), scalltype);
+								// TODO: We could potentially find the position of the name
+								constrainMiniType(env, MiniTypePos(id, pos, scalltype), MiniTypePos(id, pos, supertype), "downcast-super");
 
 								// and relate the typars to the typars of the subtype
 								iteri(scalltype.typars, \i, larg -> {
-									constrainMiniType(env, MiniTypePos(id, pos, stypars[i]), larg);
+									constrainMiniType(env, 
+										// The typepars of the downcast type
+										MiniTypePos(id, pos, stypars[i]), 
+										// And the typepar of the supercall
+										MiniTypePos(id, pos, larg),
+										"downcast-typar" + i2s(i)
+									);
 								});
 
 								// So construct a type-call with parameters for the type,
-								// and then relate stype with this new type-call?
-//								// println("Relating type pars of " + miniType2string(stype) + " with " + miniType2string(type));
+								// and then relate supertype with this new type-call?
+//								// println("Relating type pars of " + miniType2string(supertype) + " with " + miniType2string(type));
 								setMiniTypeVar(env, id, args[0], scalltype);
 								{}
 							}
@@ -202,7 +218,10 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 						fieldType = makeMiniTypeVar(env);
 						rec = MiniTypeRecord([MiniTypeField(field, false, fieldType)]);
 
-						constrainMiniType(env, MiniTypePos(id, pos, argType), rec);
+						fieldpos0 = getMiniPos(args[1]);
+						fieldpos = if (fieldpos0 == -1) pos else fieldpos0;
+
+						constrainMiniType(env, MiniTypePos(id, pos, argType), MiniTypePos(id, fieldpos, rec), ".");
 
 						fieldType;
 					} else {

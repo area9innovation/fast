@@ -83,13 +83,15 @@ export {
 		// TODO: Add #defines
 	);
 
-	CompileStage ::= StageParse, StageCompileTime, StageTypeInference, StageTypeCoalesce, StageLower;
+	CompileStage ::= StageParse, StageCompileTime, StageTypeInference, StageTypeConstrain, StageTypeCoalesce, StageLower;
 		// Parse source code
 		StageParse();
 		// Evaluate at compile time
 		StageCompileTime();
 		// Infer types
 		StageTypeInference();
+		// Define tyvar constraints
+		StageTypeConstrain();
 		// Resolve type constraints
 		StageTypeCoalesce();
 		// Lower to typed BExp and optimize

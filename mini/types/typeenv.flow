@@ -10,6 +10,10 @@ export {
 		// The types of local ids so far
 		localTypes : Tree<string, MiniType>,
 
+		// TODO:
+		// Add position info for each local variable
+		// as well as the global variable where each local is defined
+
 		// For the MLSub algorithm, we keep track of bounds:
 		tyvarLowerBounds : ref Tree<int, Set<MiniType>>,
 		tyvarUpperBounds : ref Tree<int, Set<MiniType>>,

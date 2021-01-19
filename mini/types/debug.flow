@@ -39,7 +39,7 @@ debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void {
 
 			fileinfo = getFileLineInfo(env.ast, name, pos);
 
-			println(fileinfo + strRight(miniPrettyTypeVar(env, tv), 3) + decor);
+			println(fileinfo + miniPrettyTypeVar(env, tv) + decor);
 		});
 		{}
 	}
@@ -61,7 +61,7 @@ debugMiniType(env : MiniTypeEnv, type : MiniType) -> string {
 		MiniTypeVar(id): {	
 			miniPrettyTypeVar(env, id);
 		}
-		default: " : " + miniType2string(type);
+		default: miniType2string(type);
 	}
 }
 

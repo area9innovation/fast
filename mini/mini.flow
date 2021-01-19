@@ -121,6 +121,6 @@ printHelp() -> void {
 	println("mini file=filename.flow");
 	println("   debug=1                     Follow the compilation process for all ids");
 	println("   debug=id1,id2               Follow the compilation process for id1, id2");
-	println("   stages=parse,ct,type,coalesce,lower");
+	println("   stages=parse,ct,type,constrain,coalesce,lower");
 	println("        With debug, follow the compilation process for these stages");
 }
