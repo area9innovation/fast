@@ -155,17 +155,24 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 						// This is special.
 						argType = typeInferenceMini(env, id, args[0]);
 						type = convertMiniExpAsType(env, args[1]);
+
+						defc = \ -> {
+							// Pick out the position for the type
+							typepos0 = getMiniPos(args[1]);
+							typepos = if (typepos0 == -1) pos else typepos0;
+							constrainMiniType(env, MiniTypePos(id, pos, argType), MiniTypePos(id, typepos, type), ":");
+						};
+
 						switch (args[0]) {
 							MiniInt(__, __, __): {
-								// This is fine nomatter what, since it is the official way to declare other int types
+								switch (type) {
+									MiniTypeInt(__): {
+										// This is fine nomatter what, since it is the official way to declare other int types
+									}
+									default: defc();
+								}
 							}
-							default: {
-								// For the rest, check the type
-								// Pick out the position for the type
-								typepos0 = getMiniPos(args[1]);
-								typepos = if (typepos0 == -1) pos else typepos0;
-								constrainMiniType(env, MiniTypePos(id, pos, argType), MiniTypePos(id, typepos, type), ":");
-							}
+							default: defc();
 						};
 						setMiniTypeVar(env, id, args[1], type);
 						setMiniTypeVar(env, id, ex, type);
