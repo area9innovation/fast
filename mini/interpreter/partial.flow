@@ -19,7 +19,23 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 		MiniValue(): e;
 		MiniVar(name, __, tyvar): e;
 		MiniLet(name, value, body, pos, tyvar): {
-			MiniLet(name, partialMiniExp(env, value), partialMiniExp(env, body), pos, tyvar);
+			pvalue = partialMiniExp(env, value);
+
+			// OK, check if the value is just a name
+			isId = switch (pvalue) {
+				MiniVar(nname, __, __): true;
+				default: false;
+			};
+
+			pe = MiniLet(name, pvalue, partialMiniExp(env, body), pos, tyvar);
+			if (isId) {
+				// This helps get rid of "__switchvalue" in switches where
+				// it is not needed, and that in turn helps downcast work
+				// correctly in tests/maybe.flow
+				interpretMiniExp(env, pe);
+			} else {
+				pe;
+			}
 		}
 		MiniLambda(args, body, pos, tyvar): {
 			MiniLambda(args, partialMiniExp(env, body), pos, tyvar);
