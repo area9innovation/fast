@@ -36,7 +36,7 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 		}
 
 		error = \ -> {
-			env.onError(lhsp.id, lhsp.pos, "Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs));
+			env.onError(lhsp.id, lhsp.pos, "Type violation " + miniType2string(lhs) + " < " + miniType2string(rhs) + " due to constraints " + reason);
 			if (lhsp.id == rhsp.id && lhsp.pos == rhsp.pos) {
 			} else {
 				env.onError(rhsp.id, rhsp.pos, "with here");

@@ -64,7 +64,7 @@ typeInferenceMiniDeclaration(env0 : MiniTypeEnv, id : string, recursive : bool, 
 		constrainMiniType(env0, 
 			MiniTypePos(id, pos, inferredType), 
 			MiniTypePos(id, pos, mforward), // TODO: Find the position of the existing definition?
-			"forward"
+			"forward<" + id + ">"
 		);
 
 		if (false) {
@@ -89,7 +89,7 @@ setMiniTypeDeclaration(env : MiniTypeEnv, id : string, pos : int, type : MiniTyp
 	mtype = lookupTree(env.ast.types, id);
 	mtype ?? {
 		// TODO: If we have it, find the existing position
-		constrainMiniType(env, MiniTypePos(id, pos, type), MiniTypePos(id, pos, mtype), "forward");
+		constrainMiniType(env, MiniTypePos(id, pos, type), MiniTypePos(id, pos, mtype), "forward<" + id + ">");
 	} : {};
 
 	MiniTypeEnv(

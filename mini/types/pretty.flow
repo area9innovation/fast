@@ -13,7 +13,10 @@ miniType2string(t : MiniType) -> string {
 	switch (t) {
 		MiniTypeInt(bits): if (bits == 0) "void" else if (bits == 1) "bool" else if (bits == 32) "int" else "i" + i2s(bits);
 		MiniTypeFunction(args, returnType): "(" + superglue(args, miniType2string, ", ") + ") -> " + miniType2string(returnType);
-		MiniTypeCall(id, typars): id + if (typars != []) "<" + superglue(typars, miniType2string, ", ") + ">" else "";
+		MiniTypeCall(id, typars): {
+			(if (id == "") "*" else id)
+			+ if (typars != []) "<" + superglue(typars, miniType2string, ", ") + ">" else "";
+		}
 		MiniTypeVar(id): "α" + i2s(id);
 		MiniTypePar(id): id;
 		MiniTypeRecord(fields): {
