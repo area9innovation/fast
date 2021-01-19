@@ -1,8 +1,8 @@
 # Mini
 
 - [Mini](#mini)
-	- [Mini Server](#mini-server)
 	- [Running the compiler](#running-the-compiler)
+	- [Compiler Internal Languages](#compiler-internal-languages)
 	- [Milestones](#milestones)
 	- [Known syntaxs differences](#known-syntaxs-differences)
 	- [Backends](#backends)
@@ -42,7 +42,6 @@
 - [Polymorphism](#polymorphism)
 - [Editor DSL](#editor-dsl)
 - [ICFP inspiration](#icfp-inspiration)
-- [__downcast](#__downcast)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -53,7 +52,59 @@ with changed ids.  It is based on having a database of definitions in memory.
 We track the dependencies between definitions, and as code is changed, we 
 efficiently update only the parts that need it.
 
-## Mini Server
+## Running the compiler
+
+Run with
+
+	flowcpp mini/mini.flow -- file=myprogram.flow
+
+will compile myprogram to js and flow files called out.js and out.flow.
+
+This
+
+	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=1
+
+will produce a debug trace of how this file goes through the compiler.
+
+If you are interested in only one function, you can use this:
+
+	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=main
+
+to get a trace of how "main" goes through the compiler.
+
+Similarly, this
+
+	flowcpp mini/mini.flow -- file=myprogram.flow debug=myprogram,main
+
+will debug both main as above, but also how we parse the file "myprogram".
+
+You can limit what phases of the compilation process you want to debug-trace
+using the "stages" argument:
+
+	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=1 stages=parse
+
+and you will only get debug info about parsing.
+
+The stages can be separated by comma. Here is a list of the stages:
+
+	parse     - resolution of includes and parsing
+	ct 	      - compile time evaluation. Used to desugar constructs
+	type      - type inference and the resulting types
+	constrain - track the detailed type constraints build by the type inference
+	coalesce  - track how the type constraints are resolved into final types
+	lower	  - see how the lowering to typed `BExp` is done
+
+The default stages activated are "parse,ct,type,lower".
+If you are debugging type inference problems, then using
+
+	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=1 stages=type,constrain,coalesce,lower
+
+is a good combination with a lot of details.
+
+TODO:
+- Add stage for backend code gen
+
+## Compiler Internal Languages
 
 The compile server is based on these different languages:
 
@@ -83,32 +134,6 @@ command line version in `mini/mini.flow`.
 TODO:
 - Add a more traditional Mini server, with a HTTP-based interface.
 
-## Running the compiler
-
-Run with
-
-	flowcpp mini/mini.flow -- file=myprogram.flow
-
-will compile myprogram to js and flow files called out.js and out.flow.
-
-This
-
-	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=1
-
-will produce a debug trace of how this file goes through the compiler.
-
-If you are interested in only one function, you can use this:
-
-	flowcpp mini/mini.flow -- file=mini/tests/test.flow debug=main
-
-to get a trace of how "main" goes through the compiler.
-
-Similarly, this
-
-	flowcpp mini/mini.flow -- file=myprogram.flow debug=myprogram,main
-
-will debug both main as above, but also how we parse the file "myprogram".
-
 ## Milestones
 
 The compiler is still in development, and a lot of work remains. To help guide
@@ -119,7 +144,7 @@ the development, we have defined some milestones.
     - Redo __construct to be more like record construction?
       - makerecord(), setrecord(record, id, val)?
 	- Specific todos for test cases:
-	- 1: Generalize unbound tyvars to typars
+	- 1: Generalize unbound tyvars to typars, or figure out why typars are instantiated
 	  maybeBind has wrong type.
 	- lambdaarg does not capture type parameters defined in lambdas!
     - 5, 7: intersection typing
@@ -155,8 +180,6 @@ the development, we have defined some milestones.
    - Track declarations per file when file changes
    - Track imports/exports
    - Check imports/exports, undefined names
-
-- Get error messages with locations to work
 
 - Introduce "options" for strict polymorphism, flow-type, etc. for language variations
 
@@ -531,13 +554,13 @@ use one of the other.
 ## Switch
 
 We expand let-bindings in cases in the compile-time step by partially evaluating the __ctcase
-functino accordingly.
+function accordingly.
 
 Similarly, we expand a ?? b : c to a switch at compile time to a switch.
 
 TODO:
 - Union-match: This requires knowing the unions, as well as the entire scope of the switch
-- Exaustiveness check
+- Exhaustiveness check of switch
 
 ## Switch backend
 
@@ -604,11 +627,8 @@ The use in the grammar is isolated to a few areas:
 
 Forwards declarations can be stored in the MiniAst.types field.
 
-We have a function, which converts an MiniExp to a type in the types/type_ast.flow file.
+We have a function, which converts an MiniExp to a type in the `types/type_ast.flow` file.
 This encodes the convention for how to represent types as values.
-
-Plan:
-- Use "forward" in the grammar and check that it works
 
 # Optimizations
 
@@ -646,7 +666,7 @@ This is the fastest way to iterate an array in JS:
 		++x;
 	}
 
-Consider to add `while` and mutable variables to BExp, so we could explicitly represent this.
+Consider to add `while` and mutable variables to BExp or Back, so we could explicitly represent this.
 
 # Appendix
 
@@ -814,9 +834,7 @@ TODO:
   - Port to flow, and compile to WASM? A lot of JS voodoo is used, so not easy
   - Wrap as natives - much easier
 
-
 So we have an efficient way to just send in a bunch of rectangles, and get only those visible rendered.
-
 
 Next idea:
 
@@ -873,12 +891,6 @@ https://www.youtube.com/watch?v=MUcG9LwQrJA&list=PLyrlk8Xaylp6vEeTa5x55uTH7Hjowt
 CRDT DSL: Using distributive laws to fix conflicts. Result is compositional CRDTs.
 https://crdt.tech/
 https://arxiv.org/pdf/2004.04303.pdf
-
-# __downcast
-
-Make sure the downcast type have "auto" for type-pars for the structs in it.
-
-__downcast has to relate the type pars of switchvar with the case-type.
 
 Special case
 
