@@ -230,7 +230,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 
 						constrainMiniType(env, MiniTypePos(id, pos, argType), MiniTypePos(id, fieldpos, rec), ".");
 
-						fieldType;
+						setMiniTypeVar(env, id, ex, fieldType);
 					} else {
 						def();
 					}

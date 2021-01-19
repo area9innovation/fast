@@ -20,8 +20,9 @@ miniPrettyTyped(env : MiniTypeEnv, m : MiniExp) -> string {
 		MiniString(value, __): toString(value);
 		MiniVar(name, __, tv): name + type(tv);
 		MiniLet(name, value, body, __, tv): blueprint("
-			%name%%type% = %value%;
-			%body%",
+			%name% = %value%;
+				%body%
+			%type%",
 			[ "name", name,
 			  "type", type(tv),
 			  "value", miniPrettyTyped(env, value),

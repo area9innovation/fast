@@ -89,8 +89,9 @@ prettyBExp(b : BExp) -> string {
 		BVar(name, type): name + " ·" + miniType2string(type) + "·";
 		BLet(name, value, body, type): {
 			blueprint("
-				%name% : %type% = %value%;
-				%body%", [
+				%name% = %value%;
+					%body%
+				·%type%·", [
 					"name", name,
 					"type", miniType2string(type),
 					"value", prettyBExp(value),
