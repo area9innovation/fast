@@ -273,6 +273,7 @@ Languages to add:
 - C++
 - Rust
 - Wasm
+- Rescript/Ocaml: https://medium.com/att-israel/how-i-switched-from-typescript-to-rescript-637aa5ef8d3
 
 ### JS
 
@@ -895,4 +896,23 @@ https://arxiv.org/pdf/2004.04303.pdf
 Special case
 
 if (isSameStructType()) somehow
+
+
+# Partial evaluation as a core primitive
+
+https://github.com/mrakgr/The-Spiral-Language
+
+Two layered, staged language.
+The first is dynamically typed, partial evaluation based.
+The second is ML, statically typed.
+
+It has two constructs:
+- dyn which marks a variable to exist in the output produced by the compiler
+- join, which marks an expression hich should be lifted into a function
+  to be produced by the compiler
+
+This is easy to add to Mini, since it already has a partial evaluator.
+
+First test case is to use this to make reducers and rvalues efficient in
+real life.
 
