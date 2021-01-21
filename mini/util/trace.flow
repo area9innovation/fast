@@ -5,6 +5,8 @@ export {
 	isDebuggingId(ast : MiniAst, stage : CompileStage, id : string) -> bool;
 
 	isDebuggingIds(ast : MiniAst, stage : CompileStage, ids : Set<string>) -> bool;
+
+	isDebuggingStage(ast : MiniAst, stage : CompileStage) -> bool;
 }
 
 isDebuggingId(ast : MiniAst, stage : CompileStage, id : string) -> bool {
@@ -17,4 +19,9 @@ isDebuggingIds(ast : MiniAst, stage : CompileStage, ids : Set<string>) -> bool {
 	&& (
 		!isEmptySet(intersectSets(ast.options.debugIds, ids)) || containsSet(ast.options.debugIds, "1")
 	)
+}
+
+
+isDebuggingStage(ast : MiniAst, stage : CompileStage) -> bool {
+	containsSet(ast.options.debugStages, stage)
 }

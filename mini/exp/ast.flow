@@ -83,7 +83,7 @@ export {
 		// TODO: Add #defines
 	);
 
-	CompileStage ::= StageParse, StageCompileTime, StageTypeInference, StageTypeConstrain, StageTypeCoalesce, StageLower;
+	CompileStage ::= StageParse, StageCompileTime, StageTypeInference, StageTypeConstrain, StageTypeCoalesce, StageTypeSimplify, StageLower;
 		// Parse source code
 		StageParse();
 		// Evaluate at compile time
@@ -94,6 +94,8 @@ export {
 		StageTypeConstrain();
 		// Resolve type constraints
 		StageTypeCoalesce();
+		// Simplify restypes
+		StageTypeSimplify();
 		// Lower to typed BExp and optimize
 		StageLower();
 }

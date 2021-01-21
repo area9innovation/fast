@@ -4,6 +4,7 @@ import mini/types/type;
 import mini/types/subtype;
 import mini/types/subtypegraph;
 import mini/types/tyvarinfo;
+import mini/util/trace;
 
 export {
 	// Simplifies the res types to mini types
@@ -13,15 +14,24 @@ export {
 simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void {
 	acc = SimplifyAcc(env, env.tyvars, makeSet(), resTypes);
 
-	if (env.ast.options.verbose > 1) {
+	debug = isDebuggingStage(env.ast, StageTypeSimplify());
+	if (debug) {
 		println("Simplify restypes:");
 	}
 
 	traverseInOrder(resTypes, \tv, restype -> {
 		resolved = simplifyResType(acc, ResTypeVar(tv));
-		if (env.ast.options.verbose > 1) {
-			println("a"  + i2s(tv) + " = " + miniType2string(resolved) + " from " + debugBounds(env, tv) + "   giving restype: " + resType2string(restype));
-		};
+		if (debug) {
+			// OK, find out what id this is
+			id = findMiniTyvarId(env, tv);
+
+			if (isDebuggingId(env.ast, StageTypeSimplify(), id)) {
+				pos = findMiniTyvarPos(env, tv);
+
+				fileinfo = getFileLineInfo(env.ast, id, pos);
+				println("α" + i2s(tv) + " = " + miniType2string(resolved) + " from " + debugBounds(env, tv) + "   giving restype: " + resType2string(restype) + "     " + fileinfo);
+			}
+		}
 	});
 }
 
