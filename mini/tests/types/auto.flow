@@ -1,8 +1,9 @@
-foo(a) {
+foo(a) {	//  (int) -> int
 	a;
 }
 
-bar() {
-	a : auto = 1;
+bar() {		// () -> int
+	a : auto = 1;	
 	foo(a);
 }
+

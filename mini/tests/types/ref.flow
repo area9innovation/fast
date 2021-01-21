@@ -1,0 +1,15 @@
+foo() {
+	a = ref 1;
+	a := ^a;	// TODO: Coalescing problem
+	a := read(a);
+	a := 2;
+	set(a, 3);
+}
+
+read(r) {	// TODO: Coalescing problem
+	^r;
+}
+
+set(r, v) {
+	r := v;
+}

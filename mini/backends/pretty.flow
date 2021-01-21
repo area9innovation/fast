@@ -118,7 +118,7 @@ prettyBExp(b : BExp) -> string {
 			"if (" + prettyBExp(cond) + ") {" + prettyBExp(then) + "} else {" + prettyBExp(else_) + "}" + " ·" + miniType2string(type) + "·";
 		}
 		BSequence(statements, type): {
-			"{" + superglue(statements, \s -> prettyBExp(s), "; ") + "}" + " ·" + miniType2string(type) + "·";
+			"{" + superglue(statements, \s -> prettyBExp(s), ";\n") + "}" + " ·" + miniType2string(type) + "·";
 		}
 		BSwitch(val, cases, type): {
 			blueprint("
