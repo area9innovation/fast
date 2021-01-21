@@ -2,12 +2,14 @@ import mini/types/typeenv;
 import mini/types/restype;
 import mini/types/unify_restype;
 import mini/types/debug;
+import mini/util/trace;
 import ds/tuples;
 import ds/treeutils;
 
 export {
 	// Construct a map of how each tyvar is coalescated to a ResType
 	coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType>;
+	coalesceMiniTypeVars2(env : MiniTypeEnv) -> Tree<int, Pair<ResType, ResType>>;
 }
 
 PolarVariable(id : int, polar : bool);
@@ -23,6 +25,10 @@ coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType> {
 	// topological order?
 	cenv = CoalesceAcc(env, ref makeTree(), makeSet());
 
+	if (isDebuggingStage(env.ast, StageTypeCoalesce())) {
+		println("\nCoalescing to polar restypes");
+	}
+
 	resenv = ResTypeEnv(ref makeTree(), \tv -> {
 		restype1 = goCoalesce(cenv, MiniTypeVar(tv), true);
 		restype2 = goCoalesce(cenv, MiniTypeVar(tv), false);
@@ -34,11 +40,42 @@ coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType> {
 		restype2 = goCoalesce(cenv, MiniTypeVar(tv), false);
 
 		restype = unifyResTypes(resenv, makeSet1(tv), restype1, restype2);
+
+		if (isDebuggingStage(env.ast, StageTypeCoalesce())) {
+			// OK, find out what id this is
+			id = findMiniTyvarId(env, tv);
+
+			if (isDebuggingId(env.ast, StageTypeCoalesce(), id)) {
+				pos = findMiniTyvarPos(env, tv);
+
+				fileinfo = getFileLineInfo(env.ast, id, pos);
+
+				println("α" + i2s(tv) + " = " + rpad(resType2string(restype), " ", 20) + "  from " + resType2string(restype1) + " vs "  + resType2string(restype2) + "     " + fileinfo);
+			}
+		}
+
 		resenv.types := setTree(^(resenv.types), tv, restype);
 
 		setTree(acc, tv, restype);
 	});
 }
+
+coalesceMiniTypeVars2(env : MiniTypeEnv) -> Tree<int, Pair<ResType, ResType>> {
+	// OK, the question is whether we should build a dependency graph of the tyvars and do it in
+	// topological order?
+	cenv = CoalesceAcc(env, ref makeTree(), makeSet());
+
+	if (isDebuggingStage(env.ast, StageTypeCoalesce())) {
+		println("\nCoalescing to polar restypes");
+	}
+
+	foldRange(1, ^(env.tyvarId) - 1, makeTree(), \acc, tv -> {
+		restype1 = goCoalesce(cenv, MiniTypeVar(tv), true);
+		restype2 = goCoalesce(cenv, MiniTypeVar(tv), false);
+		setTree(acc, tv, Pair(restype1, restype2));
+	});
+}
+
 
 goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 	switch (type) {

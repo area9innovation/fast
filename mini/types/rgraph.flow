@@ -1,0 +1,30 @@
+import mini/types/restype;
+import mini/types/typeenv;
+import mini/types/coalescing;
+
+export {
+	// Build a graph that covers all tyvars
+	buildRGraph(env : MiniTypeEnv) -> RGraph;
+
+	RGraph(
+		graph : SimpleGraph<ResType, bool>
+	);
+}
+
+buildRGraph(env : MiniTypeEnv) -> RGraph {
+	restypes : Tree<int, Pair<ResType, ResType>> = coalesceMiniTypeVars2(env);
+
+	graph = foldTree(restypes, makeSimpleGraph(), \tv, bounds, acc -> {
+		node = ResTypeVar(tv);
+		acc1 = addSimpleEdge(acc, node, bounds.second, false, 0);
+		addSimpleEdge(acc1, bounds.first, node, false, 0);
+	});
+
+	dot = simpleGraph2dot(graph, ResTypeVar(0), [], \r : ResType -> {
+		[DotLabel(resType2string(r))]
+	}, \e -> []);
+
+	setFileContent("rgraph.dot", dot);
+
+	RGraph(graph);
+}

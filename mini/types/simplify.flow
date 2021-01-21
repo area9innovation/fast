@@ -16,7 +16,7 @@ simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void {
 
 	debug = isDebuggingStage(env.ast, StageTypeSimplify());
 	if (debug) {
-		println("Simplify restypes:");
+		println("\nSimplify restypes:");
 	}
 
 	traverseInOrder(resTypes, \tv, restype -> {
@@ -29,7 +29,7 @@ simplifyResTypes(env : MiniTypeEnv, resTypes : Tree<int, ResType>) -> void {
 				pos = findMiniTyvarPos(env, tv);
 
 				fileinfo = getFileLineInfo(env.ast, id, pos);
-				println("α" + i2s(tv) + " = " + miniType2string(resolved) + " from " + debugBounds(env, tv) + "   giving restype: " + resType2string(restype) + "     " + fileinfo);
+				println("α" + i2s(tv) + " = " + miniType2string(resolved) + " from " /*+ debugBounds(env, tv) + "   giving restype: "*/ + resType2string(restype) + "     " + fileinfo);
 			}
 		}
 	});
