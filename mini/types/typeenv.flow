@@ -1,6 +1,7 @@
 import mini/exp/ast;
 import mini/types/type;
 import mini/types/restype;
+import mini/types/tyvar_requirements;
 
 export {
 	// The environment used when doing type inference
@@ -32,6 +33,8 @@ export {
 		tyvar2Id : ref Tree<int, string>,
 		// What position is this tyvar for?
 		tyvar2Pos : ref Tree<int, int>,
+
+		requirements : MRequirements,
 
 		// To report errors
 		onError : (name : string, pos : int, error : string) -> void,

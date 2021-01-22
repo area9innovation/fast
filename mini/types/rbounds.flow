@@ -1,0 +1,310 @@
+import mini/types/restype;
+import mini/types/typeenv;
+import mini/types/coalescing;
+
+import fast/typing/union_find;
+
+export {
+	buildRRequirements(env : MiniTypeEnv) -> RRequirements;
+
+	RRequirements(
+		env : MiniTypeEnv,
+		// What are the lower and upper bounds for each tyvar?
+		restypes : Tree<int, Pair<ResType, ResType>>,
+		// What are the requirements for this tyvar?
+		requirements : ref Tree<int, RTyvarRequirements>,
+		// What ty vars are unified?
+		unionFind : UnionFind,
+		// The rest of tyvars to refine
+		queue : Set<int>,
+		// If we have clarified types, they live here:
+		resolved : ref Tree<int, ResType>
+	);
+
+	RTyvarRequirements(
+		parentTyvar : int,
+		tyvars : Set<int>,
+		lower : RBounds,
+		upper : RBounds,
+	);
+
+	RBounds(
+		tyvars : Set<int>,
+		fixedTypes : Set<ResType>,
+		types : Set<ResType>,
+	);
+}
+
+buildRRequirements(env : MiniTypeEnv) -> RRequirements {
+	restypes : Tree<int, Pair<ResType, ResType>> = coalesceMiniTypeVars2(env);
+
+	queue = foldTree(restypes, makeSet(), \tv, rt, acc -> {
+		insertSet(acc, tv);
+	});
+
+	renv = RRequirements(env, restypes, ref makeTree(), makeUnionFind(sizeTree(restypes)), queue, ref makeTree());
+
+	// Go through the queue and do our simplifications
+
+	processRRequirements(renv);
+
+	// For debugging:
+	parentTyvars = foldTree(restypes, makeSet(), \tv, rt, acc -> {
+		tyvar = unionFind(renv.unionFind, tv);
+		insertSet(acc, tyvar);
+	});
+
+	iterSet(parentTyvars, \tv -> {
+		mreq = lookupTree(^(renv.requirements), tv);
+		mreq ?? {
+			println("α" + i2s(tv) + " = " + rtyvarRequirements2string(renv, mreq));
+		} : {
+			println("Something went wrong with α" + i2s(tv));
+		}
+	});
+
+	renv
+}
+
+// Process the tyvars in the queue
+processRRequirements(env : RRequirements) -> void {
+	mpop = popMinSet(env.queue);
+	mpop ?? {
+		nenv = RRequirements(env with queue = mpop.rest);
+		dummy = getRTyvarRequirements(nenv, makeSet(), mpop.value);
+		processRRequirements(nenv);
+	} : {
+		extractResolved(env);
+	}
+}
+
+// Once we have completed an iteration, then figure out which tyvars are done
+extractResolved(env : RRequirements) -> void {
+	resolved = sizeTree(^(env.resolved));
+
+	// OK, simplify all requirements
+	reqs = mapTree(^(env.requirements), \req -> {
+		res = resolveRTyvarRequirements(env, req);
+		mrestype = extractResTypeFromRequirements(env, res);
+		// OK, if we have a concrete resolved type now, then store it
+		mrestype ?? {
+			println("α" + i2s(req.parentTyvar) + " = " + resType2string(mrestype));
+			env.resolved := setTree(^(env.resolved), req.parentTyvar, mrestype);
+		} : { };
+		res;
+	});
+
+	env.requirements := reqs;
+
+	if (resolved == sizeTree(^(env.resolved))) {
+		println("Could not resolve any more");
+	} else {
+		// OK, do the new queue
+		println("We resolved some, but there are now to go");
+	}
+}
+
+// Lookups and resolves any tyvars in this req
+resolveRTyvarRequirements(env : RRequirements, req : RTyvarRequirements) -> RTyvarRequirements {
+	// TODO: If upper and lower types are the same, it is fixed
+	RTyvarRequirements(
+		req with 
+		lower = resolveRBounds(env, req.lower), 
+		upper = resolveRBounds(env, req.upper)
+	);
+}
+
+resolveRBounds(env : RRequirements, b : RBounds) -> RBounds {
+	RBounds(
+		// TODO: Should we do anything about this?
+		b.tyvars,
+		mapSet(b.fixedTypes, \t -> resolveResType(env, t)),
+		mapSet(b.types, \t -> resolveResType(env, t)),
+	);
+}
+
+resolveResType(env : RRequirements, res : ResType) -> ResType {
+	rec = \t -> resolveResType(env, t);
+	switch (res) {
+		ResUnion(types): ResUnion(mapSet(types, rec));
+		ResIntersection(types): ResIntersection(mapSet(types, rec));
+		ResRecursiveType(id, type): ResRecursiveType(id, rec(type));
+		ResFunctionType(args, rhs): ResFunctionType(map(args, rec), rec(rhs));
+		ResTypeRecord(fields): ResTypeRecord(map(fields, \p -> Pair(p.first, rec(p.second))));
+		ResTypeVar(id): {
+			parent = unionFind(env.unionFind, id);
+			mres = lookupTree(^(env.resolved), parent);
+			mres ?? {
+				mres
+			} : ResTypeVar(parent);
+		}
+		ResIntType(bits): res;
+		ResTypeCall(id, typars): ResTypeCall(id, map(typars, rec));
+		ResTypePar(id): res;
+	}
+}
+
+extractResTypeFromRequirements(env : RRequirements, req : RTyvarRequirements) -> Maybe<ResType> {
+	mlower = extractResTypeFromRBounds(req.lower);
+	mlower ?? {
+		Some(mlower)
+	} : {
+		extractResTypeFromRBounds(req.upper);
+	}
+}
+
+extractResTypeFromRBounds(r : RBounds) -> Maybe<ResType> {
+	fixed = sizeSet(r.fixedTypes);
+	types = sizeSet(r.types);
+	if (fixed == 1 && types == 0) {
+		Some(set2array(r.fixedTypes)[0])
+	} else if (fixed == 0 && types == 1) {
+		Some(set2array(r.types)[0])
+	} else {
+		None();
+	}
+}
+
+getRTyvarRequirements(env : RRequirements, rec : Set<int>, tv : int) -> RTyvarRequirements {
+	mreq = lookupTree(^(env.requirements), tv);
+	mreq ?? {
+		mreq
+	} : {
+		parentTyvar = unionFind(env.unionFind, tv);
+		mbounds : Maybe<Pair<ResType, ResType>> = lookupTree(env.restypes, parentTyvar);
+		mbounds ?? {
+			lower = mbounds.first;
+			upper = mbounds.second;
+			req1 = RTyvarRequirements(parentTyvar, insertSet(makeSet1(parentTyvar), tv), makeRBounds(), makeRBounds());
+			req = addResType2Requirements(env, insertSet(rec, parentTyvar), req1, lower, upper);
+			env.requirements := setTree(^(env.requirements), req.parentTyvar, req);
+			req;
+		} : {
+			RTyvarRequirements(-1, makeSet(), makeRBounds(), makeRBounds());
+		};
+	}
+}
+
+makeRBounds() -> RBounds {
+	RBounds(makeSet(), makeSet(), makeSet())
+}
+
+addResType2Requirements(env : RRequirements, rec : Set<int>, req : RTyvarRequirements, 
+	lower : ResType, upper : ResType) -> RTyvarRequirements {
+	
+	lowerb = addResType2Bounds(req.lower, lower);
+	upperb = addResType2Bounds(req.upper, upper);
+	req1 = RTyvarRequirements(req with lower = lowerb, upper = upperb);
+
+	req2 = foldSet(req1.lower.tyvars, req1, \acc, tv -> {
+		if (containsSet(rec, tv)) acc
+		else {
+			lreq = getRTyvarRequirements(env, rec, tv);
+			lonly = RTyvarRequirements(lreq with upper = makeRBounds());
+			mergeRTyvarRequirements(env, acc, lonly);
+		}
+	});
+	foldSet(req2.upper.tyvars, req2, \acc, tv -> {
+		if (containsSet(rec, tv)) acc
+		else {
+			ureq = getRTyvarRequirements(env, rec, tv);
+			uonly = RTyvarRequirements(ureq with lower = makeRBounds());
+			mergeRTyvarRequirements(env, acc, uonly);
+		}
+	});
+}
+
+mergeRTyvarRequirements(env : RRequirements, left : RTyvarRequirements, right : RTyvarRequirements) -> RTyvarRequirements {
+	lowerb = mergeRBounds(left.lower, right.lower);
+	upperb = mergeRBounds(left.upper, right.upper);
+	req = RTyvarRequirements(left with lower = lowerb, upper = upperb, tyvars = mergeSets(left.tyvars, right.tyvars));
+	if (left.parentTyvar != right.parentTyvar) {
+		// TODO: This requirement is probably too much
+		newTyvar = mergeRTyvars(env, left, right);
+		RTyvarRequirements(req with parentTyvar = newTyvar);
+	} else req
+}
+
+mergeRTyvars(env : RRequirements, left : RTyvarRequirements, right : RTyvarRequirements) -> int {
+	joined = unionUnion(env.unionFind, left.parentTyvar, right.parentTyvar);
+
+	println("Merging tyvars " + i2s(left.parentTyvar) + " and " + i2s(right.parentTyvar) + " to " + i2s(joined));
+
+	move = \tv -> {
+		if (tv != joined) {
+			mreq = lookupTree(^(env.requirements), tv);
+			mreq ?? {
+				nreq = RTyvarRequirements(mreq with parentTyvar = joined);
+
+				// TODO: Should remove old entries?
+
+				env.requirements := setTree(^(env.requirements), joined, nreq);
+			} : {}
+
+			// TODO. Should we also move in the resolved tree?
+		}
+	};
+	move(left.parentTyvar);
+	move(right.parentTyvar);
+	p1 = unionFind(env.unionFind, left.parentTyvar);
+	p2 = unionFind(env.unionFind, right.parentTyvar);
+	if (p1 != left.parentTyvar) {
+		move(p1);
+	}
+	if (p2 != right.parentTyvar) {
+		move(p2);
+	}
+
+	joined;
+}
+
+mergeRBounds(left : RBounds, right : RBounds) -> RBounds {
+	RBounds(
+		mergeSets(left.tyvars, right.tyvars),
+		mergeSets(left.fixedTypes, right.fixedTypes),
+		mergeSets(left.types, right.types),
+	)
+}
+
+addResType2Bounds(b : RBounds, res : ResType) -> RBounds {
+	fixed = \ -> {
+		RBounds(b with fixedTypes = insertSet(b.fixedTypes, res));
+	}
+	add = \ -> {
+		RBounds(b with types = insertSet(b.types, res));
+	}
+	switch (res) {
+		ResUnion(types): {
+			foldSet(types, b, \acc, type -> {
+				addResType2Bounds(acc, type)
+			})
+		}
+		ResIntersection(types): {
+			foldSet(types, b, \acc, type -> {
+				addResType2Bounds(acc, type)
+			})
+		}
+		ResRecursiveType(id, type): add();
+		ResFunctionType(args, rhs): fixed();
+		ResTypeRecord(fields): fixed();
+		ResTypeVar(id): {
+			RBounds(b with tyvars = insertSet(b.tyvars, id));
+		}
+		ResIntType(bits): fixed();
+		ResTypeCall(id, typars): fixed(); 
+		ResTypePar(id): fixed();
+	}
+}
+
+rtyvarRequirements2string(env : RRequirements, req : RTyvarRequirements) -> string {
+	"α" + i2s(unionFind(env.unionFind, req.parentTyvar)) 
+	+ " (" + superglue(set2array(req.tyvars), \tv -> "α" + i2s(tv), ", ") + ")"
+	+ " with "
+	+ "{ " + rbounds2string(req.lower) + " } .. { " + rbounds2string(req.upper) + " }"
+}
+
+rbounds2string(r : RBounds) -> string {
+	superglue(set2array(r.tyvars), \tv -> "α" + i2s(tv), ", ")
+	+ " : " + superglue(set2array(r.fixedTypes), resType2string, ", ")
+	+ " : " + superglue(set2array(r.types), resType2string, ", ")
+}

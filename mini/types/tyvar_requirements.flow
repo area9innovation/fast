@@ -1,0 +1,23 @@
+import mini/types/type;
+import fast/typing/union_find;
+import ds/set;
+
+export {
+	MRequirements(
+		// We track the requirements for tyvars here
+		requirements : ref Tree<int, MTyvarRequirements>,
+		// What tyvars are unified?
+		unionFind : UnionFind,
+	);
+
+	MTyvarRequirements(
+		// What is the id of the parent tyvar in this union
+		parentTyvar : int,
+		// What tyvars are synonyms
+		tyvars : Set<int>,
+		// What are the transitive lower bounds?
+		lower : Set<MiniType>,
+		// What are the transitive upper bounds?
+		upper : Set<MiniType>,
+	);
+}
