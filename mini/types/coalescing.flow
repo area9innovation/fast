@@ -144,6 +144,7 @@ goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 }
 
 makeResTypeVar(env : MiniTypeEnv) -> ResTypeVar {
+	// TRODO: Add position information
 	id = ^(env.tyvarId);
 	env.tyvarId := id + 1;
 	ResTypeVar(id);

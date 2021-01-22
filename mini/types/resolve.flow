@@ -5,7 +5,7 @@ import mini/types/builtin;
 
 export {
 	// Lookup the type
-	resolveMiniTypeVar(env : MiniTypeEnv, name : string, pos : int,tyvarId : int) -> MiniType;
+	resolveMiniTypeVar(env : MiniTypeEnv, name : string, pos : int, tyvarId : int) -> MiniType;
 }
 
 resolveMiniTypeVar(env : MiniTypeEnv, name : string, pos : int, tyvarId : int) -> MiniType {

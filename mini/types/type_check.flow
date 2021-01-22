@@ -2,6 +2,7 @@ import mini/types/typeinference;
 import mini/types/coalescing;
 import mini/types/simplify;
 import mini/types/rgraph;
+import mini/types/rbounds;
 import mini/util/trace;
 import mini/exp/topological;
 import mini/exp/pretty_typed;
@@ -77,13 +78,18 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 		\name, pos, e -> ast.onError(ast, name, pos, "<unknown>: " + e)
 	});
 
-	// OK, construct the graph of bounds
+	// cenv.tyvars is empty here!
+
+	// OK, construct the graph of bounds. This is nice for debugging
 	rgraph = buildRGraph(cenv);
+
+	reqs = buildRRequirements(cenv);
 
 	// OK, resolve the constraints for each tyvar
 	resTypes : Tree<int, ResType> = coalesceMiniTypeVars(cenv);
-
+	// And convert those to minitypes for each tyvar
 	simplifyResTypes(cenv, resTypes);
+	// cenv.tyvars is resolved here
 
 	if (isDebuggingIds(ast, StageTypeInference(), ids)) {
 		println("\nResult of type inference:");

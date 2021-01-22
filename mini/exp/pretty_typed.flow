@@ -89,7 +89,7 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 			"α" + i2s(tv) 
 				+ (if (equalSet(lower, upper)) {
 					v = b(lower, ",");
-					if (v != "") "≔" + v else ""
+					if (v != "") "∊" + v else ""
 				} else { "∊{" + b(lower, "|") + "}..{" + b(upper,"&") + "}"});
 		}
 	}

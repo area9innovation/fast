@@ -16,8 +16,8 @@ buildRGraph(env : MiniTypeEnv) -> RGraph {
 
 	graph = foldTree(restypes, makeSimpleGraph(), \tv, bounds, acc -> {
 		node = ResTypeVar(tv);
-		acc1 = addSimpleEdge(acc, node, bounds.second, false, 0);
-		addSimpleEdge(acc1, bounds.first, node, false, 0);
+		acc1 = if (node != bounds.second) addSimpleEdge(acc, node, bounds.second, false, 0) else acc;
+		if (node != bounds.first) addSimpleEdge(acc1, bounds.first, node, false, 0) else acc1;
 	});
 
 	dot = simpleGraph2dot(graph, ResTypeVar(0), [], \r : ResType -> {
