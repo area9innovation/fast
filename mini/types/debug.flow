@@ -34,12 +34,15 @@ debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void {
 				debugBounds(env, tv);
 			} else "";
 
+			parent = unionFind(env.requirements.unionFind, tv);
+			parentInfo = if (parent != tv) " = α" + i2s(parent) + " " else "";
+
 			name = findMiniTyvarId(env, tv);
 			pos = findMiniTyvarPos(env, tv);
 
 			fileinfo = getFileLineInfo(env.ast, name, pos);
 
-			println(fileinfo + miniPrettyTypeVar(env, tv) + decor);
+			println(fileinfo + miniPrettyTypeVar(env, tv) + parentInfo + decor);
 		});
 		{}
 	}

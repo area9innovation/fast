@@ -1,15 +1,15 @@
 foo() {
 	a = ref 1;
-	a := ^a;	// TODO: simplify restype problem
+	a := ^a;
 	a := read(a);
 	a := 2;
 	set(a, 3);
 }
 
-read(r) {	// TODO: simplify restype problem
+read(r) {	// (ref int) -> int
 	^r;
 }
 
-set(r, v) {
+set(r, v) {	// (ref int, int) -> void
 	r := v;
 }

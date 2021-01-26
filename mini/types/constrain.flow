@@ -199,14 +199,23 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 	rightParent = unionFind(env.requirements.unionFind, right);
 	if (leftParent != rightParent) {
 		joined = unionUnion(env.requirements.unionFind, leftParent, rightParent);
-//		println("Merging tyvars " + i2s(left) + " and " + i2s(right) + " to " + i2s(joined));
+
+		if (isDebuggingId(env.ast, StageTypeConstrain(), lhs.id) || isDebuggingId(env.ast, StageTypeConstrain(), rhs.id)) {
+			fileinfo1 = getFileLineInfo(env.ast, lhs.id, lhs.pos);
+			fileinfo2 = getFileLineInfo(env.ast, rhs.id, rhs.pos);
+			println(fileinfo1 + "Merging tyvars α" + i2s(left) + " and α" + i2s(right) + " to α" + i2s(joined) + (if (fileinfo1 != fileinfo2) " " + fileinfo2 else ""));
+		}
 
 		move = \tv1, tv2 -> {
 			// Move all info on tv to joined
 			if (tv1 != tv2) {
-				mergeTyvarBounds(env.tyvarLowerBounds, tv1, tv2, joined);
-				mergeTyvarBounds(env.tyvarUpperBounds, tv1, tv2, joined);
-				constrainMiniType(env, MiniTypePos(lhs with type = MiniTypeVar(tv1)), MiniTypePos(rhs with type = MiniTypeVar(tv2)), "join");
+				lower = mergeTyvarBounds(env.tyvarLowerBounds, tv1, tv2, joined);
+				upper = mergeTyvarBounds(env.tyvarUpperBounds, tv1, tv2, joined);
+				iterSet(lower, \ltype -> {
+					iterSet(upper, \utype -> {
+						constrainMiniType(env, MiniTypePos(lhs with type = ltype), MiniTypePos(rhs with type = utype), "join");
+					})
+				});
 			}
 		};
 		move(left, joined);
@@ -216,12 +225,15 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 	}
 }
 
-mergeTyvarBounds(bounds : ref Tree<int, Set<MiniType>>, tv1 : int, tv2 : int, target : int) -> void {
+mergeTyvarBounds(bounds : ref Tree<int, Set<MiniType>>, tv1 : int, tv2 : int, target : int) -> Set<MiniType> {
 	left = lookupMultimap(^bounds, tv1);
 	right = lookupMultimap(^bounds, tv2);
 
 	merged = mergeSets(left, right);
+
 	bounds := setTree(^bounds, target, merged);
 	looser = if (tv1 == target) tv2 else tv1;
 	bounds := removeFromTree(^bounds, looser);
+
+	merged;
 }
