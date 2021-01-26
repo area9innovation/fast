@@ -1,11 +1,11 @@
 foo() {
 	a = ref 1;
 	a := ^a;	// TODO: simplify restype problem
-/*	a := read(a);
+	a := read(a);
 	a := 2;
-	set(a, 3);*/
+	set(a, 3);
 }
-/*
+
 read(r) {	// TODO: simplify restype problem
 	^r;
 }
@@ -13,4 +13,3 @@ read(r) {	// TODO: simplify restype problem
 set(r, v) {
 	r := v;
 }
-*/
