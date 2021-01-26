@@ -50,7 +50,7 @@ coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType> {
 
 				fileinfo = getFileLineInfo(env.ast, id, pos);
 
-				parentId = unionFind(env.requirements.unionFind, tv);
+				parentId = unionFind(env.unionFind, tv);
 
 				println("α" + i2s(tv) 
 					+ (if (tv != parentId) " (from " +i2s(parentId) + ")" else "")
@@ -98,7 +98,7 @@ goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 			}));
 		}
 		MiniTypeVar(id): {
-			parentId = unionFind(env.env.requirements.unionFind, id);
+			parentId = unionFind(env.env.unionFind, id);
 			vspol = PolarVariable(parentId, polar);
 			if (containsSet(env.inProcess, vspol)) {
 				mtyvar = lookupTree(^(env.recursive), vspol);

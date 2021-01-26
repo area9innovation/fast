@@ -42,6 +42,7 @@
 - [Polymorphism](#polymorphism)
 - [Editor DSL](#editor-dsl)
 - [ICFP inspiration](#icfp-inspiration)
+- [Partial evaluation as a core primitive](#partial-evaluation-as-a-core-primitive)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -147,7 +148,7 @@ the development, we have defined some milestones.
 	- 1: Generalize unbound tyvars to typars, or figure out why typars are instantiated
 	  maybeBind has wrong type.
 	- lambdaarg does not capture type parameters defined in lambdas!
-    - 5, 7: intersection typing
+    - 5, 7: intersection typing. We should do a collection of requirements
 	- 6, 28: ? and ??
 	- 8, 13, 14: intersection and union typing galore
 	- 9, 24: double vs ?, . typing

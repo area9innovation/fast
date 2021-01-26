@@ -32,7 +32,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ref makeSet(),
 		ref makeTree(),
 		ref makeTree(),
-		MRequirements(ref makeTree(), makeUnionFind(0)),
+		makeUnionFind(0),
 		\name, pos, e -> ast.onError(ast, name, pos, e)
 	);
 }

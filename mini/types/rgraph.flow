@@ -15,9 +15,14 @@ buildRGraph(env : MiniTypeEnv) -> RGraph {
 	restypes : Tree<int, Pair<ResType, ResType>> = coalesceMiniTypeVars2(env);
 
 	graph = foldTree(restypes, makeSimpleGraph(), \tv, bounds, acc -> {
-		node = ResTypeVar(tv);
-		acc1 = if (node != bounds.second) addSimpleEdge(acc, node, bounds.second, false, 0) else acc;
-		if (node != bounds.first) addSimpleEdge(acc1, bounds.first, node, false, 0) else acc1;
+		ptv = unionFind(env.unionFind, tv);
+		if (ptv != tv) {
+			acc
+		} else {
+			node = ResTypeVar(tv);
+			acc1 = if (node != bounds.second) addSimpleEdge(acc, node, bounds.second, false, 0) else acc;
+			if (node != bounds.first) addSimpleEdge(acc1, bounds.first, node, false, 0) else acc1;
+		}
 	});
 
 	dot = simpleGraph2dot(graph, ResTypeVar(0), [], \r : ResType -> {

@@ -34,7 +34,7 @@ debugMiniTypeEnv(env : MiniTypeEnv, verbose : bool) -> void {
 				debugBounds(env, tv);
 			} else "";
 
-			parent = unionFind(env.requirements.unionFind, tv);
+			parent = unionFind(env.unionFind, tv);
 			parentInfo = if (parent != tv) " = α" + i2s(parent) + " " else "";
 
 			name = findMiniTyvarId(env, tv);

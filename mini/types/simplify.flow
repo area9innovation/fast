@@ -45,7 +45,7 @@ SimplifyAcc(
 simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 	todo = \ -> {
 		// TODO: Error
-		acc.env.onError("", -1, "Can not convert " + resType2string(r));
+		acc.env.onError("", -1, "Can not simplify " + resType2string(r));
 		MiniTypeCall("flow", []);
 	};
 	switch (r) {
@@ -62,7 +62,9 @@ simplifyResType(acc : SimplifyAcc, r : ResType) -> MiniType {
 			simplifyResType(nacc, type);
 		}
 		ResFunctionType(args, rhs): MiniTypeFunction(map(args, \a -> simplifyResType(acc, a)), simplifyResType(acc, rhs));
-		ResTypeRecord(fields): todo();
+		ResTypeRecord(fields): {
+			todo();
+		}
 		ResTypeVar(id): {
 			mtype = lookupTree(^(acc.tyvars), id);
 			switch (mtype) {
