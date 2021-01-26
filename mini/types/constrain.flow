@@ -45,8 +45,9 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 		right = \ -> {
 			switch (rhs) {
 				MiniTypeVar(rid): {
-					addMiniLowerBound(env, rid, lhs);
-					constrainUpperBounds(env, rid, lhsp, reason);
+					parentId = unionFind(env.requirements.unionFind, rid);
+					addMiniLowerBound(env, parentId, lhs);
+					constrainUpperBounds(env, parentId, lhsp, reason);
 				}
 				MiniTypeCall(rid, rtypars): {
 					if (rid == "flow"  && rtypars == []) {
@@ -105,14 +106,18 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 				}
 			}
 			MiniTypeVar(lid): {
+				parentId = unionFind(env.requirements.unionFind, lid);
 				def = \ -> {
-					addMiniUpperBound(env, lid, rhs);
-					constrainLowerBounds(env, lid, rhsp, reason);
+					addMiniUpperBound(env, parentId, rhs);
+					constrainLowerBounds(env, parentId, rhsp, reason);
 				};
 
 				switch (rhs) {
-					MiniTypeVar(rid): if (lid != rid) {
-						def();
+					MiniTypeVar(rid): {
+						rparentId = unionFind(env.requirements.unionFind, rid);
+						if (parentId != rparentId) {
+							unifyMiniTyvars(env, lhsp, parentId, rhsp, rparentId);
+						}
 					};
 					default: def();
 				}
@@ -187,4 +192,36 @@ constrainUpperBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason
 	iterSet(types, \utype -> {
 		constrainMiniType(env, typep, MiniTypePos(id, pos, utype), reason + " upper-bound")
 	})
+}
+
+unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniTypePos, right : int) -> void {
+	leftParent = unionFind(env.requirements.unionFind, left);
+	rightParent = unionFind(env.requirements.unionFind, right);
+	if (leftParent != rightParent) {
+		joined = unionUnion(env.requirements.unionFind, leftParent, rightParent);
+//		println("Merging tyvars " + i2s(left) + " and " + i2s(right) + " to " + i2s(joined));
+
+		move = \tv1, tv2 -> {
+			// Move all info on tv to joined
+			if (tv1 != tv2) {
+				mergeTyvarBounds(env.tyvarLowerBounds, tv1, tv2, joined);
+				mergeTyvarBounds(env.tyvarUpperBounds, tv1, tv2, joined);
+				constrainMiniType(env, MiniTypePos(lhs with type = MiniTypeVar(tv1)), MiniTypePos(rhs with type = MiniTypeVar(tv2)), "join");
+			}
+		};
+		move(left, joined);
+		move(joined, right);
+		move(leftParent, joined);
+		move(joined, rightParent);
+	}
+}
+
+mergeTyvarBounds(bounds : ref Tree<int, Set<MiniType>>, tv1 : int, tv2 : int, target : int) -> void {
+	left = lookupMultimap(^bounds, tv1);
+	right = lookupMultimap(^bounds, tv2);
+
+	merged = mergeSets(left, right);
+	bounds := setTree(^bounds, target, merged);
+	looser = if (tv1 == target) tv2 else tv1;
+	bounds := removeFromTree(^bounds, looser);
 }

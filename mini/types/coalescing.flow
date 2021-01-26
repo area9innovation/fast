@@ -50,7 +50,11 @@ coalesceMiniTypeVars(env : MiniTypeEnv) -> Tree<int, ResType> {
 
 				fileinfo = getFileLineInfo(env.ast, id, pos);
 
-				println("α" + i2s(tv) + " = " + rpad(resType2string(restype), " ", 20) + "  from " + resType2string(restype1) + " vs "  + resType2string(restype2) + "     " + fileinfo);
+				parentId = unionFind(env.requirements.unionFind, tv);
+
+				println("α" + i2s(tv) 
+					+ (if (tv != parentId) " (from " +i2s(parentId) + ")" else "")
+					+ " = " + rpad(resType2string(restype), " ", 20) + "  from " + resType2string(restype1) + " vs "  + resType2string(restype2) + "     " + fileinfo);
 			}
 		}
 
@@ -94,7 +98,8 @@ goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 			}));
 		}
 		MiniTypeVar(id): {
-			vspol = PolarVariable(id, polar);
+			parentId = unionFind(env.env.requirements.unionFind, id);
+			vspol = PolarVariable(parentId, polar);
 			if (containsSet(env.inProcess, vspol)) {
 				mtyvar = lookupTree(^(env.recursive), vspol);
 				mtyvar ?? {
@@ -106,7 +111,7 @@ goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 					tyvar;
 				}
 			} else {
-				bounds = lookupMultimap(^(if (polar) env.env.tyvarLowerBounds else env.env.tyvarUpperBounds), id);
+				bounds = lookupMultimap(^(if (polar) env.env.tyvarLowerBounds else env.env.tyvarUpperBounds), parentId);
 				nenv = CoalesceAcc(env with inProcess = insertSet(env.inProcess, vspol));
 				boundTypes = mapSet(bounds, \b -> {
 					goCoalesce(nenv, b, polar)
@@ -122,7 +127,7 @@ goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 						ResIntersection(boundTypes);
 					}
 				} : {
-					ResTypeVar(id);
+					ResTypeVar(parentId);
 				};
 
 				// If this exist in the recursive map, return a recursive type

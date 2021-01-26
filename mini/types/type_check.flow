@@ -83,7 +83,7 @@ typecheckMiniTypes(ast : MiniAst, ids : Set<string>) -> MiniAst {
 	// OK, construct the graph of bounds. This is nice for debugging
 	rgraph = buildRGraph(cenv);
 
-	reqs = buildRRequirements(cenv);
+//	reqs = buildRRequirements(cenv);
 
 	// OK, resolve the constraints for each tyvar
 	resTypes : Tree<int, ResType> = coalesceMiniTypeVars(cenv);
