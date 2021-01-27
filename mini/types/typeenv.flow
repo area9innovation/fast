@@ -16,6 +16,9 @@ export {
 		// Add position info for each local variable
 		// as well as the global variable where each local is defined
 
+		// What tyvars are unified?
+		unionFind : UnionFind,
+
 		// For the MLSub algorithm, we keep track of bounds:
 		tyvarLowerBounds : ref Tree<int, Set<MiniType>>,
 		tyvarUpperBounds : ref Tree<int, Set<MiniType>>,
@@ -34,9 +37,6 @@ export {
 		tyvar2Id : ref Tree<int, string>,
 		// What position is this tyvar for?
 		tyvar2Pos : ref Tree<int, int>,
-
-		// What tyvars are unified?
-		unionFind : UnionFind,
 
 		// To report errors
 		onError : (name : string, pos : int, error : string) -> void,

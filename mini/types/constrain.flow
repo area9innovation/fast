@@ -12,8 +12,8 @@ export {
 	// Extract constraints from this type pairing. lhs should be a subtype of rhs
 	constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void;
 
-	addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void;
-	addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void;
+	// Sets both upper and lower bounds, when we know the final type
+	setMiniTypeBounds(env : MiniTypeEnv, tyvar : int, type : MiniTypePos) -> void;
 }
 
 constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void {
@@ -46,8 +46,7 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 			switch (rhs) {
 				MiniTypeVar(rid): {
 					parentId = unionFind(env.unionFind, rid);
-					addMiniLowerBound(env, parentId, lhs);
-					constrainUpperBounds(env, parentId, lhsp, reason);
+					addMiniLowerBound(env, parentId, lhsp, reason);
 				}
 				MiniTypeCall(rid, rtypars): {
 					if (rid == "flow"  && rtypars == []) {
@@ -108,8 +107,7 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 			MiniTypeVar(lid): {
 				parentId = unionFind(env.unionFind, lid);
 				def = \ -> {
-					addMiniUpperBound(env, parentId, rhs);
-					constrainLowerBounds(env, parentId, rhsp, reason);
+					addMiniUpperBound(env, parentId, rhsp, reason);
 				};
 
 				switch (rhs) {
@@ -168,12 +166,29 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 	}
 }
 
-addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
-	env.tyvarLowerBounds := insertMultimap(^(env.tyvarLowerBounds), tyvar, type);
+//
+// Handling lower/upper constraints
+
+setMiniTypeBounds(env : MiniTypeEnv, tyvar : int, type : MiniTypePos) -> void {
+	parentId = unionFind(env.unionFind, tyvar);
+	// TODO: Maybe we should not do it like this,
+	// but rather set it directly to the known type
+	addMiniLowerBound(env, parentId, type, "set");
+	addMiniUpperBound(env, parentId, type, "set");
 }
 
-addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniType) -> void {
-	env.tyvarUpperBounds := insertMultimap(^(env.tyvarUpperBounds), tyvar, type);
+// We know the tyvar id is the current parent tyvar
+addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
+	env.tyvarLowerBounds := insertMultimap(^(env.tyvarLowerBounds), tyvar, type.type);
+	// Propagate the bound to the upper bounds as well
+	constrainUpperBounds(env, tyvar, type, reason);
+}
+
+// We know the tyvar id is the current parent tyvar
+addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
+	env.tyvarUpperBounds := insertMultimap(^(env.tyvarUpperBounds), tyvar, type.type);
+	// Propagate the bound to the lower bounds as well
+	constrainLowerBounds(env, tyvar, type, reason);
 }
 
 constrainLowerBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason : string) -> void {
@@ -182,7 +197,7 @@ constrainLowerBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \ltype -> {
 		constrainMiniType(env, MiniTypePos(id, pos, ltype), typep, reason + " lower-bound")
-	})
+	});
 }
 
 constrainUpperBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason : string) -> void {
@@ -194,6 +209,7 @@ constrainUpperBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason
 	})
 }
 
+// OK, we know these two tyvars are identical
 unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniTypePos, right : int) -> void {
 	leftParent = unionFind(env.unionFind, left);
 	rightParent = unionFind(env.unionFind, right);
@@ -211,6 +227,8 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 			if (tv1 != tv2) {
 				lower = mergeTyvarBounds(env.tyvarLowerBounds, tv1, tv2, joined);
 				upper = mergeTyvarBounds(env.tyvarUpperBounds, tv1, tv2, joined);
+				// Brute force propagation of all combinations.
+				// TODO: Optimize this
 				iterSet(lower, \ltype -> {
 					iterSet(upper, \utype -> {
 						constrainMiniType(env, MiniTypePos(lhs with type = ltype), MiniTypePos(rhs with type = utype), "join");

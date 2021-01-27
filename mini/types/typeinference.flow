@@ -25,6 +25,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 	MiniTypeEnv(
 		ast,
 		makeTree(),
+		makeUnionFind(0),
 		ref makeTree(),
 		ref makeTree(),
 		ref 1,
@@ -32,7 +33,6 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ref makeSet(),
 		ref makeTree(),
 		ref makeTree(),
-		makeUnionFind(0),
 		\name, pos, e -> ast.onError(ast, name, pos, e)
 	);
 }
@@ -260,6 +260,7 @@ getMiniVarType(env : MiniTypeEnv, id : string, pos : int, name : string) -> Mini
 	instantiateTypePars2TypeVars(env, type);
 }
 
+// This constraints the given exp to have a tyvar with a given type
 setMiniTypeVar(env : MiniTypeEnv, global : string, ex : MiniExp, type : MiniType) -> MiniType {
 	def = \tv -> {
 		id = if (tv == 0) {
@@ -276,10 +277,10 @@ setMiniTypeVar(env : MiniTypeEnv, global : string, ex : MiniExp, type : MiniType
 			};
 			ttv.id;
 		} else tv;
-		addMiniLowerBound(env, id, type);
-		addMiniUpperBound(env, id, type);
 
 		pos = getMiniPos(ex);
+		setMiniTypeBounds(env, id, MiniTypePos(global, pos, type));
+
 		if (pos == -1) {
 			if (isUrlParameterTrue("strict")) {
 				println("Could not find position for " + miniPretty(ex));
