@@ -8,8 +8,8 @@ export {
 	and unify any type vars as far as possible.
 	Example:
 	1. [] + {first:α51}   == [{first:α51}]
-	2. [{first:α51}] + {second:α54} = [{first:α51}, {second:α54}]
-	3. [{first:α51}, {second:α54}] + Pair<?, ??> = [Pair<?, ??>]  
+	2. [{first:α51}] + {second:α54} = [{first:α51, second:α54}]
+	3. [{first:α51, second:α54}] + Pair<?, ??> = [Pair<?, ??>]  
 		and unification of α51 with ? and α54 with ??
 	*/
 	intersectMiniTypes(env : MiniTypeEnv, 
@@ -28,12 +28,6 @@ intersectMiniTypes(env : MiniTypeEnv,
 			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
 			env.onError(typep.id, typep.pos, "Can not intersect " + miniType2string(type) + " and " + existing);
 			types;
-		}
-		todo = \ -> {
-			// TODO: Error
-			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
-			env.onError(typep.id, typep.pos, "Can we intersect these? " + miniType2string(type) + " and " + existing);
-			insertSet(types, type);
 		}
 
 		unifyall = \ -> {
@@ -58,7 +52,7 @@ intersectMiniTypes(env : MiniTypeEnv,
 							// And we just keep the result
 							types;
 						}
-						default: todo();
+						default: error();
 					}
 				}
 			}
@@ -66,7 +60,7 @@ intersectMiniTypes(env : MiniTypeEnv,
 				intersectMiniTypeCall(env, unify, typep, types, type);
 			}
 			MiniTypeVar(id): {
-				todo();
+				error();
 			}
 			MiniTypePar(id): {
 				// OK, we require that it is only typepars
@@ -229,9 +223,34 @@ intersectMiniTypeCalls(env : MiniTypeEnv,
 		// Just unify the parameters
 		constrainMiniTypeCalls(env, typep.id, typep.pos, unify, left, right, "intersect typecalls");
 		left;
+	} else if (left.id == "") {
+		// OK, we have an unknown struct vs a named struct.
+		// Now we know the name
+		intersectMiniTypeCalls(env, unify, typep, MiniTypeCall(left with id = right.id), right);
+	} else if (right.id == "") {
+		// OK, we have an unknown struct vs a named struct.
+		// Now we know the name
+		intersectMiniTypeCalls(env, unify, typep, left, MiniTypeCall(right with id = left.id));
 	} else {
-		println("TODO: Intersect typecall " + miniType2string(left) + " with typecall " + miniType2string(right));
-		left;
+		// OK, check that one is a part of the other one
+
+		runion = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
+		runion ?? {
+			// OK, right is the union
+			println("Found " + miniType2string(runion) + " from union " + miniType2string(right) + " for struct " + miniType2string(left));
+			left;
+		} : {
+			lunion = findMiniStructInUnion(env.ast, right.id, left.id, left.typars);
+			switch (lunion) {
+				None(): {
+					println("TODO: Intersect typecall " + miniType2string(left) + " with typecall " + miniType2string(right));
+					left;
+				}
+				Some(lun): {
+					println("Found " + miniType2string(lun) + " from union " + miniType2string(left) + " for struct " + miniType2string(right));
+					right;
+				}
+			}
+		}
 	}
 }
-

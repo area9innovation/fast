@@ -12,7 +12,7 @@ export {
 	) -> void;
 
 	// Check if this left name is inside the typename on the right, and if so, return the applied struct in the union
-	findMiniStructInUnion(env : MiniAst, left : string, right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
+	findMiniStructInUnion(env : MiniAst, left : string, rightUnion : string, rtypars : [MiniType]) -> Maybe<MiniType>;
 
 	// Check if this left name is inside the typename on the right, and if so, lift the left type to the applied union type
 	findMiniUnionFromStruct(env : MiniAst, left : string, ltypars : [MiniType], right : string, rtypars : [MiniType]) -> Maybe<MiniType>;
