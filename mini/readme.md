@@ -155,6 +155,7 @@ the development, we have defined some milestones.
 	- 9: Implicit polymorphism for maybeMap
 	- 17: mutable struct fields
 	- 26, 27, 30: __construct5 is unknown
+	- 21: Somehow we end up with a tyvar as an upper bound.
   - Figure out natives from runtime & linking
 
 - Parse all of flow syntax. Missing:

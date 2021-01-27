@@ -191,13 +191,17 @@ addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : s
 addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
 	reqs = getMTyvarRequirements(env, tyvar);
 
-	// TODO: We could have another constain which is unify where there is no difference between upper and lower
-	nupper = intersectMiniTypes(env, constrainMiniType, reqs.upper, type);
+	nupper = intersectMiniTypes(env, unifyMiniType, reqs.upper, type);
 
 	nreqs = MTyvarRequirements(reqs with upper = nupper);
 	env.tyvarRequirements := setTree(^(env.tyvarRequirements), tyvar, nreqs);
 	// Propagate the bound to the lower bounds as well
 	constrainLowerBounds(env, tyvar, nreqs, type, reason);
+}
+
+unifyMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void {
+	constrainMiniType(env, lhsp, rhsp, reason);
+	constrainMiniType(env, rhsp, lhsp, reason + "2");
 }
 
 constrainLowerBounds(env : MiniTypeEnv, tyvar : int, reqs : MTyvarRequirements, typep : MiniTypePos, reason : string) -> void {
@@ -248,7 +252,7 @@ mergeTyvarBounds(env : MiniTypeEnv, lhs : MiniTypePos, tv1 : int, rhs : MiniType
 	left = getMTyvarRequirements(env, tv1);
 	right = getMTyvarRequirements(env, tv2);
 
-	merged = mergeMTyvarRequirements(left, right);
+	merged = mergeMTyvarRequirements(env, lhs, left, right);
 
 	env.tyvarRequirements := setTree(^(env.tyvarRequirements), target, merged);
 	looser = if (tv1 == target) tv2 else tv1;
@@ -263,7 +267,7 @@ mergeTyvarBounds(env : MiniTypeEnv, lhs : MiniTypePos, tv1 : int, rhs : MiniType
 	});
 }
 
-mergeMTyvarRequirements(left : MTyvarRequirements, right : MTyvarRequirements) -> MTyvarRequirements {
+mergeMTyvarRequirements(env : MiniTypeEnv, typep : MiniTypePos, left : MTyvarRequirements, right : MTyvarRequirements) -> MTyvarRequirements {
 	fixed = switch (left.fixed) {
 		None(): right.fixed;
 		Some(lfixed): {
@@ -279,9 +283,17 @@ mergeMTyvarRequirements(left : MTyvarRequirements, right : MTyvarRequirements) -
 			}
 		}
 	};
+
+	newUpper = foldSet(right.upper, left.upper, \acc, rtype -> {
+		if (containsSet(acc, rtype)) acc
+		else {
+			intersectMiniTypes(env, unifyMiniType, acc, MiniTypePos(typep with type = rtype));
+		}
+	});
+
 	MTyvarRequirements(
 		fixed,
 		mergeSets(left.lower, right.lower),
-		mergeSets(left.upper, right.upper),
+		newUpper
 	);
 }

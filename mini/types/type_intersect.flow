@@ -30,27 +30,30 @@ intersectMiniTypes(env : MiniTypeEnv,
 			types;
 		}
 
+		hasFlow = containsSet(types, MiniTypeCall("flow", []));
+		typesWithoutFlow = if (hasFlow) removeSet(types, MiniTypeCall("flow", [])) else types;
+
 		unifyall = \ -> {
-			iterSet(types, \t -> {
+			iterSet(typesWithoutFlow, \t -> {
 				unify(env, MiniTypePos(typep.id, typep.pos, t), typep, "intersection")
 			});
-			insertSet(types, type);
+			insertSet(typesWithoutFlow, type);
 		};
 
 		switch (type) {
 			MiniTypeInt(lbits): unifyall();
 			MiniTypeFunction(args, returnType): {
 				// OK, we require at most one function there already
-				if (sizeSet(types) != 1) {
+				if (sizeSet(typesWithoutFlow) != 1) {
 					error();
 				} else {
-					efn = set2array(types)[0];
+					efn = set2array(typesWithoutFlow)[0];
 					switch (efn) {
 						MiniTypeFunction(eargs, ereturnType): {
 							// OK, unify these fns
 							unify(env, MiniTypePos(typep.id, typep.pos, efn), typep, "intersection");
 							// And we just keep the result
-							types;
+							typesWithoutFlow;
 						}
 						default: error();
 					}
@@ -64,12 +67,15 @@ intersectMiniTypes(env : MiniTypeEnv,
 			}
 			MiniTypePar(id): {
 				// OK, we require that it is only typepars
-				hasError = foldSet(types, false, \acc, t -> {
+				hasError = foldSet(typesWithoutFlow, false, \acc, t -> {
 					switch (t) {
 						MiniTypePar(eid): {
 							if (eid != id) {
-								// !env.ast.options.implicitTypePars
-								true
+								if (typep.id == "extractStruct") acc
+								else {
+									// !env.ast.options.implicitTypePars
+									true
+								}
 							} else acc;
 						}
 						default: true;
@@ -79,7 +85,8 @@ intersectMiniTypes(env : MiniTypeEnv,
 					error();
 					types;
 				} else {
-					insertSet(types, type);
+					// insertSet(typesWithoutFlow, type);
+					makeSet1(type);
 				}
 			}
 			MiniTypeRecord(fields): {
@@ -101,11 +108,14 @@ intersectMiniTypesWithRecord(env : MiniTypeEnv,
 	// - MiniTypeRecord(): intersect all
 	// - MiniTypeCall(): Work to do
 
+	// println("[" + superglue(set2array(types), miniType2string, ", ") + "]");
+
 	mrecord : Set<MiniTypeRecord> = foldSet(types, makeSet(), \acc, etype -> {
 		switch (etype) {
 			MiniTypeRecord(__): {
 				if (!isEmptySet(acc)) {
-					env.onError(typep.id, typep.pos, "Invariant broken. Expected only one record in intersection " + miniType2string(record));
+					existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
+					env.onError(typep.id, typep.pos, "Invariant broken. Expected only one record in intersection " + miniType2string(record) + " from " + existing);
 				}
 				insertSet(acc, etype);
 			}
@@ -117,7 +127,9 @@ intersectMiniTypesWithRecord(env : MiniTypeEnv,
 		intersectMiniRecords(env, unify, typep, rec, record);
 	});
 
-	foldSet(types, nacc, \acc, etype -> {
+	// println(" [" + superglue(set2array(nacc), miniType2string, ", ") + "]");
+
+	r = foldSet(types, nacc, \acc, etype -> {
 		error = \ -> {
 			env.onError(typep.id, typep.pos, "Can not intersect " + miniType2string(record) + " with " + miniType2string(etype));
 			acc;
@@ -137,6 +149,10 @@ intersectMiniTypesWithRecord(env : MiniTypeEnv,
 			MiniTypePar(id): error();
 		}
 	});
+
+	// println("    [" + superglue(set2array(r), miniType2string, ", ") + "]");
+
+	r;
 }
 
 // Intersect two records
@@ -163,6 +179,7 @@ intersectMiniRecords(env : MiniTypeEnv,
 
 	// TODO: Here, we could see if there is a unique struct or union with these fields
 	// and resolve to that
+	// println("Intersect gave " + miniType2string(MiniTypeRecord(ffields)));
 
 	MiniTypeRecord(ffields);
 }
