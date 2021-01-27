@@ -1,0 +1,250 @@
+import mini/types/typeenv;
+import mini/types/debug;
+import mini/types/subtype;
+
+export {
+	/*
+	Adds a new type to an intersection. Will check that this is legal,
+	and unify any type vars as far as possible.
+	Example:
+	1. [] + {first:α51}   == [{first:α51}]
+	2. [{first:α51}] + {second:α54} = [{first:α51}, {second:α54}]
+	3. [{first:α51}, {second:α54}] + Pair<?, ??> = [Pair<?, ??>]  
+		and unification of α51 with ? and α54 with ??
+	*/
+	intersectMiniTypes(env : MiniTypeEnv, 
+		unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+		types : Set<MiniType>, typep : MiniTypePos) -> Set<MiniType>;
+}
+
+intersectMiniTypes(env : MiniTypeEnv, 
+		unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+		types : Set<MiniType>, typep : MiniTypePos) -> Set<MiniType> {
+
+	type = typep.type;
+	if (isEmptySet(types)) makeSet1(type)
+	else {
+		todo = \ -> {
+			// TODO: Error
+			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
+			env.onError(typep.id, typep.pos, "Can we intersect these? " + miniType2string(type) + " and " + existing);
+			insertSet(types, type);
+		}
+
+		unifyall = \ -> {
+			iterSet(types, \t -> {
+				unify(env, MiniTypePos(typep.id, typep.pos, t), typep, "intersection")
+			});
+			insertSet(types, type);
+		};
+
+		switch (type) {
+			MiniTypeInt(lbits): unifyall();
+			MiniTypeFunction(args, returnType): {
+				todo();
+			}
+			MiniTypeCall(id, typars): {
+				intersectMiniTypeCall(env, unify, typep, types, type);
+			}
+			MiniTypeVar(id): {
+				todo();
+			}
+			MiniTypePar(id): {
+				todo();
+			}
+			MiniTypeRecord(fields): {
+				intersectMiniTypesWithRecord(env, unify, types, typep, type)
+			}
+		}
+	}
+}
+
+intersectMiniTypesWithRecord(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	types : Set<MiniType>, typep : MiniTypePos, record : MiniTypeRecord) -> Set<MiniType> {
+
+	// Record vs
+	// - MiniTypeInt: Error
+	// - MiniTypeFunction: Error
+	// - MiniTypeVar: Not expected, ignorable
+	// - MiniTypePar: Error, or ignorable
+	// - MiniTypeRecord(): intersect all
+	// - MiniTypeCall(): Work to do
+
+	mrecord : Set<MiniTypeRecord> = foldSet(types, makeSet(), \acc, etype -> {
+		switch (etype) {
+			MiniTypeRecord(__): {
+				if (!isEmptySet(acc)) {
+					env.onError(typep.id, typep.pos, "Invariant broken. Expected only one record in intersection " + miniType2string(record));
+				}
+				insertSet(acc, etype);
+			}
+			default: acc;
+		}
+	});
+	
+	nacc = mapSet(mrecord, \rec -> {
+		intersectMiniRecords(env, unify, typep, rec, record);
+	});
+
+	foldSet(types, nacc, \acc, etype -> {
+		error = \ -> {
+			env.onError(typep.id, typep.pos, "Can not intersect " + miniType2string(record) + " with " + miniType2string(etype));
+			acc;
+		}
+		todo = \ -> { 
+			println("TODO: Implement intersect " + miniType2string(record) + " with " + miniType2string(etype));
+			acc;
+		}
+		switch (etype) {
+			MiniTypeInt(bits): error();
+			MiniTypeRecord(fields): acc; // Already handled
+			MiniTypeFunction(args, returnType): error();
+			MiniTypeCall(id, typars): {
+				intersectMiniTypeCall(env, unify, typep, acc, etype);
+			}
+			MiniTypeVar(id): error();
+			MiniTypePar(id): error();
+		}
+	});
+}
+
+// Intersect two records
+intersectMiniRecords(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	typep : MiniTypePos, left : MiniTypeRecord, right : MiniTypeRecord) -> MiniType {
+
+	ffields = fold(left.fields, right.fields, \acc, lfield -> {
+		// OK, process a field.
+		// Check if it already exists
+		fold(acc, acc, \acc2, rfield -> {
+			if (rfield.name == lfield.name) {
+				// It does, so unify the types
+				if (rfield.isMutable != lfield.isMutable) {
+					env.onError(typep.id, typep.pos, "Mutable mismatch " + miniType2string(left) + " with " + miniType2string(right));
+				}
+				unify(env, MiniTypePos(typep.id, typep.pos, rfield.type), MiniTypePos(typep.id, typep.pos, lfield.type), "intersect fields");
+				acc2;
+			} else {
+				arrayPush(acc2, lfield);
+			}
+		})
+	});
+
+	// TODO: Here, we could see if there is a unique struct or union with these fields
+	// and resolve to that
+
+	MiniTypeRecord(ffields);
+}
+
+// Intersect a type call with existing types
+intersectMiniTypeCall(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	typep : MiniTypePos, types : Set<MiniType>, call : MiniTypeCall) -> Set<MiniType> {
+
+	foldSet(types, makeSet(), \acc, etype -> {
+		error = \ -> {
+			env.onError(typep.id, typep.pos, "Can not intersect " + miniType2string(call) + " with " + miniType2string(etype));
+			acc;
+		}
+		todo = \ -> { 
+			println("TODO: Implement intersect " + miniType2string(call) + " with " + miniType2string(etype));
+			acc;
+		}
+		switch (etype) {
+			MiniTypeInt(bits): error();
+			MiniTypeRecord(fields): {
+				insertSet(acc, intersectMiniTypeCallWithRecord(env, unify, typep, call, etype));
+			}
+			MiniTypeFunction(args, returnType): error();
+			MiniTypeCall(id, typars): {
+				insertSet(acc, intersectMiniTypeCalls(env, unify, typep, call, etype));
+			}
+			MiniTypeVar(id): error();
+			MiniTypePar(id): error();
+		}
+	});
+}
+
+// A type call with a record
+intersectMiniTypeCallWithRecord(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	typep : MiniTypePos, call : MiniTypeCall, record : MiniTypeRecord) -> MiniType {
+
+	mrecord = typeCall2MiniRecord(env.ast, call);
+	mrecord ?? {
+		// OK, we have instantiated this type call as a record
+		// so we can unify these
+		unify(env, MiniTypePos(typep.id, typep.pos, mrecord), MiniTypePos(typep.id, typep.pos, record), "struct vs record");
+		call;
+	} : {
+		println("TODO: Intersect typecall " + miniType2string(call) + " with record " + miniType2string(record));
+		call;
+	}
+}
+
+
+// A type call with a type call
+intersectMiniTypeCalls(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	typep : MiniTypePos, left : MiniTypeCall, right : MiniTypeCall) -> MiniType {
+	println("TODO: Intersect typecall " + miniType2string(left) + " with typecall " + miniType2string(right));
+
+	left;
+}
+
+
+/*
+intersectTypes(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	left : MiniType, right : MiniType) -> Maybe<MiniType> {
+	res = intersectMiniTypes(env, unify, makeSet1(left), right);
+	if (isEmptySet(res)) None()
+	else Some(set2array(res)[0]);
+}
+
+intersectMiniTypecalls(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	left : MiniTypeCall, right : MiniTypeCall)  -> Maybe<MiniType> {
+	if (left.id == right.id) {
+		if (!env.ast.options.implicitTypePars && length(left.typars) != length(right.typars)) {
+			None();
+		} else {
+			len = max(length(left.typars), length(right.typars));
+			itypars = generate(0, len, \i -> {
+				ltypar = if (i < length(left.typars)) {
+					left.typars[i];
+				} else right.typars[i];
+				rtypar = if (i < length(right.typars)) {
+					right.typars[i];
+				} else left.typars[i];
+				intersectTypes(env, ltypar, rtypar);
+			});
+			otypars = filtermap(itypars, idfn);
+			if (length(otypars) == len) {
+				Some(MiniTypeCall(left.id, otypars));
+			} else None();
+		}
+	} else if (left.id == "flow") {
+		Some(right)
+	} else if (right.id == "flow") {
+		Some(left);
+	} else {
+		mlstruct = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
+		mlstruct ?? {
+			// OK, we found the struct in the right hand side. Intersect with that
+			intersectTypes(env, left, mlstruct)
+		} : {
+			mrstruct = findMiniStructInUnion(env.ast, right.id, left.id, left.typars);
+			mrstruct ?? {
+				// OK, we found the struct in the right hand side. Intersect with that
+				intersectTypes(env, right, mrstruct)
+			} : {
+				// TODO: Error
+				env.onError("", -1, "Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
+				None();
+			}
+		}
+	}
+}
+*/

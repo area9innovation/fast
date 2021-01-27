@@ -7,6 +7,7 @@ import mini/exp/pretty;
 import mini/types/tyvarinfo;
 import mini/types/pretty;
 import mini/types/subtype;
+import mini/types/type_intersect;
 
 export {
 	// Extract constraints from this type pairing. lhs should be a subtype of rhs
@@ -189,7 +190,10 @@ addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : s
 // We know the tyvar id is the current parent tyvar
 addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
 	reqs = getMTyvarRequirements(env, tyvar);
-	nreqs = MTyvarRequirements(reqs with upper = insertSet(reqs.upper, type.type));
+
+	nupper = intersectMiniTypes(env, constrainMiniType, reqs.upper, type);
+
+	nreqs = MTyvarRequirements(reqs with upper = nupper);
 	env.tyvarRequirements := setTree(^(env.tyvarRequirements), tyvar, nreqs);
 	// Propagate the bound to the lower bounds as well
 	constrainLowerBounds(env, tyvar, nreqs, type, reason);
@@ -229,14 +233,7 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 		move = \tv1, tv2 -> {
 			// Move all info on tv to joined
 			if (tv1 != tv2) {
-				reqs = mergeTyvarBounds(env, tv1, tv2, joined);
-				// Brute force propagation of all combinations.
-				// TODO: Optimize this
-				iterSet(reqs.lower, \ltype -> {
-					iterSet(reqs.upper, \utype -> {
-						constrainMiniType(env, MiniTypePos(lhs with type = ltype), MiniTypePos(rhs with type = utype), "join");
-					})
-				});
+				mergeTyvarBounds(env, lhs, tv1, rhs, tv2, joined);
 			}
 		};
 		move(left, joined);
@@ -246,7 +243,7 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 	}
 }
 
-mergeTyvarBounds(env : MiniTypeEnv, tv1 : int, tv2 : int, target : int) -> MTyvarRequirements {
+mergeTyvarBounds(env : MiniTypeEnv, lhs : MiniTypePos, tv1 : int, rhs : MiniTypePos, tv2 : int, target : int) -> void {
 	left = getMTyvarRequirements(env, tv1);
 	right = getMTyvarRequirements(env, tv2);
 
@@ -256,7 +253,13 @@ mergeTyvarBounds(env : MiniTypeEnv, tv1 : int, tv2 : int, target : int) -> MTyva
 	looser = if (tv1 == target) tv2 else tv1;
 	env.tyvarRequirements := removeFromTree(^(env.tyvarRequirements), looser);
 
-	merged;
+	// Brute force propagation of all combinations.
+	// TODO: Optimize this
+	iterSet(merged.lower, \ltype -> {
+		iterSet(merged.upper, \utype -> {
+			constrainMiniType(env, MiniTypePos(lhs with type = ltype), MiniTypePos(rhs with type = utype), "join");
+		})
+	});
 }
 
 mergeMTyvarRequirements(left : MTyvarRequirements, right : MTyvarRequirements) -> MTyvarRequirements {
