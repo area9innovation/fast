@@ -1,0 +1,118 @@
+import mini/types/typeenv;
+import mini/types/debug;
+import mini/types/subtype;
+
+export {
+	/*
+	Adds a new type to an intersection. Will check that this is legal,
+	and unify any type vars as far as possible.
+	Example:
+	1. [] + {first:α51}   == [{first:α51}]
+	2. [{first:α51}] + {second:α54} = [{first:α51, second:α54}]
+	3. [{first:α51, second:α54}] + Pair<?, ??> = [Pair<?, ??>]  
+		and unification of α51 with ? and α54 with ??
+	*/
+	unionMiniTypes(env : MiniTypeEnv, 
+		unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+		types : Set<MiniType>, typep : MiniTypePos) -> Set<MiniType>;
+}
+
+unionMiniTypes(env : MiniTypeEnv, 
+		unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+		types : Set<MiniType>, typep : MiniTypePos) -> Set<MiniType> {
+
+	type = typep.type;
+	if (isEmptySet(types)) makeSet1(type)
+	else {
+		error = \ -> {
+			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
+			env.onError(typep.id, typep.pos, "Can not union " + miniType2string(type) + " and " + existing);
+			types;
+		}
+
+		todo = \ -> {
+			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
+			println("TODO: union " + miniType2string(type) + " and " + existing);
+			insertSet(types, type);
+		}
+
+		hasFlow = containsSet(types, MiniTypeCall("flow", []));
+
+		switch (type) {
+			MiniTypeInt(bits): {
+				todo();
+			}
+			MiniTypeFunction(args, returnType): todo();
+			MiniTypeCall(id, typars): {
+				unionMiniTypeCall(env, unify, typep, types, type);
+			}
+			MiniTypeVar(id): todo();
+			MiniTypePar(id): todo();
+			MiniTypeRecord(fields): todo();
+		}
+	}
+}
+
+// Union a type call with existing types
+unionMiniTypeCall(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	typep : MiniTypePos, types : Set<MiniType>, call : MiniTypeCall) -> Set<MiniType> {
+
+	foldSet(types, makeSet(), \acc, etype -> {
+		error = \ -> {
+			env.onError(typep.id, typep.pos, "Can not union " + miniType2string(call) + " with " + miniType2string(etype));
+			acc;
+		}
+		todo = \ -> { 
+			println("TODO: Implement union " + miniType2string(call) + " with " + miniType2string(etype));
+			acc;
+		}
+		switch (etype) {
+			MiniTypeInt(bits): error();
+			MiniTypeFunction(args, returnType): error();
+			MiniTypeCall(id, typars): {
+				unionMiniTypeCalls(env, unify, typep, acc, call, etype);
+			}
+			MiniTypeVar(id): error();
+			MiniTypePar(id): error();
+			MiniTypeRecord(fields): todo();
+		}
+	});
+}
+
+// A type call with a type call, and add the result to the acc
+unionMiniTypeCalls(env : MiniTypeEnv, 
+	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
+	typep : MiniTypePos, acc : Set<MiniType>, left : MiniTypeCall, right : MiniTypeCall) -> Set<MiniType> {
+
+	if (left.id == right.id) {
+		// Just unify the parameters
+		// TODO: Should this be done both ways?
+		constrainMiniTypeCalls(env, typep.id, typep.pos, unify, left, right, "union typecalls");
+		insertSet(acc, left);
+	} else {
+		// OK, check that one is a part of the other one
+
+		runion = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
+		runion ?? {
+			// OK, right is the union
+			println("Found " + miniType2string(runion) + " from union " + miniType2string(right) + " for struct " + miniType2string(left));
+			insertSet(acc, right);
+		} : {
+			lunion = findMiniStructInUnion(env.ast, right.id, left.id, left.typars);
+			switch (lunion) {
+				None(): {
+					// Neither is the union.
+					// See if there is some unique union that works
+					println("TODO: Find union for typecall " + miniType2string(left) + " and typecall " + miniType2string(right));
+
+					insertSet(acc, left);
+				}
+				Some(lun): {
+					println("Found " + miniType2string(lun) + " from union " + miniType2string(left) + " for struct " + miniType2string(right));
+					insertSet(acc, right);
+				}
+			}
+		}
+	}
+}

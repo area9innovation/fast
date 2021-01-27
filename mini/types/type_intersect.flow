@@ -238,6 +238,7 @@ intersectMiniTypeCalls(env : MiniTypeEnv,
 
 	if (left.id == right.id) {
 		// Just unify the parameters
+		// TODO: Should this be done both ways?
 		constrainMiniTypeCalls(env, typep.id, typep.pos, unify, left, right, "intersect typecalls");
 		left;
 	} else if (left.id == "") {

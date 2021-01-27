@@ -8,6 +8,7 @@ import mini/types/tyvarinfo;
 import mini/types/pretty;
 import mini/types/subtype;
 import mini/types/type_intersect;
+import mini/types/type_union;
 
 export {
 	// Extract constraints from this type pairing. lhs should be a subtype of rhs
@@ -180,7 +181,10 @@ setMiniTypeBounds(env : MiniTypeEnv, tyvar : int, type : MiniTypePos) -> void {
 // We know the tyvar id is the current parent tyvar
 addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
 	reqs = getMTyvarRequirements(env, tyvar);
-	nreqs = MTyvarRequirements(reqs with lower = insertSet(reqs.lower, type.type));
+
+	nlower = unionMiniTypes(env, unifyMiniType, reqs.lower, type);
+
+	nreqs = MTyvarRequirements(reqs with lower = nlower);
 	env.tyvarRequirements := setTree(^(env.tyvarRequirements), tyvar, nreqs);
 
 	// Propagate the bound to the upper bounds as well
@@ -284,6 +288,13 @@ mergeMTyvarRequirements(env : MiniTypeEnv, typep : MiniTypePos, left : MTyvarReq
 		}
 	};
 
+	newLower = foldSet(right.lower, left.lower, \acc, rtype -> {
+		if (containsSet(acc, rtype)) acc
+		else {
+			unionMiniTypes(env, unifyMiniType, acc, MiniTypePos(typep with type = rtype));
+		}
+	});
+
 	newUpper = foldSet(right.upper, left.upper, \acc, rtype -> {
 		if (containsSet(acc, rtype)) acc
 		else {
@@ -293,7 +304,7 @@ mergeMTyvarRequirements(env : MiniTypeEnv, typep : MiniTypePos, left : MTyvarReq
 
 	MTyvarRequirements(
 		fixed,
-		mergeSets(left.lower, right.lower),
+		newLower,
 		newUpper
 	);
 }
