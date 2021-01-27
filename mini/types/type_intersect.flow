@@ -24,6 +24,11 @@ intersectMiniTypes(env : MiniTypeEnv,
 	type = typep.type;
 	if (isEmptySet(types)) makeSet1(type)
 	else {
+		error = \ -> {
+			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
+			env.onError(typep.id, typep.pos, "Can not intersect " + miniType2string(type) + " and " + existing);
+			types;
+		}
 		todo = \ -> {
 			// TODO: Error
 			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
@@ -41,7 +46,21 @@ intersectMiniTypes(env : MiniTypeEnv,
 		switch (type) {
 			MiniTypeInt(lbits): unifyall();
 			MiniTypeFunction(args, returnType): {
-				todo();
+				// OK, we require at most one function there already
+				if (sizeSet(types) != 1) {
+					error();
+				} else {
+					efn = set2array(types)[0];
+					switch (efn) {
+						MiniTypeFunction(eargs, ereturnType): {
+							// OK, unify these fns
+							unify(env, MiniTypePos(typep.id, typep.pos, efn), typep, "intersection");
+							// And we just keep the result
+							types;
+						}
+						default: todo();
+					}
+				}
 			}
 			MiniTypeCall(id, typars): {
 				intersectMiniTypeCall(env, unify, typep, types, type);
@@ -50,7 +69,24 @@ intersectMiniTypes(env : MiniTypeEnv,
 				todo();
 			}
 			MiniTypePar(id): {
-				todo();
+				// OK, we require that it is only typepars
+				hasError = foldSet(types, false, \acc, t -> {
+					switch (t) {
+						MiniTypePar(eid): {
+							if (eid != id) {
+								// !env.ast.options.implicitTypePars
+								true
+							} else acc;
+						}
+						default: true;
+					}
+				});
+				if (hasError) {
+					error();
+					types;
+				} else {
+					insertSet(types, type);
+				}
 			}
 			MiniTypeRecord(fields): {
 				intersectMiniTypesWithRecord(env, unify, types, typep, type)
@@ -188,63 +224,14 @@ intersectMiniTypeCallWithRecord(env : MiniTypeEnv,
 intersectMiniTypeCalls(env : MiniTypeEnv, 
 	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
 	typep : MiniTypePos, left : MiniTypeCall, right : MiniTypeCall) -> MiniType {
-	println("TODO: Intersect typecall " + miniType2string(left) + " with typecall " + miniType2string(right));
 
-	left;
-}
-
-
-/*
-intersectTypes(env : MiniTypeEnv, 
-	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
-	left : MiniType, right : MiniType) -> Maybe<MiniType> {
-	res = intersectMiniTypes(env, unify, makeSet1(left), right);
-	if (isEmptySet(res)) None()
-	else Some(set2array(res)[0]);
-}
-
-intersectMiniTypecalls(env : MiniTypeEnv, 
-	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
-	left : MiniTypeCall, right : MiniTypeCall)  -> Maybe<MiniType> {
 	if (left.id == right.id) {
-		if (!env.ast.options.implicitTypePars && length(left.typars) != length(right.typars)) {
-			None();
-		} else {
-			len = max(length(left.typars), length(right.typars));
-			itypars = generate(0, len, \i -> {
-				ltypar = if (i < length(left.typars)) {
-					left.typars[i];
-				} else right.typars[i];
-				rtypar = if (i < length(right.typars)) {
-					right.typars[i];
-				} else left.typars[i];
-				intersectTypes(env, ltypar, rtypar);
-			});
-			otypars = filtermap(itypars, idfn);
-			if (length(otypars) == len) {
-				Some(MiniTypeCall(left.id, otypars));
-			} else None();
-		}
-	} else if (left.id == "flow") {
-		Some(right)
-	} else if (right.id == "flow") {
-		Some(left);
+		// Just unify the parameters
+		constrainMiniTypeCalls(env, typep.id, typep.pos, unify, left, right, "intersect typecalls");
+		left;
 	} else {
-		mlstruct = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
-		mlstruct ?? {
-			// OK, we found the struct in the right hand side. Intersect with that
-			intersectTypes(env, left, mlstruct)
-		} : {
-			mrstruct = findMiniStructInUnion(env.ast, right.id, left.id, left.typars);
-			mrstruct ?? {
-				// OK, we found the struct in the right hand side. Intersect with that
-				intersectTypes(env, right, mrstruct)
-			} : {
-				// TODO: Error
-				env.onError("", -1, "Can we intersect these? " + miniType2string(left) + " and " + miniType2string(right));
-				None();
-			}
-		}
+		println("TODO: Intersect typecall " + miniType2string(left) + " with typecall " + miniType2string(right));
+		left;
 	}
 }
-*/
+

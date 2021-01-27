@@ -191,6 +191,7 @@ addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : s
 addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
 	reqs = getMTyvarRequirements(env, tyvar);
 
+	// TODO: We could have another constain which is unify where there is no difference between upper and lower
 	nupper = intersectMiniTypes(env, constrainMiniType, reqs.upper, type);
 
 	nreqs = MTyvarRequirements(reqs with upper = nupper);
