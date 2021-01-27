@@ -106,10 +106,6 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 			}
 			MiniTypeVar(lid): {
 				parentId = unionFind(env.unionFind, lid);
-				def = \ -> {
-					addMiniUpperBound(env, parentId, rhsp, reason);
-				};
-
 				switch (rhs) {
 					MiniTypeVar(rid): {
 						rparentId = unionFind(env.unionFind, rid);
@@ -117,7 +113,9 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 							unifyMiniTyvars(env, lhsp, parentId, rhsp, rparentId);
 						}
 					};
-					default: def();
+					default: {
+						addMiniUpperBound(env, parentId, rhsp, reason);
+					}
 				}
 			}
 			MiniTypePar(lid): {
@@ -168,6 +166,7 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 
 //
 // Handling lower/upper constraints
+//
 
 setMiniTypeBounds(env : MiniTypeEnv, tyvar : int, type : MiniTypePos) -> void {
 	parentId = unionFind(env.unionFind, tyvar);
@@ -206,7 +205,7 @@ constrainUpperBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \utype -> {
 		constrainMiniType(env, typep, MiniTypePos(id, pos, utype), reason + " upper-bound")
-	})
+	});
 }
 
 // OK, we know these two tyvars are identical
@@ -220,7 +219,7 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 			fileinfo1 = getFileLineInfo(env.ast, lhs.id, lhs.pos);
 			fileinfo2 = getFileLineInfo(env.ast, rhs.id, rhs.pos);
 			println(fileinfo1 + "Merging tyvars α" + i2s(left) + " and α" + i2s(right) + " to α" + i2s(joined) + (if (fileinfo1 != fileinfo2) " " + fileinfo2 else ""));
-		}
+		};
 
 		move = \tv1, tv2 -> {
 			// Move all info on tv to joined

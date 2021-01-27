@@ -23,12 +23,12 @@ export {
 		tyvarLowerBounds : ref Tree<int, Set<MiniType>>,
 		tyvarUpperBounds : ref Tree<int, Set<MiniType>>,
 
-		// What is the next tyvar id?
-		tyvarId : ref int,
-
 		// What are the tyvars bound to in terms of resolved types?
 		// This is set by the resolution
 		tyvars : ref Tree<int, MiniType>,
+
+		// What is the next tyvar id?
+		tyvarId : ref int,
 
 		// We keep a cache of constraints to avoid infinite loops
 		constraintCache : ref Set<Pair<MiniType, MiniType>>,
