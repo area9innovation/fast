@@ -111,7 +111,8 @@ goCoalesce(env : CoalesceAcc, type : MiniType, polar : bool) -> ResType {
 					tyvar;
 				}
 			} else {
-				bounds = lookupMultimap(^(if (polar) env.env.tyvarLowerBounds else env.env.tyvarUpperBounds), parentId);
+				reqs = getMTyvarRequirements(env.env, parentId);
+				bounds = if (polar) reqs.lower else reqs.upper;
 				nenv = CoalesceAcc(env with inProcess = insertSet(env.inProcess, vspol));
 				boundTypes = mapSet(bounds, \b -> {
 					goCoalesce(nenv, b, polar)

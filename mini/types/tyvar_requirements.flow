@@ -1,11 +1,15 @@
-import mini/types/type;
-import ds/set;
+import mini/types/typeenv;
 
 export {
-	MTyvarRequirements(
-		// What are the transitive lower bounds?
-		lower : Set<MiniType>,
-		// What are the transitive upper bounds?
-		upper : Set<MiniType>,
-	);
+	// Does not follow to the parent tyvar
+	getMTyvarRequirements(env : MiniTypeEnv, tyvar : int) -> MTyvarRequirements;
+}
+
+getMTyvarRequirements(env : MiniTypeEnv, tyvar : int) -> MTyvarRequirements {
+	mreqs = lookupTree(^(env.tyvarRequirements), tyvar);
+	mreqs ?? {
+		mreqs
+	} : {
+		MTyvarRequirements(None(), makeSet(), makeSet());
+	}
 }

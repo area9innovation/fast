@@ -2,6 +2,7 @@ import mini/types/typeenv;
 import text/blueprint;
 import mini/types/pretty;
 import mini/types/builtin;
+import mini/types/tyvar_requirements;
 
 export {
 	// Lookup the type
@@ -17,10 +18,9 @@ resolveMiniTypeVar(env : MiniTypeEnv, name : string, pos : int, tyvarId : int) -
 		if (tyvarId == 0) {
 			miniTypeVoid
 		} else {
-			lower = lookupMultimap(^(env.tyvarLowerBounds), tyvarId);
-			upper = lookupMultimap(^(env.tyvarUpperBounds), tyvarId);
+			reqs = getMTyvarRequirements(env, tyvarId);
 			fn = \l -> "{" + superglue(set2array(l), miniType2string, ", ") + "}";
-			env.onError(name, pos, "Could not resolve tyvar " + i2s(tyvarId) + " with " + fn(lower) + ".." + fn(upper));
+			env.onError(name, pos, "Could not resolve tyvar " + i2s(tyvarId) + " with " + fn(reqs.lower) + ".." + fn(reqs.upper));
 			MiniTypeVar(tyvarId);
 		}
 	};

@@ -2,6 +2,7 @@ import mini/exp/exp;
 import mini/types/typeenv;
 import mini/types/pretty;
 import mini/types/tyvarinfo;
+import mini/types/tyvar_requirements;
 import text/blueprint;
 
 export {
@@ -80,8 +81,9 @@ miniPrettyTypeVar(env : MiniTypeEnv, tv : int) -> string {
 				""
 			}
 		} : {
-			lower = lookupMultimap(^(env.tyvarLowerBounds), tv);
-			upper = lookupMultimap(^(env.tyvarUpperBounds), tv);
+			reqs = getMTyvarRequirements(env, tv);
+			lower = reqs.lower;
+			upper = reqs.upper;
 			b = \s : Set<MiniType>, sep -> {
 				if (isEmptySet(s)) ""
 				else superglue(set2array(s), miniType2string, sep)

@@ -178,20 +178,25 @@ setMiniTypeBounds(env : MiniTypeEnv, tyvar : int, type : MiniTypePos) -> void {
 
 // We know the tyvar id is the current parent tyvar
 addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
-	env.tyvarLowerBounds := insertMultimap(^(env.tyvarLowerBounds), tyvar, type.type);
+	reqs = getMTyvarRequirements(env, tyvar);
+	nreqs = MTyvarRequirements(reqs with lower = insertSet(reqs.lower, type.type));
+	env.tyvarRequirements := setTree(^(env.tyvarRequirements), tyvar, nreqs);
+
 	// Propagate the bound to the upper bounds as well
-	constrainUpperBounds(env, tyvar, type, reason);
+	constrainUpperBounds(env, tyvar, nreqs, type, reason);
 }
 
 // We know the tyvar id is the current parent tyvar
 addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : string) -> void {
-	env.tyvarUpperBounds := insertMultimap(^(env.tyvarUpperBounds), tyvar, type.type);
+	reqs = getMTyvarRequirements(env, tyvar);
+	nreqs = MTyvarRequirements(reqs with upper = insertSet(reqs.upper, type.type));
+	env.tyvarRequirements := setTree(^(env.tyvarRequirements), tyvar, nreqs);
 	// Propagate the bound to the lower bounds as well
-	constrainLowerBounds(env, tyvar, type, reason);
+	constrainLowerBounds(env, tyvar, nreqs, type, reason);
 }
 
-constrainLowerBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason : string) -> void {
-	types = lookupMultimap(^(env.tyvarLowerBounds), tyvar);
+constrainLowerBounds(env : MiniTypeEnv, tyvar : int, reqs : MTyvarRequirements, typep : MiniTypePos, reason : string) -> void {
+	types = reqs.lower;
 	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \ltype -> {
@@ -199,8 +204,8 @@ constrainLowerBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason
 	});
 }
 
-constrainUpperBounds(env : MiniTypeEnv, tyvar : int, typep : MiniTypePos, reason : string) -> void {
-	types = lookupMultimap(^(env.tyvarUpperBounds), tyvar);
+constrainUpperBounds(env : MiniTypeEnv, tyvar : int, reqs : MTyvarRequirements, typep : MiniTypePos, reason : string) -> void {
+	types = reqs.upper;
 	id = findMiniTyvarId(env, tyvar);
 	pos = findMiniTyvarPos(env, tyvar);
 	iterSet(types, \utype -> {
@@ -224,12 +229,11 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 		move = \tv1, tv2 -> {
 			// Move all info on tv to joined
 			if (tv1 != tv2) {
-				lower = mergeTyvarBounds(env.tyvarLowerBounds, tv1, tv2, joined);
-				upper = mergeTyvarBounds(env.tyvarUpperBounds, tv1, tv2, joined);
+				reqs = mergeTyvarBounds(env, tv1, tv2, joined);
 				// Brute force propagation of all combinations.
 				// TODO: Optimize this
-				iterSet(lower, \ltype -> {
-					iterSet(upper, \utype -> {
+				iterSet(reqs.lower, \ltype -> {
+					iterSet(reqs.upper, \utype -> {
 						constrainMiniType(env, MiniTypePos(lhs with type = ltype), MiniTypePos(rhs with type = utype), "join");
 					})
 				});
@@ -242,15 +246,38 @@ unifyMiniTyvars(env : MiniTypeEnv, lhs : MiniTypePos, left : int, rhs : MiniType
 	}
 }
 
-mergeTyvarBounds(bounds : ref Tree<int, Set<MiniType>>, tv1 : int, tv2 : int, target : int) -> Set<MiniType> {
-	left = lookupMultimap(^bounds, tv1);
-	right = lookupMultimap(^bounds, tv2);
+mergeTyvarBounds(env : MiniTypeEnv, tv1 : int, tv2 : int, target : int) -> MTyvarRequirements {
+	left = getMTyvarRequirements(env, tv1);
+	right = getMTyvarRequirements(env, tv2);
 
-	merged = mergeSets(left, right);
+	merged = mergeMTyvarRequirements(left, right);
 
-	bounds := setTree(^bounds, target, merged);
+	env.tyvarRequirements := setTree(^(env.tyvarRequirements), target, merged);
 	looser = if (tv1 == target) tv2 else tv1;
-	bounds := removeFromTree(^bounds, looser);
+	env.tyvarRequirements := removeFromTree(^(env.tyvarRequirements), looser);
 
 	merged;
+}
+
+mergeMTyvarRequirements(left : MTyvarRequirements, right : MTyvarRequirements) -> MTyvarRequirements {
+	fixed = switch (left.fixed) {
+		None(): right.fixed;
+		Some(lfixed): {
+			switch (right.fixed) {
+				None(): left.fixed;
+				Some(rfixed): {
+					// OK, left and right have to match
+					if (lfixed != rfixed) {
+						println("Collusion " + miniType2string(lfixed) + " and "+ miniType2string(rfixed));
+					}
+					left.fixed;
+				}
+			}
+		}
+	};
+	MTyvarRequirements(
+		fixed,
+		mergeSets(left.lower, right.lower),
+		mergeSets(left.upper, right.upper),
+	);
 }

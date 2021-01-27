@@ -26,9 +26,7 @@ makeMiniTypeEnv(ast : MiniAst) -> MiniTypeEnv {
 		ast,
 		makeTree(),
 		makeUnionFind(0),
-		// Lower
-		ref makeTree(),
-		// Upper
+		// Reqs
 		ref makeTree(),
 		// Decided
 		ref makeTree(),

@@ -2,7 +2,6 @@ import mini/exp/ast;
 import mini/types/type;
 import mini/types/restype;
 import fast/typing/union_find;
-// import mini/types/tyvar_requirements;
 
 export {
 	// The environment used when doing type inference
@@ -20,8 +19,7 @@ export {
 		unionFind : UnionFind,
 
 		// For the MLSub algorithm, we keep track of bounds:
-		tyvarLowerBounds : ref Tree<int, Set<MiniType>>,
-		tyvarUpperBounds : ref Tree<int, Set<MiniType>>,
+		tyvarRequirements : ref Tree<int, MTyvarRequirements>,
 
 		// What are the tyvars bound to in terms of resolved types?
 		// This is set by the resolution
@@ -40,5 +38,14 @@ export {
 
 		// To report errors
 		onError : (name : string, pos : int, error : string) -> void,
+	);
+
+	MTyvarRequirements(
+		// Do we know what it is?
+		fixed : Maybe<MiniType>,
+		// What are the transitive lower bounds?
+		lower : Set<MiniType>,
+		// What are the transitive upper bounds?
+		upper : Set<MiniType>,
 	);
 }
