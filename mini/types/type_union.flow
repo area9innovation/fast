@@ -61,7 +61,7 @@ unionMiniTypes(env : MiniTypeEnv,
 				}
 			}
 			MiniTypeCall(id, typars): {
-				unionMiniTypeCall(env, unify, typep, types, type);
+				unionMiniTypeCalls(env, unify, typep, insertSet(types, type));
 			}
 			MiniTypeVar(id): error();
 			MiniTypePar(id): insertSet(types, type);
@@ -71,51 +71,83 @@ unionMiniTypes(env : MiniTypeEnv,
 }
 
 // Union a type call with existing types
-unionMiniTypeCall(env : MiniTypeEnv, 
-	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
-	typep : MiniTypePos, types : Set<MiniType>, call : MiniTypeCall) -> Set<MiniType> {
-
-	foldSet(types, makeSet(), \acc, etype -> {
-		error = \ -> {
-			env.onError(typep.id, typep.pos, "Can not union " + miniType2string(call) + " with " + miniType2string(etype));
-			acc;
-		}
-		todo = \ -> { 
-			println("TODO: Implement union " + miniType2string(call) + " with " + miniType2string(etype));
-			acc;
-		}
-		switch (etype) {
-			MiniTypeInt(bits): error();
-			MiniTypeFunction(args, returnType): error();
-			MiniTypeCall(id, typars): {
-				unionMiniTypeCalls(env, unify, typep, acc, call, etype);
-			}
-			MiniTypeVar(id): error();
-			MiniTypePar(id): error();
-			MiniTypeRecord(fields): todo();
-		}
-	});
-}
-
-// A type call with a type call, and add the result to the acc
 unionMiniTypeCalls(env : MiniTypeEnv, 
 	unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
-	typep : MiniTypePos, acc : Set<MiniType>, left : MiniTypeCall, right : MiniTypeCall) -> Set<MiniType> {
+	typep : MiniTypePos, types : Set<MiniType>) -> Set<MiniType> {
 
-	if (left.id == right.id) {
-		// Just unify the parameters
-		// TODO: Should this be done both ways?
-		constrainMiniTypeCalls(env, typep.id, typep.pos, unify, left, right, "union typecalls");
-		insertSet(acc, left);
-	} else if (left.id == "") {
-		// OK, we have an unknown struct vs a named struct or union.
-		// Now we know the name
-		unionMiniTypeCalls(env, unify, typep, acc, MiniTypeCall(left with id = right.id), right);
-	} else if (right.id == "") {
-		// OK, we have an unknown struct vs a named struct.
-		// Now we know the name
-		unionMiniTypeCalls(env, unify, typep, acc, left, MiniTypeCall(right with id = left.id));
+	records : Set<MiniTypeRecord> = foldSet(types, makeSet(), \acc, t -> {
+		switch (t) {
+			MiniTypeRecord(fields): insertSet(acc, t);
+			default: acc;
+		}
+	});
+	calls : Set<MiniTypeCall> = foldSet(types, makeSet(), \acc, t -> {
+		switch (t) {
+			MiniTypeCall(__, __): insertSet(acc, t);
+			default: acc;
+		}
+	});
+	others : Set<MiniType> = foldSet(types, makeSet(), \acc, t -> {
+		switch (t) {
+			MiniTypeRecord(__): acc;
+			MiniTypeCall(__, __): acc;
+			default: insertSet(acc, t);
+		}
+	});
+
+	if (!isEmptySet(others)) {
+		existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
+		env.onError(typep.id, typep.pos, "Can not union " + existing);
+		types;
+	} else if (sizeSet(records) + sizeSet(calls) <= 1) {
+		// OK, this is good enough
+		types;
 	} else {
+		// OK, now look at potential unique supertypes when we have more than one
+		recordSuperTypes : Set<Set<string>> = mapSet(records, \r -> {
+			// TODO: Find super types of records.
+			makeSet1("TODO");
+		});
+		callSupertypes : Set<Set<string>> = mapSet(calls, \call -> {
+			if (call.id == "") {
+				// TODO: Figure out how to handle this one
+				makeSet1("TODO");
+			} else {
+				findMiniSuperTypes(env.ast.subtypeGraph, call.id);
+			}
+		});
+
+		allSuperTypes : Set<Set<string>> = mergeSets(recordSuperTypes, callSupertypes);
+
+		hasUnknown = existsSet(allSuperTypes, isEmptySet);
+
+		// OK: Find the intersection of all these guys
+		supertypes = if (hasUnknown) makeSet() else {
+			foldSet(allSuperTypes, Pair(true, makeSet()), \acc, st -> {
+				Pair(false, if (acc.first) {
+					st
+				} else {
+					intersectSets(acc.second, st);
+				});
+			}).second;
+		};
+		
+		if (sizeSet(supertypes) == 1) {
+			// We have a unique super-type!
+			supertype = set2array(supertypes)[0];
+			println("We could unify with this super type " + supertype);
+
+			types;
+		} else {
+			// TODO: All identical type calls should be unified
+			println("TODO: Figure out how to union " + superglue(set2array(types), miniType2string, ", "));
+			// constrainMiniTypeCalls(env, typep.id, typep.pos, unify, left, right, "union typecalls");
+			types;
+		}
+	}
+}
+
+/*
 		// OK, check that one is a part of the other one
 		runion = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
 		runion ?? {
@@ -150,3 +182,4 @@ unionMiniTypeCalls(env : MiniTypeEnv,
 		}
 	}
 }
+*/
