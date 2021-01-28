@@ -10,7 +10,7 @@ export {
 }
 
 updateMiniUnionSubGraph(acc : MiniSubtypeGraph, union : MiniUnion) -> MiniSubtypeGraph {
-	// TODO: OK, first remove the links from any previous union
+	// TODO: For incremental, first remove the links from any previous union
 
 	// Then add the links from struct to union
 	fold(union.typenames, acc, \acc2, type -> {

@@ -1,6 +1,7 @@
 import mini/types/typeenv;
 import mini/types/debug;
 import mini/types/subtype;
+import mini/types/subtypegraph;
 
 export {
 	/*
@@ -127,8 +128,19 @@ unionMiniTypeCalls(env : MiniTypeEnv,
 				None(): {
 					// Neither is the union.
 					// See if there is some unique union that works
-					println("TODO: Find union for typecall " + miniType2string(left) + " and typecall " + miniType2string(right));
-					insertSet(acc, left);
+					lunions = findMiniSuperTypes(env.ast.subtypeGraph, left.id);
+					runions = findMiniSuperTypes(env.ast.subtypeGraph, right.id);
+					shared = intersectSets(lunions, runions);
+					if (sizeSet(shared) == 1) {
+						// OK, we found a unique union
+						unionName = set2array(shared)[0];
+						println("TODO: Figure out how to lift type pars from " + miniType2string(left) + " and " + miniType2string(right) + " to union " + unionName);
+						insertSet(acc, left);
+					} else {
+						println("TODO: Find union for typecall " + miniType2string(left) + " and typecall " + miniType2string(right));
+						println(set2array(shared));
+						insertSet(acc, left);
+					}
 				}
 				Some(lun): {
 					println("TODO: Unify the found " + miniType2string(lun) + " from union " + miniType2string(left) + " with struct " + miniType2string(right));
