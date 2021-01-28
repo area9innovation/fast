@@ -42,12 +42,28 @@ unionMiniTypes(env : MiniTypeEnv,
 			MiniTypeInt(bits): {
 				todo();
 			}
-			MiniTypeFunction(args, returnType): todo();
+			MiniTypeFunction(args, returnType): {
+				// OK, we require at most one function there already
+				if (sizeSet(types) != 1) {
+					error();
+				} else {
+					efn = set2array(types)[0];
+					switch (efn) {
+						MiniTypeFunction(eargs, ereturnType): {
+							// OK, unify these fns
+							unify(env, MiniTypePos(typep.id, typep.pos, efn), typep, "union");
+							// And we just keep the result
+							types;
+						}
+						default: error();
+					}
+				}
+			}
 			MiniTypeCall(id, typars): {
 				unionMiniTypeCall(env, unify, typep, types, type);
 			}
-			MiniTypeVar(id): todo();
-			MiniTypePar(id): todo();
+			MiniTypeVar(id): error();
+			MiniTypePar(id): insertSet(types, type);
 			MiniTypeRecord(fields): todo();
 		}
 	}
@@ -90,13 +106,20 @@ unionMiniTypeCalls(env : MiniTypeEnv,
 		// TODO: Should this be done both ways?
 		constrainMiniTypeCalls(env, typep.id, typep.pos, unify, left, right, "union typecalls");
 		insertSet(acc, left);
+	} else if (left.id == "") {
+		// OK, we have an unknown struct vs a named struct or union.
+		// Now we know the name
+		unionMiniTypeCalls(env, unify, typep, acc, MiniTypeCall(left with id = right.id), right);
+	} else if (right.id == "") {
+		// OK, we have an unknown struct vs a named struct.
+		// Now we know the name
+		unionMiniTypeCalls(env, unify, typep, acc, left, MiniTypeCall(right with id = left.id));
 	} else {
 		// OK, check that one is a part of the other one
-
 		runion = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
 		runion ?? {
 			// OK, right is the union
-			println("Found " + miniType2string(runion) + " from union " + miniType2string(right) + " for struct " + miniType2string(left));
+			println("TODO: Unify the found " + miniType2string(runion) + " from union " + miniType2string(right) + " with struct " + miniType2string(left));
 			insertSet(acc, right);
 		} : {
 			lunion = findMiniStructInUnion(env.ast, right.id, left.id, left.typars);
@@ -105,11 +128,10 @@ unionMiniTypeCalls(env : MiniTypeEnv,
 					// Neither is the union.
 					// See if there is some unique union that works
 					println("TODO: Find union for typecall " + miniType2string(left) + " and typecall " + miniType2string(right));
-
 					insertSet(acc, left);
 				}
 				Some(lun): {
-					println("Found " + miniType2string(lun) + " from union " + miniType2string(left) + " for struct " + miniType2string(right));
+					println("TODO: Unify the found " + miniType2string(lun) + " from union " + miniType2string(left) + " with struct " + miniType2string(right));
 					insertSet(acc, right);
 				}
 			}
