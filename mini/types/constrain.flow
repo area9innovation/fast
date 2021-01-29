@@ -33,7 +33,7 @@ constrainMiniType(env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, rea
 			fileinfo2 = getFileLineInfo(env.ast, rhsp.id, rhsp.pos);
 			println(
 				fileinfo1 + "Constrain " + reason + " " + debugMiniType(env, lhs) + " ≤ " + debugMiniType(env, rhs)
-				+ (if (fileinfo1 != fileinfo2) fileinfo2 else "")
+				+ (if (fileinfo1 != fileinfo2) " " + fileinfo2 else "")
 			);
 		}
 

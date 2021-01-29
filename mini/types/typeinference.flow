@@ -181,6 +181,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 					} else if (fname == "__downcast") {
 						// This is downcast "id : type in body"
 						name = getMiniVar(args[0]);
+						nameType = typeInferenceMini(env, id, args[0]);
 						type = convertMiniExpAsType(env, args[1]);
 						body = args[2];
 
@@ -189,11 +190,15 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 							MiniTypeCall(subtype, stypars): {
 								// Relate type pars of the first name and the type here
 								supertype = getMiniVarType(env, id, pos, name);
-								// Make a shell type call with the correct number of type pars
+								// Make a shell union type call with the correct number of type pars
 								scalltype = MiniTypeCall("", map(stypars, \__ -> makeMiniTypeVar(env)));
 								// Relate this to the super-type
 								// TODO: We could potentially find the position of the name
-								constrainMiniType(env, MiniTypePos(id, pos, scalltype), MiniTypePos(id, pos, supertype), "downcast-super");
+								constrainMiniType(env, 
+									MiniTypePos(id, pos, scalltype), 
+									MiniTypePos(id, pos, supertype), 
+									"downcast-super"
+								);
 
 								// and relate the typars to the typars of the subtype
 								iteri(scalltype.typars, \i, larg -> {

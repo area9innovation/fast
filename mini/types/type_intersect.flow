@@ -252,13 +252,13 @@ intersectMiniTypeCalls(env : MiniTypeEnv,
 	} else {
 		// OK, check that one is a part of the other one
 
-		runion = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
+		runion = makeMiniStructFromUnion(env.ast, left.id, right.id, right.typars);
 		runion ?? {
 			// OK, right is the union
 			println("Found " + miniType2string(runion) + " from union " + miniType2string(right) + " for struct " + miniType2string(left));
 			left;
 		} : {
-			lunion = findMiniStructInUnion(env.ast, right.id, left.id, left.typars);
+			lunion = makeMiniStructFromUnion(env.ast, right.id, left.id, left.typars);
 			switch (lunion) {
 				None(): {
 					println("TODO: Intersect typecall " + miniType2string(left) + " with typecall " + miniType2string(right));

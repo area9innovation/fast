@@ -25,48 +25,58 @@ unionMiniTypes(env : MiniTypeEnv,
 	type = typep.type;
 	if (isEmptySet(types)) makeSet1(type)
 	else {
+		added = insertSet(types, type);
 		error = \ -> {
-			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
-			env.onError(typep.id, typep.pos, "Can not union " + miniType2string(type) + " and " + existing);
+			existing = superglue(set2array(added), miniType2string, ", ");
+			env.onError(typep.id, typep.pos, "Can not join types " + existing);
 			types;
 		}
 
 		todo = \ -> {
 			existing = "[" + superglue(set2array(types), miniType2string, ", ") + "]";
 			println("TODO: union " + miniType2string(type) + " and " + existing);
-			insertSet(types, type);
+			added;
 		}
 
-		hasFlow = containsSet(types, MiniTypeCall("flow", []));
-
-		switch (type) {
-			MiniTypeInt(bits): {
-				todo();
-			}
-			MiniTypeFunction(args, returnType): {
-				// OK, we require at most one function there already
-				if (sizeSet(types) != 1) {
-					error();
-				} else {
-					efn = set2array(types)[0];
-					switch (efn) {
-						MiniTypeFunction(eargs, ereturnType): {
-							// OK, unify these fns
-							unify(env, MiniTypePos(typep.id, typep.pos, efn), typep, "union");
-							// And we just keep the result
-							types;
-						}
-						default: error();
+		hasFlow = containsSet(added, MiniTypeCall("flow", []));
+		if (hasFlow) {
+			// OK, this is always flow
+			makeSet1(MiniTypeCall("flow", []));
+		} else {
+			switch (type) {
+				MiniTypeInt(bits): {
+					if (sizeSet(added) != 1) {
+						error();
+					} else {
+						added;
 					}
 				}
+				MiniTypeFunction(args, returnType): {
+					// OK, we require at most one function there already
+					if (sizeSet(types) != 1) {
+						error();
+					} else {
+						efn = set2array(types)[0];
+						switch (efn) {
+							MiniTypeFunction(eargs, ereturnType): {
+								// OK, unify these fns
+								unify(env, MiniTypePos(typep.id, typep.pos, efn), typep, "union");
+								// And we just keep the result
+								types;
+							}
+							default: error();
+						}
+					}
+				}
+				MiniTypeCall(id, typars): {
+					unionMiniTypeCalls(env, unify, typep, insertSet(types, type));
+				}
+				MiniTypeVar(id): error();
+				MiniTypePar(id): insertSet(types, type);
+				MiniTypeRecord(fields): todo();
 			}
-			MiniTypeCall(id, typars): {
-				unionMiniTypeCalls(env, unify, typep, insertSet(types, type));
-			}
-			MiniTypeVar(id): error();
-			MiniTypePar(id): insertSet(types, type);
-			MiniTypeRecord(fields): todo();
 		}
+
 	}
 }
 
@@ -113,6 +123,7 @@ unionMiniTypeCalls(env : MiniTypeEnv,
 				// TODO: Figure out how to handle this one
 				makeSet1("TODO");
 			} else {
+				// TODO: If this id is a union, it should also be in the set
 				findMiniSuperTypes(env.ast.subtypeGraph, call.id);
 			}
 		});
@@ -135,9 +146,18 @@ unionMiniTypeCalls(env : MiniTypeEnv,
 		if (sizeSet(supertypes) == 1) {
 			// We have a unique super-type!
 			supertype = set2array(supertypes)[0];
-			println("We could unify with this super type " + supertype);
+			// TODO: Figure out what the type pars are here, and join them with the types
+			unionType = MiniTypeCall(supertype, []);
+			iterSet(calls, \call -> {
+				mstruct = makeMiniStructFromUnion(env.ast, call.id, supertype, call.typars);
+				mstruct ?? {
+					unify(env, MiniTypePos(typep with type = call), MiniTypePos(typep with type = mstruct), "union supertype")
+				} : {}
+			});
 
-			types;
+			// TODO: Iterate over records
+
+			makeSet1(unionType);
 		} else {
 			// TODO: All identical type calls should be unified
 			println("TODO: Figure out how to union " + superglue(set2array(types), miniType2string, ", "));
@@ -149,13 +169,13 @@ unionMiniTypeCalls(env : MiniTypeEnv,
 
 /*
 		// OK, check that one is a part of the other one
-		runion = findMiniStructInUnion(env.ast, left.id, right.id, right.typars);
+		runion = makeMiniStructFromUnion(env.ast, left.id, right.id, right.typars);
 		runion ?? {
 			// OK, right is the union
 			println("TODO: Unify the found " + miniType2string(runion) + " from union " + miniType2string(right) + " with struct " + miniType2string(left));
 			insertSet(acc, right);
 		} : {
-			lunion = findMiniStructInUnion(env.ast, right.id, left.id, left.typars);
+			lunion = makeMiniStructFromUnion(env.ast, right.id, left.id, left.typars);
 			switch (lunion) {
 				None(): {
 					// Neither is the union.

@@ -1,0 +1,8 @@
+idfn(a) {
+	a
+}
+
+main() {
+	idfn(1);
+	idfn(false);
+}

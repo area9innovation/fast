@@ -342,12 +342,12 @@ intersectMiniTypecalls(acc : SimplifyAcc, left : MiniTypeCall, right : MiniTypeC
 	} else if (right.id == "flow") {
 		Some(left);
 	} else {
-		mlstruct = findMiniStructInUnion(acc.env.ast, left.id, right.id, right.typars);
+		mlstruct = makeMiniStructFromUnion(acc.env.ast, left.id, right.id, right.typars);
 		mlstruct ?? {
 			// OK, we found the struct in the right hand side. Intersect with that
 			intersectTypes(acc, left, mlstruct)
 		} : {
-			mrstruct = findMiniStructInUnion(acc.env.ast, right.id, left.id, left.typars);
+			mrstruct = makeMiniStructFromUnion(acc.env.ast, right.id, left.id, left.typars);
 			mrstruct ?? {
 				// OK, we found the struct in the right hand side. Intersect with that
 				intersectTypes(acc, right, mrstruct)

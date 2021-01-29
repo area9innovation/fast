@@ -1,0 +1,22 @@
+Maybe<?> ::= None, Some<?>;
+
+None();
+Some(value : ?);
+
+either(m : Maybe<?>, def : ?) -> ? {
+	switch (m) {
+		None(): {
+			// m : None<?>
+			def;
+		}
+		Some(v): {
+			// m : Some<?>
+			m.value;
+		}
+	}
+}
+
+main() {
+	either(None(), 1);
+	either(Some(1.0), 2.0);
+}
