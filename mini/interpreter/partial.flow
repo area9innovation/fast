@@ -55,7 +55,7 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 					} else if (fname == "__ctmaybe") {
 						processMiniMaybe(env, args);
 					} else if (fname == "__compiletime") {
-						interpretMiniExp(env, e);
+						interpretMiniExp(env, args[0]);
 					} else if (fname == "__type") {
 						interpretMiniType(env, def());
 					} else {

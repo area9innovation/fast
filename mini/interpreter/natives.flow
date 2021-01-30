@@ -1,0 +1,39 @@
+import mini/interpreter/env;
+import mini/exp/value;
+
+export {
+	evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp;
+}
+
+evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
+	def = MiniCall(fn, args, pos, tyvar);
+	if (fn.name == "+") {
+		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
+			MiniInt(getMiniInt(args[0]) + getMiniInt(args[1]), pos, tyvar);
+		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
+			MiniDouble(getMiniDouble(args[0]) + getMiniDouble(args[1]), pos);
+		} else if (isMiniString(args[0]) && isMiniString(args[1])) {
+			MiniString(getMiniString(args[0]) + getMiniString(args[1]), pos);
+		} else def;
+	} else if (fn.name == "-") {
+		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
+			MiniInt(getMiniInt(args[0]) - getMiniInt(args[1]), pos, tyvar);
+		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
+			MiniDouble(getMiniDouble(args[0]) - getMiniDouble(args[1]), pos);
+		} else def;
+	} else if (fn.name == "*") {
+		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
+			MiniInt(getMiniInt(args[0]) * getMiniInt(args[1]), pos, tyvar);
+		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
+			MiniDouble(getMiniDouble(args[0]) * getMiniDouble(args[1]), pos);
+		} else def;
+	} else if (fn.name == "/") {
+		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
+			MiniInt(getMiniInt(args[0]) / getMiniInt(args[1]), pos, tyvar);
+		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
+			MiniDouble(getMiniDouble(args[0]) / getMiniDouble(args[1]), pos);
+		} else def;
+	} else {
+		def
+	}
+}

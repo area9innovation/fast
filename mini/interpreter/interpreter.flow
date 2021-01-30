@@ -1,9 +1,9 @@
 import mini/exp/ast;
+import mini/interpreter/natives;
+import mini/interpreter/env;
 
 export {
 	makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter;
-
-	MiniInterpreter(env : MiniAst);
 
 	// This inlines calls and let-bindings
 	interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
@@ -43,6 +43,9 @@ interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], pos : i
 				setMiniInterpreterVar(acc, arg, args[i])
 			});
 			interpretMiniExp(nenv, body)
+		}
+		MiniVar(name, __, __): {
+			evalMiniStaticCall(env, fn, args, pos, tyvar)
 		}
 		default: MiniCall(fn, args, pos, tyvar);
 	}
