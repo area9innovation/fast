@@ -4,14 +4,16 @@ import mini/types/pretty;
 export {
 	mtypeBounds2string(t : MTypeBounds) -> string;
 	mtype2Bounds(m : MiniType) -> MTypeBounds;
-	mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, left : MTypeBounds, right : MTypeBounds) -> MTypeBounds;
+
+	// Merge these bounds. If union is true, consider this a union. Otherwise, consider it intersection
+	mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, union : bool, left : MTypeBounds, right : MTypeBounds) -> MTypeBounds;
 }
 
 mtypeBounds2string(t : MTypeBounds) -> string {
 	mset = \s -> map(set2array(s), miniType2string);
 	strGlue(concatA(
 		[
-			if (t.isFlow) ["flow"] else [""],
+			if (t.isFlow) ["flow"] else [],
 			switch (t.intType) {
 				None(): [];
 				Some(tt): [miniType2string(tt)];
@@ -44,11 +46,11 @@ mtype2Bounds(t : MiniType) -> MTypeBounds {
 }
 
 
-mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, left : MTypeBounds, right : MTypeBounds) -> MTypeBounds {
+mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, union : bool, left : MTypeBounds, right : MTypeBounds) -> MTypeBounds {
 	onError = \ -> {
 		env.onError(typep.id, typep.pos, "Can not merge bounds " + mtypeBounds2string(left) + " and " + mtypeBounds2string(right));
 	}
-	MTypeBounds(
+	mt = MTypeBounds(
 		left.isFlow || right.isFlow,
 		mergeMaybeType(left.intType, right.intType, onError),
 		mergeMaybeType(left.fn, right.fn, onError),
@@ -56,7 +58,8 @@ mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, left : MTypeBounds, rig
 		mergeSets(left.typars, right.typars),
 		mergeSets(left.records, right.records),
 		mergeSets(left.calls, right.calls),
-	)
+	);
+	simplifyMTypeBounds(env, mt, union, onError);
 }
 
 mergeMaybeType(left : Maybe<?>, right : Maybe<?>, onError : () -> void) -> Maybe<?> {
@@ -75,3 +78,43 @@ mergeMaybeType(left : Maybe<?>, right : Maybe<?>, onError : () -> void) -> Maybe
 		}
 	}
 }
+
+// Simplify these bounds. If union is true, consider this a union. Otherwise, consider it intersection
+simplifyMTypeBounds(env : MiniTypeEnv, m : MTypeBounds, union : bool, onError : () -> void) -> MTypeBounds {
+	if (union && m.isFlow) {
+		// Pure flow type wins
+		MTypeBounds(true, None(), None(), makeSet(), makeSet(), makeSet(), makeSet());
+	} else {
+		isInt = isSome(m.intType);
+		isFn = isSome(m.fn);
+		ntyvars = sizeSet(m.tyvars);
+		ntypars = sizeSet(m.typars);
+		nrecords = sizeSet(m.records);
+		ncalls = sizeSet(m.calls);
+		if (isInt || isFn) {
+			if (ntyvars + ntypars + nrecords + ncalls != 0 || (isInt && isFn)) {
+				onError();
+			}
+			m;
+		} else if (ntyvars + ntypars + nrecords + ncalls <= 1) {
+			m
+		} else {
+			println("TODO: Simplify " + mtypeBounds2string(m) + " as " + if (union) "union" else "intersection");
+			m;
+		}
+	}
+}
+
+
+/*
+	MTypeBounds(
+		isFlow : bool,
+		intType : Maybe<MiniTypeInt>,
+		fn : Maybe<MiniTypeFunction>,
+
+		tyvars : Set<MiniTypeVar>,
+		typars : Set<MiniTypePar>,
+		records : Set<MiniTypeRecord>,
+		calls : Set<MiniTypeCall>
+	);
+*/

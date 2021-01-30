@@ -45,9 +45,11 @@ export {
 		fixed : Maybe<MiniType>,
 		// What are the transitive lower bounds?
 		lower : Set<MiniType>,
+		// TODO: Migrate to these
 		lowerBounds : MTypeBounds,
 		// What are the transitive upper bounds?
 		upper : Set<MiniType>,
+		// TODO: Migrate to these
 		upperBounds : MTypeBounds,
 	);
 
@@ -59,6 +61,7 @@ export {
 		tyvars : Set<MiniTypeVar>,
 		typars : Set<MiniTypePar>,
 		records : Set<MiniTypeRecord>,
-		calls : Set<MiniTypeCall>
+		calls : Set<MiniTypeCall>,
+		// TODO: Add positions and ids to track positions
 	);
 }

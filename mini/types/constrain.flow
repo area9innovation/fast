@@ -188,7 +188,7 @@ addMiniLowerBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : s
 	nlower = unionMiniTypes(env, unifyMiniType, reqs.lower, type, reason);
 
 	// TODO: Union these instead of merge?
-	nlowerBounds = mergeMTypeBounds(env, type, reqs.lowerBounds, mtype2Bounds(type.type));
+	nlowerBounds = mergeMTypeBounds(env, type, true, reqs.lowerBounds, mtype2Bounds(type.type));
 
 	nreqs = MTyvarRequirements(reqs with lower = nlower, lowerBounds = nlowerBounds);
 	env.tyvarRequirements := setTree(^(env.tyvarRequirements), tyvar, nreqs);
@@ -204,7 +204,7 @@ addMiniUpperBound(env : MiniTypeEnv, tyvar : int, type : MiniTypePos, reason : s
 	nupper = intersectMiniTypes(env, unifyMiniType, reqs.upper, type);
 
 	// TODO: Intersect these instead of merge?
-	nupperBounds = mergeMTypeBounds(env, type, reqs.lowerBounds, mtype2Bounds(type.type));
+	nupperBounds = mergeMTypeBounds(env, type, false, reqs.upperBounds, mtype2Bounds(type.type));
 
 	nreqs = MTyvarRequirements(reqs with upper = nupper, upperBounds = nupperBounds);
 	env.tyvarRequirements := setTree(^(env.tyvarRequirements), tyvar, nreqs);
@@ -303,7 +303,7 @@ mergeMTyvarRequirements(env : MiniTypeEnv, typep : MiniTypePos, left : MTyvarReq
 			unionMiniTypes(env, unifyMiniType, acc, MiniTypePos(typep with type = rtype), "merge");
 		}
 	});
-	newLowerBounds = mergeMTypeBounds(env, typep, left.lowerBounds, right.lowerBounds);
+	newLowerBounds = mergeMTypeBounds(env, typep, true, left.lowerBounds, right.lowerBounds);
 
 	newUpper = foldSet(right.upper, left.upper, \acc, rtype -> {
 		if (containsSet(acc, rtype)) acc
@@ -311,7 +311,7 @@ mergeMTyvarRequirements(env : MiniTypeEnv, typep : MiniTypePos, left : MTyvarReq
 			intersectMiniTypes(env, unifyMiniType, acc, MiniTypePos(typep with type = rtype));
 		}
 	});
-	newUpperBounds = mergeMTypeBounds(env, typep, left.upperBounds, right.upperBounds);
+	newUpperBounds = mergeMTypeBounds(env, typep, false, left.upperBounds, right.upperBounds);
 
 	MTyvarRequirements(
 		fixed,
