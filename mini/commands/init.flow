@@ -10,7 +10,7 @@ export {
 
 makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 	strict = isUrlParameterTrue("strict");
-	stagestr = getUrlParameterDef("stages", "type,constrain,lower"); // parse,ct,type,constrain,coalesce,simplify,lower
+	stagestr = getUrlParameterDef("stages", "ct,type,constrain,coalesce,lower"); // parse,ct,type,constrain,coalesce,simplify,lower
 	stages = fold(strSplit(stagestr, ","), makeSet(), \acc, stage -> {
 		if (stage == "parse") insertSet(acc, StageParse())
 		else if (stage == "ct") insertSet(acc, StageCompileTime())

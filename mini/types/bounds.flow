@@ -1,0 +1,77 @@
+import mini/types/typeenv;
+import mini/types/pretty;
+
+export {
+	mtypeBounds2string(t : MTypeBounds) -> string;
+	mtype2Bounds(m : MiniType) -> MTypeBounds;
+	mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, left : MTypeBounds, right : MTypeBounds) -> MTypeBounds;
+}
+
+mtypeBounds2string(t : MTypeBounds) -> string {
+	mset = \s -> map(set2array(s), miniType2string);
+	strGlue(concatA(
+		[
+			if (t.isFlow) ["flow"] else [""],
+			switch (t.intType) {
+				None(): [];
+				Some(tt): [miniType2string(tt)];
+			},
+			switch (t.fn) {
+				None(): [];
+				Some(tt): [miniType2string(tt)];
+			},
+			mset(t.tyvars),
+			mset(t.typars),
+			mset(t.records),
+			mset(t.calls),
+		]
+	), ",");
+}
+
+mtype2Bounds(t : MiniType) -> MTypeBounds {
+	b = MTypeBounds(false, None(), None(), makeSet(), makeSet(), makeSet(), makeSet());
+	switch (t) {
+		MiniTypeInt(bits): MTypeBounds(b with intType = Some(t));
+		MiniTypeFunction(args, returnType): MTypeBounds(b with fn = Some(t));
+		MiniTypeCall(id, typars): {
+			if (id == "flow") MTypeBounds(b with isFlow = true)
+			else MTypeBounds(b with calls = makeSet1(t));
+		}
+		MiniTypeVar(id): MTypeBounds(b with tyvars = makeSet1(t));
+		MiniTypePar(id): MTypeBounds(b with typars = makeSet1(t));
+		MiniTypeRecord(fields): MTypeBounds(b with records = makeSet1(t));
+	}
+}
+
+
+mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, left : MTypeBounds, right : MTypeBounds) -> MTypeBounds {
+	onError = \ -> {
+		env.onError(typep.id, typep.pos, "Can not merge bounds " + mtypeBounds2string(left) + " and " + mtypeBounds2string(right));
+	}
+	MTypeBounds(
+		left.isFlow || right.isFlow,
+		mergeMaybeType(left.intType, right.intType, onError),
+		mergeMaybeType(left.fn, right.fn, onError),
+		mergeSets(left.tyvars, right.tyvars),
+		mergeSets(left.typars, right.typars),
+		mergeSets(left.records, right.records),
+		mergeSets(left.calls, right.calls),
+	)
+}
+
+mergeMaybeType(left : Maybe<?>, right : Maybe<?>, onError : () -> void) -> Maybe<?> {
+	switch (left) {
+		None(): right;
+		Some(lleft): {
+			switch (right) {
+				None(): left;
+				Some(rright): {
+					if (lleft != rright) {
+						onError();
+					};
+					left;
+				}
+			}
+		}
+	}
+}

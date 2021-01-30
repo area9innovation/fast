@@ -15,12 +15,12 @@ export {
 	*/
 	unionMiniTypes(env : MiniTypeEnv, 
 		unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
-		types : Set<MiniType>, typep : MiniTypePos) -> Set<MiniType>;
+		types : Set<MiniType>, typep : MiniTypePos, reason : string) -> Set<MiniType>;
 }
 
 unionMiniTypes(env : MiniTypeEnv, 
 		unify : (env : MiniTypeEnv, lhsp : MiniTypePos, rhsp : MiniTypePos, reason : string) -> void,
-		types : Set<MiniType>, typep : MiniTypePos) -> Set<MiniType> {
+		types : Set<MiniType>, typep : MiniTypePos, reason : string) -> Set<MiniType> {
 
 	type = typep.type;
 	if (isEmptySet(types)) makeSet1(type)
@@ -28,7 +28,7 @@ unionMiniTypes(env : MiniTypeEnv,
 		added = insertSet(types, type);
 		error = \ -> {
 			existing = superglue(set2array(added), miniType2string, ", ");
-			env.onError(typep.id, typep.pos, "Can not join types " + existing);
+			env.onError(typep.id, typep.pos, "Can not join types " + existing + " " + reason);
 			types;
 		}
 

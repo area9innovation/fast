@@ -194,7 +194,7 @@ typeInferenceMini(env : MiniTypeEnv, id : string, ex : MiniExp) -> MiniType {
 								scalltype = MiniTypeCall("", map(stypars, \__ -> makeMiniTypeVar(env)));
 								// Relate this to the super-type
 								// TODO: We could potentially find the position of the name
-								constrainMiniType(env, 
+								unifyMiniType(env, 
 									MiniTypePos(id, pos, scalltype), 
 									MiniTypePos(id, pos, supertype), 
 									"downcast-super"

@@ -45,7 +45,20 @@ export {
 		fixed : Maybe<MiniType>,
 		// What are the transitive lower bounds?
 		lower : Set<MiniType>,
+		lowerBounds : MTypeBounds,
 		// What are the transitive upper bounds?
 		upper : Set<MiniType>,
+		upperBounds : MTypeBounds,
+	);
+
+	MTypeBounds(
+		isFlow : bool,
+		intType : Maybe<MiniTypeInt>,
+		fn : Maybe<MiniTypeFunction>,
+
+		tyvars : Set<MiniTypeVar>,
+		typars : Set<MiniTypePar>,
+		records : Set<MiniTypeRecord>,
+		calls : Set<MiniTypeCall>
 	);
 }
