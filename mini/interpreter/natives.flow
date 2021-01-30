@@ -33,7 +33,52 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
 			MiniDouble(getMiniDouble(args[0]) / getMiniDouble(args[1]), pos);
 		} else def;
+	} else if (fn.name == "==") {
+		cmp = compareMiniValue(args[0], args[1]);
+		if (cmp == -2) def
+		else MiniInt(b2i(cmp == 0), pos, tyvar);
+	} else if (fn.name == "!=") {
+		cmp = compareMiniValue(args[0], args[1]);
+		if (cmp == -2) def
+		else MiniInt(b2i(cmp != 0), pos, tyvar);
+	} else if (fn.name == "<=") {
+		cmp = compareMiniValue(args[0], args[1]);
+		if (cmp == -2) def
+		else MiniInt(b2i(cmp <= 0), pos, tyvar);
+	} else if (fn.name == "<") {
+		cmp = compareMiniValue(args[0], args[1]);
+		if (cmp == -2) def
+		else MiniInt(b2i(cmp < 0), pos, tyvar);
+	} else if (fn.name == ">=") {
+		cmp = compareMiniValue(args[0], args[1]);
+		if (cmp == -2) def
+		else MiniInt(b2i(cmp >= 0), pos, tyvar);
+	} else if (fn.name == ">") {
+		cmp = compareMiniValue(args[0], args[1]);
+		if (cmp == -2) def
+		else MiniInt(b2i(cmp > 0), pos, tyvar);
 	} else {
 		def
+	}
+}
+
+compareMiniValue(left : MiniExp, right : MiniExp) -> int {
+	switch (left) {
+		MiniInt(lvalue, pos, tyvar): switch (right) {
+			MiniInt(rvalue, __, __): genericCompare(lvalue, rvalue);
+			default: -2;
+		}
+		MiniDouble(lvalue, pos): switch (right) {
+			MiniDouble(rvalue, __): genericCompare(lvalue, rvalue);
+			default: -2;
+		}
+		MiniString(lvalue, pos):  switch (right) {
+			MiniString(rvalue, __): genericCompare(lvalue, rvalue);
+			default: -2;
+		}
+		MiniVar(name, pos, tyvar): -2;
+		MiniLet(name, value, body, pos, tyvar): -2;
+		MiniLambda(args, body, pos, tyvar): -2;
+		MiniCall(fn, args, pos, tyvar): -2;
 	}
 }
