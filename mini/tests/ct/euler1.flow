@@ -1,4 +1,5 @@
 import runtime;
+import string;
 
 /*
 If we list all the natural numbers below 10 that are multiples of 3 or 5, 
@@ -15,7 +16,40 @@ euler1(limit : int) -> int {
     });
 }
 
+
+euler2(a : double, b : double, sum : double) -> double {
+    fib = a + b;
+    nsum = if (fib % 2.0 == 0.0) sum + fib else sum; 
+    if (fib < 4000000.0) {
+        euler2(b, fib, nsum)
+    } else {
+        nsum;
+    }
+}
+
+isPalindromic(s : string) -> bool {
+	l = strlen(s);
+    l <= 1 || {
+		first = strLeft(s, 1);
+		last = strRight(s, l - 1);
+        first == last && isPalindromic(strsubsmart(s, 1, -1));
+    }
+}
+
+euler4() -> int {
+    foldRange(100, 999, 0, \acc, a -> {
+        foldRange(100, 999, acc, \acc2, b -> {
+        	p = a * b;
+	        if (p < acc2 || !isPalindromic(i2s(p))) acc2 else p;
+        })
+    });
+}
+
 main() {
-	li = __compiletime(euler1(10));
-	println(li);
+	e1 = __compiletime(euler1(10));	// 23
+	e2 = __compiletime(euler2(0.0, 1.0, 0.0)); // Correct: 4613732
+	e4 = __compiletime(euler4()); // 906609
+	println(e1);
+	println(e2);
+	println(e4);
 }

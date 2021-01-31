@@ -30,44 +30,89 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 			e;
 		}
 		MiniCall(fn, args, pos, tyvar): {
-			efn = interpretMiniExp(env, fn);
-			def = \ -> {
-				eargs = map(args, \a -> interpretMiniExp(env, a));
-				interpretMiniCall(env, efn, eargs, pos, tyvar)
-			}
-			switch (efn) {
-				MiniVar(name, __, __): {
-					if (name == "__ifte") {
-						cond = interpretMiniExp(env, args[0]);
-						if (isMiniInt(cond)) {
-							condval = getMiniInt(cond);
-							if (condval != 0) {
-								interpretMiniExp(env, args[1]);
-							} else {
-								interpretMiniExp(env, args[2]);
-							}
-						} else {
-							MiniCall(efn, [cond, args[1], args[2]], pos, tyvar);
-						}
-					} else if (name == "__ift") {
-						cond = interpretMiniExp(env, args[0]);
-						if (isMiniInt(cond)) {
-							condval = getMiniInt(cond);
-							if (condval != 0) {
-								interpretMiniExp(env, args[1]);
-							} else {
-								MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
-							}
-						} else {
-							MiniCall(efn, [cond, args[1]], pos, tyvar);
-						}
-					} else {
-						def();
-					}
+			normal = \ -> {
+				efn = interpretMiniExp(env, fn);
+				def = \ -> {
+					eargs = map(args, \a -> interpretMiniExp(env, a));
+					interpretMiniCall(env, efn, eargs, pos, tyvar)
 				}
-				default: def();
-			}
-			// Don't eval args to if
+				switch (efn) {
+					MiniVar(name, __, __): {
+						// Do the functions which include control flow
+						if (name == "__ifte") {
+							cond = interpretMiniExp(env, args[0]);
+							if (isMiniInt(cond)) {
+								condval = getMiniInt(cond);
+								if (condval != 0) {
+									interpretMiniExp(env, args[1]);
+								} else {
+									interpretMiniExp(env, args[2]);
+								}
+							} else {
+								MiniCall(efn, [cond, args[1], args[2]], pos, tyvar);
+							}
+						} else if (name == "__ift") {
+							cond = interpretMiniExp(env, args[0]);
+							if (isMiniInt(cond)) {
+								condval = getMiniInt(cond);
+								if (condval != 0) {
+									interpretMiniExp(env, args[1]);
+								} else {
+									MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
+								}
+							} else {
+								MiniCall(efn, [cond, args[1]], pos, tyvar);
+							}
+						} else if (name == "&&") {
+							left = interpretMiniExp(env, args[0]);
+							if (isMiniInt(left)) {
+								leftv = getMiniInt(left);
+								if (leftv == 0) {
+									// False
+									left;
+								} else {
+									interpretMiniExp(env, args[1]);
+								}
+							} else {
+								right = interpretMiniExp(env, args[1]);
+								MiniCall(efn, [left, right], pos, tyvar);
+							}
+						} else if (name == "||") {
+							left = interpretMiniExp(env, args[0]);
+							if (isMiniInt(left)) {
+								leftv = getMiniInt(left);
+								if (leftv != 0) {
+									// True
+									left;
+								} else {
+									interpretMiniExp(env, args[1]);
+								}
+							} else {
+								right = interpretMiniExp(env, args[1]);
+								MiniCall(efn, [left, right], pos, tyvar);
+							}
+						} else if (isNativeInterpreted(name)) {
+							eargs = map(args, \a -> interpretMiniExp(env, a));
+							evalMiniStaticCall(env, efn, eargs, pos, tyvar)
+						} else {
+							def();
+						}
+					}
+					default: def();
+				}
+
+			};
+
+			// Check if we have a built-in native
+			switch (fn) {
+				MiniVar(name, __, __): {
+					if (isNativeInterpreted(name)) {
+						eargs = map(args, \a -> interpretMiniExp(env, a));
+						evalMiniStaticCall(env, fn, eargs, pos, tyvar);
+					} else normal();
+				}
+				default: normal();
+			};
 		}
 	}
 }

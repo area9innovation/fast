@@ -1,8 +1,15 @@
 import mini/interpreter/env;
 import mini/exp/value;
+import mini/exp/pretty;
 
 export {
+	isNativeInterpreted(name : string) -> bool;
 	evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp;
+}
+
+isNativeInterpreted(name : string) -> bool {
+	// println("Is this native? " + name);
+	name == "i2s" || name == "d2s" || name == "strlen" || name == "substring" || name == "println"
 }
 
 evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
@@ -39,6 +46,16 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
 			MiniDouble(getMiniDouble(args[0]) % getMiniDouble(args[1]), pos);
 		} else def;
+	} else if (fn.name == "__neg") {
+		if (isMiniInt(args[0])) {
+			MiniInt(-getMiniInt(args[0]), pos, tyvar);
+		} else if (isMiniDouble(args[0])) {
+			MiniDouble(-getMiniDouble(args[0]), pos);
+		} else def;
+	} else if (fn.name == "!") {
+		if (isMiniInt(args[0])) {
+			MiniInt(b2i(getMiniInt(args[0]) == 0), pos, tyvar);
+		} else def;
 	} else if (fn.name == "==") {
 		cmp = compareMiniValue(args[0], args[1]);
 		if (cmp == -2) def
@@ -63,28 +80,34 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		cmp = compareMiniValue(args[0], args[1]);
 		if (cmp == -2) def
 		else MiniInt(b2i(cmp > 0), pos, tyvar);
-	} else if (fn.name == "&&") {
-		if (isMiniInt(args[0])) {
-			left = getMiniInt(args[0]);
-			if (left == 0) {
-				// False
-				args[0];
-			} else {
-				args[1];
-			}
-		} else def
-	} else if (fn.name == "||") {
-		if (isMiniInt(args[0])) {
-			left = getMiniInt(args[0]);
-			if (left != 0) {
-				// True
-				args[0];
-			} else {
-				args[1];
-			}
-		} else def
+	} else if (fn.name == "i2s" && isMiniInt(args[0])) {
+		MiniString(i2s(getMiniInt(args[0])), pos);
+	} else if (fn.name == "d2s" && isMiniDouble(args[0])) {
+		MiniString(d2s(getMiniDouble(args[0])), pos);
+	} else if (fn.name == "strlen" && isMiniString(args[0])) {
+		MiniInt(strlen(getMiniString(args[0])), pos, tyvar);
+	} else if (fn.name == "substring" && isMiniString(args[0]) && isMiniInt(args[1]) && isMiniInt(args[2])) {
+		s = getMiniString(args[0]);
+		i1 = getMiniInt(args[1]);
+		i2 = getMiniInt(args[2]);
+		MiniString(substring(s, i1, i2), pos);
+	} else if (fn.name == "println") {
+		if (isMiniString(args[0])) {
+			println(getMiniString(args[0]));
+		} else if (isMiniInt(args[0])) {
+			println(getMiniInt(args[0]));
+		} else if (isMiniDouble(args[0])) {
+			println(getMiniDouble(args[0]));
+		} else {
+			println(miniPretty(args[0]));
+		}
+		MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
+	} else if (fn.name == ";") {
+		// TODO: Check if args[0] is constant
+		args[1];
 	} else {
-		println("TODO: Implement " + fn.name);
+		// println("TODO: Implement " + fn.name);
+		// println(args);
 		def
 	}
 }
