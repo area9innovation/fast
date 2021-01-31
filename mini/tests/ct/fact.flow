@@ -1,0 +1,10 @@
+native println : io (flow) -> void = Native.println;
+
+fact(i : int) -> int {
+	if (i <= 1) i
+	else i * fact(i - 1);
+}
+
+main() {
+	println(__compiletime(fact(5)));
+}
