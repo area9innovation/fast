@@ -33,6 +33,12 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
 			MiniDouble(getMiniDouble(args[0]) / getMiniDouble(args[1]), pos);
 		} else def;
+	} else if (fn.name == "%") {
+		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
+			MiniInt(getMiniInt(args[0]) % getMiniInt(args[1]), pos, tyvar);
+		} else if (isMiniDouble(args[0]) && isMiniDouble(args[1])) {
+			MiniDouble(getMiniDouble(args[0]) % getMiniDouble(args[1]), pos);
+		} else def;
 	} else if (fn.name == "==") {
 		cmp = compareMiniValue(args[0], args[1]);
 		if (cmp == -2) def
@@ -57,7 +63,28 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		cmp = compareMiniValue(args[0], args[1]);
 		if (cmp == -2) def
 		else MiniInt(b2i(cmp > 0), pos, tyvar);
+	} else if (fn.name == "&&") {
+		if (isMiniInt(args[0])) {
+			left = getMiniInt(args[0]);
+			if (left == 0) {
+				// False
+				args[0];
+			} else {
+				args[1];
+			}
+		} else def
+	} else if (fn.name == "||") {
+		if (isMiniInt(args[0])) {
+			left = getMiniInt(args[0]);
+			if (left != 0) {
+				// True
+				args[0];
+			} else {
+				args[1];
+			}
+		} else def
 	} else {
+		println("TODO: Implement " + fn.name);
 		def
 	}
 }
