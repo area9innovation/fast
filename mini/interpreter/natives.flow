@@ -105,6 +105,15 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			i = getMiniInt(args[1]);
 			ar[i];
 		} else def;
+	} else if (fn.name == "length") {
+		if (isMiniArray(args[0])) {
+			ar = getMiniArrayValue(args[0]);
+			MiniInt(length(ar), pos, tyvar)
+		} else def;
+
+	// TODO: Add natives
+	// concat, map, mapi, fold, foldi, replace, subrange, enumFromTo, iter, iteri, iteriUntil, filter
+
 	} else if (fn.name == "i2s" && isMiniInt(args[0])) {
 		MiniString(i2s(getMiniInt(args[0])), pos);
 	} else if (fn.name == "i2d" && isMiniInt(args[0])) {
