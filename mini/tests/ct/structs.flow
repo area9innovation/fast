@@ -25,6 +25,13 @@ main() {
 		println(Some(1).value);	// 1
 		println(either(None(), 0));	// 0
 		println(either(Some(1), 0)); // 1
-		0;
+		println(
+			switch(Some(1)) {
+				None(): 0;
+				default: 2;
+			}
+		);
+
+		-1;
 	});
 }

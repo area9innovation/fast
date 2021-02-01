@@ -171,7 +171,7 @@ interpretSwitch(env : MiniInterpreter, case : string, value : MiniExp, cases : M
 
 	case1 = getMiniStaticCall(cases);
 	if (case1 == "__or") {
-		mcasebody = find(getMiniCallArgs(cases), \cc -> {
+			mcasebody = find(getMiniCallArgs(cases), \cc -> {
 			cargs = getMiniCallArgs(cc);
 			casename = getMiniVar(cargs[0]);
 			casename == case;
@@ -191,7 +191,22 @@ interpretSwitch(env : MiniInterpreter, case : string, value : MiniExp, cases : M
 			});
 			interpretMiniExp(nenv, cargs[2]);
 		} : {
-			def();
+			// OK, see if there is a default
+			mdefault = find(getMiniCallArgs(cases), \cc -> {
+				casename = getMiniStaticCall(cc);
+				casename == "__defaultcase"
+			});
+			switch (mdefault) {
+				None(): {
+					// TODO: Could it be a union match?
+					println("Could not find case for " + case);
+					def();
+				}
+				Some(defau): {
+					cargs = getMiniCallArgs(defau);
+					interpretMiniExp(env, cargs[0]);
+				}
+			}
 		}
 	} else {
 		println("TODO: Find case " + case + " amongst");
