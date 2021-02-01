@@ -11,7 +11,7 @@ export {
 }
 
 makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter {
-	MiniInterpreter(ast);
+	MiniInterpreter(ast, ref 0, ref makeTree());
 }
 
 interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {

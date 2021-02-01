@@ -227,10 +227,44 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		} else {
 			println(miniPretty(args[0]));
 		}
-		MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
+		miniVoid(pos, tyvar);
+
 	} else if (fn.name == ";") {
-		// TODO: Check if args[0] is constant
-		args[1];
+		if (isMiniStatic(args[0])) {
+			args[1];
+		} else {
+			def
+		}
+
+	//
+	// Refs
+	//
+
+	} else if (fn.name == "__ref") {
+		if (isMiniStatic(args[0])) {
+			pnt = ^(env.nextRefId);
+			env.nextRefId := pnt + 1;
+			env.refs := setTree(^(env.refs), pnt, args[0]);
+			// We encode refs as integers
+			MiniInt(pnt, pos, tyvar);
+		} else def;
+	} else if (fn.name == "__deref") {
+		if (isMiniInt(args[0])) {
+			pnt = getMiniInt(args[0]);
+			mval = lookupTree(^(env.refs), pnt);
+			mval ?? {
+				mval
+			} : {
+				def;
+			}
+		} else def;
+	} else if (fn.name == ":=") {
+		if (isMiniInt(args[0]) && isMiniStatic(args[1])) {
+			pnt = getMiniInt(args[0]);
+			env.refs := setTree(^(env.refs), pnt, args[1]);
+			miniVoid(pos, tyvar);
+		} else def;
+
 	} else {
 		println("TODO: Implement " + fn.name);
 		// println(args);
@@ -294,4 +328,28 @@ getMiniArrayValue(e : MiniExp) -> [MiniExp] {
 		}
 		default: [];
 	}
+}
+
+isMiniStatic(e : MiniExp) -> bool {
+	switch (e) {
+		MiniInt(value, pos, tyvar): true;
+		MiniDouble(value, pos): true;
+		MiniString(value, pos): true;
+		MiniVar(name, pos, tyvar): true;
+		MiniLet(name, value, body, pos, tyvar): isMiniStatic(value) && isMiniStatic(body);
+		MiniLambda(args, body, pos, tyvar): true;
+		MiniCall(fn, args, pos, tyvar): {
+			switch (fn) {
+				MiniVar(fnname, __, __): {
+					(fnname == "__void"  || fnname == "__array")
+					&& forall(args, isMiniStatic)
+				}
+				default: false;
+			}
+		}
+	}
+}
+
+miniVoid(pos : int, tyvar : int) -> MiniExp {
+	MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
 }
