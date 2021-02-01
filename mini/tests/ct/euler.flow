@@ -1,4 +1,5 @@
 import runtime;
+import math/math;
 import string;
 
 /*
@@ -45,11 +46,40 @@ euler4() -> int {
     });
 }
 
+euler6(limit : int) -> double {
+    sumsquares = foldRange(1, limit, 0.0, \acc, n -> acc + i2d(n * n));
+    natsum = foldRange(1, limit, 0.0, \acc, n -> acc + i2d(n));
+	natsum * natsum - sumsquares
+}
+
+
+isPrime(x : int) -> bool {
+    x == 2 || (x > 2 && (x % 2 != 0) && doIsPrime(x, 3, round(sqrt(i2d(x))) + 1))
+}
+
+doIsPrime(x : int, i : int, stop : int) -> bool {
+    i >= stop
+    || (
+        (x % i) != 0 
+        && doIsPrime(x, i + 2, stop)
+    );
+}
+
+euler10b(size : int) -> double {
+    primes = filter(enumFromTo(1, size), isPrime);
+    fold(primes, 0.0, \acc, prime -> acc + i2d(prime));
+}
+
+
 main() {
-	e1 = __compiletime(euler1(10));	// 23
-	e2 = __compiletime(euler2(0.0, 1.0, 0.0)); // Correct: 4613732
-	e4 = __compiletime(euler4()); // 906609
-	println(e1);
-	println(e2);
-	println(e4);
+//	println(__compiletime(euler1(10)));
+//	println(__compiletime(euler2(0.0, 1.0, 0.0))); // Correct: 4613732
+//	println(__compiletime(euler4())); // 906609
+//	println(__compiletime(euler6(100))); // 25164150
+
+	// euler7: arrays, refs and structs, bit operations
+	// euler8: arrays
+
+	// euler10b: arrays
+    println(__compiletime(euler10b(2000000))); // Correct: 142913828922
 }

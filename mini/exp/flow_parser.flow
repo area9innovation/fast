@@ -3510,12 +3510,24 @@ parse_exp12(acc : DParseAcc) -> bool {
 																											if (if (addVerbatim(acc, i2s(acc.i))) {
 																												if (matchString(acc, "[")) {
 																													if (parse_ws(acc)) {
-																														if (parse_expcommas(acc)) {
-																															if (matchString(acc, "]")) {
-																																if (parse_ws(acc)) {
-																																	if (addMatched(acc, "[")) {
-																																		if (addVerbatim(acc, "unop")) {
-																																			discardDCheckpoint(acc)
+																														if (addMatched(acc, "__emptyarray")) {
+																															if (addVerbatim(acc, "var")) {
+																																if (addVerbatim(acc, "nil")) {
+																																	if (addVerbatim(acc, "call")) {
+																																		if (addVerbatim(acc, "setpos")) {
+																																			if (parse_expcommas(acc)) {
+																																				if (matchString(acc, "]")) {
+																																					if (parse_ws(acc)) {
+																																						discardDCheckpoint(acc)
+																																					} else {
+																																						restoreDCheckpoint(acc)
+																																					}
+																																				} else {
+																																					restoreDCheckpoint(acc)
+																																				}
+																																			} else {
+																																				restoreDCheckpoint(acc)
+																																			}
 																																		} else {
 																																			restoreDCheckpoint(acc)
 																																		}
@@ -3866,15 +3878,23 @@ parse_expcommas(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp(acc)) {
-			if (parseStar(acc, \ -> {
-				{
-					pushDCheckpoint(acc);
-					if (matchString(acc, ",")) {
-						if (parse_ws(acc)) {
-							if (parse_exp(acc)) {
-								if (addMatched(acc, ",")) {
-									if (addVerbatim(acc, "binop")) {
-										discardDCheckpoint(acc)
+			if (addMatched(acc, ",")) {
+				if (addVerbatim(acc, "binop")) {
+					if (parseStar(acc, \ -> {
+						{
+							pushDCheckpoint(acc);
+							if (matchString(acc, ",")) {
+								if (parse_ws(acc)) {
+									if (parse_exp(acc)) {
+										if (addMatched(acc, ",")) {
+											if (addVerbatim(acc, "binop")) {
+												discardDCheckpoint(acc)
+											} else {
+												restoreDCheckpoint(acc)
+											}
+										} else {
+											restoreDCheckpoint(acc)
+										}
 									} else {
 										restoreDCheckpoint(acc)
 									}
@@ -3884,31 +3904,31 @@ parse_expcommas(acc : DParseAcc) -> bool {
 							} else {
 								restoreDCheckpoint(acc)
 							}
-						} else {
-							restoreDCheckpoint(acc)
+						}
+					})) {
+						{
+							pushDCheckpoint(acc);
+							pushDCheckpoint(acc);
+							if (if (matchString(acc, ",")) {
+								if (parse_ws(acc)) {
+									discardDCheckpoint(acc)
+								} else {
+									restoreDCheckpoint(acc)
+								}
+							} else {
+								restoreDCheckpoint(acc)
+							}) {
+								discardDCheckpoint(acc)
+							} else {
+								restoreDCheckpoint(acc)
+							};
+							discardDCheckpoint(acc)
 						}
 					} else {
 						restoreDCheckpoint(acc)
 					}
-				}
-			})) {
-				{
-					pushDCheckpoint(acc);
-					pushDCheckpoint(acc);
-					if (if (matchString(acc, ",")) {
-						if (parse_ws(acc)) {
-							discardDCheckpoint(acc)
-						} else {
-							restoreDCheckpoint(acc)
-						}
-					} else {
-						restoreDCheckpoint(acc)
-					}) {
-						discardDCheckpoint(acc)
-					} else {
-						restoreDCheckpoint(acc)
-					};
-					discardDCheckpoint(acc)
+				} else {
+					restoreDCheckpoint(acc)
 				}
 			} else {
 				restoreDCheckpoint(acc)

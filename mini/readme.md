@@ -521,7 +521,7 @@ These have to be implemented in the backends to do the right thing:
 	__neg  is used for prefix negation of int/double
 
 	__emptyarray is used for the empty array
-	[ is used for array constructs, where the arguments are separated by the "," operator
+	, is used for array constructs, with semantics like arrayPush
 	__index is used for array indexing
 
 	__ref constructs a reference

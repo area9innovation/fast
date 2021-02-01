@@ -1,0 +1,9 @@
+native println : io (?) -> void = Native.println;
+
+main() {
+	__compiletime(println([]));
+	__compiletime(println([1]));
+	__compiletime(println([[]]));
+	__compiletime(println([1,2,3]));
+	__compiletime(println([1,2,3][0]));
+}

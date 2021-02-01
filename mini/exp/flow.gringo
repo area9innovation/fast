@@ -129,7 +129,7 @@ exp =
 		| $$pos int ws $"s2i" $"setpos"
 		| brace
 		| string
-		| $$pos "[" ws expcommas "]" ws $$"[" $"unop"
+		| $$pos "[" ws $$"__emptyarray" $"var" $"nil" $"call" $"setpos" expcommas "]" ws
 		| $$pos "[" ws "]" ws $$"__emptyarray" $"var" $"nil" $"call" $"setpos"
 	);
 
@@ -140,7 +140,8 @@ exp =
 brace = "{" ws $$pos exp (#";" ws exp $$";" $"binop")* (";" ws)? #"}" ws $"setpos"
 	| "{" ws $$pos "}" ws $$"__void" $"var" $"nil" $"call" $"setpos";
 
-expcommas = exp ("," ws exp $$"," $"binop")* ("," ws)?;
+// We consider "," as arrayPush
+expcommas = exp $$"," $"binop" ("," ws exp $$"," $"binop")* ("," ws)?;
 
 semiexps = exp (";" ws exp $$";" $"binop")*;
 

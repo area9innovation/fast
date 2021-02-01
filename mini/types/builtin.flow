@@ -66,8 +66,7 @@ getBuiltinMiniTypes() -> Tree<string, MiniType> {
 
 		// Array constructs
 		Pair("__emptyarray", MiniTypeFunction([], at(ta))),
-		Pair("[", MiniTypeFunction([ta], at(ta))),
-		Pair(",", MiniTypeFunction([ta, ta], ta)),
+		Pair(",", MiniTypeFunction([at(ta), ta], at(ta))),
 
 		Pair("__index", MiniTypeFunction([at(ta), i], ta)),
 

@@ -9,7 +9,7 @@ export {
 
 isNativeInterpreted(name : string) -> bool {
 	// println("Is this native? " + name);
-	name == "i2s" || name == "d2s" || name == "strlen" || name == "substring" || name == "println"
+	name == "i2s" || name == "d2s" || name == "i2d" || name == "strlen" || name == "substring" || name == "println" || name == "arrayPush"
 }
 
 evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
@@ -80,8 +80,35 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		cmp = compareMiniValue(args[0], args[1]);
 		if (cmp == -2) def
 		else MiniInt(b2i(cmp > 0), pos, tyvar);
+
+	//
+	// Array constructions
+	//
+	} else if (fn.name == "__emptyarray") {
+		MiniCall(
+			MiniVar("__array", pos, tyvar),
+			[],
+			pos, tyvar
+		);
+	} else if (fn.name == "," || fn.name == "arrayPush") {
+		if (isMiniArray(args[0])) {
+			left = getMiniArrayValue(args[0]);
+			MiniCall(
+				MiniVar("__array", pos, tyvar),
+				arrayPush(left, args[1]),
+				pos, tyvar
+			);
+		} else def;
+	} else if (fn.name == "__index") {
+		if (isMiniArray(args[0]) && isMiniInt(args[1])) {
+			ar = getMiniArrayValue(args[0]);
+			i = getMiniInt(args[1]);
+			ar[i];
+		} else def;
 	} else if (fn.name == "i2s" && isMiniInt(args[0])) {
 		MiniString(i2s(getMiniInt(args[0])), pos);
+	} else if (fn.name == "i2d" && isMiniInt(args[0])) {
+		MiniDouble(i2d(getMiniInt(args[0])), pos);
 	} else if (fn.name == "d2s" && isMiniDouble(args[0])) {
 		MiniString(d2s(getMiniDouble(args[0])), pos);
 	} else if (fn.name == "strlen" && isMiniString(args[0])) {
@@ -98,6 +125,8 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			println(getMiniInt(args[0]));
 		} else if (isMiniDouble(args[0])) {
 			println(getMiniDouble(args[0]));
+		} else if (isMiniArray(args[0])) {
+			println(getMiniArrayValue(args[0]));
 		} else {
 			println(miniPretty(args[0]));
 		}
@@ -106,7 +135,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		// TODO: Check if args[0] is constant
 		args[1];
 	} else {
-		// println("TODO: Implement " + fn.name);
+		println("TODO: Implement " + fn.name);
 		// println(args);
 		def
 	}
@@ -130,5 +159,34 @@ compareMiniValue(left : MiniExp, right : MiniExp) -> int {
 		MiniLet(name, value, body, pos, tyvar): -2;
 		MiniLambda(args, body, pos, tyvar): -2;
 		MiniCall(fn, args, pos, tyvar): -2;
+	}
+}
+
+isMiniArray(e : MiniExp) -> bool {
+	switch (e) {
+		MiniCall(fn, args, __, __): {
+			switch (fn) {
+				MiniVar(name, __, __): {
+					name == "__array";
+				}
+				default: false;
+			}
+		}
+		default: false;
+	}
+}
+
+getMiniArrayValue(e : MiniExp) -> [MiniExp] {
+	switch (e) {
+		MiniCall(fn, args, __, __): {
+			switch (fn) {
+				MiniVar(name, __, __): {
+					if (name == "__array") args
+					else [];
+				}
+				default: [];
+			}
+		}
+		default: [];
 	}
 }
