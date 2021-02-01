@@ -82,6 +82,7 @@ euler10b(size : int) -> double {
     fold(primes, 0.0, \acc, prime -> acc + i2d(prime));
 }
 
+// TODO: Figure out how these fallback fallbacks can automatically make it?
 
 fold(xs : [?], init : ??, fn : (??, ?)->??) -> ?? {
 	doFold(0, xs, init, fn);

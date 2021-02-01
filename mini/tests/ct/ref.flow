@@ -1,0 +1,11 @@
+native println : io (flow) -> void = Native.println;
+
+main() {
+	__compiletime({
+		a = ref 0;
+		a := ^a + 1;
+		b = a;
+		b := 0;
+		println(^a);
+	});
+}

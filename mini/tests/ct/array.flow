@@ -21,6 +21,8 @@ arrayPush(array, value) {
 	replace(array, length(array), value); 
 }
 
+// TODO: Figure out how these fallbacks can automatically be added?
+
 __compiletime(v : ?)-> ? {
 	v;
 }
