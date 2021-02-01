@@ -91,6 +91,9 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 								right = interpretMiniExp(env, args[1]);
 								MiniCall(efn, [left, right], pos, tyvar);
 							}
+						} else if (name == "__switch") {
+							val = interpretMiniExp(env, args[0]);
+							interpretSwitch(env, val, args[1], pos, tyvar);
 						} else if (isNativeInterpreted(name)) {
 							eargs = map(args, \a -> interpretMiniExp(env, a));
 							evalMiniStaticCall(env, efn, eargs, pos, tyvar);
@@ -154,4 +157,20 @@ interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], pos : i
 setMiniInterpreterVar(env : MiniInterpreter, name : string, value : MiniExp) -> MiniInterpreter {
 	nast = MiniAst(env.env with declarations = setTree(env.env.declarations, name, value));
 	MiniInterpreter(env with env = nast);
+}
+
+
+interpretSwitch(env : MiniInterpreter, value : MiniExp, cases : MiniExp, pos : int, tyvar : int) -> MiniExp {
+	def =  \ -> {
+		MiniCall(MiniVar("__switch", pos, tyvar), [value, cases], pos, tyvar);
+	};
+
+	if (isMiniString(value)) {
+		case = getMiniString(value);
+		println("TODO: Find case " + case + " amongst");
+		println(cases);
+		def();
+	} else {
+		def();
+	}
 }

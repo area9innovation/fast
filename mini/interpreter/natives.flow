@@ -1,4 +1,5 @@
 import mini/interpreter/env;
+import mini/interpreter/util;
 import mini/exp/value;
 import mini/exp/pretty;
 
@@ -305,117 +306,15 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 				def
 			}
 		} : def;
+	} else if (fn.name == "__switchvalue") {
+		if (isMiniStaticCall(args[0])) {
+			structname = getMiniStaticCall(args[0]);
+			MiniString(structname, pos)
+		} else def;
 
 	} else {
 		println("TODO: Implement " + fn.name);
 		// println(args);
 		def
 	}
-}
-
-compareMiniValue(left : MiniExp, right : MiniExp) -> int {
-	switch (left) {
-		MiniInt(lvalue, pos, tyvar): switch (right) {
-			MiniInt(rvalue, __, __): genericCompare(lvalue, rvalue);
-			default: -2;
-		}
-		MiniDouble(lvalue, pos): switch (right) {
-			MiniDouble(rvalue, __): genericCompare(lvalue, rvalue);
-			default: -2;
-		}
-		MiniString(lvalue, pos):  switch (right) {
-			MiniString(rvalue, __): genericCompare(lvalue, rvalue);
-			default: -2;
-		}
-		MiniVar(name, pos, tyvar): -2;
-		MiniLet(name, value, body, pos, tyvar): -2;
-		MiniLambda(args, body, pos, tyvar): -2;
-		MiniCall(fn, args, pos, tyvar): -2;
-	}
-}
-
-// TODO: This construction for arrays is maybe not the best representation?
-// We can not type it
-makeMiniArray(es : [MiniExp], pos : int, tyvar : int) -> MiniExp {
-	MiniCall(
-		MiniVar("__array", pos, tyvar), es, pos, tyvar
-	);
-}
-
-isMiniArray(e : MiniExp) -> bool {
-	switch (e) {
-		MiniCall(fn, args, __, __): {
-			switch (fn) {
-				MiniVar(name, __, __): {
-					name == "__array";
-				}
-				default: false;
-			}
-		}
-		default: false;
-	}
-}
-
-getMiniArrayValue(e : MiniExp) -> [MiniExp] {
-	switch (e) {
-		MiniCall(fn, args, __, __): {
-			switch (fn) {
-				MiniVar(name, __, __): {
-					if (name == "__array") args
-					else [];
-				}
-				default: [];
-			}
-		}
-		default: [];
-	}
-}
-
-isMiniStatic(e : MiniExp) -> bool {
-	switch (e) {
-		MiniInt(value, pos, tyvar): true;
-		MiniDouble(value, pos): true;
-		MiniString(value, pos): true;
-		MiniVar(name, pos, tyvar): true;
-		MiniLet(name, value, body, pos, tyvar): isMiniStatic(value) && isMiniStatic(body);
-		MiniLambda(args, body, pos, tyvar): true;
-		MiniCall(fn, args, pos, tyvar): {
-			switch (fn) {
-				MiniVar(fnname, __, __): {
-					(fnname == "__void"  || fnname == "__array")
-					&& forall(args, isMiniStatic)
-				}
-				default: false;
-			}
-		}
-	}
-}
-
-isMiniStaticCall(e : MiniExp) -> bool {
-	getMiniStaticCall(e) != ""
-}
-
-getMiniStaticCall(e : MiniExp) -> string {
-	switch (e) {
-		MiniCall(fn, __, __, __): {
-			switch (fn) {
-				MiniVar(fnname, __, __): fnname;
-				default: "";
-			}
-		}
-		default: "";
-	}
-}
-
-getMiniCallArgs(e : MiniExp) -> [MiniExp] {
-	switch (e) {
-		MiniCall(__, args, __, __): {
-			args;
-		}
-		default: [];
-	}
-}
-
-miniVoid(pos : int, tyvar : int) -> MiniExp {
-	MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
 }

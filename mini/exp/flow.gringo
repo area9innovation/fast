@@ -158,7 +158,7 @@ switch = $$pos "switch" !letterOrDigit ws '(' ws
 		')' ws '{' ws cases #'}' ws $$"__switch" $"binop" 
 
 		$"setpos"	// Set the position of the "switch" condition
-		// let __switchvar = exp in __switch(__switchvar(exp), cases)
+		// let __switchvar = exp in __switch(__switchvalue(__switchvar), cases)
 		$"let"	
 		$"setpos";
 

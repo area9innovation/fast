@@ -4,7 +4,6 @@ Maybe<?> ::= None, Some<?>;
 
 None();
 Some(value : ?);
-/*
 either(m : Maybe<?>, def : ?) -> ? {
 	switch (m) {
 		None(): {
@@ -17,15 +16,14 @@ either(m : Maybe<?>, def : ?) -> ? {
 		}
 	}
 }
-*/
 
 main() {
 	__compiletime({
 		println(None());
 		println(Some(1));
 		println(Some(1).value);
-//		println(either(None(), 0));
-//		println(either(Some(1), 0));
+		println(either(None(), 0));
+		println(either(Some(1), 0));
 		0;
 	});
 }
