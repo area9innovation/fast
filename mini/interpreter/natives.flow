@@ -33,6 +33,9 @@ isNativeInterpreted(name : string) -> bool {
 
 evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
 	def = MiniCall(fn, args, pos, tyvar);
+	//
+	// Builtins
+	//
 	if (fn.name == "+") {
 		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
 			MiniInt(getMiniInt(args[0]) + getMiniInt(args[1]), pos, tyvar);
@@ -100,6 +103,13 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		if (cmp == -2) def
 		else MiniInt(b2i(cmp > 0), pos, tyvar);
 
+	} else if (fn.name == ";") {
+		if (isMiniStatic(args[0])) {
+			args[1];
+		} else {
+			def
+		}
+
 	//
 	// Math
 	//
@@ -138,7 +148,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		} else def;
 
 	//
-	// Array constructions
+	// Array
 	//
 	} else if (fn.name == "__emptyarray") {
 		makeMiniArray([], pos, tyvar)
@@ -229,13 +239,6 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		}
 		miniVoid(pos, tyvar);
 
-	} else if (fn.name == ";") {
-		if (isMiniStatic(args[0])) {
-			args[1];
-		} else {
-			def
-		}
-
 	//
 	// Refs
 	//
@@ -264,6 +267,33 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			env.refs := setTree(^(env.refs), pnt, args[1]);
 			miniVoid(pos, tyvar);
 		} else def;
+
+	//
+	// structs
+	//
+	} else if (fn.name == "__construct0"  && isMiniString(args[0])) {
+		// We represent a struct by the call to the constructor
+		MiniCall(
+			MiniVar(getMiniString(args[0]), pos, tyvar),
+			[
+			], pos, tyvar
+		)
+	} else if (fn.name == "__construct1" && isMiniString(args[0]) && isMiniString(args[1])) {
+		name = getMiniString(args[0]);
+		field0 = getMiniString(args[1]);
+		val = lookupTreeDef(env.env.declarations, field0, args[1]);
+
+		MiniCall(
+			MiniVar(name, pos, tyvar),
+			[ val ], pos, tyvar
+		);
+
+	} else if (fn.name == "." && isMiniStaticCall(args[0]) && isMiniString(args[1])) {
+		val = getMiniStaticCall(args[0]);
+		sargs = getMiniCallArgs(args[0]);
+		field = getMiniString(args[1]);
+		println("TODO: . on " + val + " for field " + field + " with args " + toString(sargs));
+		def;
 
 	} else {
 		println("TODO: Implement " + fn.name);
@@ -347,6 +377,31 @@ isMiniStatic(e : MiniExp) -> bool {
 				default: false;
 			}
 		}
+	}
+}
+
+isMiniStaticCall(e : MiniExp) -> bool {
+	getMiniStaticCall(e) != ""
+}
+
+getMiniStaticCall(e : MiniExp) -> string {
+	switch (e) {
+		MiniCall(fn, __, __, __): {
+			switch (fn) {
+				MiniVar(fnname, __, __): fnname;
+				default: "";
+			}
+		}
+		default: "";
+	}
+}
+
+getMiniCallArgs(e : MiniExp) -> [MiniExp] {
+	switch (e) {
+		MiniCall(__, args, __, __): {
+			args;
+		}
+		default: [];
 	}
 }
 

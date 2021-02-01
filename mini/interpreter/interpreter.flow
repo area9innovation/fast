@@ -103,11 +103,18 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 							MiniVar(nat, __, __): {
 								if (nat == "__native") {
 									println("TODO: Implement native " + getMiniString(nargs[2]) + " in interpreter/natives.flow");
+									def();
+								} else if (nat == ":") {
+									cfn = interpretMiniExp(env, nargs[0]);
+
+									eargs = map(args, \a -> interpretMiniExp(env, a));
+									interpretMiniCall(env, cfn, eargs, pos, tyvar)
+								} else {
+									def();
 								}
 							}
-							default: {}
+							default: def();
 						}
-						def();
 					}
 					default: {
 						def();
