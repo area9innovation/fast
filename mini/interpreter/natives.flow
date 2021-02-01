@@ -21,7 +21,7 @@ isNativeInterpreted(name : string) -> bool {
 	|| name == "println" 
 
 	|| name == "arrayPush" || name == "length" || name == "enumFromTo" || name == "concat"
-	|| name == "subrange"
+	|| name == "subrange" || name == "replace"
 }
 
 evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
@@ -127,8 +127,15 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		if (isMiniArray(args[0]) && isMiniInt(args[1]) && isMiniInt(args[2])) {
 			ar = getMiniArrayValue(args[0]);
 			index = getMiniInt(args[1]);
-			len = getMiniInt(args[1]);
+			len = getMiniInt(args[2]);
 			makeMiniArray(subrange(ar, index, len), pos, tyvar)
+		} else def;
+	} else if (fn.name == "replace") {
+		if (isMiniArray(args[0]) && isMiniInt(args[1])) {
+			ar = getMiniArrayValue(args[0]);
+			index = getMiniInt(args[1]);
+			elm = args[2];
+			makeMiniArray(replace(ar, index, elm), pos, tyvar)
 		} else def;
 	} else if (fn.name == "enumFromTo") {
 		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
@@ -200,6 +207,8 @@ compareMiniValue(left : MiniExp, right : MiniExp) -> int {
 	}
 }
 
+// TODO: This construction for arrays is maybe not the best representation?
+// We can not type it
 makeMiniArray(es : [MiniExp], pos : int, tyvar : int) -> MiniExp {
 	MiniCall(
 		MiniVar("__array", pos, tyvar), es, pos, tyvar

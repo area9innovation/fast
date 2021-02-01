@@ -1,20 +1,55 @@
-
 native println : io (?) -> void = Native.println;
 
 native length : ([?]) -> int = Native.length;
 native concat : ([?], [?]) -> [?] = Native.concat;
+native replace : ([?], int, ?) -> [?] = Native.replace;
+native subrange : (a : [?], index : int, length : int) -> [?] = Native.subrange;
+native enumFromTo : (start : int, end : int) -> [int] = Native.enumFromTo;
 
 native map : ([?], (?) -> ??) -> [??] = Native.map;
 native mapi : ([?], (int, ?) -> ??) -> [??] = Native.mapi;
 native fold : (xs : [?], init : ??, fn : (??, ?)->??) -> ?? = Native.fold;
 native foldi : (xs : [?], init : ??, fn : (int, ??, ?)->??) -> ?? = Native.foldi;
-native replace : ([?], int, ?) -> [?] = Native.replace;
-native subrange : (a : [?], index : int, length : int) -> [?] = Native.subrange;
-native enumFromTo : (start : int, end : int) -> [int] = Native.enumFromTo;
 native iter : ([?], (?)->void) -> void = Native.iter;
 native iteri : ([?], (int, ?)->void) -> void = Native.iteri;
 native iteriUntil : ([?], (int, ?)->bool) -> int = Native.iteriUntil;
 native filter : (a : [?], test : (?) -> bool) -> [?] = Native.filter;
+
+arrayPush(array, value) { 
+	replace(array, length(array), value); 
+}
+
+fold(xs : [?], init : ??, fn : (??, ?)->??) -> ?? {
+	doFold(0, xs, init, fn);
+}
+
+doFold(i : int, xs : [?], init : ??, fn : (??, ?)->??) -> ?? {
+	if (i < length(xs)) {
+		doFold(i + 1, xs, fn(init, xs[i]), fn);
+	} else init;
+}
+
+/*
+filter(a : [?], test : (?) -> bool) -> [?] {
+	list2array(fold(a, makeList(), \acc, element -> {
+		if (test(element)) Cons(element, acc)
+		else acc
+	}));
+}
+*/
+
+filter(a : [?], test : (?) -> bool) -> [?] {
+	doFilter([], 0, a, test);
+}
+
+doFilter(acc : [?], i : int, xs : [?], test : (?) -> bool) -> [?] {
+	if (i < length(xs)) {
+		nacc = if (test(xs[i])) {
+			arrayPush(acc, xs[i])
+		} else acc;
+		doFilter(nacc, i + 1, xs, test);
+	} else acc
+}
 
 main() {
 	__compiletime({
@@ -28,5 +63,7 @@ main() {
 		println(concat([1],[2]));
 		println(enumFromTo(0, 1));
 		println(subrange([0,1,2], 1, 2));
+		println(replace([0,1,2], 1, 4));
+		println(filter([0,1,2], \e -> e % 2 == 0));
 	});
 }
