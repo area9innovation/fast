@@ -1,9 +1,32 @@
+
 native println : io (?) -> void = Native.println;
 
+native length : ([?]) -> int = Native.length;
+native concat : ([?], [?]) -> [?] = Native.concat;
+
+native map : ([?], (?) -> ??) -> [??] = Native.map;
+native mapi : ([?], (int, ?) -> ??) -> [??] = Native.mapi;
+native fold : (xs : [?], init : ??, fn : (??, ?)->??) -> ?? = Native.fold;
+native foldi : (xs : [?], init : ??, fn : (int, ??, ?)->??) -> ?? = Native.foldi;
+native replace : ([?], int, ?) -> [?] = Native.replace;
+native subrange : (a : [?], index : int, length : int) -> [?] = Native.subrange;
+native enumFromTo : (start : int, end : int) -> [int] = Native.enumFromTo;
+native iter : ([?], (?)->void) -> void = Native.iter;
+native iteri : ([?], (int, ?)->void) -> void = Native.iteri;
+native iteriUntil : ([?], (int, ?)->bool) -> int = Native.iteriUntil;
+native filter : (a : [?], test : (?) -> bool) -> [?] = Native.filter;
+
 main() {
-	__compiletime(println([]));
-	__compiletime(println([1]));
-	__compiletime(println([[]]));
-	__compiletime(println([1,2,3]));
-	__compiletime(println([1,2,3][0]));
+	__compiletime({
+		println([]);
+		println([1]);
+		println([1,2]);
+		println([1,2,3]);
+		println([1,2,3][0]);
+		println([[]]);
+		println(length([1]));
+		println(concat([1],[2]));
+		println(enumFromTo(0, 1));
+		println(subrange([0,1,2], 1, 2));
+	});
 }

@@ -2,6 +2,11 @@ import mini/interpreter/env;
 import mini/exp/value;
 import mini/exp/pretty;
 
+/*
+TODO:
+- Separate functions which we ALWAYS want to evaluate if they have constant arguments:
+  strlen, length
+*/
 export {
 	isNativeInterpreted(name : string) -> bool;
 	evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp;
@@ -9,7 +14,14 @@ export {
 
 isNativeInterpreted(name : string) -> bool {
 	// println("Is this native? " + name);
-	name == "i2s" || name == "d2s" || name == "i2d" || name == "strlen" || name == "substring" || name == "println" || name == "arrayPush"
+	name == "i2s" || name == "d2s" || name == "i2d" 
+	
+	|| name == "strlen" || name == "substring" 
+	
+	|| name == "println" 
+
+	|| name == "arrayPush" || name == "length" || name == "enumFromTo" || name == "concat"
+	|| name == "subrange"
 }
 
 evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
@@ -85,16 +97,11 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 	// Array constructions
 	//
 	} else if (fn.name == "__emptyarray") {
-		MiniCall(
-			MiniVar("__array", pos, tyvar),
-			[],
-			pos, tyvar
-		);
+		makeMiniArray([], pos, tyvar)
 	} else if (fn.name == "," || fn.name == "arrayPush") {
 		if (isMiniArray(args[0])) {
 			left = getMiniArrayValue(args[0]);
-			MiniCall(
-				MiniVar("__array", pos, tyvar),
+			makeMiniArray(
 				arrayPush(left, args[1]),
 				pos, tyvar
 			);
@@ -110,9 +117,30 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			ar = getMiniArrayValue(args[0]);
 			MiniInt(length(ar), pos, tyvar)
 		} else def;
+	} else if (fn.name == "concat") {
+		if (isMiniArray(args[0]) && isMiniArray(args[1])) {
+			left = getMiniArrayValue(args[0]);
+			right = getMiniArrayValue(args[1]);
+			makeMiniArray(concat(left, right), pos, tyvar)
+		} else def;
+	} else if (fn.name == "subrange") {
+		if (isMiniArray(args[0]) && isMiniInt(args[1]) && isMiniInt(args[2])) {
+			ar = getMiniArrayValue(args[0]);
+			index = getMiniInt(args[1]);
+			len = getMiniInt(args[1]);
+			makeMiniArray(subrange(ar, index, len), pos, tyvar)
+		} else def;
+	} else if (fn.name == "enumFromTo") {
+		if (isMiniInt(args[0]) && isMiniInt(args[1])) {
+			ints = enumFromTo(getMiniInt(args[0]), getMiniInt(args[1]));
+			makeMiniArray(
+				map(ints, \i -> MiniInt(i, pos, tyvar)),
+				pos, tyvar
+			);
+		} else def;
 
 	// TODO: Add natives
-	// concat, map, mapi, fold, foldi, replace, subrange, enumFromTo, iter, iteri, iteriUntil, filter
+	// concat, map, mapi, fold, foldi, replace, subrange, iter, iteri, iteriUntil, filter
 
 	} else if (fn.name == "i2s" && isMiniInt(args[0])) {
 		MiniString(i2s(getMiniInt(args[0])), pos);
@@ -145,6 +173,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		args[1];
 	} else {
 		println("TODO: Implement " + fn.name);
+		println(lookupTree(env.env.types, fn.name));
 		// println(args);
 		def
 	}
@@ -169,6 +198,12 @@ compareMiniValue(left : MiniExp, right : MiniExp) -> int {
 		MiniLambda(args, body, pos, tyvar): -2;
 		MiniCall(fn, args, pos, tyvar): -2;
 	}
+}
+
+makeMiniArray(es : [MiniExp], pos : int, tyvar : int) -> MiniExp {
+	MiniCall(
+		MiniVar("__array", pos, tyvar), es, pos, tyvar
+	);
 }
 
 isMiniArray(e : MiniExp) -> bool {

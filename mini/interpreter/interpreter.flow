@@ -93,14 +93,26 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 							}
 						} else if (isNativeInterpreted(name)) {
 							eargs = map(args, \a -> interpretMiniExp(env, a));
-							evalMiniStaticCall(env, efn, eargs, pos, tyvar)
+							evalMiniStaticCall(env, efn, eargs, pos, tyvar);
 						} else {
 							def();
 						}
 					}
-					default: def();
+					MiniCall(nfn, nargs, __,__): {
+						switch (nfn) {
+							MiniVar(nat, __, __): {
+								if (nat == "__native") {
+									println("TODO: Implement native " + getMiniString(nargs[2]) + " in interpreter/natives.flow");
+								}
+							}
+							default: {}
+						}
+						def();
+					}
+					default: {
+						def();
+					}
 				}
-
 			};
 
 			// Check if we have a built-in native
