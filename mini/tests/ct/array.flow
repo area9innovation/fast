@@ -1,3 +1,5 @@
+// import mini/lib/natives;
+
 native println : io (?) -> void = Native.println;
 
 native length : ([?]) -> int = Native.length;
@@ -19,6 +21,10 @@ arrayPush(array, value) {
 	replace(array, length(array), value); 
 }
 
+__compiletime(v : ?)-> ? {
+	v;
+}
+
 fold(xs : [?], init : ??, fn : (??, ?)->??) -> ?? {
 	doFold(0, xs, init, fn);
 }
@@ -29,15 +35,6 @@ doFold(i : int, xs : [?], init : ??, fn : (??, ?)->??) -> ?? {
 	} else init;
 }
 
-/*
-filter(a : [?], test : (?) -> bool) -> [?] {
-	list2array(fold(a, makeList(), \acc, element -> {
-		if (test(element)) Cons(element, acc)
-		else acc
-	}));
-}
-*/
-
 filter(a : [?], test : (?) -> bool) -> [?] {
 	doFilter([], 0, a, test);
 }
@@ -45,7 +42,7 @@ filter(a : [?], test : (?) -> bool) -> [?] {
 doFilter(acc : [?], i : int, xs : [?], test : (?) -> bool) -> [?] {
 	if (i < length(xs)) {
 		nacc = if (test(xs[i])) {
-			arrayPush(acc, xs[i])
+			replace(acc, length(acc), xs[i])
 		} else acc;
 		doFilter(nacc, i + 1, xs, test);
 	} else acc
@@ -65,5 +62,6 @@ main() {
 		println(subrange([0,1,2], 1, 2));
 		println(replace([0,1,2], 1, 4));
 		println(filter([0,1,2], \e -> e % 2 == 0));
+		0;
 	});
 }

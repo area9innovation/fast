@@ -23,5 +23,5 @@ isDebuggingIds(ast : MiniAst, stage : CompileStage, ids : Set<string>) -> bool {
 
 
 isDebuggingStage(ast : MiniAst, stage : CompileStage) -> bool {
-	containsSet(ast.options.debugStages, stage)
+	!isEmptySet(ast.options.debugIds) && containsSet(ast.options.debugStages, stage)
 }

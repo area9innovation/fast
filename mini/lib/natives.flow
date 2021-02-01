@@ -1,0 +1,49 @@
+// This provides implementations for some natives, which are missing
+// so they work in the interpreter. TODO: Figure out how to integrate without errors
+
+// import ds/array;
+
+export {
+	__compiletime(v : ?)-> ?;
+}
+
+// native length : ([?]) -> int = Native.length;
+// native replace : ([?], int, ?) -> [?] = Native.replace;
+
+__compiletime(v : ?)-> ? {
+	v;
+}
+
+fold(xs : [?], init : ??, fn : (??, ?)->??) -> ?? {
+	doFold(0, xs, init, fn);
+}
+
+doFold(i : int, xs : [?], init : ??, fn : (??, ?)->??) -> ?? {
+	if (i < length(xs)) {
+		doFold(i + 1, xs, fn(init, xs[i]), fn);
+	} else init;
+}
+
+filter(a : [?], test : (?) -> bool) -> [?] {
+	doFilter([], 0, a, test);
+}
+
+doFilter(acc : [?], i : int, xs : [?], test : (?) -> bool) -> [?] {
+	if (i < length(xs)) {
+		nacc = if (test(xs[i])) {
+			replace(acc, length(acc), xs[i])
+		} else acc;
+		doFilter(nacc, i + 1, xs, test);
+	} else acc
+}
+
+
+/*
+filter(a : [?], test : (?) -> bool) -> [?] {
+	list2array(fold(a, makeList(), \acc, element -> {
+		if (test(element)) Cons(element, acc)
+		else acc
+	}));
+}
+*/
+

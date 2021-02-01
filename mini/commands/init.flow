@@ -24,9 +24,11 @@ makeMiniDb(includes : [string], onError : (string) -> void) -> MiniDb {
 			acc;
 		}
 	});
+	debugIds = filterSet(buildSet(strSplit(getUrlParameter("debug"), ",")), neq(""));
+	
 	options = MiniOptions(
 		s2i(getUrlParameter("verbose")), 
-		buildSet(strSplit(getUrlParameter("debug"), ",")),
+		debugIds,
 		stages,
 		// Implicit type pars
 		!strict
