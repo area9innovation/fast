@@ -94,7 +94,7 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 						} else if (name == "__switch") {
 							value = interpretMiniExp(env, args[0]);
 							if (isMiniString(value)) {
-								interpretSwitch(env, getMiniString(value), args[1], pos, tyvar);
+								interpretSwitch(env, getMiniString(value), args[0], args[1], pos, tyvar);
 							} else {
 								MiniCall(MiniVar("__switch", pos, tyvar), [value, args[1]], pos, tyvar);
 							}
@@ -164,7 +164,7 @@ setMiniInterpreterVar(env : MiniInterpreter, name : string, value : MiniExp) -> 
 }
 
 
-interpretSwitch(env : MiniInterpreter, case : string, cases : MiniExp, pos : int, tyvar : int) -> MiniExp {
+interpretSwitch(env : MiniInterpreter, case : string, value : MiniExp, cases : MiniExp, pos : int, tyvar : int) -> MiniExp {
 	def =  \ -> {
 		MiniCall(MiniVar("__switch", pos, tyvar), [MiniString(case, pos), cases], pos, tyvar);
 	};
@@ -179,11 +179,17 @@ interpretSwitch(env : MiniInterpreter, case : string, cases : MiniExp, pos : int
 		mcasebody ?? {
 			cargs = getMiniCallArgs(mcasebody);
 			vars = getMiniArray(cargs[1]);
-			println("Bind");
-			println(vars);
-			println(cargs[2]);
-			def();
 
+			// What is the name of the underlying value?
+			underlying = getMiniCallArgs(value)[0];
+			// This is wasteful, but since it is a variable, should not be too bad:
+			underlyingValue = interpretMiniExp(env, underlying);
+			structArgs = getMiniCallArgs(underlyingValue);
+
+			nenv = foldi(vars, env, \i, acc, var -> {
+				setMiniInterpreterVar(acc, getMiniString(var), structArgs[i]);
+			});
+			interpretMiniExp(nenv, cargs[2]);
 		} : {
 			def();
 		}

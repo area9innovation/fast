@@ -20,11 +20,11 @@ either(m : Maybe<?>, def : ?) -> ? {
 
 main() {
 	__compiletime({
-		println(None());
-		println(Some(1));
-		println(Some(1).value);
-		println(either(None(), 0));
-		println(either(Some(1), 0));
+		println(None()); // None
+		println(Some(1));	// Some(1)
+		println(Some(1).value);	// 1
+		println(either(None(), 0));	// 0
+		println(either(Some(1), 0)); // 1
 		0;
 	});
 }
