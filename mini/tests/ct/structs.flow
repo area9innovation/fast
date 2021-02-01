@@ -12,7 +12,8 @@ either(m : Maybe<?>, def : ?) -> ? {
 		}
 		Some(v): {
 			// m : Some<?>
-			m.value;
+			v;
+//			m.value;
 		}
 	}
 }

@@ -92,8 +92,12 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 								MiniCall(efn, [left, right], pos, tyvar);
 							}
 						} else if (name == "__switch") {
-							val = interpretMiniExp(env, args[0]);
-							interpretSwitch(env, val, args[1], pos, tyvar);
+							value = interpretMiniExp(env, args[0]);
+							if (isMiniString(value)) {
+								interpretSwitch(env, getMiniString(value), args[1], pos, tyvar);
+							} else {
+								MiniCall(MiniVar("__switch", pos, tyvar), [value, args[1]], pos, tyvar);
+							}
 						} else if (isNativeInterpreted(name)) {
 							eargs = map(args, \a -> interpretMiniExp(env, a));
 							evalMiniStaticCall(env, efn, eargs, pos, tyvar);
@@ -160,17 +164,33 @@ setMiniInterpreterVar(env : MiniInterpreter, name : string, value : MiniExp) -> 
 }
 
 
-interpretSwitch(env : MiniInterpreter, value : MiniExp, cases : MiniExp, pos : int, tyvar : int) -> MiniExp {
+interpretSwitch(env : MiniInterpreter, case : string, cases : MiniExp, pos : int, tyvar : int) -> MiniExp {
 	def =  \ -> {
-		MiniCall(MiniVar("__switch", pos, tyvar), [value, cases], pos, tyvar);
+		MiniCall(MiniVar("__switch", pos, tyvar), [MiniString(case, pos), cases], pos, tyvar);
 	};
 
-	if (isMiniString(value)) {
-		case = getMiniString(value);
+	case1 = getMiniStaticCall(cases);
+	if (case1 == "__or") {
+		mcasebody = find(getMiniCallArgs(cases), \cc -> {
+			cargs = getMiniCallArgs(cc);
+			casename = getMiniVar(cargs[0]);
+			casename == case;
+		});
+		mcasebody ?? {
+			cargs = getMiniCallArgs(mcasebody);
+			vars = getMiniArray(cargs[1]);
+			println("Bind");
+			println(vars);
+			println(cargs[2]);
+			def();
+
+		} : {
+			def();
+		}
+	} else {
 		println("TODO: Find case " + case + " amongst");
 		println(cases);
-		def();
-	} else {
+		println(case1);
 		def();
 	}
 }

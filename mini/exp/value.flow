@@ -7,6 +7,8 @@ export {
 	getMiniString(m : MiniExp) -> string;
 	getMiniArray(m : MiniExp) -> [MiniExp];
 
+	getMiniVar(e : MiniExp) -> string;
+
 	isMiniInt(m : MiniExp) -> bool;
 	isMiniDouble(m : MiniExp) -> bool;
 	isMiniString(m : MiniExp) -> bool;
@@ -32,6 +34,15 @@ getMiniString(m : MiniExp) -> string {
 		default: "";
 	}
 }
+
+getMiniVar(e : MiniExp) -> string {
+	switch (e) {
+		MiniVar(n, __, __): n;
+		default: "";
+	}
+}
+
+
 
 getMiniArray(m : MiniExp) -> [MiniExp] {
 	list2array(reverseList(miniArray2list(makeList(), m)))
@@ -74,3 +85,4 @@ isMiniString(m : MiniExp) -> bool {
 		default: false;
 	}
 }
+

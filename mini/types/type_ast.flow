@@ -9,8 +9,6 @@ export {
 	convertMiniExp2Type(e : MiniExp) -> MiniType;
 
 	miniType2Exp(t : MiniType) -> MiniExp;
-
-	getMiniVar(m : MiniExp) -> string;
 }
 
 convertMiniExp2Type(e : MiniExp) -> MiniType {
@@ -121,12 +119,5 @@ miniType2Exp(t : MiniType) -> MiniExp {
 				], -1, 0);
 			}), -1, 0)
 		}
-	}
-}
-
-getMiniVar(m : MiniExp) -> string {
-	switch (m) {
-		MiniVar(s, __, __): s;
-		default: "";
 	}
 }
