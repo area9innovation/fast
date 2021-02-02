@@ -11,14 +11,20 @@ export {
 }
 
 makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter {
-	MiniInterpreter(ast, ref 0, ref makeTree());
+	MiniInterpreter(ast, ref 0, ref makeTree(), ref 0, ref makeTree());
 }
 
 interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 	switch (e) {
 		MiniValue(): e;
-		MiniVar(name, __, tyvar): {
-			lookupTreeDef(env.env.declarations, name, e);
+		MiniVar(name, p, tyvar): {
+			mdyn = lookupTree(^(env.dynamicVars), name);
+			mdyn ?? {
+				// OK, rename
+				MiniVar(mdyn, p, tyvar);
+			} : {
+				lookupTreeDef(env.env.declarations, name, e);
+			}
 		}
 		MiniLet(name, value, body, __, tyvar): {
 			evalue = interpretMiniExp(env, value);
@@ -104,6 +110,27 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 						} else if (isNativeInterpreted(name)) {
 							eargs = map(args, \a -> interpretMiniExp(env, a));
 							evalMiniStaticCall(env, efn, eargs, pos, tyvar);
+						} else if (name == "dyn") {
+							// Alright!
+							switch (args[0]) {
+								MiniVar(var, __, __): {
+									dynid = "__dyn" + i2s(^(env.nextDynId));
+									val = interpretMiniExp(env, args[0]);
+									env.nextDynId := ^(env.nextDynId) + 1;
+									env.dynamicVars := setTree(^(env.dynamicVars), var, dynid);
+									MiniLet(
+										dynid,
+										val,
+										interpretMiniExp(env, args[1]),
+										pos,
+										tyvar
+									);
+								}
+								default: {
+									// OK, for other kinds, we just keep it as is
+									args[0];
+								}
+							}
 						} else {
 							def();
 						}

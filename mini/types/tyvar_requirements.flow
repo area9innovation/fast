@@ -13,9 +13,9 @@ getMTyvarRequirements(env : MiniTypeEnv, tyvar : int) -> MTyvarRequirements {
 		MTyvarRequirements(
 			None(), 
 			makeSet(), 
-			MTypeBounds(false, None(), None(), makeSet(), makeSet(), makeSet(), makeSet()),
+			MTypeBounds(false, None(), None(), makeSet(), makeSet(), makeSet(), makeSet(), makeSet()),
 			makeSet(),
-			MTypeBounds(false, None(), None(), makeSet(), makeSet(), makeSet(), makeSet()),
+			MTypeBounds(false, None(), None(), makeSet(), makeSet(), makeSet(), makeSet(), makeSet()),
 		);
 	}
 }

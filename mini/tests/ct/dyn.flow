@@ -1,7 +1,8 @@
 main() {
 	__compiletime({
 		a = 4;
-		dyn(a);
-		a + 3;
+		dyn(a,
+			a + 3
+		);
 	});
 }
