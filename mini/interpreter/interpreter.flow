@@ -11,14 +11,14 @@ export {
 }
 
 makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter {
-	MiniInterpreter(ast, ref 0, ref makeTree(), ref 0, ref makeTree());
+	MiniInterpreter(ast, ref 0, ref makeTree(), ref 0, makeTree());
 }
 
 interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 	switch (e) {
 		MiniValue(): e;
 		MiniVar(name, p, tyvar): {
-			mdyn = lookupTree(^(env.dynamicVars), name);
+			mdyn = lookupTree(env.dynamicVars, name);
 			mdyn ?? {
 				// OK, rename
 				MiniVar(mdyn, p, tyvar);
@@ -117,11 +117,13 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 									dynid = "__dyn" + i2s(^(env.nextDynId));
 									val = interpretMiniExp(env, args[0]);
 									env.nextDynId := ^(env.nextDynId) + 1;
-									env.dynamicVars := setTree(^(env.dynamicVars), var, dynid);
+									nenv = MiniInterpreter(env with dynamicVars = setTree(env.dynamicVars, var, dynid));
+									// TODO. We should do search/replace in this 
+									// body to also work in control flow constructs
 									MiniLet(
 										dynid,
 										val,
-										interpretMiniExp(env, args[1]),
+										interpretMiniExp(nenv, args[1]),
 										pos,
 										tyvar
 									);
@@ -131,6 +133,8 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 									args[0];
 								}
 							}
+						} else if (name == "join") {
+							interpretMiniJoin(env, args[0], pos, tyvar);
 						} else {
 							def();
 						}
@@ -244,4 +248,11 @@ interpretSwitch(env : MiniInterpreter, case : string, value : MiniExp, cases : M
 		println(case1);
 		def();
 	}
+}
+
+interpretMiniJoin(env : MiniInterpreter, e : MiniExp, pos : int, tyvar : int) -> MiniExp {
+	// TODO: find dynamic vars in this context,
+	// make those parameters, and construct a lambda with a call here
+	println("TODO: Find dyns in " + miniPretty(e) + " and make a lambda");
+	interpretMiniExp(env, e);
 }

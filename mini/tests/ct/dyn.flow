@@ -2,7 +2,11 @@ main() {
 	__compiletime({
 		a = 4;
 		dyn(a,
-			a + 3
+			join(
+				if (a < 1) {
+					1
+				} else 2 * a
+			)
 		);
 	});
 }
