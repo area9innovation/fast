@@ -26,17 +26,19 @@ mtypeBounds2string(t : MTypeBounds) -> string {
 			mset(t.typars),
 			mset(t.records),
 			mset(t.calls),
+			mset(t.unnamedUnions)
 		]
 	), ",");
 }
 
 mtype2Bounds(t : MiniType) -> MTypeBounds {
-	b = MTypeBounds(false, None(), None(), makeSet(), makeSet(), makeSet(), makeSet());
+	b = MTypeBounds(false, None(), None(), makeSet(), makeSet(), makeSet(), makeSet(), makeSet());
 	switch (t) {
 		MiniTypeInt(bits): MTypeBounds(b with intType = Some(t));
 		MiniTypeFunction(args, returnType): MTypeBounds(b with fn = Some(t));
 		MiniTypeCall(id, typars): {
 			if (id == "flow") MTypeBounds(b with isFlow = true)
+			else if (id == "") MTypeBounds(b with unnamedUnions = makeSet1(t))
 			else MTypeBounds(b with calls = makeSet1(t));
 		}
 		MiniTypeVar(id): MTypeBounds(b with tyvars = makeSet1(t));
@@ -44,7 +46,6 @@ mtype2Bounds(t : MiniType) -> MTypeBounds {
 		MiniTypeRecord(fields): MTypeBounds(b with records = makeSet1(t));
 	}
 }
-
 
 mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, union : bool, left : MTypeBounds, right : MTypeBounds) -> MTypeBounds {
 	onError = \ -> {
@@ -58,6 +59,7 @@ mergeMTypeBounds(env : MiniTypeEnv, typep : MiniTypePos, union : bool, left : MT
 		mergeSets(left.typars, right.typars),
 		mergeSets(left.records, right.records),
 		mergeSets(left.calls, right.calls),
+		mergeSets(left.unnamedUnions, right.unnamedUnions),
 	);
 	simplifyMTypeBounds(env, mt, union, onError);
 }
@@ -83,7 +85,7 @@ mergeMaybeType(left : Maybe<?>, right : Maybe<?>, onError : () -> void) -> Maybe
 simplifyMTypeBounds(env : MiniTypeEnv, m : MTypeBounds, union : bool, onError : () -> void) -> MTypeBounds {
 	if (union && m.isFlow) {
 		// Pure flow type wins
-		MTypeBounds(true, None(), None(), makeSet(), makeSet(), makeSet(), makeSet());
+		MTypeBounds(true, None(), None(), makeSet(), makeSet(), makeSet(), makeSet(), makeSet());
 	} else {
 		isInt = isSome(m.intType);
 		isFn = isSome(m.fn);
@@ -91,12 +93,13 @@ simplifyMTypeBounds(env : MiniTypeEnv, m : MTypeBounds, union : bool, onError : 
 		ntypars = sizeSet(m.typars);
 		nrecords = sizeSet(m.records);
 		ncalls = sizeSet(m.calls);
+		nunnamed = sizeSet(m.unnamedUnions);
 		if (isInt || isFn) {
-			if (ntyvars + ntypars + nrecords + ncalls != 0 || (isInt && isFn)) {
+			if (ntyvars + ntypars + nrecords + ncalls + nunnamed != 0 || (isInt && isFn)) {
 				onError();
 			}
 			m;
-		} else if (ntyvars + ntypars + nrecords + ncalls <= 1) {
+		} else if (ntyvars + ntypars + nrecords + ncalls + nunnamed <= 1) {
 			m
 		} else {
 			println("TODO: Simplify " + mtypeBounds2string(m) + " as " + if (union) "union" else "intersection");
@@ -104,7 +107,6 @@ simplifyMTypeBounds(env : MiniTypeEnv, m : MTypeBounds, union : bool, onError : 
 		}
 	}
 }
-
 
 /*
 	MTypeBounds(
@@ -115,6 +117,7 @@ simplifyMTypeBounds(env : MiniTypeEnv, m : MTypeBounds, union : bool, onError : 
 		tyvars : Set<MiniTypeVar>,
 		typars : Set<MiniTypePar>,
 		records : Set<MiniTypeRecord>,
-		calls : Set<MiniTypeCall>
+		calls : Set<MiniTypeCall>,
+		unnamedUnion : Set<MiniTypeCall>
 	);
 */

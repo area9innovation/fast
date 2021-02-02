@@ -62,6 +62,7 @@ export {
 		typars : Set<MiniTypePar>,
 		records : Set<MiniTypeRecord>,
 		calls : Set<MiniTypeCall>,
+		unnamedUnions : Set<MiniTypeCall>,
 		// TODO: Add positions and ids to track positions
 	);
 }
