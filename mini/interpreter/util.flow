@@ -1,4 +1,4 @@
-import mini/exp/exp;
+import mini/exp/ast;
 import algorithms;
 
 export {
@@ -8,7 +8,7 @@ export {
 	isMiniArray(e : MiniExp) -> bool;
 	getMiniArrayValue(e : MiniExp) -> [MiniExp];
 
-	isMiniStatic(e : MiniExp) -> bool;
+	isMiniStatic(env : MiniAst, e : MiniExp) -> bool;
 	
 	// Is this a call to a static function, i.e. a struct?
 	isMiniStaticCall(e : MiniExp) -> bool;
@@ -76,19 +76,19 @@ getMiniArrayValue(e : MiniExp) -> [MiniExp] {
 	}
 }
 
-isMiniStatic(e : MiniExp) -> bool {
+isMiniStatic(env : MiniAst, e : MiniExp) -> bool {
 	switch (e) {
 		MiniInt(value, pos, tyvar): true;
 		MiniDouble(value, pos): true;
 		MiniString(value, pos): true;
 		MiniVar(name, pos, tyvar): true;
-		MiniLet(name, value, body, pos, tyvar): isMiniStatic(value) && isMiniStatic(body);
+		MiniLet(name, value, body, pos, tyvar): isMiniStatic(env, value) && isMiniStatic(env, body);
 		MiniLambda(args, body, pos, tyvar): true;
 		MiniCall(fn, args, pos, tyvar): {
 			switch (fn) {
 				MiniVar(fnname, __, __): {
-					(fnname == "__void"  || fnname == "__array")
-					&& forall(args, isMiniStatic)
+					(fnname == "__void"  || fnname == "__array" || containsKeyTree(env.structs, fnname))
+					&& forall(args, \a -> isMiniStatic(env, a))
 				}
 				default: false;
 			}

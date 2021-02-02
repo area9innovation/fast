@@ -111,7 +111,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		else MiniInt(b2i(cmp > 0), pos, tyvar);
 
 	} else if (fn.name == ";") {
-		if (isMiniStatic(args[0])) {
+		if (isMiniStatic(env.env, args[0])) {
 			args[1];
 		} else {
 			def
@@ -254,7 +254,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 	//
 
 	} else if (fn.name == "__ref") {
-		if (isMiniStatic(args[0])) {
+		if (isMiniStatic(env.env, args[0])) {
 			pnt = ^(env.nextRefId);
 			env.nextRefId := pnt + 1;
 			env.refs := setTree(^(env.refs), pnt, args[0]);
@@ -273,7 +273,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			}
 		} else def;
 	} else if (fn.name == ":=") {
-		if (isMiniInt(args[0]) && isMiniStatic(args[1])) {
+		if (isMiniInt(args[0]) && isMiniStatic(env.env, args[1])) {
 			pnt = getMiniInt(args[0]);
 			env.refs := setTree(^(env.refs), pnt, args[1]);
 			miniVoid(pos, tyvar);
