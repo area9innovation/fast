@@ -37,6 +37,18 @@ doFilter(acc : [?], i : int, xs : [?], test : (?) -> bool) -> [?] {
 	} else acc
 }
 
+map(xs : [?], fn  : (?) -> ??) -> [??] {
+	doMap([], 0, xs, fn);
+}
+
+doMap(acc : [??], i : int, xs : [?], fn : (?) -> ??) -> [??] {
+	if (i < length(xs)) {
+		doMap(
+			replace(acc, i, fn(xs[i])), i + 1, xs, fn
+		)
+	} else acc;
+}
+
 
 /*
 filter(a : [?], test : (?) -> bool) -> [?] {

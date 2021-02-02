@@ -1,0 +1,12 @@
+native println : io (?) -> void = Native.println;
+
+
+main() {
+	__compiletime({
+		println(false);
+		println(true);
+		println(!false);
+		println(false || true);
+		println(true && false);
+	});
+}

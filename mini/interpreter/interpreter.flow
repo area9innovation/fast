@@ -98,6 +98,9 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 							} else {
 								MiniCall(MiniVar("__switch", pos, tyvar), [value, args[1]], pos, tyvar);
 							}
+						} else if (name == ":") {
+							// Just ignore the type.
+							interpretMiniExp(env, args[0]);
 						} else if (isNativeInterpreted(name)) {
 							eargs = map(args, \a -> interpretMiniExp(env, a));
 							evalMiniStaticCall(env, efn, eargs, pos, tyvar);

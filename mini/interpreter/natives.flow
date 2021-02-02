@@ -2,6 +2,7 @@ import mini/interpreter/env;
 import mini/interpreter/util;
 import mini/exp/value;
 import mini/exp/pretty;
+import math/bits;
 
 /*
 TODO:
@@ -9,7 +10,9 @@ TODO:
   strlen, length
 */
 export {
+	// These functions are natives, which we have implementations for
 	isNativeInterpreted(name : string) -> bool;
+
 	evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp;
 }
 
@@ -30,6 +33,9 @@ isNativeInterpreted(name : string) -> bool {
 	// Math
 	|| name == "sin" || name == "asin" || name == "acos"  || name == "atan"  || name == "atan2"
 	|| name == "exp" || name == "log"
+
+	// Bits
+	|| name == "bitOr" || name == "bitAnd" || name == "bitShl" || name == "bitUshr" || name == "bitNot"
 }
 
 evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
@@ -110,6 +116,9 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		} else {
 			def
 		}
+	} else if (fn.name == "__void") {
+		def
+
 
 	//
 	// Math
@@ -259,6 +268,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			mval ?? {
 				mval
 			} : {
+				println("Could not find reference");
 				def;
 			}
 		} else def;
@@ -288,6 +298,17 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			MiniVar(name, pos, tyvar),
 			[ val ], pos, tyvar
 		);
+	} else if (fn.name == "__construct2" && length(args) == 3 && forall(args, isMiniString)) {
+		name = getMiniString(args[0]);
+		field0 = getMiniString(args[1]);
+		field1 = getMiniString(args[2]);
+		val1 = lookupTreeDef(env.env.declarations, field0, args[1]);
+		val2 = lookupTreeDef(env.env.declarations, field1, args[1]);
+
+		MiniCall(
+			MiniVar(name, pos, tyvar),
+			[ val1, val2 ], pos, tyvar
+		);
 
 	} else if (fn.name == "." && isMiniStaticCall(args[0]) && isMiniString(args[1])) {
 		structname = getMiniStaticCall(args[0]);
@@ -312,8 +333,22 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			MiniString(structname, pos)
 		} else def;
 
+	//
+	// Bits
+	//
+	} else if (fn.name == "bitAnd" && isMiniInt(args[0]) && isMiniInt(args[1])) {
+		MiniInt(bitAnd(getMiniInt(args[0]), getMiniInt(args[1])), pos, tyvar)
+	} else if (fn.name == "bitOr" && isMiniInt(args[0]) && isMiniInt(args[1])) {
+		MiniInt(bitOr(getMiniInt(args[0]), getMiniInt(args[1])), pos, tyvar)
+	} else if (fn.name == "bitShl" && isMiniInt(args[0]) && isMiniInt(args[1])) {
+		MiniInt(bitShl(getMiniInt(args[0]), getMiniInt(args[1])), pos, tyvar)
+	} else if (fn.name == "bitUshr" && isMiniInt(args[0]) && isMiniInt(args[1])) {
+		MiniInt(bitUshr(getMiniInt(args[0]), getMiniInt(args[1])), pos, tyvar)
+	} else if (fn.name == "bitNot" && isMiniInt(args[0])) {
+		MiniInt(bitNot(getMiniInt(args[0])), pos, tyvar)
+
 	} else {
-		println("TODO: Implement " + fn.name);
+		println("TODO: Implement interpretation of " + fn.name + " " + toString(args));
 		// println(args);
 		def
 	}
