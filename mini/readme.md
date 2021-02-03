@@ -918,3 +918,18 @@ This is easy to add to Mini, since it already has a partial evaluator.
 First test case is to use this to make reducers and rvalues efficient in
 real life.
 
+
+
+# Use cases
+
+- Morris-prath
+- Deforestation af reducere
+- DSL kode genering, f.ex. gringo
+- Regex.
+- Pattern matching
+- inline fastlåst
+- Wasm target
+- Flowschema
+- SQL
+- Master key
+- Gringo, so we can do compile time parsing and evaluation
