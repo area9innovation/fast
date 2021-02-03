@@ -23,6 +23,7 @@ main() {
 		cdb = fold(files, fdb, \acc, file -> miniEvalForths(file, acc, [toString(file), "parsefile"]));
 
 		miniProcessCommand(cdb, make(""), \tdb -> {
+			// TODO: Construct the EXP version before we do the statement version?
 			program = miniAst2BProgram(tdb.program);
 
 			if (verbose > 1) {

@@ -16,9 +16,9 @@ bdeclaration2flow(b : BDeclaration) -> string {
 	switch (b) {
 		BFunction(name, args, body, tailcall, type): {
 			blueprint("
-				%name%(%args%) {
+				%name%(%args%) { // %type%
 					%body%
-				} // %type%", [
+				}", [
 				"name", name,
 				"args", superglue(args, \fa -> fa.name, ", "),
 				"body", bstatement2flow(flowBackend(), body),
