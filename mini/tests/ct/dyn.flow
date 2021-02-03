@@ -2,10 +2,12 @@ main() {
 	__compiletime({
 		a = 4;
 		dyn(a,
+			add = \c, d -> c + d;
 			join(
-				if (a < 1) {
-					1
-				} else 2 * a
+				add(1, a)
+			);
+			join(
+				add(2, a)
 			)
 		);
 	});

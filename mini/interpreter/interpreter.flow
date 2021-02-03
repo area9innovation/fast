@@ -130,7 +130,7 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 								}
 							}
 						} else if (name == "join") {
-							interpretMiniJoin(env, args[0], pos, tyvar);
+							interpretMiniJoin(env, interpretMiniExp(env, args[0]), pos, tyvar);
 						} else {
 							def();
 						}
