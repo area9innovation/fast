@@ -252,11 +252,12 @@ interpretMiniJoin(env : MiniInterpreter, e : MiniExp, pos : int, tyvar : int) ->
 	dynamicNames = buildSet(getTreeValues(env.dynamicVars));
 
 	dyns = extractMiniDynamic(dynamicNames, makeSet(), e);
-	println("TODO: Make lambda with pars "  + strGlue(set2array(dyns), ", ") + " for " + miniPretty(e));
+	args = set2array(dyns);
 
-	
-
-	interpretMiniExp(env, e);
+	// TODO: Should we lift this lambda up to top-level?
+	lambda = MiniLambda(args, e, pos, tyvar);
+	call = MiniCall(lambda, map(args, \a -> MiniVar(a, pos, tyvar)), pos, tyvar);
+	call;
 }
 
 extractMiniDynamic(env : Set<string>, dyns : Set<string>, e : MiniExp) -> Set<string> {
