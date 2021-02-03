@@ -1,6 +1,5 @@
 import mini/interpreter/interpreter;
 import mini/exp/value;
-import mini/exp/compare;
 import mini/types/type_ast;
 import mini/types/util;
 import mini/types/implicit_polymorphism;
@@ -288,28 +287,6 @@ processMiniMaybe(env : MiniInterpreter, args : [MiniExp]) -> MiniExp {
 			], -1, 0)
 		], -1, 0), pos[0], 0
 	);
-}
-
-replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
-	if (isSameMiniExp(e, finde)) replacee
-	else {
-		rec = \v -> replaceMiniExp(v, finde, replacee);
-		switch (e) {
-			MiniInt(value, __, tyvar): e;
-			MiniDouble(value, __): e;
-			MiniString(value, __): e;
-			MiniVar(name, __, tyvar): e;
-			MiniLet(name, value, body, pos, tyvar): {
-				MiniLet(name, rec(value), rec(body), pos, tyvar)
-			}
-			MiniLambda(args, body, pos, tyvar): {
-				MiniLambda(args, rec(body), pos, tyvar);
-			}
-			MiniCall(fn, args, pos, tyvar): {
-				MiniCall(rec(fn), map(args, rec), pos, tyvar)
-			}
-		}
-	}
 }
 
 // Here, we should ensure that typenames have the correct number of typars

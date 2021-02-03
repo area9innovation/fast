@@ -1,4 +1,5 @@
 import mini/exp/ast;
+import mini/exp/compare;
 import algorithms;
 
 export {
@@ -16,6 +17,8 @@ export {
 	getMiniCallArgs(e : MiniExp) -> [MiniExp];
 
 	miniVoid(pos : int, tyvar : int) -> MiniExp;
+
+	replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp;
 }
 
 compareMiniValue(left : MiniExp, right : MiniExp) -> int {
@@ -123,4 +126,26 @@ getMiniCallArgs(e : MiniExp) -> [MiniExp] {
 
 miniVoid(pos : int, tyvar : int) -> MiniExp {
 	MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
+}
+
+replaceMiniExp(e : MiniExp, finde : MiniExp, replacee : MiniExp) -> MiniExp {
+	if (isSameMiniExp(e, finde)) replacee
+	else {
+		rec = \v -> replaceMiniExp(v, finde, replacee);
+		switch (e) {
+			MiniInt(value, __, tyvar): e;
+			MiniDouble(value, __): e;
+			MiniString(value, __): e;
+			MiniVar(name, __, tyvar): e;
+			MiniLet(name, value, body, pos, tyvar): {
+				MiniLet(name, rec(value), rec(body), pos, tyvar)
+			}
+			MiniLambda(args, body, pos, tyvar): {
+				MiniLambda(args, rec(body), pos, tyvar);
+			}
+			MiniCall(fn, args, pos, tyvar): {
+				MiniCall(rec(fn), map(args, rec), pos, tyvar)
+			}
+		}
+	}
 }

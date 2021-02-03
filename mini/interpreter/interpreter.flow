@@ -18,13 +18,7 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 	switch (e) {
 		MiniValue(): e;
 		MiniVar(name, p, tyvar): {
-			mdyn = lookupTree(env.dynamicVars, name);
-			mdyn ?? {
-				// OK, rename
-				MiniVar(mdyn, p, tyvar);
-			} : {
-				lookupTreeDef(env.env.declarations, name, e);
-			}
+			lookupTreeDef(env.env.declarations, name, e);
 		}
 		MiniLet(name, value, body, __, tyvar): {
 			evalue = interpretMiniExp(env, value);
@@ -118,12 +112,14 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 									val = interpretMiniExp(env, args[0]);
 									env.nextDynId := ^(env.nextDynId) + 1;
 									nenv = MiniInterpreter(env with dynamicVars = setTree(env.dynamicVars, var, dynid));
-									// TODO. We should do search/replace in this 
-									// body to also work in control flow constructs
+
+									// We should do search/replace in this body to also work in control flow constructs
+									renamed = replaceMiniExp(args[1], args[0], MiniVar(dynid, pos, tyvar));
+
 									MiniLet(
 										dynid,
 										val,
-										interpretMiniExp(nenv, args[1]),
+										interpretMiniExp(nenv, renamed),
 										pos,
 										tyvar
 									);
@@ -251,8 +247,35 @@ interpretSwitch(env : MiniInterpreter, case : string, value : MiniExp, cases : M
 }
 
 interpretMiniJoin(env : MiniInterpreter, e : MiniExp, pos : int, tyvar : int) -> MiniExp {
-	// TODO: find dynamic vars in this context,
-	// make those parameters, and construct a lambda with a call here
-	println("TODO: Find dyns in " + miniPretty(e) + " and make a lambda");
+	// Find dynamic vars in this context, make those parameters, and construct a 
+	// lambda with a call here
+	dynamicNames = buildSet(getTreeValues(env.dynamicVars));
+
+	dyns = extractMiniDynamic(dynamicNames, makeSet(), e);
+	println("TODO: Make lambda with pars "  + strGlue(set2array(dyns), ", ") + " for " + miniPretty(e));
+
+	
+
 	interpretMiniExp(env, e);
+}
+
+extractMiniDynamic(env : Set<string>, dyns : Set<string>, e : MiniExp) -> Set<string> {
+	switch (e) {
+		MiniInt(value, pos, tyvar): dyns;
+		MiniDouble(value, pos): dyns;
+		MiniString(value, pos): dyns;
+		MiniVar(name, pos, tyvar): if (containsSet(env, name)) insertSet(dyns, name) else dyns;
+		MiniLet(name, value, body, pos, tyvar): {
+			if (containsSet(env, name)) {
+				println("TODO: Shadowing in extracting for lambda " + name);
+			}
+			acc1 = extractMiniDynamic(env, dyns, value);
+			extractMiniDynamic(env, acc1, body);
+		}
+		MiniLambda(args, body, pos, tyvar): extractMiniDynamic(env, dyns, body);
+		MiniCall(fn, args, pos, tyvar): {
+			acc1 = extractMiniDynamic(env, dyns, fn);
+			fold(args, acc1, \acc2, a -> extractMiniDynamic(env, acc2, a))
+		}
+	}
 }
