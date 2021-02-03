@@ -933,3 +933,20 @@ real life.
 - SQL
 - Master key
 - Gringo, so we can do compile time parsing and evaluation
+	c via wasm
+	Typescript
+- async/await lifting - client/server
+
+- frp lifting
+
+- Basic
+
+New DSLs to define Curator:
+- Workflow
+- Dataschema/flowschema and master-key
+- Reporting
+- Users and roles
+- Converters
+- Translation
+- Tasks/communication
+
