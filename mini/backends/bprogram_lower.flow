@@ -11,19 +11,18 @@ import mini/types/builtin;
 import ds/arrayutils;
 
 export {
-	miniAst2BProgram(ast : MiniAst) -> BProgram;
+	miniAst2BExpProgram(ast : MiniAst) -> BExpProgram;
+
+	bexpProgram2BProgram(b : BExpProgram) -> BProgram;
 
 	// This lowers our program to BExp with types. The name is used for error reporting
 	miniExp2BExp(env : MiniTypeEnv, name : string, e : MiniExp) -> BExp;
-
-	// And then lower to statement-based
-	bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration;
 
 	// For use in backends, when expressions need a statement
 	bexp2BReturn(b : BExp) -> BStatement;
 }
 
-miniAst2BProgram(ast : MiniAst) -> BProgram {
+miniAst2BExpProgram(ast : MiniAst) -> BExpProgram {
 	// Here we effectively do DCE:
 	// TODO: Also include all top-level vars with side-effects
 	ids0 : Set<string> = getMiniDependencies(ast.idDependents, "main", true);
@@ -38,7 +37,8 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 		filtermap(order, \id -> {
 			mdecl = lookupTree(ast.typedDeclarations, id);
 			mdecl ?? {
-				Some(BGlobalVar(id, mdecl, bexpType(mdecl)))
+				decl = bexp2BExpDeclaration(id, mdecl);
+				Some(decl)
 			} : None(); // We will let backends complain: Some(BComment("// ERROR: Unknown id " + id))
 		})
 	);
@@ -46,14 +46,37 @@ miniAst2BProgram(ast : MiniAst) -> BProgram {
 	// Optimize constants
 	opt = extractBExpGlobals(bexp);
 
+	opt;
+}
+
+bexpProgram2BProgram(b : BExpProgram) -> BProgram {
 	BProgram(
-		map(opt.declarations, \gv : BGlobalVar -> {
-			bexp2BDeclaration(gv.name, gv.body)
-		})
+		map(b.declarations, bexpDeclaration2Declaration)
 	);
 }
 
-bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
+bexpDeclaration2Declaration(be : BExpDeclaration) -> BDeclaration {
+	switch (be) {
+		BGlobalVar(name, body, type): be;
+		BExpFunction(name, args, body, type): {
+			hasTailcall = ref false;
+			bbody = bexp2BStatement(name, map(args, \a -> a.name), hasTailcall, true, body);
+			BFunction(
+				name, args, bbody,
+				^hasTailcall,
+				type
+			);
+		}
+		BExpNative(name, isio, type, nativeName, fallback): {
+			sfallback : Maybe<BDeclaration> = fallback ?? {
+				Some(bexpDeclaration2Declaration(fallback))
+			} : None();
+			BNative(name, isio, type, nativeName, sfallback)
+		}
+	}
+}
+
+bexp2BExpDeclaration(declid : string, b : BExp) -> BExpDeclaration {
 	var = \ -> {
 		BGlobalVar(declid, b, bexpType(b));
 	};
@@ -62,11 +85,8 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 		BVar(__, __): var();
 		BLet(__, __, __, __): var();
 		BLambda(args, body, type): {
-			hasTailcall = ref false;
-			bbody = bexp2BStatement(declid, map(args, \a -> a.name), hasTailcall, true, body);
-			BFunction(
-				declid, args, bbody,
-				^hasTailcall,
+			BExpFunction(
+				declid, args, body,
 				type
 			);
 		}
@@ -82,9 +102,9 @@ bexp2BDeclaration(declid : string, b : BExp) -> BDeclaration {
 						};
 						ntype = bexpType(args[1]);
 						fallback = if (length(args) > 3) {
-							Some(bexp2BDeclaration(declid, args[3]))
+							Some(bexp2BExpDeclaration(declid, args[3]))
 						} else None();
-						BNative(declid, bisIo == BInt(1, miniTypeInt),
+						BExpNative(declid, bisIo == BInt(1, miniTypeInt),
 							ntype,
 							nativeName,
 							fallback

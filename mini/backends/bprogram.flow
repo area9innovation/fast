@@ -2,18 +2,21 @@ import mini/types/type;
 import maybe;
 
 export {
-	// This is the typed AST we send to the backends when they need to compile
+	// Typed intermediate representation with code in topological order, but not in statements yet
+	BExpProgram(declarations : [BExpDeclaration]);
+
+	// This is the typed AST we send to the backends when they need to compile using statements
 	BProgram(declarations : [BDeclaration]);
 
-	// Intermediate representation with code in topological order, but not in statements yet
-	BExpProgram(declarations : [BGlobalVar]);
-
+	BExpDeclaration ::= BGlobalVar, BExpFunction, BExpNative;
 	BDeclaration ::= BGlobalVar, BFunction, BNative;
 
 		BGlobalVar(name : string, body : BExp, type : MiniType);
 
+		BExpFunction(name : string, args : [BFunArg], body : BExp, type : MiniType);
 		BFunction(name : string, args : [BFunArg], body : BStatement, tailCall : bool, type : MiniType);
 
+		BExpNative(name : string, isio : bool, type : MiniType, nativeName : string, fallback : Maybe<BExpDeclaration>);
 		BNative(name : string, isio : bool, type : MiniType, nativeName : string, fallback : Maybe<BDeclaration>);
 
 	// Statement-based languages can get this format:

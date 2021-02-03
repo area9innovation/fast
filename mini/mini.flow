@@ -23,9 +23,6 @@ main() {
 		cdb = fold(files, fdb, \acc, file -> miniEvalForths(file, acc, [toString(file), "parsefile"]));
 
 		miniProcessCommand(cdb, make(""), \tdb -> {
-			// TODO: Construct the EXP version before we do the statement version?
-			program = miniAst2BProgram(tdb.program);
-
 			if (verbose > 1) {
 				println("\nMini declarations after type checking:");
 				traverseInOrder(tdb.program.declarations, \st, val -> {
@@ -58,15 +55,20 @@ main() {
 				});
 			};
 
+			program = miniAst2BExpProgram(tdb.program);
+
 			if (verbose > 0) {
 				// Print the typed backend representation here
 				println("\nBackend after type checking:");
-				println(prettyBProgram(program));
+				println(prettyBExpProgram(program));
 			};
 
-			flowprogram = bprogram2flow(program);
-			jsprogram = bprogram2js(program);
+			sprogram = bexpProgram2BProgram(program);
+
+			flowprogram = bprogram2flow(sprogram);
 			setFileContent(changeFileExt(output, ".flow"), flowprogram);
+
+			jsprogram = bprogram2js(sprogram);
 			setFileContent(changeFileExt(output, ".js"), jsprogram);
 
 			if (verbose > 1) {

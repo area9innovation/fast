@@ -3,12 +3,40 @@ import mini/types/pretty;
 
 export {
 	prettyBProgram(p : BProgram) -> string;
+	prettyBExpProgram(p : BExpProgram) -> string;
 	prettyBExp(b : BExp) -> string;
 }
 
 prettyBProgram(p : BProgram) -> string {
 	superglue(p.declarations, prettyBDeclaration, "\n");
 }
+
+prettyBExpProgram(p : BExpProgram) -> string {
+	superglue(p.declarations, prettyBExpDeclaration, "\n");
+}
+
+prettyBExpDeclaration(b : BExpDeclaration) -> string {
+	switch (b) {
+		BExpFunction(name, args, body, type): {
+			blueprint("
+				%header% {
+					%body%
+				}
+			", [
+				"header", name + "(" + superglue(args, \a -> a.name , ", ") + ") : " + miniType2string(type),
+				"body", prettyBExp(body)
+			])
+		}
+		BGlobalVar(name, body, type): {
+			name + " : " + miniType2string(type) + " = " + prettyBExp(body);
+		}
+		BExpNative(name, isio, type, nativeName, mfallback): {
+			"native " + name + " : " + (if (isio) "io" else "") + miniType2string(type) + " = " + nativeName
+			+ (mfallback ?? (" with " + prettyBExpDeclaration(mfallback)) : "");
+		}
+	}
+}
+
 
 prettyBDeclaration(b : BDeclaration) -> string {
 	switch (b) {
