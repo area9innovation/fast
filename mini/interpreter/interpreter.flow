@@ -6,7 +6,7 @@ import mini/interpreter/env;
 export {
 	makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter;
 
-	// This inlines calls and let-bindings
+	// This inlines calls and let-bindings. TODO: Add id so we can give decent error messages
 	interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
 }
 
@@ -176,10 +176,15 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
 	switch (fn) {
 		MiniLambda(largs, body, __, __): {
-			nenv = foldi(largs, env, \i, acc, arg -> {
-				setMiniInterpreterVar(acc, arg, args[i])
-			});
-			interpretMiniExp(nenv, body)
+			if (length(largs) != length(args)) {
+				env.env.onError(env.env, "", pos, "Expected " + i2s(length(largs)) + " args, got " + i2s(length(args)) + " for " + miniPretty(fn));
+				MiniCall(fn, args, pos, tyvar);
+			} else {
+				nenv = foldi(largs, env, \i, acc, arg -> {
+					setMiniInterpreterVar(acc, arg, args[i])
+				});
+				interpretMiniExp(nenv, body)
+			}
 		}
 		MiniVar(name, __, __): {
 			evalMiniStaticCall(env, fn, args, pos, tyvar)

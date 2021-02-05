@@ -15,7 +15,9 @@ main() {
 
 	verbose = s2i(getUrlParameterDef("verbose", "0"));
 
-	db0 = makeMiniDb(["", ".","c:\\flow9\\lib\\", "c:\\flow9"], println);
+	includes = strSplit(getUrlParameter("I"), ",");
+
+	db0 = makeMiniDb(concat(["", ".", "c:\\flow9\\lib\\", "c:\\flow9"], includes), println);
 
 	db = miniEvalForths("", db0, ["prepflow"]);
 
