@@ -290,25 +290,15 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			], pos, tyvar
 		)
 	} else if (fn.name == "__construct1" && isMiniString(args[0]) && isMiniString(args[1])) {
-		name = getMiniString(args[0]);
-		field0 = getMiniString(args[1]);
-		val = lookupTreeDef(env.env.declarations, field0, args[1]);
-
-		MiniCall(
-			MiniVar(name, pos, tyvar),
-			[ val ], pos, tyvar
-		);
+		interpretConstruct(env, args, pos, tyvar)
 	} else if (fn.name == "__construct2" && length(args) == 3 && forall(args, isMiniString)) {
-		name = getMiniString(args[0]);
-		field0 = getMiniString(args[1]);
-		field1 = getMiniString(args[2]);
-		val1 = lookupTreeDef(env.env.declarations, field0, args[1]);
-		val2 = lookupTreeDef(env.env.declarations, field1, args[1]);
-
-		MiniCall(
-			MiniVar(name, pos, tyvar),
-			[ val1, val2 ], pos, tyvar
-		);
+		interpretConstruct(env, args, pos, tyvar)
+	} else if (fn.name == "__construct3" && length(args) == 4 && forall(args, isMiniString)) {
+		interpretConstruct(env, args, pos, tyvar)
+	} else if (fn.name == "__construct4" && length(args) == 5 && forall(args, isMiniString)) {
+		interpretConstruct(env, args, pos, tyvar)
+	} else if (fn.name == "__construct5" && length(args) == 6 && forall(args, isMiniString)) {
+		interpretConstruct(env, args, pos, tyvar)
 
 	} else if (fn.name == "." && isMiniStaticCall(args[0]) && isMiniString(args[1])) {
 		structname = getMiniStaticCall(args[0]);
@@ -352,4 +342,15 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		// println(args);
 		def
 	}
+}
+
+interpretConstruct(env : MiniInterpreter, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
+	strings = map(args, getMiniString);
+	name = strings[0];
+
+	vals = mapi(tail(strings), \i, field -> {
+		lookupTreeDef(env.env.declarations, field, args[i + 1]);
+	});
+
+	MiniCall(MiniVar(name, pos, tyvar), vals, pos, tyvar);
 }
