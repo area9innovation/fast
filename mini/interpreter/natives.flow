@@ -2,6 +2,8 @@ import mini/interpreter/env;
 import mini/interpreter/util;
 import mini/exp/value;
 import mini/exp/pretty;
+import mini/types/builtin;
+import mini/types/type_ast;
 import math/bits;
 
 /*
@@ -337,6 +339,14 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 	} else if (fn.name == "bitNot" && isMiniInt(args[0])) {
 		MiniInt(bitNot(getMiniInt(args[0])), pos, tyvar)
 
+	//
+	// Reflection in the interpreter
+	//
+
+	} else if (fn.name == "typeof") {
+		type = interpretTypeOf(env, args[0]);
+		miniType2Exp(type);
+
 	} else {
 		println("TODO: Implement interpretation of " + fn.name + " " + toString(args));
 		// println(args);
@@ -353,4 +363,46 @@ interpretConstruct(env : MiniInterpreter, args : [MiniExp], pos : int, tyvar : i
 	});
 
 	MiniCall(MiniVar(name, pos, tyvar), vals, pos, tyvar);
+}
+
+interpretTypeOf(env : MiniInterpreter, val : MiniExp)-> MiniType {
+	switch (val) {
+		MiniCall(fn, args, __, __): {
+			switch (fn) {
+				MiniVar(name, __, __): {
+					if (name == "__void") {
+						miniTypeVoid;
+					} else if (name == "__array") {
+						MiniTypeCall(
+							"array",
+							[
+								interpretTypeOf(env, args[0])
+							]
+						)
+					} else {
+						println(name);
+						MiniTypeCall(name, [])
+					}
+				}
+				default: {
+					println("TODO: figure out the type of " + miniPretty(val));
+					miniTypeVoid
+				}
+			}
+		}
+		MiniInt(value, pos, tyvar): MiniTypeInt(32);
+		MiniDouble(value, pos): miniTypeDouble;
+		MiniString(value, pos): miniTypeString;
+		MiniVar(name, pos, tyvar): {
+			println("TODO: Unknown var type " + name);
+			miniTypeVoid;
+		}
+		MiniLet(name, value, body, pos, tyvar): {
+			interpretTypeOf(env, body);
+		}
+		MiniLambda(args, body, pos, tyvar): {
+			println("TODO: Unknown fn type");
+			miniTypeVoid;
+		}
+	}
 }

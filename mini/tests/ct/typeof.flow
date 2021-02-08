@@ -1,0 +1,16 @@
+None();
+Some(value : ?);
+
+main() {
+	__compiletime({
+		println(typeof(1));
+		println(typeof(1.1));
+		println(typeof("This is a string"));
+		println(typeof(false));
+		println(typeof({}));
+		println(typeof([1]));
+		println(typeof(ref 1));	// This is int, since refs are ints when evaluated
+		println(typeof(None()));
+		println(typeof(Some(1)));	// We do not have type parameters, so this is just Some()
+	});
+}
