@@ -3,7 +3,7 @@ import mini/interpreter/util;
 import mini/exp/value;
 import mini/exp/pretty;
 import mini/types/builtin;
-import mini/types/type_ast;
+import mini/types/pretty;
 import math/bits;
 
 /*
@@ -345,7 +345,7 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 
 	} else if (fn.name == "typeof") {
 		type = interpretTypeOf(env, args[0]);
-		miniType2Exp(type);
+		MiniString(miniType2string(type), pos)
 
 	} else {
 		println("TODO: Implement interpretation of " + fn.name + " " + toString(args));
@@ -365,7 +365,7 @@ interpretConstruct(env : MiniInterpreter, args : [MiniExp], pos : int, tyvar : i
 	MiniCall(MiniVar(name, pos, tyvar), vals, pos, tyvar);
 }
 
-interpretTypeOf(env : MiniInterpreter, val : MiniExp)-> MiniType {
+interpretTypeOf(env : MiniInterpreter, val : MiniExp) -> MiniType {
 	switch (val) {
 		MiniCall(fn, args, __, __): {
 			switch (fn) {
@@ -380,7 +380,6 @@ interpretTypeOf(env : MiniInterpreter, val : MiniExp)-> MiniType {
 							]
 						)
 					} else {
-						println(name);
 						MiniTypeCall(name, [])
 					}
 				}
