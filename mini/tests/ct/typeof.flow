@@ -1,3 +1,5 @@
+Maybe<?> ::= None, Some<?>;
+
 None();
 Some(value : ?);
 
@@ -12,5 +14,10 @@ main() {
 		println(typeof(ref 1));	// This is int, since refs are ints when evaluated
 		println(typeof(None()));
 		println(typeof(Some(1)));	// We do not have type parameters, so this is just Some()
+
+		println(isStructName("None"));
+		println(isStructName("int"));
+		println(isUnionName("Maybe"));
+
 	});
 }
