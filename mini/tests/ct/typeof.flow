@@ -3,6 +3,8 @@ Maybe<?> ::= None, Some<?>;
 None();
 Some(value : ?);
 
+Pair(first : ?, second : ??);
+
 main() {
 	__compiletime({
 		println(typeof(1));
@@ -18,6 +20,9 @@ main() {
 		println(isStructName("None"));
 		println(isStructName("int"));
 		println(isUnionName("Maybe"));
+
+		println(getStructFieldNames("Some"));
+		println(getStructFieldNames("Pair"));
 
 	});
 }

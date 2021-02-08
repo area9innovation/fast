@@ -353,7 +353,15 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 
 	} else if (fn.name == "isUnionName" && isMiniString(args[0])) {
 		name = getMiniString(args[0]);
-		MiniInt(b2i(containsKeyTree(env.env.unions, name)), pos, tyvar);	
+		MiniInt(b2i(containsKeyTree(env.env.unions, name)), pos, tyvar);
+
+	} else if (fn.name == "getStructFieldNames" && isMiniString(args[0])) {
+		name = getMiniString(args[0]);
+		mstruct = lookupTree(env.env.structs, name);
+		fields = mstruct ?? {
+			map(mstruct.fields, \f -> f.name);
+		} : [];
+		makeMiniArray(map(fields, \f -> MiniString(f, pos)), pos, tyvar);
 
 	} else {
 		println("TODO: Implement interpretation of " + fn.name + " " + toString(args));
