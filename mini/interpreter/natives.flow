@@ -345,7 +345,17 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 
 	} else if (fn.name == "typeof") {
 		type = interpretTypeOf(env, args[0]);
-		MiniString(miniType2string(type), pos)
+		miniType2Array(type, pos, tyvar)
+
+	} else if (fn.name == "isArray") {	
+		type = interpretTypeOf(env, args[0]);
+		isarray = switch (type) {
+			MiniTypeCall(n, __): {
+				n == "array"
+			}
+			default: false;
+		}
+		MiniInt(b2i(isarray), pos, tyvar);
 
 	} else if (fn.name == "isStructName" && isMiniString(args[0])) {
 		name = getMiniString(args[0]);
@@ -362,6 +372,14 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			map(mstruct.fields, \f -> f.name);
 		} : [];
 		makeMiniArray(map(fields, \f -> MiniString(f, pos)), pos, tyvar);
+
+	} else if (fn.name == "getStructFieldTypes" && isMiniString(args[0])) {
+		name = getMiniString(args[0]);
+		mstruct = lookupTree(env.env.structs, name);
+		fields = mstruct ?? {
+			map(mstruct.fields, \f -> f.type);
+		} : [];
+		makeMiniArray(map(fields, \f -> miniType2Array(f, pos, tyvar)), pos, tyvar);
 
 	} else {
 		println("TODO: Implement interpretation of " + fn.name + " " + toString(args));
@@ -419,5 +437,25 @@ interpretTypeOf(env : MiniInterpreter, val : MiniExp) -> MiniType {
 			println("TODO: Unknown fn type");
 			miniTypeVoid;
 		}
+	}
+}
+
+// We do a mixed string/array representation
+// "int"
+// ["array", type]
+// ["MyStruct", type, type]
+miniType2Array(t : MiniType, pos : int, tyvar : int) -> MiniExp {
+	todo = \ -> {
+		println("TODO: Can not lift type yet " + toString(t));
+		MiniString("flow", pos);
+	}
+	rec = \tt -> miniType2Array(tt, pos, tyvar);
+	switch (t) {
+		MiniTypeInt(bits): MiniString(if (bits == 0) "void" else if (bits == 1) "bool" else "int", pos);
+		MiniTypeFunction(args, returnType): todo();
+		MiniTypeCall(id, typars): makeMiniArray(concat([MiniString(id, pos)], map(typars, rec)), pos, tyvar);
+		MiniTypeVar(id): todo();
+		MiniTypePar(id): MiniString(id, pos);
+		MiniTypeRecord(fields): todo();
 	}
 }

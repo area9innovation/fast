@@ -17,12 +17,17 @@ main() {
 		println(typeof(None()));
 		println(typeof(Some(1)));	// We do not have type parameters, so this is just Some()
 
+		println(isArray([1]));
+
 		println(isStructName("None"));
 		println(isStructName("int"));
 		println(isUnionName("Maybe"));
 
 		println(getStructFieldNames("Some"));
 		println(getStructFieldNames("Pair"));
+
+		println(getStructFieldTypes("Some"));
+		println(getStructFieldTypes("Pair"));
 
 	});
 }
