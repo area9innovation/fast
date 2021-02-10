@@ -6,12 +6,20 @@ import mini/interpreter/env;
 export {
 	makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter;
 
-	// This inlines calls and let-bindings. TODO: Add id so we can give decent error messages
+	// Inline let-bindings
+	interpretMiniExpNoCalls(env : MiniInterpreter, e : MiniExp) -> MiniExp;
+
+	// This evaluates as much as possible, including inlining calls and let-bindings
+	// TODO: Add id so we can give decent error messages
 	interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp;
 }
 
 makeMiniInterpreter(ast : MiniAst) -> MiniInterpreter {
-	MiniInterpreter(ast, ref 0, ref makeTree(), ref 0, makeTree());
+	MiniInterpreter(ast, true, ref 0, ref makeTree(), ref 0, makeTree());
+}
+
+interpretMiniExpNoCalls(env : MiniInterpreter, e : MiniExp) -> MiniExp {
+	interpretMiniExp(MiniInterpreter(env with evaluateCalls = false), e)
 }
 
 interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
@@ -25,155 +33,160 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 			nenv = setMiniInterpreterVar(env, name, evalue);
 			interpretMiniExp(nenv, body);
 		}
-		MiniLambda(args, body, __, tyvar): {
-			// TODO: Grab closure?
-			e;
+		MiniLambda(args, body, pos, tyvar): {
+			MiniLambda(args, interpretMiniExpNoCalls(env, body), pos, tyvar);
 		}
 		MiniCall(fn, args, pos, tyvar): {
-			normal = \ -> {
-				efn = interpretMiniExp(env, fn);
-				def = \ -> {
-					eargs = map(args, \a -> interpretMiniExp(env, a));
-					interpretMiniCall(env, efn, eargs, pos, tyvar)
-				}
-				switch (efn) {
+			lift = liftSequenceFromCall(env, e);
+			if (env.evaluateCalls) {
+				// Check if we have a direct call to a built-in native, where we should ignore any fallback implementations
+				switch (fn) {
 					MiniVar(name, __, __): {
-						// Do the functions which include control flow
-						if (name == "__ifte") {
-							cond = interpretMiniExp(env, args[0]);
-							if (isMiniInt(cond)) {
-								condval = getMiniInt(cond);
-								if (condval != 0) {
-									interpretMiniExp(env, args[1]);
-								} else {
-									interpretMiniExp(env, args[2]);
-								}
-							} else {
-								MiniCall(efn, [cond, args[1], args[2]], pos, tyvar);
-							}
-						} else if (name == "__ift") {
-							cond = interpretMiniExp(env, args[0]);
-							if (isMiniInt(cond)) {
-								condval = getMiniInt(cond);
-								if (condval != 0) {
-									interpretMiniExp(env, args[1]);
-								} else {
-									MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
-								}
-							} else {
-								MiniCall(efn, [cond, args[1]], pos, tyvar);
-							}
-						} else if (name == "&&") {
-							left = interpretMiniExp(env, args[0]);
-							if (isMiniInt(left)) {
-								leftv = getMiniInt(left);
-								if (leftv == 0) {
-									// False
-									left;
-								} else {
-									interpretMiniExp(env, args[1]);
-								}
-							} else {
-								right = interpretMiniExp(env, args[1]);
-								MiniCall(efn, [left, right], pos, tyvar);
-							}
-						} else if (name == "||") {
-							left = interpretMiniExp(env, args[0]);
-							if (isMiniInt(left)) {
-								leftv = getMiniInt(left);
-								if (leftv != 0) {
-									// True
-									left;
-								} else {
-									interpretMiniExp(env, args[1]);
-								}
-							} else {
-								right = interpretMiniExp(env, args[1]);
-								MiniCall(efn, [left, right], pos, tyvar);
-							}
-						} else if (name == "__switch") {
-							value = interpretMiniExp(env, args[0]);
-							if (isMiniString(value)) {
-								interpretSwitch(env, getMiniString(value), args[0], args[1], pos, tyvar);
-							} else {
-								MiniCall(MiniVar("__switch", pos, tyvar), [value, args[1]], pos, tyvar);
-							}
-						} else if (name == ":") {
-							// Just ignore the type.
-							interpretMiniExp(env, args[0]);
-						} else if (isNativeInterpreted(name)) {
-							eargs = map(args, \a -> interpretMiniExp(env, a));
-							evalMiniStaticCall(env, efn, eargs, pos, tyvar);
-						} else if (name == "dyn") {
-							// Alright!
-							switch (args[0]) {
-								MiniVar(var, __, __): {
-									dynid = "__dyn" + i2s(^(env.nextDynId));
-									val = interpretMiniExp(env, args[0]);
-									env.nextDynId := ^(env.nextDynId) + 1;
-									nenv = MiniInterpreter(env with dynamicVars = setTree(env.dynamicVars, var, dynid));
-
-									// We should do search/replace in this body to also work in control flow constructs
-									renamed = replaceMiniExp(args[1], args[0], MiniVar(dynid, pos, tyvar));
-
-									MiniLet(
-										dynid,
-										val,
-										interpretMiniExp(nenv, renamed),
-										pos,
-										tyvar
-									);
-								}
-								default: {
-									// OK, for other kinds, we just keep it as is
-									args[0];
-								}
-							}
-						} else if (name == "join") {
-							interpretMiniJoin(env, interpretMiniExp(env, args[0]), pos, tyvar);
-						} else {
-							def();
-						}
+						if (isNativeInterpreted(name)) {
+							// OK, go do it immediately, ignoring any fallbacks that we could find under that name
+							interpretNormalMiniCall(env, fn, args, pos, tyvar);
+						} else interpretMiniCall(env, lift.fn, lift.args, pos, tyvar);
 					}
-					MiniCall(nfn, nargs, __,__): {
-						switch (nfn) {
-							MiniVar(nat, __, __): {
-								if (nat == "__native") {
-									println("TODO: Implement native " + getMiniString(nargs[2]) + " in interpreter/natives.flow");
-									def();
-								} else if (nat == ":") {
-									cfn = interpretMiniExp(env, nargs[0]);
-
-									eargs = map(args, \a -> interpretMiniExp(env, a));
-									interpretMiniCall(env, cfn, eargs, pos, tyvar)
-								} else {
-									def();
-								}
-							}
-							default: def();
-						}
-					}
-					default: {
-						def();
-					}
+					default: interpretMiniCall(env, lift.fn, lift.args, pos, tyvar);
 				}
-			};
-
-			// Check if we have a built-in native
-			switch (fn) {
-				MiniVar(name, __, __): {
-					if (isNativeInterpreted(name)) {
-						eargs = map(args, \a -> interpretMiniExp(env, a));
-						evalMiniStaticCall(env, fn, eargs, pos, tyvar);
-					} else normal();
-				}
-				default: normal();
-			};
+			} else {
+				eargs = map(lift.args, \a -> interpretMiniExp(env, a));
+				MiniCall(interpretMiniExp(env, lift.fn), eargs, pos, tyvar);
+			}
 		}
 	}
 }
 
 interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], pos : int, tyvar : int) -> MiniExp {
+	efn = interpretMiniExp(env, fn);
+	def = \ -> {
+		interpretNormalMiniCall(env, efn, args, pos, tyvar)
+	}
+	switch (efn) {
+		MiniVar(name, __, __): {
+			// Do the functions which include control flow
+			if (name == "__ifte") {
+				cond = interpretMiniExp(env, args[0]);
+				if (isMiniInt(cond)) {
+					condval = getMiniInt(cond);
+					if (condval != 0) {
+						interpretMiniExp(env, args[1]);
+					} else {
+						interpretMiniExp(env, args[2]);
+					}
+				} else {
+					MiniCall(efn, [cond, interpretMiniExpNoCalls(env, args[1]), interpretMiniExpNoCalls(env, args[2])], pos, tyvar);
+				}
+			} else if (name == "__ift") {
+				cond = interpretMiniExp(env, args[0]);
+				if (isMiniInt(cond)) {
+					condval = getMiniInt(cond);
+					if (condval != 0) {
+						interpretMiniExp(env, args[1]);
+					} else {
+						MiniCall(MiniVar("__void", pos, tyvar), [], pos, tyvar);
+					}
+				} else {
+					MiniCall(efn, [cond, interpretMiniExpNoCalls(env, args[1])], pos, tyvar);
+				}
+			} else if (name == "&&") {
+				left = interpretMiniExp(env, args[0]);
+				if (isMiniInt(left)) {
+					leftv = getMiniInt(left);
+					if (leftv == 0) {
+						// False
+						left;
+					} else {
+						interpretMiniExp(env, args[1]);
+					}
+				} else {
+					right = interpretMiniExp(env, args[1]);
+					MiniCall(efn, [left, right], pos, tyvar);
+				}
+			} else if (name == "||") {
+				left = interpretMiniExp(env, args[0]);
+				if (isMiniInt(left)) {
+					leftv = getMiniInt(left);
+					if (leftv != 0) {
+						// True
+						left;
+					} else {
+						interpretMiniExp(env, args[1]);
+					}
+				} else {
+					right = interpretMiniExp(env, args[1]);
+					MiniCall(efn, [left, right], pos, tyvar);
+				}
+			} else if (name == "__switch") {
+				value = interpretMiniExp(env, args[0]);
+				if (isMiniString(value)) {
+					interpretSwitch(env, getMiniString(value), args[0], args[1], pos, tyvar);
+				} else {
+					MiniCall(MiniVar("__switch", pos, tyvar), [value, interpretMiniExpNoCalls(env, args[1])], pos, tyvar);
+				}
+			} else if (name == ":") {
+				// Just ignore the type.
+				interpretMiniExp(env, args[0]);
+			} else if (env.evaluateCalls && isNativeInterpreted(name)) {
+				eargs = map(args, \a -> interpretMiniExp(env, a));
+				evalMiniStaticCall(env, efn, eargs, pos, tyvar);
+			} else if (name == "dyn") {
+				// Alright!
+				switch (args[0]) {
+					MiniVar(var, __, __): {
+						dynid = "__dyn" + i2s(^(env.nextDynId));
+						val = interpretMiniExp(env, args[0]);
+						env.nextDynId := ^(env.nextDynId) + 1;
+						nenv = MiniInterpreter(env with dynamicVars = setTree(env.dynamicVars, var, dynid));
+
+						// We should do search/replace in this body to also work in control flow constructs
+						renamed = replaceMiniExp(args[1], args[0], MiniVar(dynid, pos, tyvar));
+
+						MiniLet(
+							dynid,
+							val,
+							interpretMiniExp(nenv, renamed),
+							pos,
+							tyvar
+						);
+					}
+					default: {
+						// OK, for other kinds, we just keep it as is
+						args[0];
+					}
+				}
+			} else if (name == "join") {
+				interpretMiniJoin(env, interpretMiniExp(env, args[0]), pos, tyvar);
+			} else {
+				def();
+			}
+		}
+		MiniCall(nfn, nargs, __,__): {
+			switch (nfn) {
+				MiniVar(nat, __, __): {
+					if (nat == "__native") {
+						println("TODO: Implement native " + getMiniString(nargs[2]) + " in interpreter/natives.flow");
+						def();
+					} else if (nat == ":") {
+						cfn = interpretMiniExp(env, nargs[0]);
+						println("Colon");
+						println(cfn);
+						interpretNormalMiniCall(env, cfn, args, pos, tyvar)
+					} else {
+						def();
+					}
+				}
+				default: def();
+			}
+		}
+		default: {
+			def();
+		}
+	}
+}
+
+interpretNormalMiniCall(env : MiniInterpreter, fn : MiniExp, oargs : [MiniExp], pos : int, tyvar : int) -> MiniExp {
+	args = map(oargs, \a -> interpretMiniExp(env, a));
 	switch (fn) {
 		MiniLambda(largs, body, __, __): {
 			if (length(largs) != length(args)) {
@@ -191,6 +204,30 @@ interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], pos : i
 		}
 		default: MiniCall(fn, args, pos, tyvar);
 	}
+}
+
+liftSequenceFromCall(env : MiniInterpreter, call : MiniCall) -> MiniCall {
+	if (length(call.args) > 0) {
+		switch (call.args[0]) {
+			MiniCall(ffn, aargs, pos, tyvar): {
+				switch (ffn) {
+					MiniVar(n, __, __): {
+						if (n == ";" && length(aargs) == 2) {
+							// We turn fn(a;b, ...)
+							// into a; fn(b, ...)
+							a = aargs[0];
+							b = aargs[1];
+							MiniCall(ffn, [a, MiniCall(call.fn, concat([b], tail(call.args)), call.pos, call.tyvar) ], pos, tyvar);
+						} else {
+							call;
+						}
+					}
+					default: call;
+				}
+			}
+			default: call;
+		}
+	} else call;
 }
 
 setMiniInterpreterVar(env : MiniInterpreter, name : string, value : MiniExp) -> MiniInterpreter {

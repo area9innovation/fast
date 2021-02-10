@@ -49,6 +49,17 @@ doMap(acc : [??], i : int, xs : [?], fn : (?) -> ??) -> [??] {
 	} else acc;
 }
 
+iter(xs : [?], fn  : (?) -> void) -> void {
+	doIter(0, xs, fn);
+}
+
+doIter(i : int, xs : [?], fn  : (?) -> void) -> void {
+	if (i < length(xs)) {
+		fn(xs[i]);
+		doIter(i + 1, xs, fn)
+	}
+}
+
 
 /*
 filter(a : [?], test : (?) -> bool) -> [?] {

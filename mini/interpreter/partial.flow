@@ -31,7 +31,7 @@ partialMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 				// This helps get rid of "__switchvalue" in switches where
 				// it is not needed, and that in turn helps downcast work
 				// correctly in tests/maybe.flow
-				interpretMiniExp(env, pe);
+				interpretMiniExpNoCalls(env, pe);
 			} else {
 				pe;
 			}

@@ -307,18 +307,23 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		sargs = getMiniCallArgs(args[0]);
 		field = getMiniString(args[1]);
 
-		mstructdef = lookupTree(env.env.structs, structname);
-		mstructdef ?? {
-			fieldi = findiDef(mstructdef.fields, \f -> {
-				f.name == field
-			}, -1);
-			if (fieldi != -1) {
-				sargs[fieldi];
-			} else {
-				println("Error: Can not find ." + field + " on " + structname + " with args " + toString(sargs));
-				def
-			}
-		} : def;
+		if (field == "structname") {
+			MiniString(structname, pos);
+		} else {
+			mstructdef = lookupTree(env.env.structs, structname);
+			mstructdef ?? {
+				fieldi = findiDef(mstructdef.fields, \f -> {
+					f.name == field
+				}, -1);
+				if (fieldi != -1) {
+					sargs[fieldi];
+				} else {
+					println("Error: Can not find ." + field + " on " + structname + " with args " + toString(sargs));
+					def
+				}
+			} : def;
+		}
+
 	} else if (fn.name == "__switchvalue") {
 		if (isMiniStaticCall(args[0])) {
 			structname = getMiniStaticCall(args[0]);
@@ -380,6 +385,14 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 			map(mstruct.fields, \f -> f.type);
 		} : [];
 		makeMiniArray(map(fields, \f -> miniType2Array(f, pos, tyvar)), pos, tyvar);
+
+	} else if (fn.name == "getUnionTypeNames" && isMiniString(args[0])) {
+		name = getMiniString(args[0]);
+		munion = lookupTree(env.env.unions, name);
+		typenames = munion ?? {
+			munion.typenames
+		} : [];
+		makeMiniArray(map(typenames, \f -> miniType2Array(f, pos, tyvar)), pos, tyvar);
 
 	} else {
 		println("TODO: Implement interpretation of " + fn.name + " " + toString(args));
