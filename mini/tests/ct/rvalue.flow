@@ -1,0 +1,86 @@
+import ds/array;
+
+// Pair(first : ?, second : ??);
+
+Json ::= JsonObject, JsonArray, JsonNull, JsonBool, JsonString, JsonDouble;
+		JsonObject(members : [Pair<string, Json>]);
+		JsonArray(value : [Json]);
+		JsonBool(v : bool);
+		JsonString(s : string);
+		JsonDouble(value : double);
+		JsonNull();
+
+RValue(value : ?, children : [RMember<?>]);
+	RMember(key : string, value : RValue<?>);
+
+
+
+iter(xs : [?], fn  : (?) -> void) -> void {
+	doIter(0, xs, fn);
+}
+
+doIter(i : int, xs : [?], fn  : (?) -> void) -> void {
+	if (i < length(xs)) {
+		fn(xs[i]);
+		doIter(i + 1, xs, fn)
+	}
+}
+
+fold(xs : [?], init : ??, fn : (??, ?) -> ??) -> ?? {
+	doFold(0, xs, init, fn);
+}
+
+doFold(i : int, xs : [?], init : ??, fn : (??, ?) -> ??) -> ?? {
+	if (i < length(xs)) {
+		doFold(i + 1, xs, fn(init, xs[i]), fn);
+	} else init;
+}
+
+
+main() {
+	__compiletime({
+		// Gives an array of types
+		typenames = getUnionTypeNames("Json");
+		println(typenames);
+		dyn(name, 
+			fold(typenames, None(), \acc, tn -> {
+				if (tn[0] == name) {
+					Some(tn);
+				} else acc
+			})
+		);
+	});
+}
+
+
+/*
+
+json2rvalue(j : Json) -> RValue<Json> {
+	switch (j) {
+		JsonObject(members): RValue(j, map(members, \m -> {
+			RMember(m.first, json2rvalue(m.second))
+		}));
+		JsonArray(value): RValue(j, mapi(value, \i, v -> {
+			RMember(i2s(i), json2rvalue(v))
+		}));
+		JsonNull(): RValue(j, []);
+		JsonBool(v): RValue(j, []);
+		JsonString(s): RValue(j, []);
+		JsonDouble(value): RValue(j, []);
+	}
+}
+
+rvalue2json(r : RValue<Json>) -> Json {
+	switch (r.value) {
+		JsonObject(__): JsonObject(map(r.children, \member -> {
+			Pair(member.key, rvalue2json(member.value))
+		}));
+		JsonArray(__): JsonArray(map(r.children, \m -> rvalue2json(m.value)));
+		JsonNull(): r.value;
+		JsonBool(v): r.value;
+		JsonString(s): r.value;
+		JsonDouble(value): r.value;
+	}
+}
+
+*/

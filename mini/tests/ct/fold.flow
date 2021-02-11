@@ -1,0 +1,25 @@
+
+fold(xs : [?], init : ??, fn : (??, ?) -> ??) -> ?? {
+	doFold(0, xs, init, fn);
+}
+
+doFold(i : int, xs : [?], init : ??, fn : (??, ?) -> ??) -> ?? {
+	if (i < length(xs)) {
+		doFold(i + 1, xs, fn(init, xs[i]), fn);
+	} else init;
+}
+
+main() {
+	__compiletime({
+		a = 1;
+		dyn(a, {
+			b = fold([1,2,3], 0, \acc, i -> {
+				if (i < a) {
+					println(i);
+				};
+				acc + i;
+			});
+			a + b;
+		});
+	})
+}
