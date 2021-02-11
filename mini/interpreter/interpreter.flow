@@ -37,7 +37,6 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 			MiniLambda(args, interpretMiniExpNoCalls(env, body), pos, tyvar);
 		}
 		MiniCall(fn, args, pos, tyvar): {
-			lift = liftSequenceFromCall(env, e);
 			if (env.evaluateCalls) {
 				// Check if we have a direct call to a built-in native, where we should ignore any fallback implementations
 				switch (fn) {
@@ -45,13 +44,13 @@ interpretMiniExp(env : MiniInterpreter, e : MiniExp) -> MiniExp {
 						if (isNativeInterpreted(name)) {
 							// OK, go do it immediately, ignoring any fallbacks that we could find under that name
 							interpretNormalMiniCall(env, fn, args, pos, tyvar);
-						} else interpretMiniCall(env, lift.fn, lift.args, pos, tyvar);
+						} else interpretMiniCall(env, fn, args, pos, tyvar);
 					}
-					default: interpretMiniCall(env, lift.fn, lift.args, pos, tyvar);
+					default: interpretMiniCall(env, fn, args, pos, tyvar);
 				}
 			} else {
-				eargs = map(lift.args, \a -> interpretMiniExp(env, a));
-				MiniCall(interpretMiniExp(env, lift.fn), eargs, pos, tyvar);
+				eargs = map(args, \a -> interpretMiniExp(env, a));
+				MiniCall(interpretMiniExp(env, fn), eargs, pos, tyvar);
 			}
 		}
 	}
@@ -186,8 +185,11 @@ interpretMiniCall(env : MiniInterpreter, fn : MiniExp, args : [MiniExp], pos : i
 }
 
 interpretNormalMiniCall(env : MiniInterpreter, fn : MiniExp, oargs : [MiniExp], pos : int, tyvar : int) -> MiniExp {
-	args = map(oargs, \a -> interpretMiniExp(env, a));
-	switch (fn) {
+	eargs = map(oargs, \a -> interpretMiniExp(env, a));
+	lifted = liftMiniArgs(env.env, 0, Pair([], []), eargs);
+	args = lifted.second;
+	
+	res = switch (fn) {
 		MiniLambda(largs, body, __, __): {
 			if (length(largs) != length(args)) {
 				env.env.onError(env.env, "", pos, "Expected " + i2s(length(largs)) + " args, got " + i2s(length(args)) + " for " + miniPretty(fn));
@@ -203,31 +205,54 @@ interpretNormalMiniCall(env : MiniInterpreter, fn : MiniExp, oargs : [MiniExp], 
 			evalMiniStaticCall(env, fn, args, pos, tyvar)
 		}
 		default: MiniCall(fn, args, pos, tyvar);
+	};
+	if (lifted.first != []) {
+		makeMiniSequence(lifted.first, res, pos, tyvar);
+	} else res;
+}
+
+// (a0;a1, b0;b1, c0;c1) is split into Pair<a0,b0,c0, a1,b1,c1> if a1 & b1 are static
+liftMiniArgs(env : MiniAst, i : int, acc : Pair<[MiniExp], [MiniExp]>, args : [MiniExp]) -> Pair<[MiniExp], [MiniExp]> {
+	if (i < length(args)) {
+		sp = splitMiniSequence(args[i]);
+		nacc = Pair(concat(acc.first, sp.first), arrayPush(acc.second, sp.second));
+		if (isMiniStatic(env, sp.second)) {
+			liftMiniArgs(env, i + 1, nacc, args);
+		} else Pair(
+			nacc.first,
+			concat(nacc.second, tailFrom(args, i + 1))
+		);
+	} else acc;
+}
+
+splitMiniSequence(e : MiniExp) -> Pair<[MiniExp], MiniExp> {
+	switch (e) {
+		MiniCall(fn, args, pos, tyvar): {
+			switch (fn) {
+				MiniVar(n, __, __): {
+					if (n == ";" && length(args) > 1) {
+						Pair(take(args, length(args) - 1), lastElement(args, e));
+					} else Pair([], e);
+				}
+				default: Pair([], e);
+			}
+		}
+		default: Pair([], e);
 	}
 }
 
-liftSequenceFromCall(env : MiniInterpreter, call : MiniCall) -> MiniCall {
-	if (length(call.args) > 0) {
-		switch (call.args[0]) {
-			MiniCall(ffn, aargs, pos, tyvar): {
-				switch (ffn) {
-					MiniVar(n, __, __): {
-						if (n == ";" && length(aargs) == 2) {
-							// We turn fn(a;b, ...)
-							// into a; fn(b, ...)
-							a = aargs[0];
-							b = aargs[1];
-							MiniCall(ffn, [a, MiniCall(call.fn, concat([b], tail(call.args)), call.pos, call.tyvar) ], pos, tyvar);
-						} else {
-							call;
-						}
-					}
-					default: call;
-				}
-			}
-			default: call;
-		}
-	} else call;
+makeMiniSequence(es : [MiniExp], val : MiniExp, pos : int, tyvar : int) -> MiniExp {
+	if (es == []) val
+	else {
+		MiniCall(
+			MiniVar(";", pos, tyvar),
+			[
+				es[0],
+				makeMiniSequence(tail(es), val, pos, tyvar)
+			],
+			pos, tyvar
+		)
+	}
 }
 
 setMiniInterpreterVar(env : MiniInterpreter, name : string, value : MiniExp) -> MiniInterpreter {
