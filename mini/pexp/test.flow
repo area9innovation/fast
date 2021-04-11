@@ -1,0 +1,14 @@
+import mini/pexp/parse;
+//import mini/pexp/interpret;
+//import mini/pexp/compile;
+
+main() {
+	file = getFileContent("mini/tests/positions.flow");
+	p = parsePExp(file, println);
+	println(p);
+//	va = interpretPExp(makeTree(), p);
+//	println(va);
+//	cpp = pexp2cpp(p, true);
+//	println(cpp);
+	quit(0);
+}

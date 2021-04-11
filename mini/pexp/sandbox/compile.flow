@@ -1,0 +1,129 @@
+import mini/pexp/pexp;
+import text/blueprint;
+
+export {
+	pexp2cpp(p : PExp, statement : bool) -> string;
+}
+
+pexp2cpp(p : PExp, statement : bool) -> string {
+	todo = \ -> {
+		println("TODO: Produce cpp for " + toString(p) + " as " + if (statement) "statement" else "expression");
+		"# TODO #";
+	}
+	switch (p) {
+		PBool(v): b2s(v);
+		PInt(v): i2s(v);
+		PDouble(v): {
+			dt = d2s(v);
+			if (strContains(dt, ".")) dt else dt + ".";
+		}
+		PString(v): toString(v);
+		PVar(var): var;
+		PLet(var, value, body): {
+			if (statement) {
+				blueprint("
+					auto %var% = %value%;
+					%body%", [
+					"var", var,
+					"value", pexp2cpp(value, false),
+					"body", pexp2cpp(body, true),
+				]);
+			} else {
+				// TODO: Figure out how to make a let-binding in an expression context
+				todo();
+			}
+		}
+		PIf(cond, then, else_): {
+			if (statement) {
+				blueprint("
+					if (%cond%) {
+						%then%
+					} else {
+						%else%
+					}", [
+					"cond", pexp2cpp(cond, false),
+					"then", pexp2cpp(then, true),
+					"else", pexp2cpp(else_, true),
+				])
+			} else {
+				blueprint("
+					(%cond%) ? (
+						%then% 
+					) : (
+						%else%
+					)", [
+					"cond", pexp2cpp(cond, false),
+					"then", pexp2cpp(then, false),
+					"else", pexp2cpp(else_, false),
+				])
+			}
+		}
+		PCall(fn, args): {
+			// Check if it is a call to a known operator
+			builtin = switch (fn) {
+				PVar(fnname): {
+					namedFn2cpp(fnname, args);
+				}
+				default: "";
+			};
+			if (builtin != "") builtin
+			else {
+				blueprint("%fn%(%args%)", [
+					"fn", pexp2cpp(fn, false),
+					"args", superglue(args, \a -> pexp2cpp(a, false), ", ")
+				])
+			}
+		}
+		PArrayValue(exps): {
+			todo();
+		}
+		PArray(exps): {
+			todo();
+		}
+		PSequence(exps): {
+			if (statement) {
+				blueprint("
+					{
+						%exps%
+					}", [
+					"exps", superglue(exps, \a -> pexp2cpp(a, true), ";\n")
+				])
+			} else {
+				blueprint("
+					(
+						%exps%
+					)", [
+					"exps", superglue(exps, \a -> pexp2cpp(a, false), ",\n")
+				])
+			}
+		}
+		PLambda(args, body): {
+			blueprint("
+			[] (%args%) {
+				%body%
+			}", [
+				"args", superglue(args, \a -> "auto " + a, ", "),
+				"body", pexp2cpp(body, true)	// flag that we need a return
+			])
+		}
+	}
+}
+
+namedFn2cpp(fnname : string, args : [PExp]) {
+	binops = [
+		"||", "&&",
+		"==", "!=",
+		"<=", "<", ">", ">=",
+		"+", "-", 
+		"*", "/", "%", 
+	];
+	if (contains(binops, fnname)) {
+		"(" + pexp2cpp(args[0], false) + fnname + pexp2cpp(args[1], false) + ")"
+	} else {
+		"";
+	}
+}
+/*
+	bin("index"), bin("dot"),
+	bin("if"), 
+*/

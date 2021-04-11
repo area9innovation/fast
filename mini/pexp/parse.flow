@@ -1,0 +1,130 @@
+import mini/pexp/pexp;
+import mini/pexp/values;
+import mini/pexp/pexp_parser;
+import text/gringo/gringo_interpreter;
+import text/deserialize_string;
+
+export {
+	parsePExp(program : string, onError : (string) -> void) -> PExp;
+}
+
+parsePExp(program : string, onError : (string) -> void) -> PExp {
+	if (false) {
+		gringoTypedParse(program, pexpTypeAction(onError), parse_flow, PSequence([]), onError);
+	} else {
+		gterm = prepareGringoParser("#include mini/pexp/pexp.gringo", onError);
+		if (gterm != GEpsilon()) {
+			// OK, parse the program
+			checkGringoTypedOps(pexpTypeOps(), gterm);
+			gringoInterpretedParse(program, pexpTypeAction(onError), gterm, PSequence([]), onError);
+		} else {
+			onError("Could not understand grammar");
+			PSequence([]);
+		}
+
+	}
+}
+
+
+// This defines the semantic actions used in the grammar
+pexpTypeAction(onError : (string) -> void) -> GringoAction<List<PExp>> {
+	gringoTypedAction(
+		// Make a string
+		\s : string -> PString(s),
+		// Extract a string from a value (typically a string)
+		getPString,
+		// Construct the basic value
+		\b -> PBool(b), // We do not have bools, so use ints
+		\i -> PInt(s2i(i)),
+		\d -> PDouble(s2d(d)), // We do not have doubles, so just use ints
+		// Construct an empty array
+		\ -> PArray([]),
+		// Append an element to an array
+		\h, t -> {
+			switch (t) {
+				PArray(es): PArray(arrayPush(es, h));
+				default: t;
+			}
+		},
+		pexpTypeOps()
+	);
+}
+
+pexpTypeOps() -> GringoTypedOperators<PExp> {
+	un = \op -> Pair(op, \l -> PCall(PVar(op), [l]));
+	bin = \op -> Pair(op, \l, r -> PCall(PVar(op), [l, r]));
+	tri = \op -> Pair(op, \l, m, r -> PCall(PVar(op), [l, m, r]));
+	GringoTypedOperators(
+		// A Tree<string, (Exp) -> Exp> of unary operator constructors
+		pairs2tree([
+			un("negate"),
+			un("not"),
+			Pair("unescape", \e -> {
+				switch (e) {
+					PString(t): PString(deserializeString(t).first);
+					default: e;
+				}
+			}),
+			Pair("id", \e -> {
+				PVar(getPString(e))
+			}),
+			Pair("sequence", \e -> {
+				PSequence(getPArray(e));
+			}),
+			Pair("hex", \e -> {
+				PInt(parseHex(getPString(e)))
+			}),
+			Pair("import", \e -> {
+				PImport(getPString(e))
+			}),
+			Pair("forbid", \e -> {
+				PForbid(getPString(e))
+			}),
+			Pair("export", \e -> {
+				PExport(e)
+			}),
+			Pair("ref", \e -> {
+				PRef(e)
+			}),
+			Pair("deref", \e -> {
+				PRef(e)
+			}),
+		]),
+		// A Tree<string, (Exp, Exp) -> Exp> of binary operator constructors
+		pairs2tree([
+			bin("||"), bin("&&"),
+			bin("=="), bin("!="),
+			bin("<="), bin("<"), bin(">"), bin(">="),
+			bin("+"), bin("-"), 
+			bin("*"), bin("/"), bin("%"), 
+			bin("index"), bin("dot"),
+			bin("if"),
+			Pair("lambda", \args, b -> {
+				fargs = map(getPArray(args), getPString);
+				PLambda(fargs, b);
+			}),
+			Pair("call", \fn, args -> {
+				PCall(fn, getPArray(args))
+			})
+		]),
+		// A Tree<string, (Exp, Exp, Exp) -> Exp> of ternary operator constructors
+		pairs2tree([
+			tri("ifelse"),
+			Pair("let", \a, b, c -> {
+				PLet(getPString(a), b, c)
+			})
+		]),
+		// A Tree<string, (Exp, Exp, Exp, Exp) -> Exp of quadrary operators
+		pairs2tree([
+			Pair("let_typed", \a, b, c, d -> {
+				mtype = getPType(b);
+				mtype ?? {
+					PLet(getPString(a), PTyped(c, mtype), d)
+				} : {
+					println("ERROR");
+					PLet(getPString(a), c, d);
+				}
+			})
+		])
+	);
+}

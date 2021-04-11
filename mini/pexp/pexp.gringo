@@ -1,0 +1,152 @@
+flow = '\uFEFF'? ws expsemi;
+
+expsemi = $"list" exp $"cons" (#";" ws exp $"cons")* (";" ws)? $"sequence"
+	| $"list" $"sequence"; 
+
+exp = 
+	toplevel
+	|> (id "=" ws exp #";" ws exp $"let"
+		| id ":" ws type "=" ws exp #";" ws exp $"let_typed"
+	)
+	|> exp ":=" ws exp $":="
+	|> exp < ("|>" ws exp $"|>")*
+	|> exp "||" ws exp $"||"
+	|> exp "&&" ws exp $"&&"
+	|> exp "==" ws exp $"==" | exp "!=" ws exp $"!="
+	|> exp ("<=" ws exp $"<=" | "<" ws exp $"<" | ">=" ws exp $">=" | ">" ws exp $">")
+	|> exp < ("+" ws exp $"+" | "-" ws exp ws $"-")*
+	|> exp ("*" ws exp $"*" | "/" ws exp $"/" | "%" ws exp $"%")*
+
+	// To ensure that ?? does not consider the : as part of the type
+	|> exp (":" ws type $":")+
+
+	|> (
+		exp "??" ws <exp ":" ws exp $"maybe"
+	)
+
+	|> (
+		'!' ws exp $"not"
+		| "-" ws exp $"negate"
+		| backslash ws lambdaargs "->" ws exp "" $"lambda" // The "" makes right-recursion disappear
+		| exp (
+			"(" ws exps ")" ws $"call"
+			| '(' ws exp "with" s fields ')' ws $"with"
+			| "." ws id "::=" ws exp $"::="
+			| "." ws id $"dot"
+			| "[" ws exp "]" ws $"index"
+		)*
+	)
+
+	|> '^' ws exp $"deref"
+
+	|> (
+		"if" !letterOrDigit ws "(" ws exp ")" ws exp "else" ws exp $"ifelse" 
+		| "if" !letterOrDigit ws "(" ws exp ")" ws exp $"if"
+		| "(" ws exp ")" ws 
+		| "ref" !letterOrDigit ws exp $"ref"
+//		| switch
+//		| "cast" !letterOrDigit ws '(' ws exp "->" ws type ')' ws $"cast"
+		| brace
+		| "true" $"true"
+		| "false" $"false"
+		| id ws $"id"
+		| string ws $"unescape"
+		| "0x" $(hexdigit+) ws $"hex"
+		| double $"s2d"
+		| int ws $"s2i"
+		| "[" ws exps "]" ws
+	);
+
+	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"nil";
+		fieldassign = id '=' ws exp $"fieldassign";
+
+toplevel = import | export | forbid | native;
+
+import = "import" s $path ws ';' ws $"import";
+export = "export" ws brace ws $"export"; 
+forbid = "forbid" s $path ws $"forbid";
+	path = bid ('/' bid)*;
+
+native = "native" s id ':' ws "$list" ("io" ws $"cons")? type '=' ws $nativename ws $"native";
+	nativename = bid ('.' bid)*;
+
+/*
+
+union = id typars "::=" ws typenames ';' ws $"uniondef";
+
+	// listof(typename, ",")
+	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
+
+
+functionOrStruct = 
+	// Forward declaration
+	  id '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
+	| $$pos id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
+
+	// This form makes both a forward-type declaration as well as the definition
+	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" returnType $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
+	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
+	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" exp ';'? ws $"lambda" $"define"
+
+	// When we only have names
+	| id $$pos '(' ws names ')' ws exp ';'? ws $"lambda" $"define"
+
+	// Forward type declarations
+	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
+	| id ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
+	// Struct
+	| $$pos id ':' ws '(' ws structargs ')' ws ';' ws $"structdef"
+	;
+
+	// listof(funarg, ",")
+	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)? | $"nil";
+	funarg = id ':' ws type $$":" $"binop";
+
+	// listof(structarg, ",")
+	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
+	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ':' ws type $"cons" $$"__structarg" $"var" $"swap" $"call";
+
+	returnType = "->" ws type;
+
+	| id ':' ws type ';'? ws $"typedef";
+
+*/
+
+brace = "{" ws expsemi "}" ws;
+
+exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
+	| $"list";
+
+lambdaargs = $"list" id ws $"cons" ("," ws id ws $"cons")* ("," ws)? 
+		| $"list";
+
+hexdigit = '0'-'9'
+	| 'a'-'f'
+	| 'A'-'F';
+
+id = $bid ws;
+
+bid = ('a'-'z' | 'A'-'Z' | '_') (letterOrDigit)*;
+
+letterOrDigit = 'a'-'z'
+	| 'A'-'Z'
+	| '_'
+	| '0'-'9';
+
+string = $('"' onechar_* '"') ws;
+
+onechar_ = backslash escapedchar_
+	| !'"' !backslash anychar;
+
+escapedchar_ = backslash | '"' | "n" | "t" | "r";
+backslash = '\';
+anychar = '0x0000'-'0xffff';
+
+double = int '.' int? | '.' int;
+
+int = $'0'-'9'+;
+
+ws = s*;
+s = " " | "\t" | "\n";
+
+flow

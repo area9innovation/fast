@@ -1,0 +1,70 @@
+import mini/pexp/pexp;
+import maybe;
+
+export {
+	getPBool(e : PExp) -> bool;
+	getPInt(e : PExp) -> int;
+	getPDouble(e : PExp) -> double;
+	getPString(e : PExp) -> string;
+	getPArrayValue(e : PExp) -> [PValue];
+	getPArray(e : PExp) -> [PExp];
+
+	getPSequence(e : PExp) -> [PExp];
+	getPType(e : PExp) -> Maybe<PType>;
+}
+
+getPBool(e : PExp) -> bool {
+	switch (e) {
+		PBool(b): b;
+		default: false;
+	}
+}
+
+getPInt(e : PExp) -> int {
+	switch (e) {
+		PInt(d): d;
+		default: 0;
+	}
+}
+
+getPDouble(e : PExp) -> double {
+	switch (e) {
+		PDouble(d): d;
+		default: 0.0;
+	}
+}
+
+getPString(e : PExp) -> string {
+	switch (e) {
+		PString(s): s;
+		default: "";
+	}
+}
+
+getPArrayValue(e : PExp) -> [PValue] {
+	switch (e) {
+		PArrayValue(es): es;
+		default: [];
+	}
+}
+
+getPArray(e : PExp) -> [PExp] {
+	switch (e) {
+		PArray(es): es;
+		default: [];
+	}
+}
+
+getPSequence(e : PExp) -> [PExp] {
+	switch (e) {
+		PSequence(es): es;
+		default: [];
+	}
+}
+
+getPType(e : PExp) -> Maybe<PType> {
+	switch (e) {
+		PType(): Some(e);
+		default: None();
+	}
+}

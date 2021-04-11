@@ -1,0 +1,39 @@
+export {
+	PValue ::= PBool, PInt, PDouble, PString, 
+		// When evaluated
+		PArrayValue, PLambda;
+
+		PBool(v : bool);
+		PInt(v : int);
+		PDouble(v : double);
+		PString(v : string);
+		PArrayValue(values : [PValue]);
+
+	PExp ::= PValue, PTopLevel, PType,
+		PRef, PVar, PLet, PIf, PCall, 
+		PArray, PSequence,
+		PTyped;
+
+	PTopLevel ::= PImport, PForbid, PExport;
+		PImport(path : string);
+		PForbid(path : string);
+		PExport(exports : PExp);
+
+		PRef(value : PExp);
+		PVar(var : string);
+		PLet(var : string, value : PExp, body : PExp);
+		PIf(cond : PExp, then : PExp, else_ : PExp);
+		// Array construction
+		PArray(exps : [PExp]);
+		PSequence(exps : [PExp]);
+		PCall(fn : PExp, args : [PExp]);
+		PLambda(args : [string], body : PExp);
+
+		PTyped(value : PExp, type : PType);
+		// Definitions
+		// Types
+		// PSwitch
+		// PWith
+	PType ::= PTypeInt;
+		PTypeInt();
+}

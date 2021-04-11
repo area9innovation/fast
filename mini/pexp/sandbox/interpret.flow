@@ -1,0 +1,54 @@
+import mini/pexp/pexp;
+import mini/pexp/values;
+import ds/tree;
+
+export {
+	interpretPExp(env : Tree<string, PValue>, e : PExp) -> PValue;
+}
+
+interpretPExp(env : Tree<string, PValue>, e : PExp) -> PValue {
+	switch (e) {
+		PValue(): e;
+		PVar(var): lookupTreeDef(env, var, PBool(false));
+		PLet(var, value, body): {
+			evalue = interpretPExp(env, value);
+			nenv = setTree(env, var, evalue);
+			interpretPExp(nenv, body);
+		}
+		PIf(cond, then, else_): {
+			econd = interpretPExp(env, cond);
+			interpretPExp(env, if (getPBool(econd)) then else else_)
+		}
+		PCall(fn, args): {
+			elambda = interpretPExp(env, fn);
+			switch (elambda) {
+				PLambda(largs, body): {
+					eargs = map(args, \a -> interpretPExp(env, a));
+					nenv = foldi(largs, env, \i, acc, larg -> {
+						setTree(acc, larg, eargs[i])
+					});
+					interpretPExp(nenv, body)
+				}
+				default: PBool(false);
+			}
+		}
+		PArray(exps): {
+			PArrayValue(map(exps, \ee -> {
+				interpretPExp(env, ee)
+			}))
+		}
+		PSequence(exps): {
+			fold(exps, PBool(false), \acc : PValue, ee -> {
+				interpretPExp(env, ee)
+			})
+		}
+		PLambda(args, body): {
+			PLambda(args, instantiatePClosure(env, args, body));
+		}
+	}
+}
+
+instantiatePClosure(env : Tree<string, PValue>, args : [string], body : PExp) -> PExp {
+	println("TODO: instantiate free vars");
+	body;
+}

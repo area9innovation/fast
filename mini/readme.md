@@ -44,6 +44,7 @@
 - [ICFP inspiration](#icfp-inspiration)
 - [Partial evaluation as a core primitive](#partial-evaluation-as-a-core-primitive)
 - [Use cases](#use-cases)
+- [New plan](#new-plan)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -950,3 +951,21 @@ New DSLs to define Curator:
 - Translation
 - Tasks/communication
 
+# New plan
+
+The Forth stuff is too complicated.
+The restriction of the mini-lambda in the entire compiler is too untyped.
+
+1. Have complete AST after parsing, using typed Gringo grammar.
+   
+   PExp = Parsed Expressions
+
+2. Once files and dependents are parsed, desugar constructs:
+
+   DExp = Desugared Expressions
+
+3. Once dependencies are desugared, do type inference
+
+   TExp = Typed Expressions
+
+4. Then plug into the backends.
