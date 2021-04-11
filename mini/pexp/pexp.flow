@@ -1,23 +1,27 @@
 export {
-	PValue ::= PBool, PInt, PDouble, PString, 
+	PValue ::= PVoid, PBool, PInt, PDouble, PString, 
 		// When evaluated
 		PArrayValue, PLambda;
 
+		PVoid();
 		PBool(v : bool);
 		PInt(v : int);
 		PDouble(v : double);
 		PString(v : string);
 		PArrayValue(values : [PValue]);
 
-	PExp ::= PValue, PTopLevel, PType,
-		PRef, PVar, PLet, PIf, PCall, 
-		PArray, PSequence,
-		PTyped;
+	PExp ::= PValue, PTopLevel, PType, PArgType,
+		PRef, PVar, PLet, PIf, PCall, PCallOp,
+		PArray, PSequence, PSwitch, PCase;
 
-	PTopLevel ::= PImport, PForbid, PExport;
+	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PUnion, PStruct, PStructArg;
 		PImport(path : string);
 		PForbid(path : string);
 		PExport(exports : PExp);
+		PGlobal(id : string, value : PExp);
+		PUnion(typename : PTypeName, types : [PTypeName]);
+		PStruct(id : string, structArgs : [PStructArg]);
+			PStructArg(id : string, ismutable : bool, type : PType);
 
 		PRef(value : PExp);
 		PVar(var : string);
@@ -27,13 +31,22 @@ export {
 		PArray(exps : [PExp]);
 		PSequence(exps : [PExp]);
 		PCall(fn : PExp, args : [PExp]);
-		PLambda(args : [string], body : PExp);
+		// For built-in operators
+		PCallOp(op : string, args : [PExp]);
+		PLambda(args : [PArgType], body : PExp);
 
-		PTyped(value : PExp, type : PType);
+			PArgType(id : string, type : PType);
+
+		PSwitch(value : PExp, cases : [PExp]);
+		PCase(id : string, args : [string], body : PExp);
+
 		// Definitions
 		// Types
 		// PSwitch
 		// PWith
-	PType ::= PTypeInt;
+	PType ::= PTypeInt, PTypePar, PTypeName;
 		PTypeInt();
+
+	PTypeName(id : string, typars : [PType]);
+	PTypePar(id : string);
 }

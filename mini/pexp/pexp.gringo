@@ -1,11 +1,48 @@
-flow = '\uFEFF'? ws expsemi;
+flow = '\uFEFF'? ws toplevels;
+
+toplevels = $"list" toplevel $"cons" (#";" ws toplevel $"cons")*  (";" ws)?;
+
+toplevel = import | export | forbid | native | union | global | functionOrStruct;
+
+import = "import" s $path ws ';' ws $"import";
+export = "export" ws brace ws $"export"; 
+forbid = "forbid" s $path ws $"forbid";
+	path = bid ('/' bid)*;
+
+native = "native" s id ':' ws "$list" ("io" ws $"cons")? type '=' ws $nativename ws $"native";
+	nativename = bid ('.' bid)*;
+
+union = typename "::=" ws typenames $"union";
+
+	typenames = $"list" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"list";
+
+global = id "=" ws exp $"global" 
+		| id ":" ws type "=" ws exp $"global_typed";
+
+functionOrStruct = 
+	// Forward declaration
+	  id fntype brace $"fndef_typed" 
+	| id fntype $"fntypedef"
+	// TODO: Add the type where the return type is missing
+	| id '(' ws structargs ')' ws $"structdef" // This is a struct!
+
+	// When we only have names for the arguments
+
+	// Forward type declarations
+	| id ':' ws type $"typedef"
+	// Struct
+	| id ':' ws '(' ws structargs ')' ws ';' ws $"structdef"
+	;
+
+	// listof(structarg, ",")
+	structargs = $"list" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"list";
+	structarg = $"list" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? id ':' ws type $"structarg";
 
 expsemi = $"list" exp $"cons" (#";" ws exp $"cons")* (";" ws)? $"sequence"
 	| $"list" $"sequence"; 
 
 exp = 
-	toplevel
-	|> (id "=" ws exp #";" ws exp $"let"
+	(id "=" ws exp #";" ws exp $"let"
 		| id ":" ws type "=" ws exp #";" ws exp $"let_typed"
 	)
 	|> exp ":=" ws exp $":="
@@ -20,17 +57,15 @@ exp =
 	// To ensure that ?? does not consider the : as part of the type
 	|> exp (":" ws type $":")+
 
-	|> (
-		exp "??" ws <exp ":" ws exp $"maybe"
-	)
+	|> exp "??" ws <exp ":" ws exp $"maybe"
 
 	|> (
 		'!' ws exp $"not"
 		| "-" ws exp $"negate"
-		| backslash ws lambdaargs "->" ws exp "" $"lambda" // The "" makes right-recursion disappear
+		| lambda
 		| exp (
 			"(" ws exps ")" ws $"call"
-			| '(' ws exp "with" s fields ')' ws $"with"
+			| with
 			| "." ws id "::=" ws exp $"::="
 			| "." ws id $"dot"
 			| "[" ws exp "]" ws $"index"
@@ -44,81 +79,85 @@ exp =
 		| "if" !letterOrDigit ws "(" ws exp ")" ws exp $"if"
 		| "(" ws exp ")" ws 
 		| "ref" !letterOrDigit ws exp $"ref"
-//		| switch
-//		| "cast" !letterOrDigit ws '(' ws exp "->" ws type ')' ws $"cast"
+		| switch
+		| "cast" !letterOrDigit ws '(' ws exp "->" ws type ')' ws $"cast"
 		| brace
-		| "true" $"true"
-		| "false" $"false"
-		| id ws $"id"
+		| "true" !letterOrDigit ws $"true"
+		| "false" !letterOrDigit ws $"false"
+		| id $"var"
 		| string ws $"unescape"
 		| "0x" $(hexdigit+) ws $"hex"
-		| double $"s2d"
-		| int ws $"s2i"
+		| $double $"s2d"
+		| $int ws $"s2i"
 		| "[" ws exps "]" ws
 	);
 
-	fields = $"nil" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"nil";
+with = '(' ws exp "with" s fields ')' ws $"with";
+	fields = $"list" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"list";
 		fieldassign = id '=' ws exp $"fieldassign";
 
-toplevel = import | export | forbid | native;
+switch = "switch" !letterOrDigit ws 
+		'(' ws exp ')' ws 
+		'{' ws cases #'}' ws $"switch";
 
-import = "import" s $path ws ';' ws $"import";
-export = "export" ws brace ws $"export"; 
-forbid = "forbid" s $path ws $"forbid";
-	path = bid ('/' bid)*;
+	cases = $"list" defaultOrNamedCase $"cons" (defaultOrNamedCase $"cons")*
+			| $"list";
 
-native = "native" s id ':' ws "$list" ("io" ws $"cons")? type '=' ws $nativename ws $"native";
-	nativename = bid ('.' bid)*;
+	defaultOrNamedCase = 
+		"default" !letterOrDigit ws ':' ws exp (';' ws)? $"default" 
+		| id '(' ws names ')' ws ':' ws exp (';' ws)?  $"case";
 
-/*
-
-union = id typars "::=" ws typenames ';' ws $"uniondef";
-
-	// listof(typename, ",")
-	typenames = $"nil" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"nil";
-
-
-functionOrStruct = 
-	// Forward declaration
-	  id '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
-	| $$pos id '(' ws structargs ')' ws ';' ws $"structdef" // This is a struct!
-
-	// This form makes both a forward-type declaration as well as the definition
-	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" returnType $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
-	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" brace $"lambda" $"define"
-	| id '(' ws $"dup" $$pos $"swap" funargs ')' ws $"splitargs" $$"auto" $"type0" $"fntype" $"rot" $"swap" $"typedef" exp ';'? ws $"lambda" $"define"
-
-	// When we only have names
-	| id $$pos '(' ws names ')' ws exp ';'? ws $"lambda" $"define"
-
-	// Forward type declarations
-	| id ':' ws '(' ws typedargs ')' ws returnType ';' ws $"fntype" $"typedef"
-	| id ':' ws '(' ws types ')' ws returnType ';' ws $"fntype" $"typedef"
-	// Struct
-	| $$pos id ':' ws '(' ws structargs ')' ws ';' ws $"structdef"
-	;
-
-	// listof(funarg, ",")
-	funargs = $"nil" funarg $"cons" ("," ws funarg $"cons")* ("," ws)? | $"nil";
-	funarg = id ':' ws type $$":" $"binop";
-
-	// listof(structarg, ",")
-	structargs = $"nil" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"nil";
-	structarg = $"nil" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? $"isnil" id $"swap" $"list2" ':' ws type $"cons" $$"__structarg" $"var" $"swap" $"call";
-
-	returnType = "->" ws type;
-
-	| id ':' ws type ';'? ws $"typedef";
-
-*/
+	names = $"list" id $"cons" ("," ws id $"cons")* | $"list";
 
 brace = "{" ws expsemi "}" ws;
+
+lambda = backslash ws lambdaargs "->" ws exp "" $"lambda"; // The "" makes right-recursion disappear
+	lambdaargs = $"list" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? 
+		| $"list";
+
+	lambdaarg = id ":" ws type $":" |
+		id $"var" $$"auto" $":";	// We add auto automatically
 
 exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
 	| $"list";
 
-lambdaargs = $"list" id ws $"cons" ("," ws id ws $"cons")* ("," ws)? 
-		| $"list";
+//
+// Types
+//
+
+type = 	
+		"bool" !letterOrDigit ws $"bool"
+		| "int" !letterOrDigit ws $"int"
+		| "double" !letterOrDigit ws $"double"
+		| "string" !letterOrDigit ws $"string"
+		| "flow" !letterOrDigit ws $"flow"
+		| "void" !letterOrDigit ws $"void"
+		| "native" !letterOrDigit ws $"native"
+		| "ref" !letterOrDigit ws type $"reftype"
+
+		| fntype
+		| typename
+
+		| "[" ws type "]" ws $"arraytype"
+
+		| $("?"+) ws $"polytype"
+		| id ":" type $"namedtype"
+	;
+
+fntype = "(" ws types ")" ws "->" ws type $"fntype";
+
+typename = id typars $"typename";
+
+typars = "<" ws types ">" ws
+	| $"list";
+
+// listof(type, ",")
+types = $"list" type $"cons" ("," ws type $"cons")* ("," ws)? 
+	| $"list";
+
+//
+// Lexing
+//
 
 hexdigit = '0'-'9'
 	| 'a'-'f'
@@ -144,7 +183,7 @@ anychar = '0x0000'-'0xffff';
 
 double = int '.' int? | '.' int;
 
-int = $'0'-'9'+;
+int = '0'-'9'+;
 
 ws = s*;
 s = " " | "\t" | "\n";
