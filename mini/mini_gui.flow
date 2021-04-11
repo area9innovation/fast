@@ -104,7 +104,8 @@ main() {
 				}, [], []),
 				MTextButton("COMPILE", \ -> {
 					println("COMPILING");
-					program = miniAst2BProgram(getValue(db).program);
+					expprogram = miniAst2BExpProgram(getValue(db).program);
+					program = bexpProgram2BProgram(expprogram);
 					flowprogram = bprogram2flow(program);
 					jsprogram = bprogram2js(program);
 					setFileContent("output.flow", flowprogram);

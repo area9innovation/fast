@@ -3,7 +3,7 @@ import mini/forth/stack;
 import mini/exp/value;
 import mini/exp/flow_parser;
 
-import gringo/gringo_lib;
+import tools/gringo/gringo_lib;
 
 import lingo/linecolumn;
 import math/stringmath;

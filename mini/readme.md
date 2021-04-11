@@ -43,6 +43,7 @@
 - [Editor DSL](#editor-dsl)
 - [ICFP inspiration](#icfp-inspiration)
 - [Partial evaluation as a core primitive](#partial-evaluation-as-a-core-primitive)
+- [Use cases](#use-cases)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -318,7 +319,7 @@ dependents on that id. This should hopefully speed things up.
 ## Gringo
 
 Gringo is a new parser, similar to Lingo, just with better performance, easier handling
-of associativity and precedence. See `gringo/readme.md` for now info.
+of associativity and precedence. See `flow9/tools/gringo/readme.md` for now info.
 
 ## Mini Commands
 
@@ -471,7 +472,6 @@ value, and then use "define" to commit the definition to the compile server.
 
 TODO: 
 - Fix parsing the command line to allow spaces in strings, otherwise, it is pretty hard to test.
-- Document how to write a Gringo grammar with semantic actions, maybe implement Basic?
 - Consider adding other syntaxes, just to demonstrate the multi-headed nature of Mini. Maybe a
   subset of JS or Java or ML?
 

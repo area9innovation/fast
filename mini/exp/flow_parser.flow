@@ -1,5 +1,5 @@
 // Produced by  flowcpp gringo/gringo.flow -- file=mini/exp/flow.gringo compile=1
-import gringo/compiler/dcode_lib;
+import text/gringo/dcode_lib;
 import string;
 
 export {
@@ -1611,7 +1611,7 @@ parse_exp(acc : DParseAcc) -> bool {
 									true
 								} else {
 									{
-										addError(acc, "Expected \";\"");
+										addParseError(acc, "Expected \";\"");
 										true
 									}
 								}) {
@@ -3015,7 +3015,7 @@ parse_exp12(acc : DParseAcc) -> bool {
 								true
 							} else {
 								{
-									addError(acc, "Expected \")\"");
+									addParseError(acc, "Expected \")\"");
 									true
 								}
 							}) {
@@ -3749,7 +3749,7 @@ parse_brace(acc : DParseAcc) -> bool {
 										true
 									} else {
 										{
-											addError(acc, "Expected \";\"");
+											addParseError(acc, "Expected \";\"");
 											true
 										}
 									}) {
@@ -3795,7 +3795,7 @@ parse_brace(acc : DParseAcc) -> bool {
 										true
 									} else {
 										{
-											addError(acc, "Expected \"}\"");
+											addParseError(acc, "Expected \"}\"");
 											true
 										}
 									}) {
@@ -4016,7 +4016,7 @@ parse_switch(acc : DParseAcc) -> bool {
 																									true
 																								} else {
 																									{
-																										addError(acc, "Expected \"}\"");
+																										addParseError(acc, "Expected \"}\"");
 																										true
 																									}
 																								}) {

@@ -120,6 +120,8 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		}
 	} else if (fn.name == "__void") {
 		def
+	} else if (fn.name == "__type" || fn.name == "__fntype") {
+		def
 
 
 	//
@@ -182,7 +184,10 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 		if (isMiniArray(args[0])) {
 			ar = getMiniArrayValue(args[0]);
 			MiniInt(length(ar), pos, tyvar)
-		} else def;
+		} else {
+			println("Expected array, got " + miniPretty(args[0]));
+			def;
+		}
 	} else if (fn.name == "concat") {
 		if (isMiniArray(args[0]) && isMiniArray(args[1])) {
 			left = getMiniArrayValue(args[0]);
@@ -211,6 +216,9 @@ evalMiniStaticCall(env : MiniInterpreter, fn : MiniVar, args : [MiniExp], pos : 
 				pos, tyvar
 			);
 		} else def;
+
+	} else if (fn.name == "__array") {
+		def;
 
 	// TODO: Add natives
 	// concat, map, mapi, fold, foldi, replace, subrange, iter, iteri, iteriUntil, filter
