@@ -10,8 +10,9 @@ export {
 	getPArray(e : PExp) -> [PExp];
 
 	getPSequence(e : PExp) -> [PExp];
-	getPType(e : PExp) -> Maybe<PType>;
-	getPTypeName(e : PExp) -> Maybe<PTypeName>;
+	getPType(e : PExp) -> PType;
+	getPTypeName(e : PExp) -> PTypeName;
+	getPTypeFunction(p : PExp) -> PTypeFunction;
 }
 
 getPBool(e : PExp) -> bool {
@@ -63,16 +64,23 @@ getPSequence(e : PExp) -> [PExp] {
 	}
 }
 
-getPType(e : PExp) -> Maybe<PType> {
+getPType(e : PExp) -> PType {
 	switch (e) {
-		PType(): Some(e);
-		default: None();
+		PType(): e;
+		default: PTypeName("", []);
 	}
 }
 
-getPTypeName(e : PExp) -> Maybe<PTypeName> {
+getPTypeName(e : PExp) -> PTypeName {
 	switch (e) {
-		PTypeName(__, __): Some(e);
-		default: None();
+		PTypeName(__, __): e;
+		default: PTypeName("", []);
+	}
+}
+
+getPTypeFunction(p : PExp) -> PTypeFunction {
+	switch (p) {
+		PTypeFunction(__, __): p;
+		default: PTypeFunction([], PTypeName("", []))
 	}
 }

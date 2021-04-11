@@ -11,17 +11,21 @@ export {
 		PArrayValue(values : [PValue]);
 
 	PExp ::= PValue, PTopLevel, PType, PArgType,
+		PStringInclude,
 		PRef, PVar, PLet, PIf, PCall, PCallOp,
-		PArray, PSequence, PSwitch, PCase;
+		PArray, PSequence, PSwitch, PCase, PCast;
 
-	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PUnion, PStruct, PStructArg;
+	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg;
 		PImport(path : string);
 		PForbid(path : string);
 		PExport(exports : PExp);
 		PGlobal(id : string, value : PExp);
+		PNative(id : string, isIo : bool, type : PType, name : string);
 		PUnion(typename : PTypeName, types : [PTypeName]);
 		PStruct(id : string, structArgs : [PStructArg]);
 			PStructArg(id : string, ismutable : bool, type : PType);
+		
+		PStringInclude(path : string);
 
 		PRef(value : PExp);
 		PVar(var : string);
@@ -39,14 +43,15 @@ export {
 
 		PSwitch(value : PExp, cases : [PExp]);
 		PCase(id : string, args : [string], body : PExp);
+		PCast(value : PExp, target : PType);
 
 		// Definitions
 		// Types
 		// PSwitch
 		// PWith
-	PType ::= PTypeInt, PTypePar, PTypeName;
-		PTypeInt();
+	PType ::= PTypePar, PTypeName, PTypeFunction, PArgType;
 
 	PTypeName(id : string, typars : [PType]);
 	PTypePar(id : string);
+	PTypeFunction(args : [PType], returnType : PType);
 }

@@ -41,8 +41,6 @@ mult = 1 * 1;
 divide = 1 / 1;
 modulo = 1 % 1;
 
-ty = 1 : int;
-
 a = {b = 1; b};
 at = {b : int = 1; b};
 mm = n ?? 0 : 1;
@@ -58,3 +56,33 @@ s = Some(1);
 f0 = s.value;
 
 i0 = [0][0];
+
+native println : io (flow) -> void = Native.println;
+
+bb : bool = false;
+ii : int = 0;
+dd : double = 0;
+ss : string = "abc\n\t \\\"\x0d\u2345\r";
+ss2 = "#include mini/tests/hello";
+
+ff : flow = 0;
+aa : [int] = [];
+bb : ref Maybe<int> = ref None();
+
+/* This is a nice comment*/
+
+foo(a : int) -> int {
+	a;
+}
+
+main() {
+	cast(1 : int -> string);
+	cast(1 : int -> double);
+	/*cast(1.1 : double -> int);
+	cast(1.1 : double -> string);*/
+}
+
+
+
+// This only works in the newer compilers
+ty = 1 : int;

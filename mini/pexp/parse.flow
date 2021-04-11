@@ -54,10 +54,18 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 	un = \op -> Pair(op, \l -> PCallOp(op, [l]));
 	bin = \op -> Pair(op, \l, r -> PCallOp(op, [l, r]));
 	tri = \op -> Pair(op, \l, m, r -> PCallOp(op, [l, m, r]));
+	mktype = \t -> PTypeName(t, []);
 	GringoTypedOperators(
 		// Nullary operators
 		pairs2tree([
-			Pair("int", \ -> PTypeInt()),
+			Pair("void", \ -> mktype("void")),
+			Pair("bool", \ -> mktype("bool")),
+			Pair("int", \ -> mktype("int")),
+			Pair("double", \ -> mktype("double")),
+			Pair("string", \ -> mktype("string")),
+			Pair("flow", \ -> mktype("flow")),
+			Pair("auto", \ -> mktype("auto")),
+			Pair("nativetype", \ -> mktype("native")),
 		]),
 		// A Tree<string, (Exp) -> Exp> of unary operator constructors
 		pairs2tree([
@@ -80,6 +88,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("hex", \e -> {
 				PInt(parseHex(getPString(e)))
 			}),
+			Pair("stringinclude", \e -> {
+				PStringInclude(getPString(e))
+			}),
 			Pair("import", \e -> {
 				PImport(getPString(e))
 			}),
@@ -92,12 +103,18 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("ref", \e -> {
 				PRef(e)
 			}),
+			Pair("default", \e -> {
+				PCase("default", [], e)
+			}),
 			Pair("polytype", \e -> {
 				PTypePar(getPString(e))
 			}),
-			Pair("default", \e -> {
-				PCase("default", [], e)
-			})
+			Pair("arraytype", \e -> {
+				PTypeName("array", [getPType(e)])
+			}),
+			Pair("reftype", \e -> {
+				PTypeName("ref", [getPType(e)])
+			}),
 		]),
 		// A Tree<string, (Exp, Exp) -> Exp> of binary operator constructors
 		pairs2tree([
@@ -116,27 +133,30 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PCall(fn, getPArray(args))
 			}),
 			bin(":="), bin("|>"), bin(":"), 
+
 			Pair("switch", \a, b -> {
 				PSwitch(a, getPArray(b))
 			}),
 			Pair("typename", \a, b -> {
-				// TODO: Verify we did not loose any types from the filter
-				PTypeName(getPString(a), filtermap(getPArray(b), getPType))
+				PTypeName(getPString(a), map(getPArray(b), getPType))
 			}),
 			Pair("union", \a, b -> {
-				mtn = getPTypeName(a);
-				mtn ?? {
-					PUnion(mtn, filtermap(getPArray(b), getPTypeName))
-				} : {
-					println("Expected typename in union def");
-					PVoid()
-				}
+				PUnion(getPTypeName(a), map(getPArray(b), getPTypeName))
 			}),
 			Pair("global", \a, b -> {
 				PGlobal(getPString(a), b)
 			}),
 			Pair("structdef", \a, b -> {
 				PStruct(getPString(a), map(getPArray(b), getPStructArg));
+			}),
+			Pair("fntype", \a, b -> {
+				PTypeFunction(map(getPArray(a), getPType), getPType(b))
+			}),
+			Pair("argtype", \id, type -> {
+				PArgType(getPString(id), getPType(type))
+			}),
+			Pair("cast", \val, type -> {
+				PCast(val, getPType(type))
 			})
 		]),
 		// A Tree<string, (Exp, Exp, Exp) -> Exp> of ternary operator constructors
@@ -150,21 +170,29 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PCase(getPString(a), map(getPArray(b), getPString), c)
 			}),
 			Pair("structarg", \a, b, c -> {
-				mtype = getPType(c);
-				type = mtype ?? mtype : PTypeInt();
-				PStructArg(getPString(b), getPArray(a) != [], type)
+				PStructArg(getPString(b), getPArray(a) != [], getPType(c))
 			}),
+			Pair("global_typed", \id, type, value -> {
+				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)]))
+			}),
+			Pair("fndef_typed", \id, type, body -> {
+				fntype = getPTypeFunction(type);
+				argtypes : [PArgType] = map(fntype.args, getPArgType);
+
+				PGlobal(getPString(id), 
+					PLambda(argtypes,
+						PCallOp(":", [body, fntype.returnType])
+					)
+				)
+			})
 		]),
 		// A Tree<string, (Exp, Exp, Exp, Exp) -> Exp of quadrary operators
 		pairs2tree([
 			Pair("let_typed", \a, b, c, d -> {
-				mtype = getPType(b);
-				mtype ?? {
-					PLet(getPString(a), PCallOp(":", [c, mtype]), d)
-				} : {
-					println("ERROR");
-					PLet(getPString(a), c, d);
-				}
+				PLet(getPString(a), PCallOp(":", [c, getPType(b)]), d)
+			}),
+			Pair("native", \id, isIo, type, name -> {
+				PNative(getPString(id), getPArray(isIo) != [], getPType(type), getPString(name))
 			})
 		])
 	);
@@ -173,13 +201,13 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 getPArgType(a : PExp) -> PArgType {
 	switch (a) {
 		PArgType(__, __): a;
-		default: PArgType("error", PTypeInt());
+		default: PArgType("error", PTypeName("", []));
 	}
 }
 
 getPStructArg(a : PExp) -> PStructArg {
 	switch (a) {
 		PStructArg(__, __, __): a;
-		default: PStructArg("error", false, PTypeInt());
+		default: PStructArg("error", false, PTypeName("", []));
 	}
 }

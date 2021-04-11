@@ -1,37 +1,42 @@
 flow = '\uFEFF'? ws toplevels;
 
-toplevels = $"list" toplevel $"cons" (#";" ws toplevel $"cons")*  (";" ws)?;
+toplevels = $"list" toplevel $"cons" (toplevel $"cons")* optsemi;
 
 toplevel = import | export | forbid | native | union | global | functionOrStruct;
+	semi = #";" ws;
+	optsemi = (";" ws)?;
 
-import = "import" s $path ws ';' ws $"import";
+import = "import" s $path ws semi $"import";
 export = "export" ws brace ws $"export"; 
-forbid = "forbid" s $path ws $"forbid";
+forbid = "forbid" s $path ws semi $"forbid";
 	path = bid ('/' bid)*;
 
-native = "native" s id ':' ws "$list" ("io" ws $"cons")? type '=' ws $nativename ws $"native";
+
+native = "native" s id ':' ws $"list" ("io" ws $$"io" $"cons")? type '=' ws $nativename ws semi $"native";
 	nativename = bid ('.' bid)*;
 
-union = typename "::=" ws typenames $"union";
+union = typename "::=" ws typenames semi $"union";
 
 	typenames = $"list" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"list";
 
-global = id "=" ws exp $"global" 
-		| id ":" ws type "=" ws exp $"global_typed";
+global = id "=" ws brace optsemi $"global" 
+		| id "=" ws exp semi $"global" 
+		| id ":" ws type "=" ws brace optsemi $"global_typed"
+		| id ":" ws type "=" ws exp semi $"global_typed";
 
 functionOrStruct = 
 	// Forward declaration
-	  id fntype brace $"fndef_typed" 
-	| id fntype $"fntypedef"
-	// TODO: Add the type where the return type is missing
-	| id '(' ws structargs ')' ws $"structdef" // This is a struct!
+	  id fntype brace optsemi $"fndef_typed" 
+	| id fntypeauto brace optsemi $"fndef_typed" 
+	| id fntype semi $"fntypedef"
+	| id '(' ws structargs ')' ws semi $"structdef" // This is a struct!
 
 	// When we only have names for the arguments
 
 	// Forward type declarations
-	| id ':' ws type $"typedef"
+	| id ':' ws type semi $"typedef"
 	// Struct
-	| id ':' ws '(' ws structargs ')' ws ';' ws $"structdef"
+	| id ':' ws '(' ws structargs ')' ws semi $"structdef"
 	;
 
 	// listof(structarg, ",")
@@ -85,6 +90,7 @@ exp =
 		| "true" !letterOrDigit ws $"true"
 		| "false" !letterOrDigit ws $"false"
 		| id $"var"
+		| '"#inc' "lude" s $path '"' ws $"stringinclude"
 		| string ws $"unescape"
 		| "0x" $(hexdigit+) ws $"hex"
 		| $double $"s2d"
@@ -116,7 +122,7 @@ lambda = backslash ws lambdaargs "->" ws exp "" $"lambda"; // The "" makes right
 		| $"list";
 
 	lambdaarg = id ":" ws type $":" |
-		id $"var" $$"auto" $":";	// We add auto automatically
+		id $"var" $"auto" $":";	// We add auto automatically
 
 exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
 	| $"list";
@@ -132,7 +138,7 @@ type =
 		| "string" !letterOrDigit ws $"string"
 		| "flow" !letterOrDigit ws $"flow"
 		| "void" !letterOrDigit ws $"void"
-		| "native" !letterOrDigit ws $"native"
+		| "native" !letterOrDigit ws $"nativetype"
 		| "ref" !letterOrDigit ws type $"reftype"
 
 		| fntype
@@ -141,19 +147,25 @@ type =
 		| "[" ws type "]" ws $"arraytype"
 
 		| $("?"+) ws $"polytype"
-		| id ":" type $"namedtype"
 	;
 
-fntype = "(" ws types ")" ws "->" ws type $"fntype";
+fntype = "(" ws argtypes ")" ws "->" ws type $"fntype";
+fntypeauto = "(" ws argtypes ")" ws $"auto" $"fntype";
+
+	// listof(type, ",")
+	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? 
+		| $"list";
+
+	argtype = id ":" ws type $"argtype" | type;
 
 typename = id typars $"typename";
 
-typars = "<" ws types ">" ws
-	| $"list";
+	typars = "<" ws types ">" ws
+		| $"list";
 
-// listof(type, ",")
-types = $"list" type $"cons" ("," ws type $"cons")* ("," ws)? 
-	| $"list";
+	// listof(type, ",")
+	types = $"list" type $"cons" ("," ws type $"cons")* ("," ws)? 
+		| $"list";
 
 //
 // Lexing
@@ -174,7 +186,10 @@ letterOrDigit = 'a'-'z'
 
 string = $('"' onechar_* '"') ws;
 
-onechar_ = backslash escapedchar_
+onechar_ = backslash "u" hexdigit hexdigit hexdigit hexdigit
+	| backslash "X" hexdigit hexdigit hexdigit hexdigit
+	| backslash "x" hexdigit hexdigit
+	| backslash escapedchar_
 	| !'"' !backslash anychar;
 
 escapedchar_ = backslash | '"' | "n" | "t" | "r";
@@ -185,7 +200,10 @@ double = int '.' int? | '.' int;
 
 int = '0'-'9'+;
 
+
 ws = s*;
-s = " " | "\t" | "\n";
+s = cs+;
+
+cs = " " | "\t" | "\n" | "//" (!"\n" anychar)* "\n" | "/*" (!"*/" anychar)* "*/";
 
 flow
