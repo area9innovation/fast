@@ -155,7 +155,10 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			}),
 			Pair("cast", \val, type -> {
 				PCast(val, getPType(type))
-			})
+			}),
+			Pair("fieldassign", \field, value -> {
+				PFieldAssign(getPString(field), value)
+			}),
 		]),
 		// Ternary operators
 		pairs2tree([
@@ -185,7 +188,10 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			}),
 			Pair("::=", \a, field, val -> {
 				PSetMutable(a, getPString(field), val);
-			})
+			}),
+			Pair("with", \struct, value, fields -> {
+				PWith(getPVar(struct), value, map(getPArray(fields), getPFieldAssign));
+			}),
 		]),
 		// Quadrary operators
 		pairs2tree([

@@ -7,9 +7,12 @@ export {
 	getPDouble(e : PExp) -> double;
 	getPString(e : PExp) -> string;
 	getPArrayValue(e : PExp) -> [PValue];
-	getPArray(e : PExp) -> [PExp];
 
+	getPVar(e : PExp) -> string;
+	getPArray(e : PExp) -> [PExp];
 	getPSequence(e : PExp) -> [PExp];
+	getPFieldAssign(p : PExp) -> PFieldAssign;
+
 	getPType(e : PExp) -> PType;
 	getPTypeName(e : PExp) -> PTypeName;
 	getPTypeFunction(p : PExp) -> PTypeFunction;
@@ -57,6 +60,13 @@ getPArray(e : PExp) -> [PExp] {
 	}
 }
 
+getPVar(e : PExp) -> string {
+	switch (e) {
+		PVar(v): v;
+		default: "";
+	}
+}
+
 getPSequence(e : PExp) -> [PExp] {
 	switch (e) {
 		PSequence(es): es;
@@ -82,5 +92,12 @@ getPTypeFunction(p : PExp) -> PTypeFunction {
 	switch (p) {
 		PTypeFunction(__, __): p;
 		default: PTypeFunction([], PTypeName("", []))
+	}
+}
+
+getPFieldAssign(p : PExp) -> PFieldAssign {
+	switch (p) {
+		PFieldAssign(__, __): p;
+		default: PFieldAssign("", PBool(false));
 	}
 }

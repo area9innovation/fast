@@ -80,11 +80,16 @@ bb : ref Maybe<int> = ref None();
 /* This is a nice comment*/
 
 Mut(mutable field : int);
+Baz(a : int, b : double);
 
 mut() {
 	m = Mut(0);
 	m.field ::= 1;
+	b = Baz(1, 2.0);
+	c = Baz(b with b = 1.0, a = 2);
+	c;
 }
+
 
 foo(a : int) -> int {
 	if (a == 0) {

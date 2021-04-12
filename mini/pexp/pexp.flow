@@ -12,8 +12,9 @@ export {
 
 	PExp ::= PValue, PTopLevel, PType, PArgType,
 		PStringInclude,
-		PRef, PSetMutable, PVar, PLet, PIf, PCall, PCallOp,
-		PArray, PSequence, PSwitch, PCase, PCast;
+		PVar, PLet, PIf, PCall, PCallOp,
+		PRef, PSetMutable, PArray, PSequence, PSwitch, PCase, PCast,
+		PWith, PFieldAssign;
 
 	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg;
 		PImport(path : string);
@@ -46,10 +47,10 @@ export {
 		PCase(id : string, args : [string], body : PExp);
 		PCast(value : PExp, target : PType);
 
+		PWith(struct : string, value : PExp, fields : [PFieldAssign]);
+			PFieldAssign(id : string, value : PExp);
+
 		// Definitions
-		// Types
-		// PSwitch
-		// PWith
 	PType ::= PTypePar, PTypeName, PTypeFunction, PArgType;
 
 	PTypeName(id : string, typars : [PType]);
