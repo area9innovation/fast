@@ -111,7 +111,7 @@ switch = "switch" !letterOrDigit ws
 		"default" !letterOrDigit ws ':' ws exp (';' ws)? $"default" 
 		| id '(' ws names ')' ws ':' ws exp (';' ws)?  $"case";
 
-	names = $"list" id $"cons" ("," ws id $"cons")* | $"list";
+	names = $"list" id $"cons" ("," ws id $"cons")* ("," ws)? | $"list";
 
 brace = "{" ws expsemi "}" ws $"sequence";
 	// The first optsemi here is to have backwards compatibility. Really, it should be semi

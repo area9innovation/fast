@@ -2890,7 +2890,24 @@ parse_names(acc : DParseAcc) -> bool {
 								}
 							}
 						})) {
-							discardDCheckpoint(acc)
+							{
+								pushDCheckpoint(acc);
+								pushDCheckpoint(acc);
+								if (if (matchString(acc, ",")) {
+									if (parse_ws(acc)) {
+										discardDCheckpoint(acc)
+									} else {
+										restoreDCheckpoint(acc)
+									}
+								} else {
+									restoreDCheckpoint(acc)
+								}) {
+									discardDCheckpoint(acc)
+								} else {
+									restoreDCheckpoint(acc)
+								};
+								discardDCheckpoint(acc)
+							}
 						} else {
 							restoreDCheckpoint(acc)
 						}

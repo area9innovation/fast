@@ -8,16 +8,18 @@ import fs/filesystem;
 main() {
 	if (false) {
 		file0 = "mini/tests/positions.flow";
-		file = "c:/flow9/lib/formats/unicode/unidecode.flow";
+		file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
+		file = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 		code = getFileContent(file);
 		p = parsePExp(code, println);
 	} else {
-		files = filter(readDirectoryRecursively("c:\\flow9\\tools"), \f -> endsWith(f, ".flow"));
+		files = filter(readDirectoryRecursively("c:\\lyceum"), \f -> endsWith(f, ".flow"));
 		t = timestamp();
 
 		errors = ref 0;
 		iter(files, \file -> {
-			if (^errors < 10) {
+			println(file);
+			if (^errors < 1000) {
 				code = getFileContent(file);
 				p = parsePExp(code, \error -> {
 					errors := ^errors + 1;
