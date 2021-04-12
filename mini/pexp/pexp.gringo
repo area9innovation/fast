@@ -7,7 +7,7 @@ toplevel = import | export | forbid | native | union | global | functionOrStruct
 	optsemi = (";" ws)?;
 
 import = "import" s $path ws semi $"import";
-export = "export" ws brace ws $"export"; 
+export = "export" ws "{" ws toplevels "}" ws $"export"; 
 forbid = "forbid" s $path ws semi $"forbid";
 	path = bid ('/' bid)*;
 
@@ -28,7 +28,7 @@ functionOrStruct =
 	// Forward declaration
 	  id fntype brace optsemi $"fndef_typed" 
 	| id fntypeauto brace optsemi $"fndef_typed" 
-	| id fntype semi $"fntypedef"
+	| id fntype semi $"typedef"
 	| id '(' ws structargs ')' ws semi $"structdef" // This is a struct!
 
 	// When we only have names for the arguments

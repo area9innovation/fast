@@ -1,6 +1,9 @@
+import runtime;
+forbid ds/tree;
 
 export {
 	i : int;
+	foo(a : int) -> int;
 }
 
 i = 1;

@@ -159,6 +159,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("fieldassign", \field, value -> {
 				PFieldAssign(getPString(field), value)
 			}),
+			Pair("typedef", \var, type -> {
+				PTypeDef(getPString(var), getPType(type))
+			}),
 		]),
 		// Ternary operators
 		pairs2tree([

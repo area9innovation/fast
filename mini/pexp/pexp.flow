@@ -16,11 +16,13 @@ export {
 		PRef, PSetMutable, PArray, PSequence, PSwitch, PCase, PCast,
 		PWith, PFieldAssign;
 
-	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg;
+	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg,
+		PTypeDef;
 		PImport(path : string);
 		PForbid(path : string);
 		PExport(exports : PExp);
 		PGlobal(id : string, value : PExp);
+		PTypeDef(id : string, type : PType);
 		PNative(id : string, isIo : bool, type : PType, name : string);
 		PUnion(typename : PTypeName, types : [PTypeName]);
 		PStruct(id : string, structArgs : [PStructArg]);
