@@ -13,7 +13,7 @@ main() {
 		code = getFileContent(file);
 		p = parsePExp(code, println);
 	} else {
-		files = filter(readDirectoryRecursively("c:\\lyceum"), \f -> endsWith(f, ".flow"));
+		files = filter(readDirectoryRecursively("c:\\fast"), \f -> endsWith(f, ".flow"));
 		t = timestamp();
 
 		errors = ref 0;

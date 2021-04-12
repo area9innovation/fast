@@ -214,7 +214,7 @@ fexp2wasm(env : FWasmEnv, f : FExp) -> string {
 						// TODO: Look up the real argument type in the complex type
 						// and use that name
 						"get_local " + wasmFId(id) + "\n"
-						+ "call_indirect (type " + wasmFId("__type__0" + ) + ")\n";
+						+ "call_indirect (type " + wasmFId("__type__0") + ")\n";
 					}
 				}
 				default: todo(); // call_indirect somehow

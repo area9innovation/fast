@@ -136,7 +136,7 @@ evaluateFastType(env : TypedefEnv, type : FastType) -> FastType {
 						mbound
 					} : type;
 				} else {
-					env.onError(("Don't know the type functor " + id);
+					env.onError("Don't know the type functor " + id);
 					type;
 				}
 			}

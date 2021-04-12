@@ -1,7 +1,7 @@
 main() {
 	__compiletime({
 		a = 4;
-		dyn(a,
+		dyn(a, {
 			add = \c, d -> c + d;
 			join(
 				add(1, a)
@@ -9,6 +9,6 @@ main() {
 			join(
 				add(2, a)
 			)
-		);
+		});
 	});
 }

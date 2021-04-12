@@ -23,42 +23,42 @@ export {
 
 getPBool(e : PExp) -> bool {
 	switch (e) {
-		PBool(b): b;
+		PBool(b, __): b;
 		default: false;
 	}
 }
 
 getPInt(e : PExp) -> int {
 	switch (e) {
-		PInt(d): d;
+		PInt(d, __): d;
 		default: 0;
 	}
 }
 
 getPDouble(e : PExp) -> double {
 	switch (e) {
-		PDouble(d): d;
+		PDouble(d, __): d;
 		default: 0.0;
 	}
 }
 
 getPString(e : PExp) -> string {
 	switch (e) {
-		PString(s): s;
+		PString(s, __): s;
 		default: "";
 	}
 }
 
 getPArrayValue(e : PExp) -> [PValue] {
 	switch (e) {
-		PArrayValue(es): es;
+		PArrayValue(es, __): es;
 		default: [];
 	}
 }
 
 getPArray(e : PExp) -> [PExp] {
 	switch (e) {
-		PArray(es): es;
+		PArray(es, __): es;
 		default: {
 			println("Expected an array!");
 			[];
@@ -68,14 +68,14 @@ getPArray(e : PExp) -> [PExp] {
 
 getPVar(e : PExp) -> string {
 	switch (e) {
-		PVar(v): v;
+		PVar(v, __): v;
 		default: "";
 	}
 }
 
 getPSequence(e : PExp) -> [PExp] {
 	switch (e) {
-		PSequence(es): es;
+		PSequence(es, __): es;
 		default: [];
 	}
 }
@@ -83,28 +83,28 @@ getPSequence(e : PExp) -> [PExp] {
 getPType(e : PExp) -> PType {
 	switch (e) {
 		PType(): e;
-		default: PTypeName("", []);
+		default: PTypeName("", [], -1);
 	}
 }
 
 getPTypeName(e : PExp) -> PTypeName {
 	switch (e) {
-		PTypeName(__, __): e;
-		default: PTypeName("", []);
+		PTypeName(__, __, __): e;
+		default: PTypeName("", [], -1);
 	}
 }
 
 getPTypeFunction(p : PExp) -> PTypeFunction {
 	switch (p) {
-		PTypeFunction(__, __): p;
-		default: PTypeFunction([], PTypeName("", []))
+		PTypeFunction(__, __, __): p;
+		default: PTypeFunction([], PTypeName("", [], -1), -1)
 	}
 }
 
 getPFieldAssign(p : PExp) -> PFieldAssign {
 	switch (p) {
-		PFieldAssign(__, __): p;
-		default: PFieldAssign("", PBool(false));
+		PFieldAssign(__, __, __): p;
+		default: PFieldAssign("", PBool(false, -1), -1);
 	}
 }
 

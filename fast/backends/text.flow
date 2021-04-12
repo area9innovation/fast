@@ -46,7 +46,6 @@ fast2text(compile : FastCompile, sections : [FDependencySection]) -> string {
 	}) +
 	superglue(compile.code.globals, fastDecl2text, "")
 	+ superglue(compile.code.functions, fastDecl2text, "");
-;
 }
 
 fastDecl2text(c : FastDeclaration) -> string {

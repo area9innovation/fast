@@ -5,12 +5,12 @@ export {
 		// When evaluated
 		PArrayValue, PLambda;
 
-		PVoid();
-		PBool(v : bool);
-		PInt(v : int);
-		PDouble(v : double);
-		PString(v : string);
-		PArrayValue(values : [PValue]);
+		PVoid(pos : int);
+		PBool(v : bool, pos : int);
+		PInt(v : int, pos : int);
+		PDouble(v : double, pos : int);
+		PString(v : string, pos : int);
+		PArrayValue(values : [PValue], pos : int);
 
 	PExp ::= PValue, PTopLevel, PType, PArgType,
 		PStringInclude,
@@ -24,39 +24,39 @@ export {
 
 	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg,
 		PTypeDef;
-		PImport(path : string);
-		PForbid(path : string);
-		PExport(exports : PExp);
-		PGlobal(id : string, value : PExp);
-		PTypeDef(id : string, type : PType);
-		PNative(id : string, isIo : bool, type : PType, name : string);
-		PUnion(typename : PTypeName, types : [PTypeName]);
-		PStruct(id : string, structArgs : [PStructArg]);
-			PStructArg(id : string, ismutable : bool, type : PType);
+		PImport(path : string, pos : int);
+		PForbid(path : string, pos : int);
+		PExport(exports : PExp, pos : int);
+		PGlobal(id : string, value : PExp, pos : int);
+		PTypeDef(id : string, type : PType, pos : int);
+		PNative(id : string, isIo : bool, type : PType, name : string, pos : int);
+		PUnion(typename : PTypeName, types : [PTypeName], pos : int);
+		PStruct(id : string, structArgs : [PStructArg], pos : int);
+			PStructArg(id : string, ismutable : bool, type : PType, pos : int);
 		
-		PStringInclude(path : string);
+		PStringInclude(path : string, pos : int);
 
-		PRef(value : PExp);
-		PSetMutable(lhs : PExp, field : string, value : PExp);
-		PVar(var : string);
-		PLet(var : string, value : PExp, body : PExp);
-		PIf(cond : PExp, then : PExp, else_ : PExp);
+		PRef(value : PExp, pos : int);
+		PSetMutable(lhs : PExp, field : string, value : PExp, pos : int);
+		PVar(var : string, pos : int);
+		PLet(var : string, value : PExp, body : PExp, pos : int);
+		PIf(cond : PExp, then : PExp, else_ : PExp, pos : int);
 		// Array construction
-		PArray(exps : [PExp]);
-		PSequence(exps : [PExp]);
-		PCall(fn : PExp, args : [PExp]);
+		PArray(exps : [PExp], pos : int);
+		PSequence(exps : [PExp], pos : int);
+		PCall(fn : PExp, args : [PExp], pos : int);
 		// For built-in operators
-		PCallOp(op : string, args : [PExp]);
-		PLambda(args : [PArgType], body : PExp);
+		PCallOp(op : string, args : [PExp], pos : int);
+		PLambda(args : [PArgType], body : PExp, pos : int);
 
-			PArgType(id : string, type : PType);
+			PArgType(id : string, type : PType, pos : int);
 
-		PSwitch(value : PExp, cases : [PExp]);
-		PCase(id : string, args : [string], body : PExp);
-		PCast(value : PExp, target : PType);
+		PSwitch(value : PExp, cases : [PExp], pos : int);
+		PCase(id : string, args : [string], body : PExp, pos : int);
+		PCast(value : PExp, target : PType, pos : int);
 
-		PWith(struct : string, value : PExp, fields : [PFieldAssign]);
-			PFieldAssign(id : string, value : PExp);
+		PWith(struct : string, value : PExp, fields : [PFieldAssign], pos : int);
+			PFieldAssign(id : string, value : PExp, pos : int);
 
 
 	PList(l : List<PExp>);
@@ -64,7 +64,7 @@ export {
 		// Definitions
 	PType ::= PTypePar, PTypeName, PTypeFunction, PArgType;
 
-	PTypeName(id : string, typars : [PType]);
-	PTypePar(id : string);
-	PTypeFunction(args : [PType], returnType : PType);
+	PTypeName(id : string, typars : [PType], pos : int);
+	PTypePar(id : string, pos : int);
+	PTypeFunction(args : [PType], returnType : PType, pos : int);
 }
