@@ -1,11 +1,32 @@
 import mini/pexp/parse;
+import fs/filesystem;
 //import mini/pexp/interpret;
 //import mini/pexp/compile;
 
+
+
 main() {
-	file = getFileContent("mini/tests/positions.flow");
-	p = parsePExp(file, println);
-	println(p);
+	if (false) {
+		file = "mini/tests/positions.flow";
+		file0 = "mini/tests/ct/dyn.flow";
+		code = getFileContent(file);
+		p = parsePExp(code, println);
+	} else {
+		files = filter(readDirectoryRecursively("c:\\flow9\\lib"), \f -> endsWith(f, ".flow"));
+		t = timestamp();
+
+		iter(files, \file -> {
+			code = getFileContent(file);
+			p = parsePExp(code, \error -> {
+				println(file + ":" + error)
+			});
+		});	
+
+		println(timestamp() - t);
+
+	}
+
+	// println(p);
 //	va = interpretPExp(makeTree(), p);
 //	println(va);
 //	cpp = pexp2cpp(p, true);

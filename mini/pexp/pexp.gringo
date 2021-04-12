@@ -27,11 +27,11 @@ global = id "=" ws brace optsemi $"global"
 functionOrStruct = 
 	// Forward declaration
 	  id fntype brace optsemi $"fndef_typed" 
-	| id fntypeauto brace optsemi $"fndef_typed" 
+	| id fntype exp semi $"fndef_typed"
 	| id fntype semi $"typedef"
+	| id fntypeauto brace optsemi $"fndef_typed" 
+	| id fntypeauto exp semi $"fndef_typed" 
 	| id '(' ws structargs ')' ws semi $"structdef" // This is a struct!
-
-	// When we only have names for the arguments
 
 	// Forward type declarations
 	| id ':' ws type semi $"typedef"
@@ -43,12 +43,10 @@ functionOrStruct =
 	structargs = $"list" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"list";
 	structarg = $"list" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? id ':' ws type $"structarg";
 
-expsemi = $"list" exp $"cons" (#";" ws exp $"cons")* (";" ws)? $"sequence"
-	| $"list" $"sequence"; 
-
 exp = 
-	(id "=" ws exp #";" ws exp $"let"
-		| id ":" ws type "=" ws exp #";" ws exp $"let_typed"
+	// This optsemi should really be semi, but we have too much legacy without
+	(id "=" ws exp optsemi (exp | $"void") $"let"	// The else is error recovery for the common case of missing a body
+		| id ":" ws type "=" ws exp semi exp $"let_typed"
 	)
 	|> exp ":=" ws exp $":="
 	|> exp < ("|>" ws exp $"|>")*
@@ -93,7 +91,7 @@ exp =
 		| '"#inc' "lude" s $path '"' ws $"stringinclude"
 		| string ws $"unescape"
 		| "0x" $(hexdigit+) ws $"hex"
-		| $double $"s2d"
+		| $double ws $"s2d"
 		| $int ws $"s2i"
 		| "[" ws exps "]" ws $"array"
 	);
@@ -115,7 +113,10 @@ switch = "switch" !letterOrDigit ws
 
 	names = $"list" id $"cons" ("," ws id $"cons")* | $"list";
 
-brace = "{" ws expsemi "}" ws;
+brace = "{" ws expsemi "}" ws $"sequence";
+	// The first optsemi here is to have backwards compatibility. Really, it should be semi
+	expsemi = $"list" exp $"cons" (optsemi exp $"cons")* optsemi
+		| $"list";
 
 lambda = backslash ws lambdaargs "->" ws exp "" $"lambda"; // The "" makes right-recursion disappear
 	lambdaargs = $"list" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? 

@@ -1,4 +1,4 @@
-import runtime;
+	import runtime;
 forbid ds/tree;
 
 export {
@@ -116,12 +116,26 @@ pipe() {
 }
 
 main() {
+	\file -> {
+		code = file;
+	}
+
 	cast(1 : int -> string);
 	cast(1 : int -> double);
 	/*cast(1.1 : double -> int);
 	cast(1.1 : double -> string);*/
 }
 
+trunc(d) cast(d : double -> int);
+
+/*
+Missing semicolon because of brace
+*/
+
+brace() {
+	if (1) 2 else { 3 }
+	b = 1;
+}
 
 
 // This only works in the newer compilers
