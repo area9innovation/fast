@@ -1,3 +1,8 @@
+
+export {
+	i : int;
+}
+
 i = 1;
 d = 1.0;
 s = "1";
@@ -65,14 +70,41 @@ dd : double = 0;
 ss : string = "abc\n\t \\\"\x0d\u2345\r";
 ss2 = "#include mini/tests/hello";
 
+native captureCallstack : io () -> native = Native.captureCallstack;
+nn : native = captureCallstack();
+
 ff : flow = 0;
 aa : [int] = [];
 bb : ref Maybe<int> = ref None();
 
 /* This is a nice comment*/
 
+Mut(mutable field : int);
+
+mut() {
+	m = Mut(0);
+	m.field ::= 1;
+}
+
 foo(a : int) -> int {
+	if (a == 0) {
+		1
+	};
+	if (a == 0) {
+		1
+	} else {
+		2;
+	};
+	if (a == 0) {
+		1;
+	} else if (a == 1) {
+		2;
+	} else 3;
 	a;
+}
+
+pipe() {
+	foo |> println
 }
 
 main() {
@@ -86,3 +118,6 @@ main() {
 
 // This only works in the newer compilers
 ty = 1 : int;
+// The explicit name of the auto type
+aa : auto = 2;
+

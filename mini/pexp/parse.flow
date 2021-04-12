@@ -15,16 +15,14 @@ parsePExp(program : string, onError : (string) -> void) -> PExp {
 		gterm = prepareGringoParser("#include mini/pexp/pexp.gringo", onError);
 		if (gterm != GEpsilon()) {
 			// OK, parse the program
-			checkGringoTypedOps(pexpTypeOps(), gterm);
-			gringoInterpretedParse(program, pexpTypeAction(onError), gterm, PSequence([]), onError);
+			ops = pexpTypeOps();
+			gringoParseWithActionCheck(program, ops, pexpTypeAction(onError), gterm, PSequence([]), onError);
 		} else {
 			onError("Could not understand grammar");
 			PSequence([]);
 		}
-
 	}
 }
-
 
 // This defines the semantic actions used in the grammar
 pexpTypeAction(onError : (string) -> void) -> GringoAction<List<PExp>> {
@@ -67,7 +65,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("auto", \ -> mktype("auto")),
 			Pair("nativetype", \ -> mktype("native")),
 		]),
-		// A Tree<string, (Exp) -> Exp> of unary operator constructors
+		// Unary operators
 		pairs2tree([
 			un("negate"),
 			un("not"),
@@ -116,7 +114,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PTypeName("ref", [getPType(e)])
 			}),
 		]),
-		// A Tree<string, (Exp, Exp) -> Exp> of binary operator constructors
+		// Binary operators
 		pairs2tree([
 			bin("||"), bin("&&"),
 			bin("=="), bin("!="),
@@ -159,7 +157,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PCast(val, getPType(type))
 			})
 		]),
-		// A Tree<string, (Exp, Exp, Exp) -> Exp> of ternary operator constructors
+		// Ternary operators
 		pairs2tree([
 			tri("ifelse"),
 			tri("maybe"),
@@ -184,9 +182,12 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 						PCallOp(":", [body, fntype.returnType])
 					)
 				)
+			}),
+			Pair("::=", \a, field, val -> {
+				PSetMutable(a, getPString(field), val);
 			})
 		]),
-		// A Tree<string, (Exp, Exp, Exp, Exp) -> Exp of quadrary operators
+		// Quadrary operators
 		pairs2tree([
 			Pair("let_typed", \a, b, c, d -> {
 				PLet(getPString(a), PCallOp(":", [c, getPType(b)]), d)

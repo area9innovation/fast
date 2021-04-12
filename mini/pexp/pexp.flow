@@ -12,7 +12,7 @@ export {
 
 	PExp ::= PValue, PTopLevel, PType, PArgType,
 		PStringInclude,
-		PRef, PVar, PLet, PIf, PCall, PCallOp,
+		PRef, PSetMutable, PVar, PLet, PIf, PCall, PCallOp,
 		PArray, PSequence, PSwitch, PCase, PCast;
 
 	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg;
@@ -28,6 +28,7 @@ export {
 		PStringInclude(path : string);
 
 		PRef(value : PExp);
+		PSetMutable(lhs : PExp, field : string, value : PExp);
 		PVar(var : string);
 		PLet(var : string, value : PExp, body : PExp);
 		PIf(cond : PExp, then : PExp, else_ : PExp);
