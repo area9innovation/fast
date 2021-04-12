@@ -95,7 +95,7 @@ exp =
 		| "0x" $(hexdigit+) ws $"hex"
 		| $double $"s2d"
 		| $int ws $"s2i"
-		| "[" ws exps "]" ws
+		| "[" ws exps "]" ws $"array"
 	);
 
 with = '(' ws exp "with" s fields ')' ws $"with";

@@ -36,11 +36,11 @@ pexpTypeAction(onError : (string) -> void) -> GringoAction<List<PExp>> {
 		\i -> PInt(s2i(i)),
 		\d -> PDouble(s2d(d)), // We do not have doubles, so just use ints
 		// Construct an empty array
-		\ -> PArray([]),
+		\ -> PList(makeList()),
 		// Append an element to an array
 		\h, t -> {
 			switch (t) {
-				PArray(es): PArray(arrayPush(es, h));
+				PList(es): PList(Cons(h, es));
 				default: t;
 			}
 		},
@@ -81,7 +81,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PVar(getPString(e))
 			}),
 			Pair("sequence", \e -> {
-				PSequence(getPArray(e));
+				PSequence(getPListArray(e));
 			}),
 			Pair("hex", \e -> {
 				PInt(parseHex(getPString(e)))
@@ -113,6 +113,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("reftype", \e -> {
 				PTypeName("ref", [getPType(e)])
 			}),
+			Pair("array", \e -> {
+				PArray(getPListArray(e));
+			}),
 		]),
 		// Binary operators
 		pairs2tree([
@@ -124,31 +127,31 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			bin("index"), bin("dot"),
 			bin("if"),
 			Pair("lambda", \args, b -> {
-				fargs = map(getPArray(args), getPArgType);
+				fargs = map(getPListArray(args), getPArgType);
 				PLambda(fargs, b);
 			}),
 			Pair("call", \fn, args -> {
-				PCall(fn, getPArray(args))
+				PCall(fn, getPListArray(args))
 			}),
 			bin(":="), bin("|>"), bin(":"), 
 
 			Pair("switch", \a, b -> {
-				PSwitch(a, getPArray(b))
+				PSwitch(a, getPListArray(b))
 			}),
 			Pair("typename", \a, b -> {
-				PTypeName(getPString(a), map(getPArray(b), getPType))
+				PTypeName(getPString(a), map(getPListArray(b), getPType))
 			}),
 			Pair("union", \a, b -> {
-				PUnion(getPTypeName(a), map(getPArray(b), getPTypeName))
+				PUnion(getPTypeName(a), map(getPListArray(b), getPTypeName))
 			}),
 			Pair("global", \a, b -> {
 				PGlobal(getPString(a), b)
 			}),
 			Pair("structdef", \a, b -> {
-				PStruct(getPString(a), map(getPArray(b), getPStructArg));
+				PStruct(getPString(a), map(getPListArray(b), getPStructArg));
 			}),
 			Pair("fntype", \a, b -> {
-				PTypeFunction(map(getPArray(a), getPType), getPType(b))
+				PTypeFunction(map(getPListArray(a), getPType), getPType(b))
 			}),
 			Pair("argtype", \id, type -> {
 				PArgType(getPString(id), getPType(type))
@@ -171,10 +174,10 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PLet(getPString(a), b, c)
 			}),
 			Pair("case", \a, b, c -> {
-				PCase(getPString(a), map(getPArray(b), getPString), c)
+				PCase(getPString(a), map(getPListArray(b), getPString), c)
 			}),
 			Pair("structarg", \a, b, c -> {
-				PStructArg(getPString(b), getPArray(a) != [], getPType(c))
+				PStructArg(getPString(b), getPListArray(a) != [], getPType(c))
 			}),
 			Pair("global_typed", \id, type, value -> {
 				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)]))
@@ -193,7 +196,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PSetMutable(a, getPString(field), val);
 			}),
 			Pair("with", \struct, value, fields -> {
-				PWith(getPVar(struct), value, map(getPArray(fields), getPFieldAssign));
+				PWith(getPVar(struct), value, map(getPListArray(fields), getPFieldAssign));
 			}),
 		]),
 		// Quadrary operators
@@ -202,7 +205,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PLet(getPString(a), PCallOp(":", [c, getPType(b)]), d)
 			}),
 			Pair("native", \id, isIo, type, name -> {
-				PNative(getPString(id), getPArray(isIo) != [], getPType(type), getPString(name))
+				PNative(getPString(id), getPListArray(isIo) != [], getPType(type), getPString(name))
 			})
 		])
 	);

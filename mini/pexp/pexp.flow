@@ -1,3 +1,5 @@
+import ds/list;
+
 export {
 	PValue ::= PVoid, PBool, PInt, PDouble, PString, 
 		// When evaluated
@@ -14,7 +16,11 @@ export {
 		PStringInclude,
 		PVar, PLet, PIf, PCall, PCallOp,
 		PRef, PSetMutable, PArray, PSequence, PSwitch, PCase, PCast,
-		PWith, PFieldAssign;
+		PWith, PFieldAssign,
+
+		// While parsing, we have an efficient list for collecting arrays
+		PList
+		;
 
 	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg,
 		PTypeDef;
@@ -51,6 +57,9 @@ export {
 
 		PWith(struct : string, value : PExp, fields : [PFieldAssign]);
 			PFieldAssign(id : string, value : PExp);
+
+
+	PList(l : List<PExp>);
 
 		// Definitions
 	PType ::= PTypePar, PTypeName, PTypeFunction, PArgType;
