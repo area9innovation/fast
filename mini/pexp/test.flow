@@ -7,23 +7,26 @@ import fs/filesystem;
 
 main() {
 	if (false) {
-		file = "mini/tests/positions.flow";
-		file0 = "mini/tests/ct/dyn.flow";
+		file0 = "mini/tests/positions.flow";
+		file = "c:/flow9/lib/formats/unicode/unidecode.flow";
 		code = getFileContent(file);
 		p = parsePExp(code, println);
 	} else {
-		files = filter(readDirectoryRecursively("c:\\flow9\\lib"), \f -> endsWith(f, ".flow"));
+		files = filter(readDirectoryRecursively("c:\\flow9\\tools"), \f -> endsWith(f, ".flow"));
 		t = timestamp();
 
+		errors = ref 0;
 		iter(files, \file -> {
-			code = getFileContent(file);
-			p = parsePExp(code, \error -> {
-				println(file + ":" + error)
-			});
+			if (^errors < 10) {
+				code = getFileContent(file);
+				p = parsePExp(code, \error -> {
+					errors := ^errors + 1;
+					println(file + ":" + error)
+				});
+			}
 		});	
 
 		println(timestamp() - t);
-
 	}
 
 	// println(p);

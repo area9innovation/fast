@@ -1,6 +1,6 @@
-flow = '\uFEFF'? ws toplevels;
+flow = '\uFEFF'? ws toplevels lastLineComment?;
 
-toplevels = $"list" toplevel $"cons" (toplevel $"cons")* optsemi;
+toplevels = $"list" toplevel $"cons" (toplevel $"cons")* optsemi | $"list";
 
 toplevel = import | export | forbid | native | union | global | functionOrStruct;
 	semi = #";" ws;
@@ -44,9 +44,9 @@ functionOrStruct =
 	structarg = $"list" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? id ':' ws type $"structarg";
 
 exp = 
-	// This optsemi should really be semi, but we have too much legacy without
+	// These optsemi should really be semi, but we have too much legacy without
 	(id "=" ws exp optsemi (exp | $"void") $"let"	// The else is error recovery for the common case of missing a body
-		| id ":" ws type "=" ws exp semi exp $"let_typed"
+		| id ":" ws type "=" ws exp optsemi exp $"let_typed"
 	)
 	|> exp ":=" ws exp $":="
 	|> exp < ("|>" ws exp $"|>")*
@@ -201,10 +201,11 @@ double = int '.' int? | '.' int;
 
 int = '0'-'9'+;
 
-
 ws = s*;
 s = cs+;
 
 cs = " " | "\t" | "\n" | "//" (!"\n" anychar)* "\n" | "/*" (!"*/" anychar)* "*/";
+
+lastLineComment = "//" (!"\n" anychar)*;
 
 flow
