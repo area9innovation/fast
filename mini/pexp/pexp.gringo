@@ -52,7 +52,7 @@ exp =
 	|> exp "&&" ws exp $"&&"
 	|> exp "==" ws exp $"==" | exp "!=" ws exp $"!="
 	|> exp ("<=" ws exp $"<=" | "<" ws exp $"<" | ">=" ws exp $">=" | ">" ws exp $">")
-	|> exp < ("+" ws exp $"+" | "-" ws exp ws $"-")*
+	|> exp < ("+" ws exp $"+" | "-" ws exp $"-")*
 	|> exp ("*" ws exp $"*" | "/" ws exp $"/" | "%" ws exp $"%")*
 
 	// To ensure that ?? does not consider the : as part of the type

@@ -32,9 +32,9 @@ pexpTypeAction(onError : (string) -> void) -> GringoAction<List<PExp>> {
 		// Extract a string from a value (typically a string)
 		getPString,
 		// Construct the basic value
-		\b -> PBool(b, 0), // We do not have bools, so use ints
+		\b -> PBool(b, 0),
 		\i -> PInt(s2i(i), 0),
-		\d -> PDouble(s2d(d), 0), // We do not have doubles, so just use ints
+		\d -> PDouble(s2d(d), 0),
 		// Construct an empty array
 		\ -> PList(makeList()),
 		// Append an element to an array

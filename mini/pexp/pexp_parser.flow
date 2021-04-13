@@ -1522,13 +1522,9 @@ parse_exp7(acc : DParseAcc) -> bool {
 							pushDCheckpoint(acc);
 							if (if (matchString(acc, "-")) {
 								if (parse_ws(acc)) {
-									if (parse_exp(acc)) {
-										if (parse_ws(acc)) {
-											if (addVerbatim(acc, "-")) {
-												discardDCheckpoint(acc)
-											} else {
-												restoreDCheckpoint(acc)
-											}
+									if (parse_exp8(acc)) {
+										if (addVerbatim(acc, "-")) {
+											discardDCheckpoint(acc)
 										} else {
 											restoreDCheckpoint(acc)
 										}
