@@ -11,12 +11,10 @@ export = "export" ws "{" ws toplevels "}" ws $"export";
 forbid = "forbid" s $path ws semi $"forbid";
 	path = bid ('/' bid)*;
 
-
 native = "native" s id ':' ws $"list" ("io" ws $$"io" $"cons")? type '=' ws $nativename ws semi $"native";
 	nativename = bid ('.' bid)*;
 
 union = typename "::=" ws typenames semi $"union";
-
 	typenames = $"list" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"list";
 
 global = id "=" ws brace optsemi $"global" 
@@ -133,38 +131,28 @@ exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)?
 //
 
 type = 	
-		"bool" !letterOrDigit ws $"bool"
-		| "int" !letterOrDigit ws $"int"
-		| "double" !letterOrDigit ws $"double"
-		| "string" !letterOrDigit ws $"string"
-		| "flow" !letterOrDigit ws $"flow"
-		| "void" !letterOrDigit ws $"void"
-		| "native" !letterOrDigit ws $"nativetype"
-		| "ref" !letterOrDigit ws type $"reftype"
-
-		| fntype
-		| typename
-
-		| "[" ws type "]" ws $"arraytype"
-
-		| $("?"+) ws $"polytype"
+	"bool" !letterOrDigit ws $"bool"
+	| "int" !letterOrDigit ws $"int"
+	| "double" !letterOrDigit ws $"double"
+	| "string" !letterOrDigit ws $"string"
+	| "flow" !letterOrDigit ws $"flow"
+	| "void" !letterOrDigit ws $"void"
+	| "native" !letterOrDigit ws $"nativetype"
+	| "ref" !letterOrDigit ws type $"reftype"
+	| fntype
+	| typename
+	| "[" ws type "]" ws $"arraytype"
+	| $("?"+) ws $"polytype"
 	;
 
 fntype = "(" ws argtypes ")" ws "->" ws type $"fntype";
 fntypeauto = "(" ws argtypes ")" ws $"auto" $"fntype";
-
-	// listof(type, ",")
-	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? 
-		| $"list";
-
+	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? | $"list";
 	argtype = id ":" ws type $"argtype" | type;
 
 typename = id typars $"typename";
+	typars = "<" ws types ">" ws | $"list";
 
-	typars = "<" ws types ">" ws
-		| $"list";
-
-	// listof(type, ",")
 	types = $"list" type $"cons" ("," ws type $"cons")* ("," ws)? 
 		| $"list";
 
@@ -198,7 +186,6 @@ backslash = '\';
 anychar = '0x0000'-'0xffff';
 
 double = int '.' int? | '.' int;
-
 int = '0'-'9'+;
 
 ws = s*;

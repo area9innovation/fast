@@ -960,7 +960,10 @@ The restriction of the mini-lambda in the entire compiler is too untyped.
    
    PExp = Parsed Expressions
 
-2. Once files and dependents are parsed, desugar constructs:
+   TODO:
+   - Populate positions correctly
+
+2. Once files and dependents are parsed, desugar the program to DExp:
 
    DExp = Desugared Expressions
 
