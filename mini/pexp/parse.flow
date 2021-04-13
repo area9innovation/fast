@@ -55,19 +55,19 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 	un = \op -> Pair(op, \l -> PCallOp(op, [l], todo()));
 	bin = \op -> Pair(op, \l, r -> PCallOp(op, [l, r], todo()));
 	tri = \op -> Pair(op, \l, m, r -> PCallOp(op, [l, m, r], todo()));
-	mktype = \t, pos -> PTypeName(t, [], pos);
+	mktype = \t -> PTypeName(t, [], -1);
 
 	GringoTypedOperators(
 		// Nullary operators
 		pairs2tree([
-			Pair("void", \ -> mktype("void", todo())),
-			Pair("bool", \ -> mktype("bool", todo())),
-			Pair("int", \ -> mktype("int", todo())),
-			Pair("double", \ -> mktype("double", todo())),
-			Pair("string", \ -> mktype("string", todo())),
-			Pair("flow", \ -> mktype("flow", todo())),
-			Pair("auto", \ -> mktype("auto", todo())),
-			Pair("nativetype", \ -> mktype("native", todo())),
+			Pair("void", \ -> mktype("void")),
+			Pair("bool", \ -> mktype("bool")),
+			Pair("int", \ -> mktype("int")),
+			Pair("double", \ -> mktype("double")),
+			Pair("string", \ -> mktype("string")),
+			Pair("flow", \ -> mktype("flow")),
+			Pair("auto", \ -> mktype("auto")),
+			Pair("nativetype", \ -> mktype("native")),
 		]),
 		// Unary operators
 		pairs2tree([
@@ -146,7 +146,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PSwitch(a, getPListArray(b), todo())
 			}),
 			Pair("typename", \a, b -> {
-				PTypeName(getPString(a), map(getPListArray(b), getPType), todo())
+				PTypeName(getPString(a), map(getPListArray(b), getPType), getPPos(a))
 			}),
 			Pair("union", \a, b -> {
 				PUnion(getPTypeName(a), map(getPListArray(b), getPTypeName), todo())
@@ -170,7 +170,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PFieldAssign(getPString(field), value, todo())
 			}),
 			Pair("typedef", \var, type -> {
-				PTypeDef(getPString(var), getPType(type), todo())
+				PTypeDef(getPString(var), getPType(type), getPPos(var))
 			}),
 			Pair("setpos", \pos, e -> {
 				setPPos(s2i(getPString(pos)), e)
@@ -217,7 +217,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("native", \id, isIo, type, name -> {
 				PNative(getPString(id), getPListArray(isIo) != [], getPType(type), getPString(name), getPPos(id))
 			})
-		])
+		]),
+		// Stack ops
+		makeTree(),
 	);
 }
 

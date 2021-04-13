@@ -89,9 +89,9 @@ exp =
 		| id $"var"
 		| '"#inc' "lude" s pathpos '"' ws $"stringinclude"
 		| string ws $"unescape"
-		| "0x" $(hexdigit+) ws $"hex"
-		| $double ws $"s2d"
-		| $int ws $"s2i"
+		| $$pos "0x" $(hexdigit+) ws $"hex" $"setpos"
+		| $$pos $double ws $"s2d" $"setpos"
+		| $$pos $int ws $"s2i" $"setpos"
 		| "[" ws exps "]" ws $"array"
 	);
 
@@ -122,7 +122,7 @@ lambda = backslash ws lambdaargs "->" ws exp "" $"lambda"; // The "" makes right
 		| $"list";
 
 	lambdaarg = id ":" ws type $":" |
-		id $"var" $"auto" $":";	// We add auto automatically
+		idpos $"var" $"auto" $":";	// We add auto automatically
 
 exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
 	| $"list";
@@ -135,14 +135,15 @@ idpos = $$pos id $"setpos";
 //
 
 type = 	
-	"bool" !letterOrDigit ws $"bool"
-	| "int" !letterOrDigit ws $"int"
-	| "double" !letterOrDigit ws $"double"
-	| "string" !letterOrDigit ws $"string"
-	| "flow" !letterOrDigit ws $"flow"
-	| "void" !letterOrDigit ws $"void"
-	| "native" !letterOrDigit ws $"nativetype"
-	| "ref" !letterOrDigit ws type $"reftype"
+	$$pos "bool" !letterOrDigit ws $"bool" $"setpos"
+	| $$pos "int" !letterOrDigit ws $"int" $"setpos"
+	| $$pos "double" !letterOrDigit ws $"double" $"setpos"
+	| $$pos "string" !letterOrDigit ws $"string" $"setpos"
+	| $$pos "flow" !letterOrDigit ws $"flow" $"setpos"
+	| $$pos "void" !letterOrDigit ws $"void" $"setpos"
+	| $$pos "auto" !letterOrDigit ws $"auto" $"setpos"
+	| $$pos "native" !letterOrDigit ws $"nativetype" $"setpos"
+	| $$pos "ref" !letterOrDigit ws type $"reftype" $"setpos"
 	| fntype
 	| typename
 	| "[" ws type "]" ws $"arraytype"
@@ -154,7 +155,7 @@ fntypeauto = "(" ws argtypes ")" ws $"auto" $"fntype";
 	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? | $"list";
 	argtype = id ":" ws type $"argtype" | type;
 
-typename = id typars $"typename";
+typename = idpos typars $"typename";
 	typars = "<" ws types ">" ws | $"list";
 
 	types = $"list" type $"cons" ("," ws type $"cons")* ("," ws)? 

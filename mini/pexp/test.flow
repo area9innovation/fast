@@ -56,7 +56,6 @@ prettyPos(input : string, i : string, p : PExp) -> void {
 			pr("arrayvalues");
 			iter(values, rec)
 		}
-		default: println(i + "TODO pretty: " + p.structname);
 		PLambda(args, body, pos): {
 			pr("lambda");
 			rec(body);
@@ -75,34 +74,107 @@ prettyPos(input : string, i : string, p : PExp) -> void {
 			pr("global " + id);
 			rec(value);
 		}
-		/*PNative(id, isIo, type, name, pos): 
-		PUnion(typename, types, pos): 
-		PStruct(id, structArgs, pos): 
-		PStructArg(id, ismutable, type, pos): 
-		PTypeDef(id, type, pos): 
-		PTypePar(id, pos): 
-		PTypeName(id, typars, pos): 
-		PTypeFunction(args, returnType, pos): 
-		PArgType(id, type, pos): 
-		PStringInclude(path, pos): 
-		PVar(var, pos): 
-		PLet(var, value, body, pos): 
-		PIf(cond, then, else_, pos): 
-		PCall(fn, args, pos): 
-		*/
+		PNative(id, isIo, type, name, pos): {
+			pr("native def");
+			rec(type);
+		}
+		PUnion(typename, types, pos): {
+			pr("union");
+			rec(typename);
+			iter(types, rec);
+		}
+		PStruct(id, structArgs, pos): {
+			pr("struct " + id);
+			iter(structArgs, rec);
+		}
+		PStructArg(id, ismutable, type, pos): {
+			pr("struct arg" + id);
+			rec(type);
+		}
+		PTypeDef(id, type, pos): {
+			pr("typedef " + id);
+			rec(type);
+		}
+		PTypePar(id, pos): pr(id);
+		PTypeName(id, typars, pos): {
+			pr("typename " + id);
+			iter(typars, rec);
+		}
+		PTypeFunction(args, returnType, pos): {
+			pr("function type");
+			iter(args, rec);
+			rec(returnType);
+		}
+		PArgType(id, type, pos): {
+			pr("arg " + id);
+			rec(type);
+		}
+		PStringInclude(path, pos): {
+			pr("String include " + path);
+		}
+		PVar(var, pos): {
+			pr("var " + var);
+		}
+		PLet(var, value, body, pos): {
+			pr("let " + var);
+			rec(value);
+			rec(body);
+		}
+		PIf(cond, then, else_, pos): {
+			pr("if");
+			rec(cond);
+			rec(then);
+			rec(else_);
+		}
+		PCall(fn, args, pos): {
+			pr("call");
+			rec(fn);
+			iter(args, rec);
+		}
 		PCallOp(op, args, pos): {
 			pr("op: " + op);
 			iter(args, rec);
 		}
-		/*PRef(value, pos): 
-		PSetMutable(lhs, field, value, pos): 
-		PArray(exps, pos): 
-		PSequence(exps, pos): 
-		PSwitch(value, cases, pos): 
-		PCase(id, args, body, pos): 
-		PCast(value, target, pos): 
-		PWith(struct, value, fields, pos): 
-		PFieldAssign(id, value, pos): */
+		PRef(value, pos): {
+			pr("ref");
+			rec(value);
+		}
+		PSetMutable(lhs, field, value, pos): {
+			pr("set mutable field" + field);
+			rec(lhs);
+			rec(value);
+		}
+		PArray(exps, pos): {
+			pr("array");
+			iter(exps, rec);
+		}
+		PSequence(exps, pos): {
+			pr("sequence");
+			iter(exps, rec);
+		}
+		PSwitch(value, cases, pos): {
+			pr("switch");
+			rec(value);
+			iter(cases, rec);
+		}
+		PCase(id, args, body, pos): {
+			pr("case " + id + "(" + strGlue(args, ", ") + ")");
+			rec(body);
+		}
+		PCast(value, target, pos): {
+			pr("cast");
+			rec(value);
+			rec(target);
+		}
+		PWith(struct, value, fields, pos): {
+			pr("with " + struct);
+			rec(value);
+			iter(fields, rec);
+		}
+		PFieldAssign(id, value, pos): {
+			pr("field " + id);
+			rec(value);
+		}
 		PList(l, pos): {
 			pr("list");
 			iterList(l, rec)
