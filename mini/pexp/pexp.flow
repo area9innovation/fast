@@ -22,11 +22,12 @@ export {
 		PList
 		;
 
-	PTopLevel ::= PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg,
+	PTopLevel ::= PModule, PImport, PForbid, PExport, PGlobal, PNative, PUnion, PStruct, PStructArg,
 		PTypeDef;
+		PModule(toplevels : [PTopLevel], pos : int);
 		PImport(path : string, pos : int);
 		PForbid(path : string, pos : int);
-		PExport(exports : PExp, pos : int);
+		PExport(exports : [PExp], pos : int);
 		PGlobal(id : string, value : PExp, pos : int);
 		PTypeDef(id : string, type : PType, pos : int);
 		PNative(id : string, isIo : bool, type : PType, name : string, pos : int);

@@ -2,7 +2,7 @@ import mini/pexp/values;
 
 export {
 	getPPos(position : PExp) -> int;
-	setPPos(position : PExp, e : PExp) -> PExp;
+	setPPos(position : int, e : PExp) -> PExp;
 }
 
 getPPos(position : PExp) -> int {
@@ -12,8 +12,7 @@ getPPos(position : PExp) -> int {
 	position.pos;
 }
 
-setPPos(position : PExp, e : PExp) -> PExp {
-	p = getPInt(position);
+setPPos(p : int, e : PExp) -> PExp {
 	switch (e) {
 		PVoid(pos): PVoid(p)
 		PBool(v, pos): PBool(v, p);
@@ -22,6 +21,7 @@ setPPos(position : PExp, e : PExp) -> PExp {
 		PString(v, pos): PString(v, p);
 		PArrayValue(values, pos): PArrayValue(values, p);
 		PLambda(args, body, pos): PLambda(args, body, p);
+		PModule(tls, pos): PModule(tls, p);
 		PImport(path, pos): PImport(path, p);
 		PForbid(path, pos): PForbid(path, p);
 		PExport(exports, pos): PExport(exports, p);

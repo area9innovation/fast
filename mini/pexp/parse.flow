@@ -10,7 +10,7 @@ export {
 }
 
 parsePExp(program : string, onError : (string) -> void) -> PExp {
-	if (true) {
+	if (false) {
 		gringoTypedParse(program, pexpTypeAction(onError), parse_flow, PSequence([], -1), onError);
 	} else {
 		gterm = prepareGringoParser("#include mini/pexp/pexp.gringo", onError);
@@ -100,7 +100,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PForbid(getPString(e), getPPos(e))
 			}),
 			Pair("export", \e -> {
-				PExport(e, todo())
+				PExport(getPListArray(e), todo())
 			}),
 			Pair("ref", \e -> {
 				PRef(e, todo())
@@ -120,6 +120,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("array", \e -> {
 				PArray(getPListArray(e), todo());
 			}),
+			Pair("module", \tl -> {
+				PModule(map(getPListArray(tl), getPTopLevel), todo());
+			})
 		]),
 		// Binary operators
 		pairs2tree([
@@ -149,7 +152,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PUnion(getPTypeName(a), map(getPListArray(b), getPTypeName), todo())
 			}),
 			Pair("global", \a, b -> {
-				PGlobal(getPString(a), b, todo())
+				PGlobal(getPString(a), b, getPPos(a))
 			}),
 			Pair("structdef", \a, b -> {
 				PStruct(getPString(a), map(getPListArray(b), getPStructArg), todo());
@@ -169,7 +172,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("typedef", \var, type -> {
 				PTypeDef(getPString(var), getPType(type), todo())
 			}),
-			Pair("setpos", setPPos)
+			Pair("setpos", \pos, e -> {
+				setPPos(s2i(getPString(pos)), e)
+			})
 		]),
 		// Ternary operators
 		pairs2tree([
@@ -185,7 +190,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PStructArg(getPString(b), getPListArray(a) != [], getPType(c), todo())
 			}),
 			Pair("global_typed", \id, type, value -> {
-				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)], todo()), todo())
+				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)], todo()), getPPos(id))
 			}),
 			Pair("fndef_typed", \id, type, body -> {
 				fntype = getPTypeFunction(type);
@@ -230,3 +235,9 @@ getPStructArg(a : PExp) -> PStructArg {
 	}
 }
 
+getPTopLevel(e : PExp) -> PTopLevel {
+	switch (e) {
+		PTopLevel(): e;
+		default: PForbid("", -1);
+	}
+}

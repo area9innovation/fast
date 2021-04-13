@@ -1,4 +1,4 @@
-flow = '\uFEFF'? ws toplevels lastLineComment?;
+flow = '\uFEFF'? ws $$pos toplevels $"module" $"setpos" lastLineComment?;
 
 toplevels = $"list" toplevel $"cons" (toplevel $"cons")* optsemi | $"list";
 
@@ -18,7 +18,7 @@ native = "native" s idpos ':' ws $"list" ("io" ws $$"io" $"cons")? type '=' ws $
 union = typename "::=" ws typenames semi $"union";
 	typenames = $"list" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"list";
 
-global = idpos "=" ws brace optsemi $"global" 
+global = idpos "=" ws brace optsemi $"global"
 		| idpos "=" ws exp semi $"global" 
 		| idpos ":" ws type "=" ws brace optsemi $"global_typed"
 		| idpos ":" ws type "=" ws exp semi $"global_typed";

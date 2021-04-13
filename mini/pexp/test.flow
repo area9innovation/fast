@@ -12,6 +12,7 @@ main() {
 		file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 		code = getFileContent(file);
 		p = parsePExp(code, println);
+		prettyPos(code, "", p);
 	} else {
 		files = filter(readDirectoryRecursively("c:\\fast"), \f -> endsWith(f, ".flow"));
 		t = timestamp();
@@ -37,4 +38,74 @@ main() {
 //	cpp = pexp2cpp(p, true);
 //	println(cpp);
 	quit(0);
+}
+
+prettyPos(input : string, i : string, p : PExp) -> void {
+	rec = \e -> prettyPos(input, i + " ", e);
+	pr = \s : string -> {
+		line = if (p.pos == -1) "MISSING POS " + p.structname else substring(input, p.pos, 20);
+		println(i + s + ": \"" + takeBefore(line, "\n", line) + "\"");
+	}
+	switch (p) {
+		PVoid(pos): pr("void");
+		PBool(v, pos): pr("bool");
+		PInt(v, pos): pr("int");
+		PDouble(v, pos): pr("double");
+		PString(v, pos): pr("string");
+		PArrayValue(values, pos): {
+			pr("arrayvalues");
+			iter(values, rec)
+		}
+		default: println(i + "TODO pretty: " + p.structname);
+		PLambda(args, body, pos): {
+			pr("lambda");
+			rec(body);
+		}
+		PModule(tl, pos): {
+			pr("module");
+			iter(tl, rec);
+		}
+		PImport(path, pos): pr("import " + path);
+		PForbid(path, pos): pr("forbid " + path);
+		PExport(exports, pos): {
+			pr("export");
+			iter(exports, rec);
+		}
+		PGlobal(id, value, pos): {
+			pr("global " + id);
+			rec(value);
+		}
+		/*PNative(id, isIo, type, name, pos): 
+		PUnion(typename, types, pos): 
+		PStruct(id, structArgs, pos): 
+		PStructArg(id, ismutable, type, pos): 
+		PTypeDef(id, type, pos): 
+		PTypePar(id, pos): 
+		PTypeName(id, typars, pos): 
+		PTypeFunction(args, returnType, pos): 
+		PArgType(id, type, pos): 
+		PStringInclude(path, pos): 
+		PVar(var, pos): 
+		PLet(var, value, body, pos): 
+		PIf(cond, then, else_, pos): 
+		PCall(fn, args, pos): 
+		*/
+		PCallOp(op, args, pos): {
+			pr("op: " + op);
+			iter(args, rec);
+		}
+		/*PRef(value, pos): 
+		PSetMutable(lhs, field, value, pos): 
+		PArray(exps, pos): 
+		PSequence(exps, pos): 
+		PSwitch(value, cases, pos): 
+		PCase(id, args, body, pos): 
+		PCast(value, target, pos): 
+		PWith(struct, value, fields, pos): 
+		PFieldAssign(id, value, pos): */
+		PList(l, pos): {
+			pr("list");
+			iterList(l, rec)
+		}
+	}
 }

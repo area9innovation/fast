@@ -1,4 +1,4 @@
-	import runtime;
+import runtime;
 forbid ds/tree;
 
 export {
