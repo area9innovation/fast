@@ -110,7 +110,7 @@ getPFieldAssign(p : PExp) -> PFieldAssign {
 
 getPListArray(p : PExp) -> [PExp] {
 	switch (p) {
-		PList(l): list2array(l);
+		PList(l, __): list2array(l);
 		default: [];
 	}
 }

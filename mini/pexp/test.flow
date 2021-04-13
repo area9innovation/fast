@@ -6,10 +6,10 @@ import fs/filesystem;
 
 
 main() {
-	if (false) {
-		file0 = "mini/tests/positions.flow";
+	if (true) {
+		file = "mini/tests/positions.flow";
 		file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
-		file = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
+		file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 		code = getFileContent(file);
 		p = parsePExp(code, println);
 	} else {

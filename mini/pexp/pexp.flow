@@ -59,7 +59,7 @@ export {
 			PFieldAssign(id : string, value : PExp, pos : int);
 
 
-	PList(l : List<PExp>);
+	PList(l : List<PExp>, pos : int);
 
 		// Definitions
 	PType ::= PTypePar, PTypeName, PTypeFunction, PArgType;

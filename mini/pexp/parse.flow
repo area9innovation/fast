@@ -1,4 +1,5 @@
 import mini/pexp/pexp;
+import mini/pexp/position;
 import mini/pexp/values;
 import mini/pexp/pexp_parser;
 import text/gringo/gringo_interpreter;
@@ -28,19 +29,19 @@ parsePExp(program : string, onError : (string) -> void) -> PExp {
 pexpTypeAction(onError : (string) -> void) -> GringoAction<List<PExp>> {
 	gringoTypedAction(
 		// Make a string
-		\s : string -> PString(s, 0),
+		\s : string -> PString(s, -1),
 		// Extract a string from a value (typically a string)
 		getPString,
 		// Construct the basic value
-		\b -> PBool(b, 0),
-		\i -> PInt(s2i(i), 0),
-		\d -> PDouble(s2d(d), 0),
+		\b -> PBool(b, -1),
+		\i -> PInt(s2i(i), -1),
+		\d -> PDouble(s2d(d), -1),
 		// Construct an empty array
-		\ -> PList(makeList()),
+		\ -> PList(makeList(), -1),
 		// Append an element to an array
 		\h, t -> {
 			switch (t) {
-				PList(es): PList(Cons(h, es));
+				PList(es, p): PList(Cons(h, es), p);
 				default: t;
 			}
 		},
@@ -90,13 +91,13 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PInt(parseHex(getPString(e)), todo())
 			}),
 			Pair("stringinclude", \e -> {
-				PStringInclude(getPString(e), todo())
+				PStringInclude(getPString(e), getPPos(e))
 			}),
 			Pair("import", \e -> {
-				PImport(getPString(e), todo())
+				PImport(getPString(e), getPPos(e))
 			}),
 			Pair("forbid", \e -> {
-				PForbid(getPString(e), todo())
+				PForbid(getPString(e), getPPos(e))
 			}),
 			Pair("export", \e -> {
 				PExport(e, todo())
@@ -168,6 +169,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("typedef", \var, type -> {
 				PTypeDef(getPString(var), getPType(type), todo())
 			}),
+			Pair("setpos", setPPos)
 		]),
 		// Ternary operators
 		pairs2tree([
@@ -208,7 +210,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PLet(getPString(a), PCallOp(":", [c, getPType(b)], todo()), d, todo())
 			}),
 			Pair("native", \id, isIo, type, name -> {
-				PNative(getPString(id), getPListArray(isIo) != [], getPType(type), getPString(name), todo())
+				PNative(getPString(id), getPListArray(isIo) != [], getPType(type), getPString(name), getPPos(id))
 			})
 		])
 	);
@@ -227,3 +229,4 @@ getPStructArg(a : PExp) -> PStructArg {
 		default: PStructArg("error", false, PTypeName("", [], -1), -1);
 	}
 }
+

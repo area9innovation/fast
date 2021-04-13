@@ -6,35 +6,36 @@ toplevel = import | export | forbid | native | union | global | functionOrStruct
 	semi = #";" ws;
 	optsemi = (";" ws)?;
 
-import = "import" s $path ws semi $"import";
-export = "export" ws "{" ws toplevels "}" ws $"export"; 
-forbid = "forbid" s $path ws semi $"forbid";
+import = "import" s pathpos ws semi $"import";
+export = "export" ws $$pos "{" ws toplevels "}" ws $"export" $"setpos";
+forbid = "forbid" s pathpos ws semi $"forbid";
+	pathpos = $$pos $path $"setpos";
 	path = bid ('/' bid)*;
 
-native = "native" s id ':' ws $"list" ("io" ws $$"io" $"cons")? type '=' ws $nativename ws semi $"native";
+native = "native" s idpos ':' ws $"list" ("io" ws $$"io" $"cons")? type '=' ws $nativename ws semi $"native";
 	nativename = bid ('.' bid)*;
 
 union = typename "::=" ws typenames semi $"union";
 	typenames = $"list" typename $"cons" ("," ws typename $"cons")* ("," ws)? | $"list";
 
-global = id "=" ws brace optsemi $"global" 
-		| id "=" ws exp semi $"global" 
-		| id ":" ws type "=" ws brace optsemi $"global_typed"
-		| id ":" ws type "=" ws exp semi $"global_typed";
+global = idpos "=" ws brace optsemi $"global" 
+		| idpos "=" ws exp semi $"global" 
+		| idpos ":" ws type "=" ws brace optsemi $"global_typed"
+		| idpos ":" ws type "=" ws exp semi $"global_typed";
 
 functionOrStruct = 
 	// Forward declaration
-	  id fntype brace optsemi $"fndef_typed" 
-	| id fntype exp semi $"fndef_typed"
-	| id fntype semi $"typedef"
-	| id fntypeauto brace optsemi $"fndef_typed" 
-	| id fntypeauto exp semi $"fndef_typed" 
-	| id '(' ws structargs ')' ws semi $"structdef" // This is a struct!
+	  idpos fntype brace optsemi $"fndef_typed" 
+	| idpos fntype exp semi $"fndef_typed"
+	| idpos fntype semi $"typedef"
+	| idpos fntypeauto brace optsemi $"fndef_typed" 
+	| idpos fntypeauto exp semi $"fndef_typed" 
+	| idpos '(' ws structargs ')' ws semi $"structdef" // This is a struct!
 
 	// Forward type declarations
-	| id ':' ws type semi $"typedef"
+	| idpos ':' ws type semi $"typedef"
 	// Struct
-	| id ':' ws '(' ws structargs ')' ws semi $"structdef"
+	| idpos ':' ws '(' ws structargs ')' ws semi $"structdef"
 	;
 
 	// listof(structarg, ",")
@@ -43,8 +44,8 @@ functionOrStruct =
 
 exp = 
 	// These optsemi should really be semi, but we have too much legacy without
-	(id "=" ws exp optsemi (exp | $"void") $"let"	// The else is error recovery for the common case of missing a body
-		| id ":" ws type "=" ws exp optsemi exp $"let_typed"
+	(idpos "=" ws exp optsemi (exp | $"void") $"let"	// The else is error recovery for the common case of missing a body
+		| idpos ":" ws type "=" ws exp optsemi exp $"let_typed"
 	)
 	|> exp ":=" ws exp $":="
 	|> exp < ("|>" ws exp $"|>")*
@@ -67,8 +68,8 @@ exp =
 		| exp (
 			"(" ws exps ")" ws $"call"
 			| with
-			| "." ws id "::=" ws exp $"::="
-			| "." ws id $"dot"
+			| "." ws idpos "::=" ws exp $"::="
+			| "." ws idpos $"dot"
 			| "[" ws exp "]" ws $"index"
 		)*
 	)
@@ -86,7 +87,7 @@ exp =
 		| "true" !letterOrDigit ws $"true"
 		| "false" !letterOrDigit ws $"false"
 		| id $"var"
-		| '"#inc' "lude" s $path '"' ws $"stringinclude"
+		| '"#inc' "lude" s pathpos '"' ws $"stringinclude"
 		| string ws $"unescape"
 		| "0x" $(hexdigit+) ws $"hex"
 		| $double ws $"s2d"
@@ -125,6 +126,9 @@ lambda = backslash ws lambdaargs "->" ws exp "" $"lambda"; // The "" makes right
 
 exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
 	| $"list";
+
+
+idpos = $$pos id $"setpos";
 
 //
 // Types
