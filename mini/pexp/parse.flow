@@ -149,13 +149,13 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PTypeName(getPString(a), map(getPListArray(b), getPType), getPPos(a))
 			}),
 			Pair("union", \a, b -> {
-				PUnion(getPTypeName(a), map(getPListArray(b), getPTypeName), todo())
+				PUnion(getPTypeName(a), map(getPListArray(b), getPTypeName), getPPos(a))
 			}),
 			Pair("global", \a, b -> {
 				PGlobal(getPString(a), b, getPPos(a))
 			}),
 			Pair("structdef", \a, b -> {
-				PStruct(getPString(a), map(getPListArray(b), getPStructArg), todo());
+				PStruct(getPString(a), map(getPListArray(b), getPStructArg), getPPos(a));
 			}),
 			Pair("fntype", \a, b -> {
 				PTypeFunction(map(getPListArray(a), getPType), getPType(b), todo())
@@ -187,7 +187,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PCase(getPString(a), map(getPListArray(b), getPString), c, todo())
 			}),
 			Pair("structarg", \a, b, c -> {
-				PStructArg(getPString(b), getPListArray(a) != [], getPType(c), todo())
+				PStructArg(getPString(b), getPListArray(a) != [], getPType(c), getPPos(b))
 			}),
 			Pair("global_typed", \id, type, value -> {
 				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)], todo()), getPPos(id))

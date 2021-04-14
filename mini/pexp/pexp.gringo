@@ -40,24 +40,24 @@ functionOrStruct =
 
 	// listof(structarg, ",")
 	structargs = $"list" structarg $"cons" ("," ws structarg $"cons")* ("," ws)? | $"list";
-	structarg = $"list" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? id ':' ws type $"structarg";
+	structarg = $"list" ("mutable" !letterOrDigit ws $$"mutable" $"cons")? idpos ':' ws type $"structarg";
 
 exp = 
 	// These optsemi should really be semi, but we have too much legacy without
 	(idpos "=" ws exp optsemi (exp | $"void") $"let"	// The else is error recovery for the common case of missing a body
 		| idpos ":" ws type "=" ws exp optsemi exp $"let_typed"
 	)
-	|> exp ":=" ws exp $":="
-	|> exp < ("|>" ws exp $"|>")*
-	|> exp "||" ws exp $"||"
-	|> exp "&&" ws exp $"&&"
-	|> exp "==" ws exp $"==" | exp "!=" ws exp $"!="
-	|> exp ("<=" ws exp $"<=" | "<" ws exp $"<" | ">=" ws exp $">=" | ">" ws exp $">")
-	|> exp < ("+" ws exp $"+" | "-" ws exp $"-")*
-	|> exp ("*" ws exp $"*" | "/" ws exp $"/" | "%" ws exp $"%")*
+	|> exp $$pos ":=" ws exp $":=" $"setpos"
+	|> exp < ( $$pos "|>" ws exp $"|>" $"setpos")*
+	|> exp $$pos "||" ws exp $"||" $"setpos"
+	|> exp $$pos "&&" ws exp $"&&" $"setpos"
+	|> exp $$pos "==" ws exp $"==" $"setpos" | exp $$pos "!=" ws exp $"!=" $"setpos"
+	|> exp ($$pos "<=" ws exp $"<=" $"setpos" | $$pos "<" ws exp $"<" $"setpos" | $$pos ">=" ws exp $">=" $"setpos" | $$pos ">" ws exp $">" $"setpos")
+	|> exp < ($$pos "+" ws exp $"+" $"setpos" | $$pos "-" ws exp $"-" $"setpos")*
+	|> exp ($$pos "*" ws exp $"*" $"setpos" | $$pos "/" ws exp $"/" $"setpos" | $$pos "%" ws exp $"%" $"setpos")*
 
 	// To ensure that ?? does not consider the : as part of the type
-	|> exp (":" ws type $":")+
+	|> exp ($$pos ":" ws type $":" $"setpos")+
 
 	|> exp "??" ws <exp ":" ws exp $"maybe"
 
@@ -95,7 +95,7 @@ exp =
 		| $$pos "[" ws exps "]" ws $"array" $"setpos"
 	);
 
-with = '(' ws exp "with" s fields ')' ws $"with";
+with = $$pos '(' ws exp "with" s fields ')' ws $"with" $"setpos";
 	fields = $"list" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"list";
 		fieldassign = id '=' ws exp $"fieldassign";
 
@@ -147,7 +147,7 @@ type =
 	| fntype
 	| typename
 	| "[" ws type "]" ws $"arraytype"
-	| $("?"+) ws $"polytype"
+	| $$pos $("?"+) ws $"polytype" $"setpos"
 	;
 
 fntype = $$pos "(" ws argtypes ")" ws "->" ws type $"fntype" $"setpos";
