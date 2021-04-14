@@ -62,37 +62,37 @@ exp =
 	|> exp "??" ws <exp ":" ws exp $"maybe"
 
 	|> (
-		'!' ws exp $"not"
-		| "-" ws exp $"negate"
+		$$pos '!' ws exp $"not" $"setpos"
+		| $$pos "-" ws exp $"negate" $"setpos"
 		| lambda
 		| exp (
-			"(" ws exps ")" ws $"call"
+			$$pos "(" ws exps ")" ws $"call" $"setpos"
 			| with
-			| "." ws idpos "::=" ws exp $"::="
-			| "." ws idpos $"dot"
-			| "[" ws exp "]" ws $"index"
+			| $$pos "." ws idpos "::=" ws exp $"::=" $"setpos"
+			| $$pos "." ws idpos $"dot" $"setpos"
+			| $$pos "[" ws exp "]" ws $"index" $"setpos"
 		)*
 	)
 
-	|> '^' ws exp $"deref"
+	|> $$pos '^' ws exp $"deref" $"setpos"
 
 	|> (
-		"if" !letterOrDigit ws "(" ws exp ")" ws exp "else" ws exp $"ifelse" 
-		| "if" !letterOrDigit ws "(" ws exp ")" ws exp $"if"
+		$$pos "if" !letterOrDigit ws "(" ws exp ")" ws exp "else" ws exp $"ifelse" $"setpos"
+		| $$pos "if" !letterOrDigit ws "(" ws exp ")" ws exp $"if"  $"setpos"
 		| "(" ws exp ")" ws 
-		| "ref" !letterOrDigit ws exp $"ref"
+		| $$pos "ref" !letterOrDigit ws exp $"ref" $"setpos"
 		| switch
-		| "cast" !letterOrDigit ws '(' ws exp "->" ws type ')' ws $"cast"
+		| $$pos "cast" !letterOrDigit ws '(' ws exp "->" ws type ')' ws $"cast" $"setpos"
 		| brace
-		| "true" !letterOrDigit ws $"true"
-		| "false" !letterOrDigit ws $"false"
-		| id $"var"
-		| '"#inc' "lude" s pathpos '"' ws $"stringinclude"
-		| string ws $"unescape"
+		| $$pos "true" !letterOrDigit ws $"true" $"setpos"
+		| $$pos "false" !letterOrDigit ws $"false" $"setpos"
+		| $$pos id $"var" $"setpos"
+		| $$pos '"#inc' "lude" s pathpos '"' ws $"stringinclude" $"setpos"
+		| $$pos string ws $"unescape" $"setpos"
 		| $$pos "0x" $(hexdigit+) ws $"hex" $"setpos"
 		| $$pos $double ws $"s2d" $"setpos"
 		| $$pos $int ws $"s2i" $"setpos"
-		| "[" ws exps "]" ws $"array"
+		| $$pos "[" ws exps "]" ws $"array" $"setpos"
 	);
 
 with = '(' ws exp "with" s fields ')' ws $"with";
@@ -112,7 +112,7 @@ switch = "switch" !letterOrDigit ws
 
 	names = $"list" id $"cons" ("," ws id $"cons")* ("," ws)? | $"list";
 
-brace = "{" ws expsemi "}" ws $"sequence";
+brace = $$pos "{" ws expsemi "}" ws $"sequence" $"setpos";
 	// The first optsemi here is to have backwards compatibility. Really, it should be semi
 	expsemi = $"list" exp $"cons" (optsemi exp $"cons")* optsemi
 		| $"list";
@@ -150,10 +150,10 @@ type =
 	| $("?"+) ws $"polytype"
 	;
 
-fntype = "(" ws argtypes ")" ws "->" ws type $"fntype";
-fntypeauto = "(" ws argtypes ")" ws $"auto" $"fntype";
+fntype = $$pos "(" ws argtypes ")" ws "->" ws type $"fntype" $"setpos";
+fntypeauto = $$pos "(" ws argtypes ")" ws $"auto" $"fntype" $"setpos";
 	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? | $"list";
-	argtype = id ":" ws type $"argtype" | type;
+	argtype = $$pos id ":" ws type $"argtype" $"setpos" | type;
 
 typename = idpos typars $"typename";
 	typars = "<" ws types ">" ws | $"list";
