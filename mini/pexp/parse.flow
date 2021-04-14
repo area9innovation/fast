@@ -184,13 +184,13 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PLet(getPString(a), b, c, todo())
 			}),
 			Pair("case", \a, b, c -> {
-				PCase(getPString(a), map(getPListArray(b), getPString), c, todo())
+				PCase(getPString(a), map(getPListArray(b), getPString), c, getPPos(a))
 			}),
 			Pair("structarg", \a, b, c -> {
 				PStructArg(getPString(b), getPListArray(a) != [], getPType(c), getPPos(b))
 			}),
 			Pair("global_typed", \id, type, value -> {
-				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)], todo()), getPPos(id))
+				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)], getPPos(id)), getPPos(id))
 			}),
 			Pair("fndef_typed", \id, type, body -> {
 				fntype = getPTypeFunction(type);
@@ -219,7 +219,21 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			})
 		]),
 		// Stack ops
-		makeTree(),
+		pairs2tree([
+			Pair("swap", \s : List<PExp> -> {
+				switch (s) {
+					Cons(h0, t0): {
+						switch (t0) {
+							Cons(h1, t1): {
+								Cons(h1, Cons(h0, t1))
+							}
+							EmptyList(): s;
+						}
+					}
+					EmptyList(): s;
+				}
+			})
+		]),
 	);
 }
 
