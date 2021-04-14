@@ -972,3 +972,23 @@ The restriction of the mini-lambda in the entire compiler is too untyped.
    TExp = Typed Expressions
 
 4. Then plug into the backends.
+
+
+# Rewrite syntax
+
+flow-exp: $id = $val; $body
+=>
+js-statement: 
+var $id = $val(100);
+$body
+
+flow-exp: $l + $r
+=>
+js-exp: $l(100) + $r(99)
+
+# Type inference
+
+Use the egraph over types and tyvars.
+Use lower/upper types as from
+https://gilmi.me/blog/post/2021/04/13/giml-typing-polymorphic-variants
+
