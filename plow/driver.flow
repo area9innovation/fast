@@ -9,25 +9,42 @@ import fast/fast_path;
 import sys/concurrent;
 
 export {
-	compilePlow(cache : PlowCache, file : string) -> Maybe<DModule>;
-
-	PlowCache(
+	makePlowCache(
 		// How to report an error
 		onError : (string) -> void,
 		// The includes we should use to find files
-		includes : [string], 
-		// Map of the Modules we have already parsed and desugared
-		modules : DModules,
-	);
+		includes : [string]
+	) -> PlowCache;
+
+	// Parse and desugar a file, and all the transitive imports
+	compilePlow(cache : PlowCache, file : string) -> DModule;
 }
 
-compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
+PlowCache(
+	// How to report an error
+	onError : (string) -> void,
+	// The includes we should use to find files
+	includes : [string], 
+	// Map of the Modules we have already parsed and desugared
+	modules : DModules,
+);
+
+makePlowCache(
+	// How to report an error
+	onError : (string) -> void,
+	// The includes we should use to find files
+	includes : [string]
+) -> PlowCache {
+	PlowCache(onError, includes, DModules(initConcurrentHashMap()));
+}
+
+compilePlow(cache : PlowCache, file : string) -> DModule {
 	path = fastPath2path(cache.includes, changeFileExt(file, ".flow"));
 	flowpath = path2fastPath(cache.includes, path);
 
 	if (containsConcurrentHashMap(cache.modules.modules, flowpath)) {
-		Some(getConcurrentHashMap(cache.modules.modules, flowpath, getDummyDModule()));
-	} else {
+		getConcurrentHashMap(cache.modules.modules, flowpath, getDummyDModule());
+	} else if (fileExists(path)) {
 		// OK, we have to parse this
 		code = getFileContent(path);
 
@@ -74,7 +91,10 @@ compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
 		dmod = desugarPExp(dd, flowpath, path, p);
 
 		setConcurrentHashMap(cache.modules.modules, flowpath, dmod);
-		Some(dmod);
+		dmod;
+	} else {
+		cache.onError(file + " could not be found");
+		getDummyDModule();
 	}
 }
 

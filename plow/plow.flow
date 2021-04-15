@@ -16,10 +16,10 @@ main() {
 
 	errors = ref 0;
 
-	cache = PlowCache(\e -> {
+	cache = makePlowCache(\e -> {
 		errors := ^errors + 1;
 		println(e);
-	}, allincludes, DModules(initConcurrentHashMap()));
+	}, allincludes);
 
 	if (!isDirectory(file)) {
 		d = compilePlow(cache, file);
