@@ -19,7 +19,7 @@ main() {
 	cache = PlowCache(\e -> {
 		errors := ^errors + 1;
 		println(e);
-	}, allincludes, initConcurrentHashMap());
+	}, allincludes, DModules(initConcurrentHashMap()));
 
 	if (!isDirectory(file)) {
 		d = compilePlow(cache, file);

@@ -2,6 +2,8 @@ import plow/dexp/dexp;
 import plow/dexp/desugar;
 import plow/pexp/parse;
 
+import plow/lookup;
+
 import fast/fast_path;
 
 import sys/concurrent;
@@ -14,8 +16,8 @@ export {
 		onError : (string) -> void,
 		// The includes we should use to find files
 		includes : [string], 
-		// A concurrent hash map from flowpath to DMondule of the Modules we have already parsed and desugared
-		modules : native,
+		// Map of the Modules we have already parsed and desugared
+		modules : DModules,
 	);
 }
 
@@ -23,8 +25,8 @@ compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
 	path = fastPath2path(cache.includes, changeFileExt(file, ".flow"));
 	flowpath = path2fastPath(cache.includes, path);
 
-	if (containsConcurrentHashMap(cache.modules, flowpath)) {
-		Some(getConcurrentHashMap(cache.modules, flowpath, getDummyDModule()));
+	if (containsConcurrentHashMap(cache.modules.modules, flowpath)) {
+		Some(getConcurrentHashMap(cache.modules.modules, flowpath, getDummyDModule()));
 	} else {
 		// OK, we have to parse this
 		code = getFileContent(path);
@@ -37,20 +39,30 @@ compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
 		mods = concurrent(false, map(imports, \i -> {
 			\ -> compilePlow(cache, i.path)
 		}));
-		println("Finished parsing imports for " + path);
+
+		// A helper to lookup structs
+		structLookup = DImportLookup(cache.modules, \module, n -> {
+			lookupTree(module.structs, n)
+		}, ref makeTree(), ref makeSet());
+
+		// A helper to lookup unions
+		unionLookup = DImportLookup(cache.modules, \module, n -> {
+			lookupTree(module.unions, n)
+		}, ref makeTree(), ref makeSet());
 
 		dd = DDesugar(flowpath, \n -> {
 			// OK, scan our imports for this struct
-			cache.onError(path + ": TODO: Find this struct " + n);
-			None()
+			structLookup.visited := makeSet();
+			importLookup(structLookup, imports, n)
 		}, \n -> {
-			cache.onError(path + ": TODO: Find this union " + n);
-			None()
+			// OK, scan our imports for this struct
+			unionLookup.visited := makeSet();
+			importLookup(unionLookup, imports, n)
 		}, makeOnError(path, cache.onError));
 
 		dmod = desugarPExp(dd, p);
 
-		setConcurrentHashMap(cache.modules, flowpath, dmod);
+		setConcurrentHashMap(cache.modules.modules, flowpath, dmod);
 		Some(dmod);
 	}
 }
@@ -70,3 +82,17 @@ makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void 
 		);
 	}
 }
+
+/*transitiveModuleSearch(visited : Set<string>, modules : [DModule], fn : (?) -> Maybe<??>) -> Maybe<??> {
+	fold2(modules, visited, None(), \nvisit, acc, module -> {
+		if (acc == None()) {
+			mfind = fn(module);
+			mfind ?? {
+				Pair(nvisit, Some(mfind))
+			} : {
+
+			}
+		} else Pair(nvisit, acc);
+	});
+}
+*/

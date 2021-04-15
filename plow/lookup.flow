@@ -1,0 +1,50 @@
+import plow/dexp/desugar;
+import ds/set;
+import sys/concurrent;
+
+export {
+	// A structure to help do lookups in the modules tree
+	DImportLookup(
+		modules : DModules,
+		// A function to lookup a name in a module (not transitively)
+		lookup : (DModule, string) -> Maybe<?>,
+		// A cache to speed up the matching
+		cache : ref Tree<string, ?>,
+		// During a lookup, we keep track of what modules have been visited
+		visited : ref Set<string>,
+	);
+
+	importLookup(m : DImportLookup<?>, imports : [DImport], name : string) -> Maybe<?>;
+
+	// A concurrent hash map from flowpath to DMondule 
+	DModules(modules : native);
+}
+
+importLookup(m : DImportLookup<?>, imports : [DImport], name : string) -> Maybe<?> {
+	seen = lookupTree(^(m.cache), name);
+	seen ?? {
+		Some(seen)
+	} : {
+		mfind = fold(imports, None(), \acc, impor : DImport -> {
+			if (acc == None()) {
+				module = getConcurrentHashMap(m.modules.modules, impor.path, getDummyDModule());
+				modfind = m.lookup(module, name);
+				switch (modfind) {
+					None(): {
+						// OK, not found in our module, so we have to check the imports
+						m.visited := insertSet(^(m.visited), impor.path);
+						importLookup(m, module.imports, name);
+					}
+					Some(f): Some(f);
+				}
+			} else acc;
+		});
+		mfind ?? {
+			// OK, add to the cache
+			m.cache := setTree(^(m.cache), name, mfind);
+			Some(mfind);
+		} : {
+			None();
+		}
+	}
+}
