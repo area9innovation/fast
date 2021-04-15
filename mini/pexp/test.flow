@@ -1,10 +1,38 @@
 import mini/pexp/parse;
 import mini/dexp/desugar;
 import fs/filesystem;
-//import mini/pexp/interpret;
-//import mini/pexp/compile;
 
-makeOnError(file : string) -> (int, string) -> void {
+main() {
+	file3 = "mini/tests/positions.flow";
+	file = "mini/tests/fold.flow";
+	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
+	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
+	file0 = "c:\\fast\\mini";
+
+	if (!isDirectory(file)) {
+		d = parseAndDesugar(file, println);
+		println(d);
+	} else {
+		files = filter(readDirectoryRecursively(file), \f -> endsWith(f, ".flow"));
+		t = timestamp();
+
+		errors = ref 0;
+		iter(files, \fil -> {
+			// println(fil);
+			if (^errors < 1000) {
+				d = parseAndDesugar(fil, \error -> {
+					errors := ^errors + 1;
+					println(error)
+				});
+			}
+		});	
+
+		println(timestamp() - t);
+	}
+	quit(0);
+}
+
+makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void {
 	resolver = ref None();
 	\pos, error -> {
 		res = onlyOnce(resolver, \ -> {
@@ -12,7 +40,7 @@ makeOnError(file : string) -> (int, string) -> void {
 			makeLineResolver(text);
 		});
 		linecol = findLine(res, pos); // maxi
-		println(
+		onError(
 			file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
 			+ "\n" + linecol.line
 			+ "\n" + lpad("^", " ", linecol.lineIndex - 1)
@@ -20,50 +48,20 @@ makeOnError(file : string) -> (int, string) -> void {
 	}
 }
 
-main() {
-	if (true) {
-		file = "mini/tests/positions.flow";
-		file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
-		file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
-		code = getFileContent(file);
-		p = parsePExp(code, println);
-		// prettyPos(code, "", p);
+parseAndDesugar(file : string, onError : (string) -> void) -> DModule {
+	code = getFileContent(file);
+	p = parsePExp(code, \e -> onError(file + ":" + e));
+	// prettyPos(code, "", p);
 
-		dd = DDesugar(file, \n -> {
-			println("TODO: Find this struct " + n);
-			None()
-		}, \n -> {
-			println("TODO: Find this union " + n);
-			None()
-		}, makeOnError(file));
+	dd = DDesugar(file, \n -> {
+		onError(file + ": TODO: Find this struct " + n);
+		None()
+	}, \n -> {
+		onError(file + ": TODO: Find this union " + n);
+		None()
+	}, makeOnError(file, onError));
 
-		d = desugarPExp(dd, p);
-		println(d);
-	} else {
-		files = filter(readDirectoryRecursively("c:\\fast"), \f -> endsWith(f, ".flow"));
-		t = timestamp();
-
-		errors = ref 0;
-		iter(files, \file -> {
-			// println(file);
-			if (^errors < 1000) {
-				code = getFileContent(file);
-				p = parsePExp(code, \error -> {
-					errors := ^errors + 1;
-					println(file + ":" + error)
-				});
-			}
-		});	
-
-		println(timestamp() - t);
-	}
-
-	// println(p);
-//	va = interpretPExp(makeTree(), p);
-//	println(va);
-//	cpp = pexp2cpp(p, true);
-//	println(cpp);
-	quit(0);
+	desugarPExp(dd, p);
 }
 
 prettyPos(input : string, i : string, p : PExp) -> void {

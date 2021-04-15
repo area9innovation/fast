@@ -1,0 +1,13 @@
+import mini/dexp/dexp;
+
+export {
+	DDesugar(
+		flowpath : string,
+		// Is this name a struct?
+		resolveStructName : (string) -> Maybe<DStruct>,
+		// Is this name a union?
+		resolveUnionName : (string) -> Maybe<DUnion>,
+		// Report an error at this position in this file
+		onError : (int, string) -> void,
+	);
+}

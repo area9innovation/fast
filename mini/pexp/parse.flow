@@ -10,7 +10,7 @@ export {
 }
 
 parsePExp(program : string, onError : (string) -> void) -> PExp {
-	if (false) {
+	if (true) {
 		gringoTypedParse(program, pexpTypeAction(onError), parse_flow, PSequence([], -1), onError);
 	} else {
 		gterm = prepareGringoParser("#include mini/pexp/pexp.gringo", onError);
