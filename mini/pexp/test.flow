@@ -1,8 +1,24 @@
 import mini/pexp/parse;
+import mini/dexp/desugar;
 import fs/filesystem;
 //import mini/pexp/interpret;
 //import mini/pexp/compile;
 
+makeOnError(file : string) -> (int, string) -> void {
+	resolver = ref None();
+	\pos, error -> {
+		res = onlyOnce(resolver, \ -> {
+			text = getFileContent(file);
+			makeLineResolver(text);
+		});
+		linecol = findLine(res, pos); // maxi
+		println(
+			file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
+			+ "\n" + linecol.line
+			+ "\n" + lpad("^", " ", linecol.lineIndex - 1)
+		);
+	}
+}
 
 
 main() {
@@ -12,7 +28,15 @@ main() {
 		file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 		code = getFileContent(file);
 		p = parsePExp(code, println);
-		prettyPos(code, "", p);
+		// prettyPos(code, "", p);
+
+		dd = DDesugar(file, \n -> {
+			println("TODO");
+			DStruct("", [], -1)
+		}, makeOnError(file));
+
+		d = desugarPExp(dd, p);
+		println(d);
 	} else {
 		files = filter(readDirectoryRecursively("c:\\fast"), \f -> endsWith(f, ".flow"));
 		t = timestamp();
@@ -170,6 +194,12 @@ prettyPos(input : string, i : string, p : PExp) -> void {
 		PFieldAssign(id, value, pos): {
 			pr("field " + id);
 			rec(value);
+		}
+		PMaybe(value, match, otherwise, pos): {
+			pr("maybe");
+			rec(value);
+			rec(match);
+			rec(otherwise);
 		}
 		PList(l, pos): {
 			pr("list");

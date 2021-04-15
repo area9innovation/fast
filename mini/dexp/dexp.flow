@@ -1,0 +1,78 @@
+import ds/list;
+import ds/tree;
+
+/*
+Differences to PExp:
+- It is not a complete Exp type, but has different unions for toplevel, exp, type
+- "Temp" structures such as argtype, case, etc are not in exp
+- We have constructors resolved to not be calls
+- Union match in switch is expanded
+- The top level is indexed like a tree
+- Introduce downcast in switches
+- Expand ?? to switch
+- Extract let-bindings from cases
+
+TODO:
+- Should we resolve string includes? Probably not
+*/
+export {
+	// We know what flowpath this file is
+	DModule(flowpath : string, imports : [DImports], exported : DExport, toplevels : Tree<string, DTopLevel>, pos : int);
+
+	DImports ::= DImport, DForbid;
+		DImport(path : string, pos : int);
+		DForbid(path : string, pos : int);
+
+	DExport(exports : [DTopLevel], pos : int);
+
+	DTopLevel ::= DGlobal, DNative, DUnion, DStruct, DTypeDef;
+		DGlobal(id : string, value : DExp, pos : int);
+		DTypeDef(id : string, type : DType, pos : int);
+		DNative(id : string, isIo : bool, type : DType, name : string, pos : int);
+		DUnion(typename : DTypeName, types : [DTypeName], pos : int);
+		DStruct(id : string, structArgs : [DStructArg], pos : int);
+			DStructArg(id : string, ismutable : bool, type : DType, pos : int);
+		
+	DValue ::= DVoid, DBool, DInt, DDouble, DString;
+		DVoid(pos : int);
+		DBool(v : bool, pos : int);
+		DInt(v : int, pos : int);
+		DDouble(v : double, pos : int);
+		DString(v : string, pos : int);
+
+	DExp ::= DValue, DStringInclude,
+		DVar, DIf, DCall, DCallOp, DLambda,
+		DRef, DSetMutable, DArray, DSequence, DSwitch, DCast, DDowncast,
+		DWith;
+
+		DStringInclude(path : string, pos : int);
+
+		DRef(value : DExp, pos : int);
+		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int);
+		DVar(var : string, pos : int);
+		DLet(var : string, value : DExp, body : DExp, pos : int);
+		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int);
+		// Array construction
+		DArray(exps : [DExp], pos : int);
+		DSequence(exps : [DExp], pos : int);
+		DCall(fn : DExp, args : [DExp], pos : int);
+		// For built-in operators
+		DCallOp(op : string, args : [DExp], pos : int);
+		DLambda(args : [DArgType], body : DExp, pos : int);
+			DArgType(id : string, type : DType, pos : int);
+
+		DSwitch(value : DExp, cases : [DExp], defaultCase : Maybe<DExp>, pos : int);
+			DCase(id : string, body : DExp, pos : int);
+		DCast(value : DExp, target : DType, pos : int);
+		// This does a downcast from a supertype to a subtype
+		DDowncast(value : DExp, subtype : DType, pos : int);
+
+		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int);
+			DFieldAssign(id : string, value : DExp, pos : int);
+
+	DType ::= DTypePar, DTypeName, DTypeFunction;
+
+	DTypeName(id : string, typars : [DType], pos : int);
+	DTypePar(id : string, pos : int);
+	DTypeFunction(args : [DType], returnType : DType, pos : int);
+}

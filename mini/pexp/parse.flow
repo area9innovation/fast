@@ -60,7 +60,8 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 	GringoTypedOperators(
 		// Nullary operators
 		pairs2tree([
-			Pair("void", \ -> mktype("void")),
+			Pair("void", \ -> PVoid(todo())),
+			Pair("voidtype", \ -> mktype("void")),
 			Pair("bool", \ -> mktype("bool")),
 			Pair("int", \ -> mktype("int")),
 			Pair("double", \ -> mktype("double")),
@@ -100,7 +101,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PForbid(getPString(e), getPPos(e))
 			}),
 			Pair("export", \e -> {
-				PExport(getPListArray(e), todo())
+				PExport(map(getPListArray(e), getPTopLevel), todo())
 			}),
 			Pair("ref", \e -> {
 				PRef(e, todo())
@@ -132,7 +133,6 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			bin("+"), bin("-"), 
 			bin("*"), bin("/"), bin("%"), 
 			bin("index"), bin("dot"),
-			bin("if"),
 			Pair("lambda", \args, b -> {
 				fargs = map(getPListArray(args), getPArgType);
 				PLambda(fargs, b, todo());
@@ -178,8 +178,12 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 		]),
 		// Ternary operators
 		pairs2tree([
-			tri("ifelse"),
-			tri("maybe"),
+			Pair("ifelse", \c, t, e -> {
+				PIf(c, t, e, todo())
+			}),
+			Pair("maybe", \c, t, e -> {
+				PMaybe(c, t, e, todo())
+			}),
 			Pair("let", \a, b, c -> {
 				PLet(getPString(a), b, c, getPPos(a))
 			}),

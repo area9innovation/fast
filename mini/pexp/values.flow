@@ -18,6 +18,8 @@ export {
 	getPTypeFunction(p : PExp) -> PTypeFunction;
 
 	getPListArray(p : PExp) -> [PExp];
+
+	getPModule(p : PExp) -> PModule;
 }
 
 getPBool(e : PExp) -> bool {
@@ -104,5 +106,12 @@ getPListArray(p : PExp) -> [PExp] {
 	switch (p) {
 		PList(l, __): list2array(l);
 		default: [];
+	}
+}
+
+getPModule(p : PExp) -> PModule {
+	switch (p) {
+		PModule(__, __): p;
+		default: PModule([], -1);
 	}
 }

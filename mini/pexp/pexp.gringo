@@ -78,7 +78,7 @@ exp =
 
 	|> (
 		$$pos "if" !letterOrDigit ws "(" ws exp ")" ws exp "else" ws exp $"ifelse" $"setpos"
-		| $$pos "if" !letterOrDigit ws "(" ws exp ")" ws exp $"if"  $"setpos"
+		| $$pos "if" !letterOrDigit ws "(" ws exp ")" ws exp $$pos $"void" $"setpos" $"ifelse" $"setpos"
 		| "(" ws exp ")" ws 
 		| $$pos "ref" !letterOrDigit ws exp $"ref" $"setpos"
 		| switch
@@ -140,7 +140,7 @@ type =
 	| $$pos "double" !letterOrDigit ws $"double" $"setpos"
 	| $$pos "string" !letterOrDigit ws $"string" $"setpos"
 	| $$pos "flow" !letterOrDigit ws $"flow" $"setpos"
-	| $$pos "void" !letterOrDigit ws $"void" $"setpos"
+	| $$pos "void" !letterOrDigit ws $"voidtype" $"setpos"
 	| $$pos "auto" !letterOrDigit ws $"auto" $"setpos"
 	| $$pos "native" !letterOrDigit ws $"nativetype" $"setpos"
 	| $$pos "ref" !letterOrDigit ws type $"reftype" $"setpos"

@@ -1,10 +1,7 @@
 import ds/list;
 
 export {
-	PValue ::= PVoid, PBool, PInt, PDouble, PString, 
-		// When evaluated
-		PLambda;
-
+	PValue ::= PVoid, PBool, PInt, PDouble, PString;
 		PVoid(pos : int);
 		PBool(v : bool, pos : int);
 		PInt(v : int, pos : int);
@@ -12,10 +9,10 @@ export {
 		PString(v : string, pos : int);
 
 	PExp ::= PValue, PTopLevel, PType, PArgType,
-		PStringInclude,
-		PVar, PLet, PIf, PCall, PCallOp,
+		PStringInclude, 
+		PVar, PLet, PIf, PCall, PCallOp, PLambda,
 		PRef, PSetMutable, PArray, PSequence, PSwitch, PCase, PCast,
-		PWith, PFieldAssign,
+		PWith, PFieldAssign, PMaybe,
 
 		// While parsing, we have an efficient list for collecting arrays
 		PList
@@ -26,7 +23,7 @@ export {
 		PModule(toplevels : [PTopLevel], pos : int);
 		PImport(path : string, pos : int);
 		PForbid(path : string, pos : int);
-		PExport(exports : [PExp], pos : int);
+		PExport(exports : [PTopLevel], pos : int);
 		PGlobal(id : string, value : PExp, pos : int);
 		PTypeDef(id : string, type : PType, pos : int);
 		PNative(id : string, isIo : bool, type : PType, name : string, pos : int);
@@ -57,11 +54,11 @@ export {
 
 		PWith(struct : string, value : PExp, fields : [PFieldAssign], pos : int);
 			PFieldAssign(id : string, value : PExp, pos : int);
+		PMaybe(value : PExp, match : PExp, otherwise : PExp, pos : int);
 
-
+	// Useful while parsing to avoid n^2 behaviour
 	PList(l : List<PExp>, pos : int);
 
-		// Definitions
 	PType ::= PTypePar, PTypeName, PTypeFunction, PArgType;
 
 	PTypeName(id : string, typars : [PType], pos : int);

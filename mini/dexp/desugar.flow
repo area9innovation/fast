@@ -1,0 +1,94 @@
+import mini/dexp/dexp;
+import mini/pexp/pexp;
+import mini/pexp/values;
+
+export {
+	// Desugar a module
+	desugarPExp(dd : DDesugar, p : PExp) -> DModule;
+		DDesugar(
+			flowpath : string,
+			resolveName : (string) -> DTopLevel,
+			onError : (int, string) -> void,
+		);
+}
+
+desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
+	module = getPModule(pexp);
+	if (module.pos == -1) dd.onError(pexp.pos, "Expected module");
+
+	imports = filtermap(module.toplevels, \tl -> {
+			switch (tl) {
+				PImport(path, pos): {
+					// TODO: Should we check that this path exists?
+					if (path == "") dd.onError(pos, "Unknown import path");
+					Some(DImport(path, pos));
+				}
+				PForbid(path, pos): {
+					Some(DForbid(path, pos));
+				}
+				default: None();
+			}
+		});
+
+	dummyExport = DExport([], pexp.pos);
+	exports = fold(module.toplevels, dummyExport, \acc, tl : PTopLevel -> {
+		switch (tl) {
+			PExport(tls, p): {
+				if (acc != dummyExport) {
+					dd.onError(p, "Only one export section is allowed");
+				}
+				DExport(
+					map(tls, \t -> convertPExp2DToplevel(dd, t)),
+					p
+				);
+			}
+			default: acc;
+		}
+	});
+
+	DModule(
+		dd.flowpath,
+		imports,
+		exports,
+		makeTree(),
+		pexp.pos,
+	);
+}
+
+convertPExp2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
+	error = \ -> {
+		dd.onError(tl.pos, "Expected global, native, function, union, struct or type def, got " + toString(tl));
+		DStruct("", [], tl.pos);
+	}
+	switch (tl) {
+		PModule(toplevels, pos): error();
+		PImport(path, pos): error();
+		PForbid(path, pos): error();
+		PExport(exports, pos): error();
+		PGlobal(id, value, pos): DGlobal(id, pexp2dexp(dd, value), pos);
+		PNative(id, isIo, type, name, pos): DNative(id, isIo, ptype2dtype(dd, type), name, pos);
+		PUnion(typename, types, pos): DUnion(ptypename2dtypename(dd, typename), map(types, \t -> ptypename2dtypename(dd, t)), pos);
+		PStruct(id, structArgs, pos): DStruct(id, map(structArgs, \sa -> pstructArg2dstructArg(dd, sa)), pos);
+		PStructArg(id, ismutable, type, pos): error();
+		PTypeDef(id, type, pos): DTypeDef(id, ptype2dtype(dd, type), pos);
+	}
+}
+
+pexp2dexp(dd : DDesugar, p : PExp) -> DExp {
+	println("TODO: Desugar " + toString(p));
+	DVoid(p.pos);
+}
+
+ptype2dtype(dd : DDesugar, p : PExp) -> DType {
+	println("TODO: Desugar " + toString(p));
+	DTypeName("", [], p.pos);
+}
+
+ptypename2dtypename(dd : DDesugar, p : PTypeName) -> DTypeName {
+	println("TODO: Desugar " + toString(p));
+	DTypeName("", [], p.pos);
+}
+
+pstructArg2dstructArg(dd : DDesugar, s : PStructArg) -> DStructArg {
+	DStructArg(s.id, s.ismutable, ptype2dtype(dd, s.type), s.pos)
+}

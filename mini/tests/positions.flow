@@ -118,7 +118,9 @@ pipe() {
 main() {
 	\file -> {
 		code = file;
-	}
+	};
+
+	{};
 
 	cast(1 : int -> string);
 	cast(1 : int -> double);
