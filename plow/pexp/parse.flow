@@ -132,7 +132,10 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			bin("<="), bin("<"), bin(">"), bin(">="),
 			bin("+"), bin("-"), 
 			bin("*"), bin("/"), bin("%"), 
-			bin("index"), bin("dot"),
+			bin("index"), 
+			Pair("dot", \val, field -> {
+				PField(val, getPString(field), todo())
+			}),
 			Pair("lambda", \args, b -> {
 				fargs = map(getPListArray(args), getPArgType);
 				PLambda(fargs, b, todo());

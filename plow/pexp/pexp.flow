@@ -11,7 +11,7 @@ export {
 	PExp ::= PValue, PTopLevel, PType, PArgType,
 		PStringInclude, 
 		PVar, PLet, PIf, PCall, PCallOp, PLambda,
-		PRef, PSetMutable, PArray, PSequence, PSwitch, 
+		PRef, PSetMutable, PField, PArray, PSequence, PSwitch, 
 		PCase, PCast, PTyped, PWith, PFieldAssign, PMaybe,
 
 		// While parsing, we have an efficient list for collecting arrays
@@ -34,6 +34,7 @@ export {
 		PStringInclude(path : string, pos : int);
 
 		PRef(value : PExp, pos : int);
+		PField(value : PExp, field : string, pos : int);
 		PSetMutable(lhs : PExp, field : string, value : PExp, pos : int);
 		PVar(var : string, pos : int);
 		PLet(var : string, value : PExp, body : PExp, pos : int);

@@ -243,6 +243,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 			DArgType(a.id, ptype2dtype(dd, a.type), a.pos)
 		}), rec(body), pos);
 		PRef(value, pos): DRef(rec(value), pos);
+		PField(value, field, pos): DField(rec(value), field, pos);
 		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos);
 		PArray(exps, pos): DArray(map(exps, rec), pos);
 		PSequence(exps, pos): {
@@ -296,6 +297,25 @@ pstructArg2dstructArg(dd : DDesugar, s : PStructArg) -> DStructArg {
 }
 
 desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
+	switchvalue = pexp2dexp(dd, s.value);
+	// OK, we need a name for the variable we are switcing on
+	switchvar : DVar = switch (switchvalue) {
+		DVar(n, __): switchvalue;
+		DTyped(value, subtype, pos): {
+			switch (value) {
+				DVar(n, __): value;
+				default: {
+					dd.onError(pos, "TODO: We need a name for this switch value");
+					DVar("", pos);
+				}
+			}
+		}
+		default: {
+			dd.onError(s.pos, "TODO: We need a name for this switch value");
+			DVar("", switchvalue.pos);
+		}
+	};
+
 	defaults = filter(s.cases, \c : PCase -> c.id == "default");
 	def : Maybe<DExp> = if (length(defaults) == 1) Some(pexp2dexp(dd, defaults[0].body))
 		else if (defaults == []) None()
@@ -307,10 +327,34 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
 	cases : [DCase] = filtermap(s.cases, \c : PCase -> {
 		if (c.id == "default") None()
 		else {
-			if (c.args != []) {
-				println("TODO: Let-bind these in case: " + toString(c.args));
-			};
-			Some(DCase(c.id, pexp2dexp(dd, c.body), c.pos))
+			body0 = pexp2dexp(dd, c.body);
+			mstruct = dd.resolveStructName(c.id);
+			body = switch (mstruct) {
+				None(): {
+					// It might be a union
+					if (c.args != []) {
+						dd.onError(c.pos, c.id + " does not accept arguments in case");
+					}
+					body0;
+				}
+				Some(struct): {
+					if (length(c.args) == length(struct.structArgs)) {
+						foldi(c.args, body0, \i, acc, arg : string -> {
+							if (arg == "__") {
+								acc
+							} else {
+								// TODO: Check if "arg" appears in body0. If not, no need to bind
+								structArg = struct.structArgs[i];
+								DLet(arg, DField(switchvalue, structArg.id, c.pos), acc, c.pos)
+							}
+						})
+					} else {
+						dd.onError(c.pos, c.id + " expects " + i2s(length(struct.structArgs)) + " args, got " + i2s(length(c.args)));
+						body0;
+					}
+				}
+			}
+			Some(DCase(c.id, body, c.pos));
 		}
 	});
 
@@ -346,10 +390,7 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
 		}
 	}));
 
-	DSwitch(
-		pexp2dexp(dd, s.value),
-		unions, def, s.pos
-	)
+	DSwitch(switchvalue, unions, def, s.pos)
 }
 
 desugarPWith(dd : DDesugar, w : PWith) -> DWith {

@@ -52,13 +52,14 @@ export {
 
 	DExp ::= DValue, DStringInclude,
 		DVar, DLet, DIf, DCall, DCallOp, DConstruct, DLambda,
-		DRef, DSetMutable, DArray, DSequence, DSwitch, 
+		DRef, DField, DSetMutable, DArray, DSequence, DSwitch, 
 		DCast, DDowncast, DTyped,
 		DWith;
 
 		DStringInclude(path : string, pos : int);
 
 		DRef(value : DExp, pos : int);
+		DField(value : DExp, field : string, pos : int);
 		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int);
 		DVar(var : string, pos : int);
 		DLet(var : string, value : DExp, body : DExp, pos : int);

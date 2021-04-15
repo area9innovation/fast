@@ -41,6 +41,7 @@ setPPos(p : int, e : PExp) -> PExp {
 		PCall(fn, args, pos): PCall(fn, args, p);
 		PCallOp(op, args, pos): PCallOp(op, args, p);
 		PRef(value, pos): PRef(value, p);
+		PField(value, field, pos): PField(value, field, p);
 		PSetMutable(lhs, field, value, pos): PSetMutable(lhs, field, value, p);
 		PArray(exps, pos): PArray(exps, p);
 		PSequence(exps, pos): PSequence(exps, p);
