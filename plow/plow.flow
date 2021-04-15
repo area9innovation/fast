@@ -3,6 +3,7 @@ import plow/pexp/pretty;
 import plow/dexp/desugar;
 import plow/driver;
 import fs/filesystem;
+import math/stringmath;
 
 main() {
 	file3 = "mini/tests/positions.flow";
@@ -21,12 +22,13 @@ main() {
 		println(e);
 	}, allincludes);
 
+	t = timestamp();
+
 	if (!isDirectory(file)) {
 		d = compilePlow(cache, file);
 		println(d);
 	} else {
 		files = filter(readDirectoryRecursively(file), \f -> endsWith(f, ".flow"));
-		t = timestamp();
 
 		iter(files, \fil -> {
 			// println(fil);
@@ -35,7 +37,9 @@ main() {
 			}
 		});	
 
-		println(timestamp() - t);
 	};
+
+	println(d2st((timestamp() - t) / 1000.0, 2) + "s");
+
 	quit(0);
 }

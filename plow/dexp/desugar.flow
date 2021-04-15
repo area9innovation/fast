@@ -1,5 +1,6 @@
 import plow/dexp/dexp;
 import plow/dexp/desugar_env;
+import plow/dexp/unique_id;
 import plow/pexp/pexp;
 import plow/pexp/values;
 import plow/dexp/unions;
@@ -296,25 +297,45 @@ pstructArg2dstructArg(dd : DDesugar, s : PStructArg) -> DStructArg {
 	DStructArg(s.id, s.ismutable, ptype2dtype(dd, s.type), s.pos)
 }
 
-desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
-	switchvalue = pexp2dexp(dd, s.value);
-	// OK, we need a name for the variable we are switcing on
-	switchvar : DVar = switch (switchvalue) {
-		DVar(n, __): switchvalue;
-		DTyped(value, subtype, pos): {
+desugarPSwitch(dd : DDesugar, s : PSwitch) -> DExp {
+	wrap = \ -> {
+		name = makeTempDName(dd);
+		pos = s.value.pos;
+		DLet(
+			name, pexp2dexp(dd, s.value),
+			desugarDSwitchWithVar(dd, s, DVar(name, pos), DTypeName("auto", [], pos)),
+			pos
+		);
+	};
+	switch (s.value) {
+		PVar(n, pos): {
+			desugarDSwitchWithVar(dd, s, DVar(n,pos), DTypeName("auto", [], pos));
+		}
+		PTyped(value, subtype, pos): {
+			stype = ptype2dtype(dd, subtype);
 			switch (value) {
-				DVar(n, __): value;
+				PVar(n, pos2): {	
+					desugarDSwitchWithVar(dd, s, DVar(n, pos2), stype);
+				}
 				default: {
-					dd.onError(pos, "TODO: We need a name for this switch value");
-					DVar("", pos);
+					// We know the type, so OK
+					name = makeTempDName(dd);
+					DLet(
+						name, pexp2dexp(dd, s.value),
+						desugarDSwitchWithVar(dd, s, DVar(name, pos), stype),
+						pos
+					);
 				}
 			}
 		}
 		default: {
-			dd.onError(s.pos, "TODO: We need a name for this switch value");
-			DVar("", switchvalue.pos);
+			wrap();
 		}
 	};
+}
+
+// OK, once we know we have a var for the switch, this is how we go
+desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType) -> DSwitch {
 
 	defaults = filter(s.cases, \c : PCase -> c.id == "default");
 	def : Maybe<DExp> = if (length(defaults) == 1) Some(pexp2dexp(dd, defaults[0].body))
@@ -345,7 +366,7 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
 							} else {
 								// TODO: Check if "arg" appears in body0. If not, no need to bind
 								structArg = struct.structArgs[i];
-								DLet(arg, DField(switchvalue, structArg.id, c.pos), acc, c.pos)
+								DLet(arg, DField(switchvar, structArg.id, c.pos), acc, c.pos)
 							}
 						})
 					} else {
@@ -390,7 +411,7 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
 		}
 	}));
 
-	DSwitch(switchvalue, unions, def, s.pos)
+	DSwitch(switchvar, type, unions, def, s.pos)
 }
 
 desugarPWith(dd : DDesugar, w : PWith) -> DWith {

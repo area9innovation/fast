@@ -27,6 +27,8 @@ PlowCache(
 	includes : [string], 
 	// Map of the Modules we have already parsed and desugared
 	modules : DModules,
+	// What is the next id
+	nextId : ref int,
 );
 
 makePlowCache(
@@ -35,7 +37,7 @@ makePlowCache(
 	// The includes we should use to find files
 	includes : [string]
 ) -> PlowCache {
-	PlowCache(onError, includes, DModules(initConcurrentHashMap()));
+	PlowCache(onError, includes, DModules(initConcurrentHashMap()), ref 0);
 }
 
 compilePlow(cache : PlowCache, file : string) -> DModule {
@@ -86,7 +88,7 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		}, \n -> {
 			// OK, scan our imports for this struct
 			importLookup(cache.modules, unionLookup, imports, n)
-		}, makeOnError(path, cache.onError));
+		}, makeOnError(path, cache.onError), cache.nextId);
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 

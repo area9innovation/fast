@@ -8,5 +8,7 @@ export {
 		resolveUnionName : (string) -> Maybe<DUnion>,
 		// Report an error at this position in this file
 		onError : (int, string) -> void,
+		// For unique ids
+		nextId : ref int,
 	);
 }
