@@ -48,7 +48,7 @@ export {
 
 			PArgType(id : string, type : PType, pos : int);
 
-		PSwitch(value : PExp, cases : [PExp], pos : int);
+		PSwitch(value : PExp, cases : [PCase], pos : int);
 		PCase(id : string, args : [string], body : PExp, pos : int);
 		PCast(value : PExp, target : PType, pos : int);
 		PTyped(value : PExp, type : PType, pos : int);

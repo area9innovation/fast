@@ -62,7 +62,7 @@ export {
 		DLambda(args : [DArgType], body : DExp, pos : int);
 			DArgType(id : string, type : DType, pos : int);
 
-		DSwitch(value : DExp, cases : [DExp], defaultCase : Maybe<DExp>, pos : int);
+		DSwitch(value : DExp, cases : [DCase], defaultCase : Maybe<DExp>, pos : int);
 			DCase(id : string, body : DExp, pos : int);
 		DCast(value : DExp, target : DType, pos : int);
 		// This does a downcast from a supertype to a subtype

@@ -146,7 +146,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			}),
 
 			Pair("switch", \a, b -> {
-				PSwitch(a, getPListArray(b), todo())
+				PSwitch(a, map(getPListArray(b), getPCase), todo())
 			}),
 			Pair("typename", \a, b -> {
 				PTypeName(getPString(a), map(getPListArray(b), getPType), getPPos(a))
@@ -262,5 +262,12 @@ getPTopLevel(e : PExp) -> PTopLevel {
 	switch (e) {
 		PTopLevel(): e;
 		default: PForbid("", -1);
+	}
+}
+
+getPCase(e : PExp) -> PCase {
+	switch (e) {
+		PCase(__, __, __, __): e;
+		default: PCase("", [], PVoid(-1), -1);
 	}
 }

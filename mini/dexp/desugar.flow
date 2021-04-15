@@ -40,7 +40,6 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 	imports = filtermap(module.toplevels, \tl -> {
 			switch (tl) {
 				PImport(path, pos): {
-					// TODO: Should we check that this path exists?
 					if (path == "") dd.onError(pos, "Unknown import path");
 					Some(DImport(path, pos));
 				}
@@ -50,6 +49,7 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 	forbids = filtermap(module.toplevels, \tl -> {
 			switch (tl) {
 				PForbid(path, pos): {
+					if (path == "") dd.onError(pos, "Unknown forbid path");
 					Some(DForbid(path, pos));
 				}
 				default: None();
@@ -216,7 +216,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 			else if (length(dexps) == 1) dexps[0]
 			else DSequence(dexps, pos);
 		}
-		//PSwitch(value, cases, pos): 
+		PSwitch(value, cases, pos): desugarPSwitch(dd, pexp);
 		PCast(value, target, pos): DCast(rec(value), ptype2dtype(dd, target), pos);
 		PTyped(value, type, pos): DTyped(rec(value), ptype2dtype(dd, type), pos);
 		//PWith(struct, value, fields, pos): 
@@ -263,4 +263,30 @@ ptypename2dtypename(dd : DDesugar, p : PTypeName) -> DTypeName {
 
 pstructArg2dstructArg(dd : DDesugar, s : PStructArg) -> DStructArg {
 	DStructArg(s.id, s.ismutable, ptype2dtype(dd, s.type), s.pos)
+}
+
+desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
+	defaults = filter(s.cases, \c : PCase -> c.id == "default");
+	def : Maybe<DExp> = if (length(defaults) == 1) Some(pexp2dexp(dd, defaults[0].body))
+		else if (defaults == []) None()
+		else {
+			dd.onError(defaults[0].pos, "Only one default allowed in switch");
+			None();
+		};
+	cases = filtermap(s.cases, \c : PCase -> {
+		if (c.id == "default") None()
+		else {
+			if (c.args != []) {
+				println("TODO: Let-bind these in case: " + toString(c.args));
+			};
+			Some(DCase(c.id, pexp2dexp(dd, c.body), c.pos))
+		}
+	});
+
+	// TODO: Expand union cases
+
+	DSwitch(
+		pexp2dexp(dd, s.value),
+		cases, def, s.pos
+	)
 }
