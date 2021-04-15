@@ -1,14 +1,17 @@
 import mini/dexp/dexp;
+import mini/dexp/desugar_env;
 import mini/pexp/pexp;
 import mini/pexp/values;
+import ds/set;
+import mini/dexp/unions;
 
 /*
 Differences to PExp:
 - It is not a complete Exp type, but has different unions for toplevel, exp, type
 - "Temp" structures such as argtype, case, etc are not in exp
+- Union match in switch is expanded
 TODO:
 - We have constructors resolved to not be calls
-- Union match in switch is expanded
 - The top level is indexed like a tree
 - Introduce downcast in switches
 - Expand ?? to switch
@@ -22,15 +25,6 @@ TODO:
 export {
 	// Desugar a module
 	desugarPExp(dd : DDesugar, p : PExp) -> DModule;
-		DDesugar(
-			flowpath : string,
-			// Is this name a struct?
-			resolveStructName : (string) -> Maybe<DStruct>,
-			// Is this name a union?
-			resolveUnionName : (string) -> Maybe<DUnion>,
-			// Report an error at this position in this file
-			onError : (int, string) -> void,
-		);
 }
 
 desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
@@ -183,11 +177,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PDouble(v, pos): DDouble(v, pos);
 		PString(v, pos): DString(v, pos);
 		PVar(var, pos): DVar(var, pos);
-		PCallOp(op, args, pos): {
-			println(op);
-			DCallOp(op, map(args, rec), pos);
-		}
-
+		PCallOp(op, args, pos): DCallOp(op, map(args, rec), pos);
 		PStringInclude(path, pos): DStringInclude(path, pos);
 		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos);
 		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos);
@@ -206,7 +196,6 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PLambda(args, body, pos): DLambda(map(args, \a -> {
 			DArgType(a.id, ptype2dtype(dd, a.type), a.pos)
 		}), rec(body), pos);
-
 		PRef(value, pos): DRef(rec(value), pos);
 		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos);
 		PArray(exps, pos): DArray(map(exps, rec), pos);
@@ -219,13 +208,8 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PSwitch(value, cases, pos): desugarPSwitch(dd, pexp);
 		PCast(value, target, pos): DCast(rec(value), ptype2dtype(dd, target), pos);
 		PTyped(value, type, pos): DTyped(rec(value), ptype2dtype(dd, type), pos);
-		//PWith(struct, value, fields, pos): 
-		//PMaybe(value, match, otherwise, pos): 
-
-		default: {
-			println("TODO: Desugar " + toString(pexp));
-			DVoid(pexp.pos);
-		}
+		PWith(struct, value, fields, pos): desugarPWith(dd, pexp);
+		PMaybe(value, match, otherwise, pos): desugarPMaybe(dd, pexp);
 
 		PModule(toplevels, pos): error();
 		PImport(path, pos): error();
@@ -273,7 +257,8 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
 			dd.onError(defaults[0].pos, "Only one default allowed in switch");
 			None();
 		};
-	cases = filtermap(s.cases, \c : PCase -> {
+
+	cases : [DCase] = filtermap(s.cases, \c : PCase -> {
 		if (c.id == "default") None()
 		else {
 			if (c.args != []) {
@@ -283,10 +268,61 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DSwitch {
 		}
 	});
 
-	// TODO: Expand union cases
+	// Collect the struct names we have explicitly named
+	structs : Set<string> = fold(cases, makeSet(), \acc, case -> {
+		mstruct = dd.resolveStructName(case.id);
+		mstruct ?? {
+			if (containsSet(acc, case.id)) {
+				dd.onError(case.pos, "Duplicate case " + case.id);
+			}
+			insertSet(acc, case.id)
+		} : acc;
+	});
+
+	// Expand union cases
+	unions = concatA(map(cases, \c : DCase -> {
+		if (containsSet(structs, c.id)) {
+			// Already a struct, keep it as is
+			[c]
+		} else {
+			// A union - expand to the cases we do not already have
+			casestructs = expandDTypename2structs(dd, c.id);
+			newStructs = filter(casestructs, \ss : DStruct -> {
+				!containsSet(structs, ss.id)
+			});
+			if (newStructs == []) {
+				dd.onError(c.pos, "Union case " + c.id + " is superfluous");
+			}
+
+			map(newStructs, \str -> {
+				DCase(str.id, c.body, c.pos)
+			})
+		}
+	}));
 
 	DSwitch(
 		pexp2dexp(dd, s.value),
-		cases, def, s.pos
+		unions, def, s.pos
 	)
 }
+
+desugarPWith(dd : DDesugar, w : PWith) -> DWith {
+	mstruct = dd.resolveStructName(w.struct);
+	mstruct ?? {
+		DWith(w.struct, pexp2dexp(dd, w.value), 
+			map(w.fields, \f : PFieldAssign -> {
+				// TODO: Check that this field exists in this struct
+				DFieldAssign(f.id, pexp2dexp(dd, f.value), f.pos)
+			}), w.pos)
+	} : {
+		dd.onError(w.pos, "Unknown struct for with: " + w.struct);
+		DWith(w.struct, pexp2dexp(dd, w.value), [], w.pos)
+	}
+}
+
+desugarPMaybe(dd : DDesugar, m : PMaybe) -> DExp {
+	// PMaybe(value, match, otherwise, pos);
+	println("TODO: Expand maybe");
+	pexp2dexp(dd, m.otherwise);
+}
+	
