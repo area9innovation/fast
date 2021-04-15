@@ -44,7 +44,6 @@
 - [ICFP inspiration](#icfp-inspiration)
 - [Partial evaluation as a core primitive](#partial-evaluation-as-a-core-primitive)
 - [Use cases](#use-cases)
-- [New plan](#new-plan)
 
 This is an effort to build a queue-based, always live compiler.
 
@@ -911,7 +910,7 @@ The second is ML, statically typed.
 
 It has two constructs:
 - dyn which marks a variable to exist in the output produced by the compiler
-- join, which marks an expression hich should be lifted into a function
+- join, which marks an expression which should be lifted into a function
   to be produced by the compiler
 
 This is easy to add to Mini, since it already has a partial evaluator.
@@ -950,45 +949,3 @@ New DSLs to define Curator:
 - Converters
 - Translation
 - Tasks/communication
-
-# New plan
-
-The Forth stuff is too complicated.
-The restriction of the mini-lambda in the entire compiler is too untyped.
-
-1. Have complete AST after parsing, using typed Gringo grammar.
-   
-   PExp = Parsed Expressions
-
-   TODO:
-   - Populate positions correctly
-
-2. Once files and dependents are parsed, desugar the program to DExp:
-
-   DExp = Desugared Expressions
-
-3. Once dependencies are desugared, do type inference
-
-   TExp = Typed Expressions
-
-4. Then plug into the backends.
-
-
-# Rewrite syntax
-
-flow-exp: $id = $val; $body
-=>
-js-statement: 
-var $id = $val(100);
-$body
-
-flow-exp: $l + $r
-=>
-js-exp: $l(100) + $r(99)
-
-# Type inference
-
-Use the egraph over types and tyvars.
-Use lower/upper types as from
-https://gilmi.me/blog/post/2021/04/13/giml-typing-polymorphic-variants
-

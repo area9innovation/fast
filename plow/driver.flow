@@ -1,0 +1,61 @@
+import plow/dexp/dexp;
+import plow/dexp/desugar;
+import plow/pexp/parse;
+
+import fast/fast_path;
+
+export {
+	compilePlow(cache : PlowCache, file : string) -> Maybe<DModule>;
+
+	PlowCache(
+		// How to report an error
+		onError : (string) -> void,
+		// The includes we should use to find files
+		includes : [string], 
+		// Modules we have already parsed and desugared
+		modules : ref Tree<string, DModule>,
+	);
+}
+
+compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
+	path = fastPath2path(cache.includes, file);
+	flowpath = path2fastPath(cache.includes, path);
+
+	mdmod = lookupTree(^(cache.modules), flowpath);
+	mdmod ?? {
+		Some(mdmod)
+	} : {
+		// OK, we have to parse this
+		code = getFileContent(file);
+		p = parsePExp(code, \e -> cache.onError(path + ":" + e));
+
+		// OK, parse all the dependent files
+		
+
+		dd = DDesugar(flowpath, \n -> {
+			cache.onError(path + ": TODO: Find this struct " + n);
+			None()
+		}, \n -> {
+			cache.onError(path + ": TODO: Find this union " + n);
+			None()
+		}, makeOnError(path, cache.onError));
+
+		Some(desugarPExp(dd, p));
+	}
+}
+
+makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void {
+	resolver = ref None();
+	\pos, error -> {
+		res = onlyOnce(resolver, \ -> {
+			text = getFileContent(file);
+			makeLineResolver(text);
+		});
+		linecol = findLine(res, pos); // maxi
+		onError(
+			file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
+			+ "\n" + linecol.line
+			+ "\n" + lpad("^", " ", linecol.lineIndex - 1)
+		);
+	}
+}
