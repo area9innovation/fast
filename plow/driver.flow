@@ -4,6 +4,8 @@ import plow/pexp/parse;
 
 import fast/fast_path;
 
+import sys/concurrent;
+
 export {
 	compilePlow(cache : PlowCache, file : string) -> Maybe<DModule>;
 
@@ -12,27 +14,33 @@ export {
 		onError : (string) -> void,
 		// The includes we should use to find files
 		includes : [string], 
-		// Modules we have already parsed and desugared
-		modules : ref Tree<string, DModule>,
+		// A concurrent hash map from flowpath to DMondule of the Modules we have already parsed and desugared
+		modules : native,
 	);
 }
 
 compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
-	path = fastPath2path(cache.includes, file);
+	path = fastPath2path(cache.includes, changeFileExt(file, ".flow"));
 	flowpath = path2fastPath(cache.includes, path);
 
-	mdmod = lookupTree(^(cache.modules), flowpath);
-	mdmod ?? {
-		Some(mdmod)
-	} : {
+	if (containsConcurrentHashMap(cache.modules, flowpath)) {
+		Some(getConcurrentHashMap(cache.modules, flowpath, getDummyDModule()));
+	} else {
 		// OK, we have to parse this
-		code = getFileContent(file);
+		code = getFileContent(path);
+
 		p = parsePExp(code, \e -> cache.onError(path + ":" + e));
+		println("Parsed " + file + " as " + path);
 
 		// OK, parse all the dependent files
-		
+		imports = getDImports(p);
+		mods = concurrent(false, map(imports, \i -> {
+			\ -> compilePlow(cache, i.path)
+		}));
+		println("Finished parsing imports for " + path);
 
 		dd = DDesugar(flowpath, \n -> {
+			// OK, scan our imports for this struct
 			cache.onError(path + ": TODO: Find this struct " + n);
 			None()
 		}, \n -> {
@@ -40,7 +48,10 @@ compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
 			None()
 		}, makeOnError(path, cache.onError));
 
-		Some(desugarPExp(dd, p));
+		dmod = desugarPExp(dd, p);
+
+		setConcurrentHashMap(cache.modules, flowpath, dmod);
+		Some(dmod);
 	}
 }
 

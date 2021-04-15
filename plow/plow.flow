@@ -6,7 +6,7 @@ import fs/filesystem;
 
 main() {
 	file3 = "mini/tests/positions.flow";
-	file = "mini/tests/fold.flow";
+	file = "mini/tests/hello.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 	file0 = "c:\\fast\\mini";
@@ -19,7 +19,7 @@ main() {
 	cache = PlowCache(\e -> {
 		errors := ^errors + 1;
 		println(e);
-	}, allincludes, ref makeTree());
+	}, allincludes, initConcurrentHashMap());
 
 	if (!isDirectory(file)) {
 		d = compilePlow(cache, file);

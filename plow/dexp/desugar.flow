@@ -25,21 +25,33 @@ TODO:
 export {
 	// Desugar a module
 	desugarPExp(dd : DDesugar, p : PExp) -> DModule;
+
+	getDummyDModule() -> DModule;
+
+	// Extract the imports only
+	getDImports(p : PExp) -> [DImport];
+
+}
+
+getDImports(p : PExp) -> [DImport] {
+	module = getPModule(p);
+	filtermap(module.toplevels, \tl -> {
+		switch (tl) {
+			PImport(path, pos): Some(DImport(path, pos));
+			default: None();
+		}
+	});
+}
+
+getDummyDModule() -> DModule {
+	DModule("",[], [], DExport([], -1), makeTree(), makeTree(), makeTree(), [], -1);
 }
 
 desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 	module = getPModule(pexp);
 	if (module.pos == -1) dd.onError(pexp.pos, "Expected module");
 
-	imports = filtermap(module.toplevels, \tl -> {
-			switch (tl) {
-				PImport(path, pos): {
-					if (path == "") dd.onError(pos, "Unknown import path");
-					Some(DImport(path, pos));
-				}
-				default: None();
-			}
-		});
+	imports = getDImports(pexp);
 	forbids = filtermap(module.toplevels, \tl -> {
 			switch (tl) {
 				PForbid(path, pos): {
