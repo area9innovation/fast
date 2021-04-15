@@ -40,27 +40,38 @@ compilePlow(cache : PlowCache, file : string) -> Maybe<DModule> {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		// A helper to lookup structs
-		structLookup = DImportLookup(cache.modules, \module, n -> {
+		// A helper to lookup structs. TODO: Should this be in the plowcache?
+		structLookup = DImportLookup(\module, n -> {
 			lookupTree(module.structs, n)
-		}, ref makeTree(), ref makeSet());
+		}, \module, n -> {
+			containsSet(module.exported.exportedTypes, n)
+		},
+		\spath, struct, error -> {
+			makeOnError(spath, cache.onError)(struct.pos, error)
+		},
+		ref makeTree(), ref makeSet());
 
-		// A helper to lookup unions
-		unionLookup = DImportLookup(cache.modules, \module, n -> {
+		// A helper to lookup unions. TODO: Should this be in the plowcache?
+		unionLookup = DImportLookup(\module, n -> {
 			lookupTree(module.unions, n)
-		}, ref makeTree(), ref makeSet());
+		}, 
+		\module, n -> {
+			containsSet(module.exported.exportedTypes, n)
+		},
+		\upath, struct, error -> {
+			makeOnError(upath, cache.onError)(struct.pos, error)
+		},
+		ref makeTree(), ref makeSet());
 
-		dd = DDesugar(flowpath, \n -> {
+		dd = DDesugar(\n -> {
 			// OK, scan our imports for this struct
-			structLookup.visited := makeSet();
-			importLookup(structLookup, imports, n)
+			importLookup(cache.modules, structLookup, imports, n)
 		}, \n -> {
 			// OK, scan our imports for this struct
-			unionLookup.visited := makeSet();
-			importLookup(unionLookup, imports, n)
+			importLookup(cache.modules, unionLookup, imports, n)
 		}, makeOnError(path, cache.onError));
 
-		dmod = desugarPExp(dd, p);
+		dmod = desugarPExp(dd, flowpath, path, p);
 
 		setConcurrentHashMap(cache.modules.modules, flowpath, dmod);
 		Some(dmod);

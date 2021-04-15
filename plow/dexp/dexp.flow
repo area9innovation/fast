@@ -1,18 +1,20 @@
 import ds/list;
-import ds/tree;
+import ds/set;
 
 export {
 	DModule(
 		flowpath : string, 
+		fullpath : string,
 		imports : [DImport], 
 		forbids : [DForbid],
 		exported : DExport, 
 		// TODO: To help track dependencies
 		// stringincludes : [DStringInclude],
-		// Change to have structs and unions directly here
 		structs : Tree<string, DStruct>,
 		unions : Tree<string, DUnion>,
-		toplevels : Tree<string, DTopLevel>, 
+		typedefs : Tree<string, DTypeDef>,
+		natives : Tree<string, DNative>,
+		globals : Tree<string, DGlobal>, 
 		order : [string],
 		// TODO: We should extract type defs
 		pos : int
@@ -20,7 +22,17 @@ export {
 
 	DImport(path : string, pos : int);
 	DForbid(path : string, pos : int);
-	DExport(exports : [DTopLevel], pos : int);
+
+	DExport(
+		// Structs and unions exported by name, but not by structure
+		exportedTypeNames : Set<string>, 
+		// Structs and unions where the structure is exported
+		exportedTypes : Set<string>, 
+		// Globals and functinos that are exported
+		exportedGlobals : Set<string>, 
+		// Placement of the export section
+		pos : int
+	);
 
 	DTopLevel ::= DGlobal, DNative, DUnion, DStruct, DTypeDef;
 		DGlobal(id : string, value : DExp, pos : int);

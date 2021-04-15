@@ -4,6 +4,7 @@ import plow/pexp/pexp;
 import plow/pexp/values;
 import plow/dexp/unions;
 import ds/set;
+import ds/arrayutils;
 
 /*
 Differences to PExp:
@@ -24,7 +25,7 @@ TODO:
 
 export {
 	// Desugar a module
-	desugarPExp(dd : DDesugar, p : PExp) -> DModule;
+	desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) -> DModule;
 
 	getDummyDModule() -> DModule;
 
@@ -43,10 +44,10 @@ getDImports(p : PExp) -> [DImport] {
 }
 
 getDummyDModule() -> DModule {
-	DModule("",[], [], DExport([], -1), makeTree(), makeTree(), makeTree(), [], -1);
+	DModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), makeTree(), [], -1);
 }
 
-desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
+desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) -> DModule {
 	module = getPModule(pexp);
 	if (module.pos == -1) dd.onError(pexp.pos, "Expected module");
 
@@ -61,11 +62,19 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 			}
 		});
 
+	// Find all top-levels (including those in the export section)
+	toplevels = fold(module.toplevels, module.toplevels, \acc, tl -> {
+		switch (tl) {
+			PExport(tls, __): concat(acc, tls);
+			default: acc;
+		}
+	});
+
 	// Extract structs & unions in our module, so we can include those in the lookup
-	structs = fold(module.toplevels, makeTree(), \acc, tl -> {
+	structs = fold(toplevels, makeTree(), \acc, tl -> {
 		extractDStruct(dd, acc, tl)
 	});
-	unions = fold(module.toplevels, makeTree(), \acc, tl -> {
+	unions = fold(toplevels, makeTree(), \acc, tl -> {
 		extractDUnion(dd, acc, tl)
 	});
 
@@ -81,55 +90,81 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 		},
 	);
 
-	dummyExport = DExport([], pexp.pos);
-	exports = fold(module.toplevels, dummyExport, \acc, tl : PTopLevel -> {
+	// Figure out what names are exported
+	dummyExport = DExport(makeSet(), makeSet(), makeSet(), pexp.pos);
+	exports0 = fold(module.toplevels, dummyExport, \acc, tl : PTopLevel -> {
 		switch (tl) {
 			PExport(tls, p): {
 				if (acc != dummyExport) {
 					dd.onError(p, "Only one export section is allowed");
 				}
-				DExport(
-					map(tls, \t -> ptoplevel2DToplevel(dd2, t)),
-					p
-				);
+				fold(tls, acc, \acc2, etl -> {
+					switch (etl) {
+						PTypeDef(id, __, __): DExport(acc2 with exportedGlobals = insertSet(acc2.exportedGlobals, id));
+						PGlobal(id, __, __): DExport(acc2 with exportedGlobals = insertSet(acc2.exportedGlobals, id));
+
+						PNative(id, isIo, type, name, pos): DExport(acc2 with exportedGlobals = insertSet(acc2.exportedGlobals, id));
+						PUnion(typename, types, pos): DExport(acc2 with exportedTypes = insertSet(acc2.exportedTypes, typename.id));
+						PStruct(id, structArgs, pos): DExport(acc2 with exportedTypes = insertSet(acc2.exportedTypes, id));
+
+						PStructArg(id, ismutable, type, pos): acc2;
+						PModule(__, pos): acc2;
+						PImport(path, pos): acc2;
+						PForbid(path, pos): acc2;
+						PExport(exports, pos): acc2;
+					}
+				})
 			}
 			default: acc;
 		}
 	});
 
-	toplevels0 = fold(module.toplevels, Pair(makeTree(), makeList()), \acc, tl : PTopLevel -> {
-		set = \name -> {
-			mdef = lookupTree(acc.first, name);
-			mdef ?? {
-				// TODO: If the definitions are compatible, we should not complain, but
-				// keep them separately
-				dd.onError(tl.pos, "Redefinition of " + name);
-				dd.onError(mdef.pos, "Previous definition is here");
-			} : {}
-			Pair(
-				setTree(acc.first, name, ptoplevel2DToplevel(dd2, tl)),
-				Cons(name, acc.second)
-			)
-		}
+	typedefs = fold(toplevels, makeTree(), \acc, tl : PTopLevel -> {
 		switch (tl) {
-			PGlobal(id, value, pos): set(id);
-			PNative(id, isIo, type, name, pos): set(id);
-			PUnion(typename, types, pos): set(typename.id);
-			PStruct(id, structArgs, pos): set(id);
-			PTypeDef(id, type, pos): set(id);
+			PTypeDef(id, type, pos): {
+				typedef = DTypeDef(id, ptype2dtype(dd2, type), pos);
+				setTree(acc, id, typedef);
+			}
 			default: acc;
 		}
 	});
 
+	natives = fold(toplevels, makeTree(), \acc, tl : PTopLevel -> {
+		switch (tl) {
+			PNative(id, isIo, type, name, pos): {
+				nativ = DNative(id, isIo, ptype2dtype(dd, type), name, pos);
+				setTree(acc, id, nativ);
+			}
+			default: acc;
+		}
+	});
+
+	globalsOrder = fold2(toplevels, makeList(), makeTree(), \ord, acc, tl : PTopLevel -> {
+		switch (tl) {
+			PGlobal(id, value, pos): {
+				global = DGlobal(id, pexp2dexp(dd2, value), pos);
+				Pair(Cons(id, ord), setTree(acc, id, global));
+			}
+			default: Pair(ord, acc);
+		}
+	});
+
+	// TODO: Traverse the typenames mentioned in the exported names and put those
+	// in exportedTypeNames if they are not in exportedTypes
+	exports = exports0;
+
 	DModule(
-		dd.flowpath,
+		flowpath,
+		fullpath,
 		imports,
 		forbids,
 		exports,
 		structs,
 		unions,
-		toplevels0.first,
-		list2array(toplevels0.second),
+		typedefs,
+		natives,
+		globalsOrder.second,
+		list2array(globalsOrder.first),
 		pexp.pos,
 	);
 }

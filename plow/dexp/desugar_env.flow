@@ -2,8 +2,6 @@ import plow/dexp/dexp;
 
 export {
 	DDesugar(
-		// What is the relative path to includes?
-		flowpath : string,
 		// Is this name a struct?
 		resolveStructName : (string) -> Maybe<DStruct>,
 		// Is this name a union?
