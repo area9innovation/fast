@@ -30,8 +30,11 @@ main() {
 		// prettyPos(code, "", p);
 
 		dd = DDesugar(file, \n -> {
-			println("TODO");
-			DStruct("", [], -1)
+			println("TODO: Find this struct " + n);
+			None()
+		}, \n -> {
+			println("TODO: Find this union " + n);
+			None()
 		}, makeOnError(file));
 
 		d = desugarPExp(dd, p);

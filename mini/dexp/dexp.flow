@@ -9,6 +9,9 @@ export {
 		exported : DExport, 
 		// TODO: To help track dependencies
 		// stringincludes : [DStringInclude],
+		// Change to have structs and unions directly here
+		structs : Tree<string, DStruct>,
+		unions : Tree<string, DUnion>,
 		toplevels : Tree<string, DTopLevel>, 
 		order : [string],
 		// TODO: We should extract type defs
@@ -21,8 +24,9 @@ export {
 
 	DTopLevel ::= DGlobal, DNative, DUnion, DStruct, DTypeDef;
 		DGlobal(id : string, value : DExp, pos : int);
-		DTypeDef(id : string, type : DType, pos : int);
 		DNative(id : string, isIo : bool, type : DType, name : string, pos : int);
+		DTypeDef(id : string, type : DType, pos : int);
+
 		DUnion(typename : DTypeName, types : [DTypeName], pos : int);
 		DStruct(id : string, structArgs : [DStructArg], pos : int);
 			DStructArg(id : string, ismutable : bool, type : DType, pos : int);

@@ -14,6 +14,8 @@ TODO:
 - Expand ?? to switch
 - Extract let-bindings from cases
 - Collect string includes
+- Extract structs and unions
+- Extract top-level functions from globals
 */
 
 export {
@@ -21,8 +23,10 @@ export {
 	desugarPExp(dd : DDesugar, p : PExp) -> DModule;
 		DDesugar(
 			flowpath : string,
-			// Given a name, figure out what it is (from imports)
-			resolveName : (string) -> Maybe<DTopLevel>,
+			// Is this name a struct?
+			resolveStructName : (string) -> Maybe<DStruct>,
+			// Is this name a union?
+			resolveUnionName : (string) -> Maybe<DUnion>,
 			// Report an error at this position in this file
 			onError : (int, string) -> void,
 		);
@@ -51,7 +55,25 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 			}
 		});
 
-	// TODO: Extract structs in our thing, so we can include those in the lookup
+	// Extract structs & unions in our module, so we can include those in the lookup
+	structs = fold(module.toplevels, makeTree(), \acc, tl -> {
+		extractDStruct(dd, acc, tl)
+	});
+	unions = fold(module.toplevels, makeTree(), \acc, tl -> {
+		extractDUnion(dd, acc, tl)
+	});
+
+	// Make sure our lookup knows about local structs and unions
+	dd2 = DDesugar(dd with 
+		resolveStructName = \name -> {
+			mst = lookupTree(structs, name);
+			mst ?? Some(mst) : dd.resolveStructName(name);
+		},
+		resolveUnionName = \name -> {
+			mst = lookupTree(unions, name);
+			mst ?? Some(mst) : dd.resolveUnionName(name);
+		},
+	);
 
 	dummyExport = DExport([], pexp.pos);
 	exports = fold(module.toplevels, dummyExport, \acc, tl : PTopLevel -> {
@@ -61,15 +83,16 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 					dd.onError(p, "Only one export section is allowed");
 				}
 				DExport(
-					map(tls, \t -> convertPExp2DToplevel(dd, t)),
+					map(tls, \t -> ptoplevel2DToplevel(dd2, t)),
 					p
 				);
 			}
 			default: acc;
 		}
 	});
+
 	toplevels0 = fold(module.toplevels, Pair(makeTree(), makeList()), \acc, tl : PTopLevel -> {
-		set = \name, tt -> {
+		set = \name -> {
 			mdef = lookupTree(acc.first, name);
 			mdef ?? {
 				// TODO: If the definitions are compatible, we should not complain, but
@@ -78,16 +101,16 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 				dd.onError(mdef.pos, "Previous definition is here");
 			} : {}
 			Pair(
-				setTree(acc.first, name, tt),
+				setTree(acc.first, name, ptoplevel2DToplevel(dd2, tl)),
 				Cons(name, acc.second)
 			)
 		}
 		switch (tl) {
-			PGlobal(id, value, pos): set(id, convertPExp2DToplevel(dd, tl));
-			PNative(id, isIo, type, name, pos): set(id, convertPExp2DToplevel(dd, tl));
-			PUnion(typename, types, pos): set(typename.id, convertPExp2DToplevel(dd, tl));
-			PStruct(id, structArgs, pos): set(id, convertPExp2DToplevel(dd, tl));
-			PTypeDef(id, type, pos): set(id, convertPExp2DToplevel(dd, tl));
+			PGlobal(id, value, pos): set(id);
+			PNative(id, isIo, type, name, pos): set(id);
+			PUnion(typename, types, pos): set(typename.id);
+			PStruct(id, structArgs, pos): set(id);
+			PTypeDef(id, type, pos): set(id);
 			default: acc;
 		}
 	});
@@ -97,13 +120,15 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 		imports,
 		forbids,
 		exports,
+		structs,
+		unions,
 		toplevels0.first,
 		list2array(toplevels0.second),
 		pexp.pos,
 	);
 }
 
-convertPExp2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
+ptoplevel2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
 	error = \ -> {
 		dd.onError(tl.pos, "Expected global, native, function, union, struct or type def");
 		DStruct("", [], tl.pos);
@@ -122,9 +147,31 @@ convertPExp2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
 	}
 }
 
+extractDStruct(dd : DDesugar, acc : Tree<string, DStruct>, tl : PTopLevel) -> Tree<string, DStruct> {
+	switch (tl) {
+		PStruct(id, structArgs, pos): {
+			dstruct = DStruct(id, map(structArgs, \sa -> pstructArg2dstructArg(dd, sa)), pos);
+			setTree(acc, id, dstruct);
+		}
+		PExport(exports, __): fold(exports, acc, \acc2, ex : PTopLevel -> extractDStruct(dd, acc2, ex));
+		default: acc;
+	}
+}
+
+extractDUnion(dd : DDesugar, acc : Tree<string, DUnion>, tl : PTopLevel) -> Tree<string, DUnion> {
+	switch (tl) {
+		PUnion(typename, types, pos): {
+			dunion = DUnion(ptypename2dtypename(dd, typename), map(types, \t -> ptypename2dtypename(dd, t)), pos);
+			setTree(acc, typename.id, dunion);
+		}
+		PExport(exports, __): fold(exports, acc, \acc2, ex : PTopLevel -> extractDUnion(dd, acc2, ex));
+		default: acc;
+	}
+}
+
 pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 	error = \ -> {
-		dd.onError(pexp.pos, "Expected expression");
+		dd.onError(pexp.pos, "Expected expression, got " + toString(pexp));
 		DVoid(pexp.pos);
 	}
 	rec = \ee -> pexp2dexp(dd, ee);
@@ -147,12 +194,9 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 			// Check if this is a struct constructor
 			switch (fn) {
 				PVar(id, __): {
-					mtl = dd.resolveName(id);
-					mtl ?? {
-						switch (mtl : DTopLevel) {
-							DStruct(sid, __, __): DConstruct(sid, map(args, rec), pos);
-							default: DCall(rec(fn), map(args, rec), pos);
-						}
+					mst = dd.resolveStructName(id);
+					mst ?? {
+						DConstruct(mst.id, map(args, rec), pos);
 					} : DCall(rec(fn), map(args, rec), pos);
 				}
 				default: DCall(rec(fn), map(args, rec), pos);
