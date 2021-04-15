@@ -142,4 +142,3 @@ brace() {
 ty = 1 : int;
 // The explicit name of the auto type
 aa : auto = 2;
-

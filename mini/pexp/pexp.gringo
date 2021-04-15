@@ -44,10 +44,10 @@ functionOrStruct =
 
 exp = 
 	// These optsemi should really be semi, but we have too much legacy without
-	(idpos "=" ws exp optsemi (exp | $"void") $"let"	// The else is error recovery for the common case of missing a body
+	(idpos "=" ws exp optsemi (exp | $$pos $"void" $"setpos") $"let"	// The else is error recovery for the common case of missing a body
 		| idpos ":" ws type "=" ws exp optsemi exp $"let_typed"
 	)
-	|> exp $$pos ":=" ws exp $":=" $"setpos"
+	|> exp ":=" $$pos $"swap" ws exp $":=" $"setpos"
 	|> exp < ( "|>" $$pos $"swap" ws exp $"|>" $"setpos")*
 	|> exp "||" $$pos $"swap" ws exp $"||" $"setpos"
 	|> exp "&&" $$pos $"swap" ws exp $"&&" $"setpos"
@@ -59,11 +59,11 @@ exp =
 	// To ensure that ?? does not consider the : as part of the type
 	|> exp (":" $$pos $"swap" ws type $":" $"setpos")+
 
-	|> exp "??" ws <exp ":" ws exp $"maybe"
+	|> exp "??" $$pos $"swap" ws <exp ":" ws exp $"maybe" $"setpos"
 
 	|> (
-		$$pos '!' ws exp $"not" $"setpos"
-		| $$pos "-" ws exp $"negate" $"setpos"
+		'!' $$pos ws exp $"not" $"setpos"
+		| "-" $$pos ws exp $"negate" $"setpos"
 		| lambda
 		| exp (
 			("(" $$pos $"swap" ws exps ")" ws $"call" $"setpos")
@@ -97,7 +97,7 @@ exp =
 
 with = '(' $$pos $"swap" ws exp "with" s fields ')' ws $"with" $"setpos";
 	fields = $"list" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"list";
-		fieldassign = id '=' ws exp $"fieldassign";
+		fieldassign = idpos '=' ws exp $"fieldassign";
 
 switch = "switch" !letterOrDigit $$pos ws
 		'(' ws exp ')' ws 
@@ -117,12 +117,12 @@ brace = $$pos "{" ws expsemi "}" ws $"sequence" $"setpos";
 	expsemi = $"list" exp $"cons" (optsemi exp $"cons")* optsemi
 		| $"list";
 
-lambda = backslash ws lambdaargs "->" ws exp "" $"lambda"; // The "" makes right-recursion disappear
+lambda = backslash $$pos ws lambdaargs "->" ws exp "" $"lambda" $"setpos"; // The "" makes right-recursion disappear
 	lambdaargs = $"list" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? 
 		| $"list";
 
 	lambdaarg = id ":" ws type $":" |
-		idpos $"var" $"auto" $":";	// We add auto automatically
+		idpos $"var" $$pos $"auto" $"setpos" $":";	// We add auto automatically
 
 exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
 	| $"list";
@@ -146,12 +146,12 @@ type =
 	| $$pos "ref" !letterOrDigit ws type $"reftype" $"setpos"
 	| fntype
 	| typename
-	| "[" ws type "]" ws $"arraytype"
+	| $$pos "[" ws type "]" ws $"arraytype" $"setpos"
 	| $$pos $("?"+) ws $"polytype" $"setpos"
 	;
 
 fntype = $$pos "(" ws argtypes ")" ws "->" ws type $"fntype" $"setpos";
-fntypeauto = $$pos "(" ws argtypes ")" ws $"auto" $"fntype" $"setpos";
+fntypeauto = $$pos "(" ws argtypes ")" ws $$pos $"auto" $"setpos" $"fntype" $"setpos";
 	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? | $"list";
 	argtype = $$pos id ":" ws type $"argtype" $"setpos" | type;
 

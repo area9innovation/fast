@@ -167,7 +167,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PCast(val, getPType(type), todo())
 			}),
 			Pair("fieldassign", \field, value -> {
-				PFieldAssign(getPString(field), value, todo())
+				PFieldAssign(getPString(field), value, getPPos(field))
 			}),
 			Pair("typedef", \var, type -> {
 				PTypeDef(getPString(var), getPType(type), getPPos(var))
@@ -181,7 +181,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			tri("ifelse"),
 			tri("maybe"),
 			Pair("let", \a, b, c -> {
-				PLet(getPString(a), b, c, todo())
+				PLet(getPString(a), b, c, getPPos(a))
 			}),
 			Pair("case", \a, b, c -> {
 				PCase(getPString(a), map(getPListArray(b), getPString), c, getPPos(a))
@@ -198,8 +198,8 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 
 				PGlobal(getPString(id), 
 					PLambda(argtypes,
-						PCallOp(":", [body, fntype.returnType], todo()), todo()
-					), todo()
+						PCallOp(":", [body, fntype.returnType], getPPos(id)), getPPos(id)
+					), getPPos(id)
 				)
 			}),
 			Pair("::=", \a, field, val -> {
@@ -212,7 +212,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 		// Quadrary operators
 		pairs2tree([
 			Pair("let_typed", \a, b, c, d -> {
-				PLet(getPString(a), PCallOp(":", [c, getPType(b)], todo()), d, todo())
+				PLet(getPString(a), PCallOp(":", [c, getPType(b)], getPPos(a)), d, getPPos(a))
 			}),
 			Pair("native", \id, isIo, type, name -> {
 				PNative(getPString(id), getPListArray(isIo) != [], getPType(type), getPString(name), getPPos(id))
