@@ -11,8 +11,8 @@ export {
 	PExp ::= PValue, PTopLevel, PType, PArgType,
 		PStringInclude, 
 		PVar, PLet, PIf, PCall, PCallOp, PLambda,
-		PRef, PSetMutable, PArray, PSequence, PSwitch, PCase, PCast,
-		PWith, PFieldAssign, PMaybe,
+		PRef, PSetMutable, PArray, PSequence, PSwitch, 
+		PCase, PCast, PTyped, PWith, PFieldAssign, PMaybe,
 
 		// While parsing, we have an efficient list for collecting arrays
 		PList
@@ -51,6 +51,7 @@ export {
 		PSwitch(value : PExp, cases : [PExp], pos : int);
 		PCase(id : string, args : [string], body : PExp, pos : int);
 		PCast(value : PExp, target : PType, pos : int);
+		PTyped(value : PExp, type : PType, pos : int);
 
 		PWith(struct : string, value : PExp, fields : [PFieldAssign], pos : int);
 			PFieldAssign(id : string, value : PExp, pos : int);

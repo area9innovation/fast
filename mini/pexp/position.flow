@@ -47,6 +47,7 @@ setPPos(p : int, e : PExp) -> PExp {
 		PSwitch(value, cases, pos): PSwitch(value, cases, p);
 		PCase(id, args, body, pos): PCase(id, args, body, p);
 		PCast(value, target, pos): PCast(value, target, p);
+		PTyped(value, type, pos): PTyped(value, type, p);
 		PWith(struct, value, fields, pos): PWith(struct, value, fields, p);
 		PMaybe(value, match, otherwise, pos): PMaybe(value, match, otherwise, p);
 		PFieldAssign(id, value, pos): PFieldAssign(id, value, p);

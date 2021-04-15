@@ -40,7 +40,8 @@ export {
 
 	DExp ::= DValue, DStringInclude,
 		DVar, DLet, DIf, DCall, DCallOp, DConstruct, DLambda,
-		DRef, DSetMutable, DArray, DSequence, DSwitch, DCast, DDowncast,
+		DRef, DSetMutable, DArray, DSequence, DSwitch, 
+		DCast, DDowncast, DTyped,
 		DWith;
 
 		DStringInclude(path : string, pos : int);
@@ -66,6 +67,7 @@ export {
 		DCast(value : DExp, target : DType, pos : int);
 		// This does a downcast from a supertype to a subtype
 		DDowncast(value : DExp, subtype : DType, pos : int);
+		DTyped(value : DExp, subtype : DType, pos : int);
 
 		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int);
 			DFieldAssign(id : string, value : DExp, pos : int);

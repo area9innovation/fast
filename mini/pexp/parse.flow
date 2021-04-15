@@ -140,7 +140,10 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("call", \fn, args -> {
 				PCall(fn, getPListArray(args), todo())
 			}),
-			bin(":="), bin("|>"), bin(":"), 
+			bin(":="), bin("|>"), 
+			Pair(":", \ex, type -> {
+				PTyped(ex, getPType(type), todo())
+			}),
 
 			Pair("switch", \a, b -> {
 				PSwitch(a, getPListArray(b), todo())
@@ -194,7 +197,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PStructArg(getPString(b), getPListArray(a) != [], getPType(c), getPPos(b))
 			}),
 			Pair("global_typed", \id, type, value -> {
-				PGlobal(getPString(id), PCallOp(":", [value, getPType(type)], getPPos(id)), getPPos(id))
+				PGlobal(getPString(id), PTyped(value, getPType(type), getPPos(id)), getPPos(id))
 			}),
 			Pair("fndef_typed", \id, type, body -> {
 				fntype = getPTypeFunction(type);
@@ -202,7 +205,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 
 				PGlobal(getPString(id), 
 					PLambda(argtypes,
-						PCallOp(":", [body, fntype.returnType], getPPos(id)), getPPos(id)
+						PTyped(body, fntype.returnType, getPPos(id)), getPPos(id)
 					), getPPos(id)
 				)
 			}),
@@ -216,7 +219,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 		// Quadrary operators
 		pairs2tree([
 			Pair("let_typed", \a, b, c, d -> {
-				PLet(getPString(a), PCallOp(":", [c, getPType(b)], getPPos(a)), d, getPPos(a))
+				PLet(getPString(a), PTyped(c, getPType(b), getPPos(a)), d, getPPos(a))
 			}),
 			Pair("native", \id, isIo, type, name -> {
 				PNative(getPString(id), getPListArray(isIo) != [], getPType(type), getPString(name), getPPos(id))

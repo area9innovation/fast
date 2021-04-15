@@ -188,6 +188,11 @@ prettyPos(input : string, i : string, p : PExp) -> void {
 			rec(value);
 			rec(target);
 		}
+		PTyped(value, type, pos): {
+			pr("typed");
+			rec(value);
+			rec(type);
+		}
 		PWith(struct, value, fields, pos): {
 			pr("with " + struct);
 			rec(value);

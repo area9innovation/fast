@@ -16,6 +16,7 @@ TODO:
 - Collect string includes
 - Extract structs and unions
 - Extract top-level functions from globals
+- Should we have an enum with builtins?
 */
 
 export {
@@ -217,6 +218,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		}
 		//PSwitch(value, cases, pos): 
 		PCast(value, target, pos): DCast(rec(value), ptype2dtype(dd, target), pos);
+		PTyped(value, type, pos): DTyped(rec(value), ptype2dtype(dd, type), pos);
 		//PWith(struct, value, fields, pos): 
 		//PMaybe(value, match, otherwise, pos): 
 
