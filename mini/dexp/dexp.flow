@@ -16,8 +16,15 @@ TODO:
 - Should we resolve string includes? Probably not
 */
 export {
-	// We know what flowpath this file is
-	DModule(flowpath : string, imports : [DImports], exported : DExport, toplevels : Tree<string, DTopLevel>, pos : int);
+	DModule(
+		flowpath : string, 
+		imports : [DImports], 
+		exported : DExport, 
+		toplevels : Tree<string, DTopLevel>, 
+		order : [string],
+		// TODO: We should extract type defs
+		pos : int
+	);
 
 	DImports ::= DImport, DForbid;
 		DImport(path : string, pos : int);

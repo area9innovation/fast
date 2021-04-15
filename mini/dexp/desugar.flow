@@ -45,19 +45,43 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 			default: acc;
 		}
 	});
+	toplevels0 = fold(module.toplevels, Pair(makeTree(), makeList()), \acc, tl : PTopLevel -> {
+		set = \name, tt -> {
+			mdef = lookupTree(acc.first, name);
+			mdef ?? {
+				// TODO: If the definitions are compatible, we should not complain, but
+				// keep them separately
+				dd.onError(tl.pos, "Redefinition of " + name);
+				dd.onError(mdef.pos, "  previous is here");
+			} : {}
+			Pair(
+				setTree(acc.first, name, tt),
+				Cons(name, acc.second)
+			)
+		}
+		switch (tl) {
+			PGlobal(id, value, pos): set(id, convertPExp2DToplevel(dd, tl));
+			PNative(id, isIo, type, name, pos): set(id, convertPExp2DToplevel(dd, tl));
+			PUnion(typename, types, pos): set(typename.id, convertPExp2DToplevel(dd, tl));
+			PStruct(id, structArgs, pos): set(id, convertPExp2DToplevel(dd, tl));
+			PTypeDef(id, type, pos): set(id, convertPExp2DToplevel(dd, tl));
+			default: acc;
+		}
+	});
 
 	DModule(
 		dd.flowpath,
 		imports,
 		exports,
-		makeTree(),
+		toplevels0.first,
+		list2array(toplevels0.second),
 		pexp.pos,
 	);
 }
 
 convertPExp2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
 	error = \ -> {
-		dd.onError(tl.pos, "Expected global, native, function, union, struct or type def, got " + toString(tl));
+		dd.onError(tl.pos, "Expected global, native, function, union, struct or type def");
 		DStruct("", [], tl.pos);
 	}
 	switch (tl) {
@@ -74,19 +98,31 @@ convertPExp2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
 	}
 }
 
-pexp2dexp(dd : DDesugar, p : PExp) -> DExp {
-	println("TODO: Desugar " + toString(p));
-	DVoid(p.pos);
+pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
+	switch (pexp) {
+		PVoid(pos): DVoid(pos);
+		PBool(v, pos): DBool(v, pos);
+		PInt(v, pos): DInt(v, pos);
+		PDouble(v, pos): DDouble(v, pos);
+		PString(v, pos): DString(v, pos);
+		default: {
+			println("TODO: Desugar " + toString(pexp));
+			DVoid(pexp.pos);
+		}
+	}
 }
 
-ptype2dtype(dd : DDesugar, p : PExp) -> DType {
-	println("TODO: Desugar " + toString(p));
-	DTypeName("", [], p.pos);
+ptype2dtype(dd : DDesugar, p : PType) -> DType {
+	switch (p) {
+		PTypePar(id, pos): DTypePar(id, pos);
+		PTypeName(id, typars, pos): ptypename2dtypename(dd, p);
+		PTypeFunction(args, returnType, pos): DTypeFunction(map(args, \at -> ptype2dtype(dd, at)), ptype2dtype(dd, returnType), pos);
+		PArgType(id, type, pos): ptype2dtype(dd, type); // We just drop the name
+	}
 }
 
 ptypename2dtypename(dd : DDesugar, p : PTypeName) -> DTypeName {
-	println("TODO: Desugar " + toString(p));
-	DTypeName("", [], p.pos);
+	DTypeName(p.id, map(p.typars, \tp -> ptype2dtype(dd, tp)), p.pos);
 }
 
 pstructArg2dstructArg(dd : DDesugar, s : PStructArg) -> DStructArg {
