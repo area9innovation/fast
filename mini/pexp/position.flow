@@ -19,7 +19,6 @@ setPPos(p : int, e : PExp) -> PExp {
 		PInt(v, pos): PInt(v, p);
 		PDouble(v, pos): PDouble(v, p);
 		PString(v, pos): PString(v, p);
-		PArrayValue(values, pos): PArrayValue(values, p);
 		PLambda(args, body, pos): PLambda(args, body, p);
 		PModule(tls, pos): PModule(tls, p);
 		PImport(path, pos): PImport(path, p);

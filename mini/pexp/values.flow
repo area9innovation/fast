@@ -7,7 +7,6 @@ export {
 	getPInt(e : PExp) -> int;
 	getPDouble(e : PExp) -> double;
 	getPString(e : PExp) -> string;
-	getPArrayValue(e : PExp) -> [PValue];
 
 	getPVar(e : PExp) -> string;
 	getPArray(e : PExp) -> [PExp];
@@ -46,13 +45,6 @@ getPString(e : PExp) -> string {
 	switch (e) {
 		PString(s, __): s;
 		default: "";
-	}
-}
-
-getPArrayValue(e : PExp) -> [PValue] {
-	switch (e) {
-		PArrayValue(es, __): es;
-		default: [];
 	}
 }
 

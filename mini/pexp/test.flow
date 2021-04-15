@@ -52,10 +52,6 @@ prettyPos(input : string, i : string, p : PExp) -> void {
 		PInt(v, pos): pr("int");
 		PDouble(v, pos): pr("double");
 		PString(v, pos): pr("string");
-		PArrayValue(values, pos): {
-			pr("arrayvalues");
-			iter(values, rec)
-		}
 		PLambda(args, body, pos): {
 			pr("lambda");
 			rec(body);

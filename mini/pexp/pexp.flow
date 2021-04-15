@@ -3,14 +3,13 @@ import ds/list;
 export {
 	PValue ::= PVoid, PBool, PInt, PDouble, PString, 
 		// When evaluated
-		PArrayValue, PLambda;
+		PLambda;
 
 		PVoid(pos : int);
 		PBool(v : bool, pos : int);
 		PInt(v : int, pos : int);
 		PDouble(v : double, pos : int);
 		PString(v : string, pos : int);
-		PArrayValue(values : [PValue], pos : int);
 
 	PExp ::= PValue, PTopLevel, PType, PArgType,
 		PStringInclude,
