@@ -20,7 +20,6 @@ makeOnError(file : string) -> (int, string) -> void {
 	}
 }
 
-
 main() {
 	if (true) {
 		file = "mini/tests/positions.flow";

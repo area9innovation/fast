@@ -1,35 +1,22 @@
 import ds/list;
 import ds/tree;
 
-/*
-Differences to PExp:
-- It is not a complete Exp type, but has different unions for toplevel, exp, type
-- "Temp" structures such as argtype, case, etc are not in exp
-- We have constructors resolved to not be calls
-- Union match in switch is expanded
-- The top level is indexed like a tree
-- Introduce downcast in switches
-- Expand ?? to switch
-- Extract let-bindings from cases
-
-TODO:
-- Should we resolve string includes? Probably not
-*/
 export {
 	DModule(
 		flowpath : string, 
-		imports : [DImports], 
+		imports : [DImport], 
+		forbids : [DForbid],
 		exported : DExport, 
+		// TODO: To help track dependencies
+		// stringincludes : [DStringInclude],
 		toplevels : Tree<string, DTopLevel>, 
 		order : [string],
 		// TODO: We should extract type defs
 		pos : int
 	);
 
-	DImports ::= DImport, DForbid;
-		DImport(path : string, pos : int);
-		DForbid(path : string, pos : int);
-
+	DImport(path : string, pos : int);
+	DForbid(path : string, pos : int);
 	DExport(exports : [DTopLevel], pos : int);
 
 	DTopLevel ::= DGlobal, DNative, DUnion, DStruct, DTypeDef;
@@ -48,7 +35,7 @@ export {
 		DString(v : string, pos : int);
 
 	DExp ::= DValue, DStringInclude,
-		DVar, DIf, DCall, DCallOp, DLambda,
+		DVar, DLet, DIf, DCall, DCallOp, DConstruct, DLambda,
 		DRef, DSetMutable, DArray, DSequence, DSwitch, DCast, DDowncast,
 		DWith;
 
@@ -65,6 +52,8 @@ export {
 		DCall(fn : DExp, args : [DExp], pos : int);
 		// For built-in operators
 		DCallOp(op : string, args : [DExp], pos : int);
+		// Struct constructo
+		DConstruct(structid : string, args : [DExp], pos : int);
 		DLambda(args : [DArgType], body : DExp, pos : int);
 			DArgType(id : string, type : DType, pos : int);
 

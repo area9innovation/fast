@@ -2,12 +2,28 @@ import mini/dexp/dexp;
 import mini/pexp/pexp;
 import mini/pexp/values;
 
+/*
+Differences to PExp:
+- It is not a complete Exp type, but has different unions for toplevel, exp, type
+- "Temp" structures such as argtype, case, etc are not in exp
+TODO:
+- We have constructors resolved to not be calls
+- Union match in switch is expanded
+- The top level is indexed like a tree
+- Introduce downcast in switches
+- Expand ?? to switch
+- Extract let-bindings from cases
+- Collect string includes
+*/
+
 export {
 	// Desugar a module
 	desugarPExp(dd : DDesugar, p : PExp) -> DModule;
 		DDesugar(
 			flowpath : string,
-			resolveName : (string) -> DTopLevel,
+			// Given a name, figure out what it is (from imports)
+			resolveName : (string) -> Maybe<DTopLevel>,
+			// Report an error at this position in this file
 			onError : (int, string) -> void,
 		);
 }
@@ -23,12 +39,19 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 					if (path == "") dd.onError(pos, "Unknown import path");
 					Some(DImport(path, pos));
 				}
+				default: None();
+			}
+		});
+	forbids = filtermap(module.toplevels, \tl -> {
+			switch (tl) {
 				PForbid(path, pos): {
 					Some(DForbid(path, pos));
 				}
 				default: None();
 			}
 		});
+
+	// TODO: Extract structs in our thing, so we can include those in the lookup
 
 	dummyExport = DExport([], pexp.pos);
 	exports = fold(module.toplevels, dummyExport, \acc, tl : PTopLevel -> {
@@ -72,6 +95,7 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 	DModule(
 		dd.flowpath,
 		imports,
+		forbids,
 		exports,
 		toplevels0.first,
 		list2array(toplevels0.second),
@@ -103,6 +127,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		dd.onError(pexp.pos, "Expected expression");
 		DVoid(pexp.pos);
 	}
+	rec = \ee -> pexp2dexp(dd, ee);
 	switch (pexp) {
 		PVoid(pos): DVoid(pos);
 		PBool(v, pos): DBool(v, pos);
@@ -110,6 +135,46 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PDouble(v, pos): DDouble(v, pos);
 		PString(v, pos): DString(v, pos);
 		PVar(var, pos): DVar(var, pos);
+		PCallOp(op, args, pos): {
+			println(op);
+			DCallOp(op, map(args, rec), pos);
+		}
+
+		PStringInclude(path, pos): DStringInclude(path, pos);
+		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos);
+		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos);
+		PCall(fn, args, pos): {
+			// Check if this is a struct constructor
+			switch (fn) {
+				PVar(id, __): {
+					mtl = dd.resolveName(id);
+					mtl ?? {
+						switch (mtl : DTopLevel) {
+							DStruct(sid, __, __): DConstruct(sid, map(args, rec), pos);
+							default: DCall(rec(fn), map(args, rec), pos);
+						}
+					} : DCall(rec(fn), map(args, rec), pos);
+				}
+				default: DCall(rec(fn), map(args, rec), pos);
+			}
+		}
+		PLambda(args, body, pos): DLambda(map(args, \a -> {
+			DArgType(a.id, ptype2dtype(dd, a.type), a.pos)
+		}), rec(body), pos);
+
+		PRef(value, pos): DRef(rec(value), pos);
+		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos);
+		PArray(exps, pos): DArray(map(exps, rec), pos);
+		PSequence(exps, pos): {
+			dexps = map(exps, rec);
+			if (exps == []) DVoid(pos)
+			else if (length(dexps) == 1) dexps[0]
+			else DSequence(dexps, pos);
+		}
+		//PSwitch(value, cases, pos): 
+		PCast(value, target, pos): DCast(rec(value), ptype2dtype(dd, target), pos);
+		//PWith(struct, value, fields, pos): 
+		//PMaybe(value, match, otherwise, pos): 
 
 		default: {
 			println("TODO: Desugar " + toString(pexp));
@@ -133,6 +198,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 
 		PList(l, pos): error();
 		PFieldAssign(id, value, pos): error();
+		PCase(id, args, body, pos): error();
 	}
 }
 
