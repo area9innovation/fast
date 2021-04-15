@@ -360,6 +360,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 				}
 				Some(struct): {
 					if (length(c.args) == length(struct.structArgs)) {
+						println("TODO: Add downcast for " +  c.id);
 						foldi(c.args, body0, \i, acc, arg : string -> {
 							if (arg == "__") {
 								acc

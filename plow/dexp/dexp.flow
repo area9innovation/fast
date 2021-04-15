@@ -79,7 +79,7 @@ export {
 			DCase(id : string, body : DExp, pos : int);
 		DCast(value : DExp, target : DType, pos : int);
 		// This does a downcast from a supertype to a subtype
-		DDowncast(value : DExp, subtype : DType, pos : int);
+		DDowncast(value : DExp, subtype : DType, scope : DExp, pos : int);
 		DTyped(value : DExp, subtype : DType, pos : int);
 
 		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int);
