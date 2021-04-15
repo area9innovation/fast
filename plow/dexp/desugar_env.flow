@@ -1,4 +1,4 @@
-import mini/dexp/dexp;
+import plow/dexp/dexp;
 
 export {
 	DDesugar(

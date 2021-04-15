@@ -1,4 +1,4 @@
-import mini/dexp/desugar_env;
+import plow/dexp/desugar_env;
 
 export {
 	expandDTypename2structs(d : DDesugar, name : string) -> [DStruct];

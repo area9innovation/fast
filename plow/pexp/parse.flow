@@ -1,7 +1,7 @@
-import mini/pexp/pexp;
-import mini/pexp/position;
-import mini/pexp/values;
-import mini/pexp/pexp_parser;
+import plow/pexp/pexp;
+import plow/pexp/position;
+import plow/pexp/values;
+import plow/pexp/pexp_parser;
 import text/gringo/gringo_interpreter;
 import text/deserialize_string;
 
@@ -13,7 +13,7 @@ parsePExp(program : string, onError : (string) -> void) -> PExp {
 	if (true) {
 		gringoTypedParse(program, pexpTypeAction(onError), parse_flow, PSequence([], -1), onError);
 	} else {
-		gterm = prepareGringoParser("#include mini/pexp/pexp.gringo", onError);
+		gterm = prepareGringoParser("#include plow/pexp/pexp.gringo", onError);
 		if (gterm != GEpsilon()) {
 			// OK, parse the program
 			ops = pexpTypeOps();

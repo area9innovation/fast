@@ -1,5 +1,5 @@
-import mini/pexp/parse;
-import mini/dexp/desugar;
+import plow/pexp/parse;
+import plow/dexp/desugar;
 import fs/filesystem;
 
 main() {

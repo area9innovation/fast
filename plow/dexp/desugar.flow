@@ -1,9 +1,9 @@
-import mini/dexp/dexp;
-import mini/dexp/desugar_env;
-import mini/pexp/pexp;
-import mini/pexp/values;
+import plow/dexp/dexp;
+import plow/dexp/desugar_env;
+import plow/pexp/pexp;
+import plow/pexp/values;
+import plow/dexp/unions;
 import ds/set;
-import mini/dexp/unions;
 
 /*
 Differences to PExp:
