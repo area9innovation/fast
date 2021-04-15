@@ -52,7 +52,7 @@ desugarPExp(dd : DDesugar, pexp : PExp) -> DModule {
 				// TODO: If the definitions are compatible, we should not complain, but
 				// keep them separately
 				dd.onError(tl.pos, "Redefinition of " + name);
-				dd.onError(mdef.pos, "  previous is here");
+				dd.onError(mdef.pos, "Previous definition is here");
 			} : {}
 			Pair(
 				setTree(acc.first, name, tt),
@@ -99,16 +99,40 @@ convertPExp2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
 }
 
 pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
+	error = \ -> {
+		dd.onError(pexp.pos, "Expected expression");
+		DVoid(pexp.pos);
+	}
 	switch (pexp) {
 		PVoid(pos): DVoid(pos);
 		PBool(v, pos): DBool(v, pos);
 		PInt(v, pos): DInt(v, pos);
 		PDouble(v, pos): DDouble(v, pos);
 		PString(v, pos): DString(v, pos);
+		PVar(var, pos): DVar(var, pos);
+
 		default: {
 			println("TODO: Desugar " + toString(pexp));
 			DVoid(pexp.pos);
 		}
+
+		PModule(toplevels, pos): error();
+		PImport(path, pos): error();
+		PForbid(path, pos): error();
+		PExport(exports, pos): error();
+		PGlobal(id, value, pos): error();
+		PNative(id, isIo, type, name, pos): error();
+		PUnion(typename, types, pos): error();
+		PStruct(id, structArgs, pos): error();
+		PStructArg(id, ismutable, type, pos): error();
+		PTypeDef(id, type, pos): error();
+		PTypePar(id, pos): error();
+		PTypeName(id, typars, pos): error();
+		PTypeFunction(args, returnType, pos): error();
+		PArgType(id, type, pos): error();
+
+		PList(l, pos): error();
+		PFieldAssign(id, value, pos): error();
 	}
 }
 
