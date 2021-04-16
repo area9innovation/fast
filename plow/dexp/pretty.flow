@@ -10,10 +10,17 @@ export {
 prettyDModule(d : DModule) -> void {
 	input = getFileContent(d.fullpath);
 	println(d.flowpath + " (" + d.fullpath + "):");
-	//	imports : [DImport], 
-	//	forbids : [DForbid],
+
+	iter(d.imports, \i : DImport -> {
+		println("  import " + i.path);
+	});
+	iter(d.forbids, \f : DForbid -> {
+		println("  forbid " + f.path);
+	});
 	//	exported : DExport, 
-	// structs : Tree<string, DStruct>,
+	traverseInOrder(d.structs, \sid, s : DStruct -> {
+		println("  struct " + prettyDStruct(input, s));
+	});
 	//	unions : Tree<string, DUnion>,
 	//	typedefs : Tree<string, DTypeDef>,
 	//	natives : Tree<string, DNative>,
@@ -138,4 +145,12 @@ prettyDType(input : string, d : DType) -> string {
 		DTypeName(id, typars, pos): id + (if (typars == []) "" else "<" + superglue(typars, \tt -> prettyDType(input, tt), ", ") + ">");
 		DTypeFunction(args, returnType, pos): "(" + superglue(args, \tt -> prettyDType(input, tt), ", ") + ") -> " + prettyDType(input, returnType);
 	}
+}
+
+prettyDStruct(input : string, s : DStruct) -> string {
+	s.id + "<" + strGlue(s.typars, ", ") 
+	+ ">(" + superglue(s.structArgs, \sa : DStructArg -> {
+		(if (sa.ismutable) "mutable " else "") 
+		+ sa.id + " : " + prettyDType(input, sa.type)
+	}, ", ") + ")";
 }

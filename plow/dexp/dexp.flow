@@ -40,7 +40,7 @@ export {
 		DTypeDef(id : string, type : DType, pos : int);
 
 		DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);
-		DStruct(id : string, typars : [DTypePar], structArgs : [DStructArg], pos : int);
+		DStruct(id : string, typars : [string], structArgs : [DStructArg], pos : int);
 			DStructArg(id : string, ismutable : bool, type : DType, pos : int);
 		
 	DValue ::= DVoid, DBool, DInt, DDouble, DString;

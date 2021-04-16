@@ -2,6 +2,7 @@ import plow/dexp/dexp;
 import plow/dexp/desugar_env;
 import plow/dexp/unique_id;
 import plow/dexp/vars;
+import plow/dexp/types;
 import plow/dexp/unions;
 
 import plow/pexp/pexp;
@@ -177,9 +178,12 @@ extractDStruct(dd : DDesugar, acc : Tree<string, DStruct>, tl : PTopLevel) -> Tr
 	switch (tl) {
 		PStruct(id, structArgs, pos): {
 			sargs = map(structArgs, \sa -> pstructArg2dstructArg(dd, sa));
-			// TODO: Extract type pars from the args
-			typars = [];
-			dstruct = DStruct(id, typars, sargs, pos);
+
+			// Extract type pars from the args
+			stypars : Set<string> = fold(sargs, makeSet(), \sacc, sa : DStructArg -> {
+				extractDTypars(sacc, sa.type)
+			});
+			dstruct = DStruct(id, set2array(stypars), sargs, pos);
 			setTree(acc, id, dstruct);
 		}
 		PExport(exports, __): fold(exports, acc, \acc2, ex : PTopLevel -> extractDStruct(dd, acc2, ex));
