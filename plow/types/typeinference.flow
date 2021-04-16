@@ -44,6 +44,9 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 }
 
 ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
+	restype = \tv, type -> {
+		unifyTType(env, type, TTypeVar(tv));
+	}
 	switch (d) {
 		DVoid(pos): TTypeName("void", []);
 		DBool(v, pos): TTypeName("bool", []);
@@ -52,7 +55,15 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DString(v, pos): TTypeName("string", []);
 		DStringInclude(path, pos): TTypeName("string", []);
 		//DVar(id, pos, tyvar): 
-
+		DVar(id, pos, tyvar): {
+			mtype = lookupTree(env.localTypes, id);
+			type = mtype ?? {
+				mtype
+			} : {
+				env.resolveId(id);
+			};
+			restype(tyvar, type);
+		}
 		DTyped(value, type, pos): {
 			valtype = ttypeInferenceDExp(env, value);
 			unifyTType(env, valtype, dtype2ttype(env, type));
@@ -61,6 +72,39 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			println("TODO: Infer the type of " + d.structname);
 			TTypeVar(env.mkTyvar());
 		}
+		// DLet(id, value, body, pos, tyvar): 
+		DIf(cond, then, else_, pos, tyvar): {
+			tcond = ttypeInferenceDExp(env, cond);
+			unifyTType(env, tcond, TTypeName("bool", []));
+
+			tthen = ttypeInferenceDExp(env, then);
+			telse = ttypeInferenceDExp(env, else_);
+			type = unifyTType(env, tthen, telse);
+			restype(tyvar, type);
+		}
+		// DCall(fn, args, pos, tyvar): 
+		// DCallOp(op, args, pos, tyvar): 
+		// DConstruct(structid, args, pos, tyvar): 
+		DLambda(args, body, pos, tyvar): {
+			argTypes = map(args, \arg -> {
+				dtype2ttype(env, arg.type)
+			});
+			nenv = foldi(args, env, \i, acc, arg -> {
+				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, argTypes[i]))
+			});
+			retType = ttypeInferenceDExp(nenv, body);
+			type = TTypeFunction(argTypes, retType);
+			restype(tyvar, type);
+		}
+		// DRef(value, pos, tyvar): 
+		// DField(value, field, pos, tyvar): 
+		// DSetMutable(lhs, field, value, pos, tyvar): 
+		// DArray(exps, pos, tyvar): 
+		// DSequence(exps, pos, tyvar): 
+		// DSwitch(value, type, cases, defaultCase, pos, tyvar): 
+		// DCast(value, target, pos): 
+		// DDowncast(value, subtype, scope, pos, tyvar): 
+		// DWith(struct, value, fields, pos, tyvar): 
 	}
 }
 

@@ -106,7 +106,20 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		setConcurrentHashMap(cache.modules.modules, flowpath, dmod);
 
 		// TODO: Check if we need a real type environment
-		tenv = ttypeInference(makeTTypeEnv(), dmod);
+		tenv0 = makeTTypeEnv();
+		tenv1 = TTypeEnv(
+			tenv0 with
+			mkTyvar = dd.mkTyvar,
+			onError = \tv, error -> {
+				pos = 0;
+				dd.onError(pos, "TODO: Find pos for " + i2s(tv) + ": " + error);
+			},
+			resolveId = \id -> {
+				println("TODO: Find type of " + id);
+				TTypeVar(dd.mkTyvar());
+			},
+		)
+		tenv = ttypeInference(tenv0, dmod);
 
 		// TODO: Concert to BExp
 

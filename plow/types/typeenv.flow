@@ -11,6 +11,9 @@ export {
 		// Report an error associated with a given tyvar
 		onError : (tyvar : int, error : string) -> void,
 
+		// Get the type of an id
+		resolveId : (string) -> TType,
+
 		// The types of local ids so far
 		localTypes : Tree<string, TType>,
 
@@ -27,7 +30,15 @@ export {
 }
 
 makeTTypeEnv() -> TTypeEnv {
-	TTypeEnv(makeTree(), \ -> 0, \tv, error -> println(error), makeTree(), makeEGraph(splitTType), ref makeTree(), ref makeTree());
+	TTypeEnv(
+		makeTree(), \ -> 0, 
+		\tv, error -> println(error), 
+		\id -> {
+			println("TODO: Find the type of " + id);
+			TTypeName("ERROR", [])
+		},
+		makeTree(), makeEGraph(splitTType), ref makeTree(), ref makeTree()
+	);
 }
 
 splitTType(t : TType) -> Pair<TType, [TType]> {
