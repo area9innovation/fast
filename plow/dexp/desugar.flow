@@ -128,6 +128,9 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		switch (tl) {
 			PTypeDef(id, type, pos): {
 				typedef = DTypeDef(id, ptype2dtype(dd2, type), pos);
+				if (containsKeyTree(acc, id)) {
+					dd.onError(pos, "Duplicate type def " + id);
+				};
 				setTree(acc, id, typedef);
 			}
 			default: acc;
@@ -138,6 +141,9 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		switch (tl) {
 			PNative(id, isIo, type, name, pos): {
 				nativ = DNative(id, isIo, ptype2dtype(dd, type), name, pos);
+				if (containsKeyTree(acc, id)) {
+					dd.onError(pos, "Duplicate native def " + id);
+				};
 				setTree(acc, id, nativ);
 			}
 			default: acc;
@@ -164,6 +170,11 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 				} : dexp;
 
 				global = DGlobal(id, set2array(typars), dexp1, pos);
+
+				if (containsKeyTree(acc, id)) {
+					dd.onError(pos, "Duplicate definition of " + id);
+				};
+
 				Pair(Cons(id, ord), setTree(acc, id, global));
 			}
 			default: Pair(ord, acc);
@@ -200,9 +211,11 @@ extractDStruct(dd : DDesugar, acc : Tree<string, DStruct>, tl : PTopLevel) -> Tr
 				extractDTypars(sacc, sa.type)
 			});
 			dstruct = DStruct(id, set2array(stypars), sargs, pos);
+			if (containsKeyTree(acc, id)) {
+				dd.onError(pos, "Duplicate struct def " + id);
+			};
 			setTree(acc, id, dstruct);
 		}
-		PExport(exports, __): fold(exports, acc, \acc2, ex : PTopLevel -> extractDStruct(dd, acc2, ex));
 		default: acc;
 	}
 }
@@ -212,9 +225,11 @@ extractDUnion(dd : DDesugar, acc : Tree<string, DUnion>, tl : PTopLevel) -> Tree
 		PUnion(typename, types, pos): {
 			dtp = ptypename2dtypename(dd, typename);
 			dunion = DUnion(dtp.id, map(dtp.typars, getDTypePar), map(types, \t -> ptypename2dtypename(dd, t)), pos);
+			if (containsKeyTree(acc, dtp.id)) {
+				dd.onError(pos, "Duplicate union def " + dtp.id);
+			};	
 			setTree(acc, typename.id, dunion);
 		}
-		PExport(exports, __): fold(exports, acc, \acc2, ex : PTopLevel -> extractDUnion(dd, acc2, ex));
 		default: acc;
 	}
 }
