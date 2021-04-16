@@ -164,7 +164,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PStruct(getPString(a), map(getPListArray(b), getPStructArg), getPPos(a));
 			}),
 			Pair("fntype", \a, b -> {
-				PTypeFunction(map(getPListArray(a), getPType), getPType(b), todo())
+				PTypeFunction(map(getPListArray(a), getPArgType), getPType(b), todo())
 			}),
 			Pair("argtype", \id, type -> {
 				PArgType(getPString(id), getPType(type), todo())
@@ -204,7 +204,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			}),
 			Pair("fndef_typed", \id, type, body -> {
 				fntype = getPTypeFunction(type);
-				argtypes : [PArgType] = map(fntype.args, getPArgType);
+				argtypes : [PArgType] = fntype.args;
 
 				PGlobal(getPString(id), 
 					PLambda(argtypes,
@@ -242,7 +242,13 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 					}
 					EmptyList(): s;
 				}
-			})
+			}),
+			Pair("drop", \s : List<PExp> -> {
+				switch (s) {
+					Cons(h0, t0): t0;
+					EmptyList(): s;
+				}
+			}),
 		]),
 	);
 }
@@ -250,14 +256,20 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 getPArgType(a : PExp) -> PArgType {
 	switch (a) {
 		PArgType(__, __, __): a;
-		default: PArgType("error", PTypeName("", [], -1), -1);
+		default: {
+			println("Expected arg type, got " + toString(a));
+			PArgType("error", PTypeName("", [], -1), -1);
+		}
 	}
 }
 
 getPStructArg(a : PExp) -> PStructArg {
 	switch (a) {
 		PStructArg(__, __, __, __): a;
-		default: PStructArg("error", false, PTypeName("", [], -1), -1);
+		default: {
+			println("Expected struct type, got " + toString(a));
+			PStructArg("error", false, PTypeName("", [], -1), -1);
+		}
 	}
 }
 

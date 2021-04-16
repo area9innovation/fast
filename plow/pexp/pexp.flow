@@ -65,5 +65,5 @@ export {
 
 	PTypeName(id : string, typars : [PType], pos : int);
 	PTypePar(id : string, pos : int);
-	PTypeFunction(args : [PType], returnType : PType, pos : int);
+	PTypeFunction(args : [PArgType], returnType : PType, pos : int);
 }

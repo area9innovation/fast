@@ -121,12 +121,11 @@ lambda = backslash $$pos ws lambdaargs "->" ws exp "" $"lambda" $"setpos"; // Th
 	lambdaargs = $"list" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? 
 		| $"list";
 
-	lambdaarg = id ":" ws type $":" |
-		idpos $"var" $$pos $"auto" $"setpos" $":";	// We add auto automatically
+	lambdaarg = id ":" ws type $"argtype" |
+		idpos $"var" $$pos $"auto" $"setpos" $"argtype";	// We add auto automatically
 
 exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
 	| $"list";
-
 
 idpos = $$pos id $"setpos";
 
@@ -153,7 +152,7 @@ type =
 fntype = $$pos "(" ws argtypes ")" ws "->" ws type $"fntype" $"setpos";
 fntypeauto = $$pos "(" ws argtypes ")" ws $$pos $"auto" $"setpos" $"fntype" $"setpos";
 	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? | $"list";
-	argtype = $$pos id ":" ws type $"argtype" $"setpos" | type;
+	argtype = $$pos id ":" ws type $"argtype" $"setpos" | type $$"" $"swap" $"argtype";
 
 typename = idpos typars $"typename";
 	typars = "<" ws types ">" ws | $"list";

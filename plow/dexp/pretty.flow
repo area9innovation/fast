@@ -32,7 +32,8 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 	type = \t -> println(i + " " + prettyDType(input, t));
 	pr = \s : string -> {
 		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
-		println(i + s + ": \"" + takeBefore(line, "\n", line) + "\"");
+		pre = i + s;
+		println(rpad(pre, " ", 60) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
 		DVoid(pos): pr("void");
@@ -48,7 +49,7 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			pr("String include " + path);
 		}
 		DVar(var, pos): {
-			pr("var " + var);
+			pr("'" + var + "'");
 		}
 		DLet(var, value, body, pos): {
 			pr("let " + var);
@@ -110,9 +111,8 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			type(target);
 		}
 		DTyped(value, typ, pos): {
-			pr("typed");
+			pr("typed : " + prettyDType(input, typ));
 			rec(value);
-			type(typ);
 		}
 		DWith(struct, value, fields, pos): {
 			pr("with " + struct);
