@@ -360,8 +360,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 				}
 				Some(struct): {
 					if (length(c.args) == length(struct.structArgs)) {
-						println("TODO: Add downcast for " +  c.id);
-						foldi(c.args, body0, \i, acc, arg : string -> {
+						body1 = foldi(c.args, body0, \i, acc, arg : string -> {
 							if (arg == "__") {
 								acc
 							} else {
@@ -369,7 +368,9 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 								structArg = struct.structArgs[i];
 								DLet(arg, DField(switchvar, structArg.id, c.pos), acc, c.pos)
 							}
-						})
+						});
+						// Add a downcast
+						DDowncast(switchvar, DTypeName(c.id, [], c.pos), body1, c.pos)
 					} else {
 						dd.onError(c.pos, c.id + " expects " + i2s(length(struct.structArgs)) + " args, got " + i2s(length(c.args)));
 						body0;

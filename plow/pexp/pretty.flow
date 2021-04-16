@@ -2,11 +2,11 @@ import plow/pexp/pexp;
 import string;
 
 export {
-	prettyPos(input : string, i : string, p : PExp) -> void;
+	prettyPExp(input : string, i : string, p : PExp) -> void;
 }
 
-prettyPos(input : string, i : string, p : PExp) -> void {
-	rec = \e -> prettyPos(input, i + " ", e);
+prettyPExp(input : string, i : string, p : PExp) -> void {
+	rec = \e -> prettyPExp(input, i + " ", e);
 	pr = \s : string -> {
 		line = if (p.pos == -1) "MISSING POS " + p.structname else substring(input, p.pos, 20);
 		println(i + s + ": \"" + takeBefore(line, "\n", line) + "\"");

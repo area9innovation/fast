@@ -1,0 +1,141 @@
+import plow/dexp/dexp;
+import string;
+import text/blueprint;
+
+export {
+	prettyDModule(d : DModule) -> void;
+	prettyDExp(input : string, i : string, d : DExp) -> void;
+}
+
+prettyDModule(d : DModule) -> void {
+	input = getFileContent(d.fullpath);
+	println(d.flowpath + " (" + d.fullpath + "):");
+	//	imports : [DImport], 
+	//	forbids : [DForbid],
+	//	exported : DExport, 
+	// structs : Tree<string, DStruct>,
+	//	unions : Tree<string, DUnion>,
+	//	typedefs : Tree<string, DTypeDef>,
+	//	natives : Tree<string, DNative>,
+	iter(d.order, \id -> {
+		mglobal = lookupTree(d.globals, id);
+		mglobal ?? {
+			println(" " + id + "=");
+			prettyDExp(input, "  ", mglobal.value);
+		} : {}
+	});
+}
+
+
+prettyDExp(input : string, i : string, d : DExp) -> void {
+	rec = \e -> prettyDExp(input, i + " ", e);
+	type = \t -> println(i + " " + prettyDType(input, t));
+	pr = \s : string -> {
+		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
+		println(i + s + ": \"" + takeBefore(line, "\n", line) + "\"");
+	}
+	switch (d : DExp) {
+		DVoid(pos): pr("void");
+		DBool(v, pos): pr("bool");
+		DInt(v, pos): pr("int");
+		DDouble(v, pos): pr("double");
+		DString(v, pos): pr("string");
+		DLambda(args, body, pos): {
+			pr("lambda " + superglue(args, \a : DArgType -> a.id + ":" + prettyDType(input, a.type), ","));
+			rec(body);
+		}
+		DStringInclude(path, pos): {
+			pr("String include " + path);
+		}
+		DVar(var, pos): {
+			pr("var " + var);
+		}
+		DLet(var, value, body, pos): {
+			pr("let " + var);
+			rec(value);
+			rec(body);
+		}
+		DIf(cond, then, else_, pos): {
+			pr("if");
+			rec(cond);
+			rec(then);
+			rec(else_);
+		}
+		DCall(fn, args, pos): {
+			pr("call");
+			rec(fn);
+			iter(args, rec);
+		}
+		DCallOp(op, args, pos): {
+			pr("op: " + op);
+			iter(args, rec);
+		}
+		DRef(value, pos): {
+			pr("ref");
+			rec(value);
+		}
+		DField(value, field, pos): {
+			pr("field ." + field);
+			rec(value);
+		}
+		DSetMutable(lhs, field, value, pos): {
+			pr("set mutable field" + field);
+			rec(lhs);
+			rec(value);
+		}
+		DArray(exps, pos): {
+			pr("array");
+			iter(exps, rec);
+		}
+		DSequence(exps, pos): {
+			pr("sequence");
+			iter(exps, rec);
+		}
+		DSwitch(value, typ, cases, mdef, pos): {
+			pr("switch");
+			rec(value);
+			type(typ);
+			iter(cases, \case : DCase -> {
+				pr("  case " + case.id);
+				prettyDExp(input, i + "  ", case.body);
+			});
+			mdef ?? {
+				pr("  default:");
+				rec(mdef)
+			} : {}
+		}
+		DCast(value, target, pos): {
+			pr("cast");
+			rec(value);
+			type(target);
+		}
+		DTyped(value, typ, pos): {
+			pr("typed");
+			rec(value);
+			type(typ);
+		}
+		DWith(struct, value, fields, pos): {
+			pr("with " + struct);
+			rec(value);
+			// iter(fields, rec);
+		}
+		DConstruct(structid, args, pos): {
+			pr("construct " + structid);
+			iter(args, rec);
+		}
+		DDowncast(value, subtype, scope, pos): {
+			pr("downcast");
+			rec(value);
+			type(subtype);
+			rec(scope);
+		}
+	}
+}
+
+prettyDType(input : string, d : DType) -> string {
+	switch (d) {
+		DTypePar(id, pos): id;
+		DTypeName(id, typars, pos): id + (if (typars == []) "" else "<" + superglue(typars, \tt -> prettyDType(input, tt), ", ") + ">");
+		DTypeFunction(args, returnType, pos): "(" + superglue(args, \tt -> prettyDType(input, tt), ", ") + ") -> " + prettyDType(input, returnType);
+	}
+}

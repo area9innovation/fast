@@ -18,6 +18,11 @@ The restriction of the mini-lambda in the entire compiler is too untyped.
 
 4. Then plug into the backends.
 
+# TODOs
+
+- Positions on some operators are off a bit.
+- Implement Maybe & With desugaring
+
 # Type inference
 
 Use the egraph over types and tyvars.

@@ -9,6 +9,7 @@ import fast/fast_path;
 import sys/concurrent;
 
 export {
+	// Constructs a compilation cache
 	makePlowCache(
 		// How to report an error
 		onError : (string) -> void,
@@ -61,38 +62,43 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 
 		// A helper to lookup structs. TODO: Should this be in the plowcache?
 		structLookup = DImportLookup(\module, n -> {
-			lookupTree(module.structs, n)
-		}, \module, n -> {
-			containsSet(module.exported.exportedTypes, n)
-		},
-		\spath, struct, error -> {
-			makeOnError(spath, cache.onError)(struct.pos, error)
-		},
-		ref makeTree(), ref makeSet());
+				lookupTree(module.structs, n)
+			}, \module, n -> {
+				containsSet(module.exported.exportedTypes, n)
+			},
+			\spath, struct, error -> {
+				makeOnError(spath, cache.onError)(struct.pos, error)
+			},
+			ref makeTree(), ref makeSet()
+		);
 
 		// A helper to lookup unions. TODO: Should this be in the plowcache?
 		unionLookup = DImportLookup(\module, n -> {
-			lookupTree(module.unions, n)
-		}, 
-		\module, n -> {
-			containsSet(module.exported.exportedTypes, n)
-		},
-		\upath, struct, error -> {
-			makeOnError(upath, cache.onError)(struct.pos, error)
-		},
-		ref makeTree(), ref makeSet());
+				lookupTree(module.unions, n)
+			}, 
+			\module, n -> {
+				containsSet(module.exported.exportedTypes, n)
+			},
+			\upath, struct, error -> {
+				makeOnError(upath, cache.onError)(struct.pos, error)
+			},
+			ref makeTree(), ref makeSet()
+		);
 
 		dd = DDesugar(\n -> {
-			// OK, scan our imports for this struct
-			importLookup(cache.modules, structLookup, imports, n)
-		}, \n -> {
-			// OK, scan our imports for this struct
-			importLookup(cache.modules, unionLookup, imports, n)
-		}, makeOnError(path, cache.onError), cache.nextId);
+				// OK, scan our imports for this struct
+				importLookup(cache.modules, structLookup, imports, n)
+			}, \n -> {
+				// OK, scan our imports for this struct
+				importLookup(cache.modules, unionLookup, imports, n)
+			}, makeOnError(path, cache.onError), 
+			cache.nextId
+		);
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
 		setConcurrentHashMap(cache.modules.modules, flowpath, dmod);
+
 		dmod;
 	} else {
 		cache.onError(file + " could not be found");
@@ -115,17 +121,3 @@ makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void 
 		);
 	}
 }
-
-/*transitiveModuleSearch(visited : Set<string>, modules : [DModule], fn : (?) -> Maybe<??>) -> Maybe<??> {
-	fold2(modules, visited, None(), \nvisit, acc, module -> {
-		if (acc == None()) {
-			mfind = fn(module);
-			mfind ?? {
-				Pair(nvisit, Some(mfind))
-			} : {
-
-			}
-		} else Pair(nvisit, acc);
-	});
-}
-*/
