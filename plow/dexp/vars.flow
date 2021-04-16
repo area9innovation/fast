@@ -1,0 +1,28 @@
+import plow/dexp/dexp;
+import plow/dexp/rec;
+
+export {
+	// Find all var references in this expression (except locals)
+	extractDVars(acc : Set<string>, d : DExp) -> Set<string>;
+}
+
+extractDVars(acc : Set<string>, d : DExp) -> Set<string> {
+	todo = \ -> {
+		println("TODO: Find vars in " + d.structname);
+		acc;
+	}
+	rec = \ee -> fold(ee, acc, extractDVars);
+	switch (d) {
+		DVar(var, pos): insertSet(acc, var);
+		DLet(var, value, body, pos): {
+			acc1 = extractDVars(acc, value);
+			hasVar = containsSet(acc1, var);
+			acc2 = extractDVars(acc, body);
+			if (hasVar) acc2
+			else removeSet(acc2, var);
+		}
+		default: {
+			fold(getDExpChildren(d), acc, extractDVars)
+		}
+	}
+}

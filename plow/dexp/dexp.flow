@@ -39,8 +39,8 @@ export {
 		DNative(id : string, isIo : bool, type : DType, name : string, pos : int);
 		DTypeDef(id : string, type : DType, pos : int);
 
-		DUnion(typename : DTypeName, types : [DTypeName], pos : int);
-		DStruct(id : string, structArgs : [DStructArg], pos : int);
+		DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);
+		DStruct(id : string, typars : [DTypePar], structArgs : [DStructArg], pos : int);
 			DStructArg(id : string, ismutable : bool, type : DType, pos : int);
 		
 	DValue ::= DVoid, DBool, DInt, DDouble, DString;
@@ -61,8 +61,8 @@ export {
 		DRef(value : DExp, pos : int);
 		DField(value : DExp, field : string, pos : int);
 		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int);
-		DVar(var : string, pos : int);
-		DLet(var : string, value : DExp, body : DExp, pos : int);
+		DVar(id : string, pos : int);
+		DLet(id : string, value : DExp, body : DExp, pos : int);
 		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int);
 		// Array construction
 		DArray(exps : [DExp], pos : int);
@@ -87,7 +87,7 @@ export {
 
 	DType ::= DTypePar, DTypeName, DTypeFunction;
 
-	DTypeName(id : string, typars : [DType], pos : int);
-	DTypePar(id : string, pos : int);
-	DTypeFunction(args : [DType], returnType : DType, pos : int);
+		DTypeName(id : string, typars : [DType], pos : int);
+		DTypePar(id : string, pos : int);
+		DTypeFunction(args : [DType], returnType : DType, pos : int);
 }

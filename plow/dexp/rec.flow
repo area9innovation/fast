@@ -1,0 +1,81 @@
+import plow/dexp/dexp;
+import ds/rvalue_api;
+
+export {
+	foldDExp(x : DExp, init : ?, fn : (?, DExp) -> ?) -> ?;
+	getDExpChildren(e : DExp) -> [DExp];
+}
+
+getDExpChildren(e : DExp) -> [DExp] {
+	switch (e) {
+		DValue(): [];
+		DStringInclude(path, pos): [];
+		DVar(id, pos): [];
+		DLet(id, value, body, pos): [value, body];
+		DIf(cond, then, else_, pos): [cond, then, else_];
+		DCall(fn, args, pos): concat([fn], args);
+		DCallOp(op, args, pos): args;
+		DConstruct(structid, args, pos): args;
+		DLambda(args, body, pos): [body];
+		DRef(value, pos): [value];
+		DField(value, field, pos): [value];
+		DSetMutable(lhs, field, value, pos): [lhs, value];
+		DArray(exps, pos): exps;
+		DSequence(exps, pos): exps;
+		DSwitch(value, type, cases, defaultCase, pos): {
+			cc = concat([value], map(cases, \c -> c.body));
+			defaultCase ?? {
+				arrayPush(cc, defaultCase);
+			} : cc
+		}
+		DCast(value, target, pos): [value];
+		DDowncast(value, subtype, scope, pos): [value, scope];
+		DTyped(value, subtype, pos): [value];
+		DWith(struct, value, fields, pos): concat([value], map(fields, \f -> f.value));
+	}
+}
+
+dexpApi = RecApi(
+	// Clear out recursive children to make the parent value canonical to comparison
+	\e : DExp -> {
+		v = DVoid(0);
+		switch (e) {
+			DValue(): e;
+			DStringInclude(path, pos): e;
+			DVar(id, pos): e;
+			DLet(id, value, body, pos): DLet(id, v, v, pos);
+			DIf(cond, then, else_, pos): DIf(v, v, v, pos);
+			DCall(fn, args, pos): DCall(v, [], pos);
+			DCallOp(op, args, pos): DCallOp(op, [], pos);
+			DConstruct(structid, args, pos): DConstruct(structid, [], pos);
+			DLambda(args, body, pos): DLambda(args, v, pos);
+			DRef(value, pos): DRef(v, pos);
+			DField(value, field, pos): DField(v, field, pos);
+			DSetMutable(lhs, field, value, pos): DSetMutable(v, field, v, pos);
+			DArray(exps, pos): DArray([], pos);
+			DSequence(exps, pos): DSequence([], pos);
+			DSwitch(value, type, cases, defaultCase, pos): DSwitch(value, type, [], None(), pos);
+			DCast(value, target, pos): DCast(v, target, pos);
+			DDowncast(value, subtype, scope, pos): DDowncast(v, subtype, v, pos);
+			DTyped(value, subtype, pos): DTyped(v, subtype, pos);
+			DWith(struct, value, fields, pos): DWith(struct, v, [], pos);
+		};
+		e
+	},
+	// Extract the recursive children of a value
+	getDExpChildren,
+	// Reconstitute a value from the parent with these children
+	\h : DExp, c : [DExp] -> {
+		switch (h) {
+			DValue(): h;
+			default: {
+				println("TODO");
+				h;
+			}
+		}
+	}
+);
+
+foldDExp(x : DExp, init : ?, fn : (?, DExp) -> ?) -> ? {
+	recfold(dexpApi, x, init, fn)
+}

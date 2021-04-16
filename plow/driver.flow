@@ -1,5 +1,7 @@
 import plow/dexp/dexp;
 import plow/dexp/desugar;
+import plow/dexp/pretty;
+
 import plow/pexp/parse;
 
 import plow/lookup;
@@ -59,6 +61,10 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		mods = concurrent(false, map(imports, \i -> {
 			\ -> compilePlow(cache, i.path)
 		}));
+
+		if (true) {
+			iter(mods, prettyDModule)
+		}
 
 		// A helper to lookup structs. TODO: Should this be in the plowcache?
 		structLookup = DImportLookup(\module, n -> {

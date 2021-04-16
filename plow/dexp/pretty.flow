@@ -97,7 +97,7 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			type(typ);
 			iter(cases, \case : DCase -> {
 				pr("  case " + case.id);
-				prettyDExp(input, i + "  ", case.body);
+				prettyDExp(input, i + "    ", case.body);
 			});
 			mdef ?? {
 				pr("  default:");

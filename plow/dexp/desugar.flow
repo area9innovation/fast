@@ -1,9 +1,11 @@
 import plow/dexp/dexp;
 import plow/dexp/desugar_env;
 import plow/dexp/unique_id;
+import plow/dexp/vars;
+import plow/dexp/unions;
+
 import plow/pexp/pexp;
 import plow/pexp/values;
-import plow/dexp/unions;
 import ds/set;
 import ds/arrayutils;
 
@@ -12,16 +14,17 @@ Differences to PExp:
 - It is not a complete Exp type, but has different unions for toplevel, exp, type
 - "Temp" structures such as argtype, case, etc are not in exp
 - Union match in switch is expanded
-TODO:
 - We have constructors resolved to not be calls
 - The top level is indexed like a tree
 - Introduce downcast in switches
-- Expand ?? to switch
 - Extract let-bindings from cases
-- Collect string includes
 - Extract structs and unions
-- Extract top-level functions from globals
+TODO:
+- Expand ?? to switch
+- Fix with
+- Collect string includes
 - Should we have an enum with builtins?
+- Extract top-level functions from globals
 */
 
 export {
@@ -170,29 +173,13 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	);
 }
 
-ptoplevel2DToplevel(dd : DDesugar, tl : PTopLevel) -> DTopLevel {
-	error = \ -> {
-		dd.onError(tl.pos, "Expected global, native, function, union, struct or type def");
-		DStruct("", [], tl.pos);
-	}
-	switch (tl) {
-		PModule(toplevels, pos): error();
-		PImport(path, pos): error();
-		PForbid(path, pos): error();
-		PExport(exports, pos): error();
-		PGlobal(id, value, pos): DGlobal(id, pexp2dexp(dd, value), pos);
-		PNative(id, isIo, type, name, pos): DNative(id, isIo, ptype2dtype(dd, type), name, pos);
-		PUnion(typename, types, pos): DUnion(ptypename2dtypename(dd, typename), map(types, \t -> ptypename2dtypename(dd, t)), pos);
-		PStruct(id, structArgs, pos): DStruct(id, map(structArgs, \sa -> pstructArg2dstructArg(dd, sa)), pos);
-		PStructArg(id, ismutable, type, pos): error();
-		PTypeDef(id, type, pos): DTypeDef(id, ptype2dtype(dd, type), pos);
-	}
-}
-
 extractDStruct(dd : DDesugar, acc : Tree<string, DStruct>, tl : PTopLevel) -> Tree<string, DStruct> {
 	switch (tl) {
 		PStruct(id, structArgs, pos): {
-			dstruct = DStruct(id, map(structArgs, \sa -> pstructArg2dstructArg(dd, sa)), pos);
+			sargs = map(structArgs, \sa -> pstructArg2dstructArg(dd, sa));
+			// TODO: Extract type pars from the args
+			typars = [];
+			dstruct = DStruct(id, typars, sargs, pos);
 			setTree(acc, id, dstruct);
 		}
 		PExport(exports, __): fold(exports, acc, \acc2, ex : PTopLevel -> extractDStruct(dd, acc2, ex));
@@ -203,7 +190,8 @@ extractDStruct(dd : DDesugar, acc : Tree<string, DStruct>, tl : PTopLevel) -> Tr
 extractDUnion(dd : DDesugar, acc : Tree<string, DUnion>, tl : PTopLevel) -> Tree<string, DUnion> {
 	switch (tl) {
 		PUnion(typename, types, pos): {
-			dunion = DUnion(ptypename2dtypename(dd, typename), map(types, \t -> ptypename2dtypename(dd, t)), pos);
+			dtp = ptypename2dtypename(dd, typename);
+			dunion = DUnion(dtp.id, map(dtp.typars, getDTypePar), map(types, \t -> ptypename2dtypename(dd, t)), pos);
 			setTree(acc, typename.id, dunion);
 		}
 		PExport(exports, __): fold(exports, acc, \acc2, ex : PTopLevel -> extractDUnion(dd, acc2, ex));
@@ -255,7 +243,11 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		}
 		PSwitch(value, cases, pos): desugarPSwitch(dd, pexp);
 		PCast(value, target, pos): DCast(rec(value), ptype2dtype(dd, target), pos);
-		PTyped(value, type, pos): DTyped(rec(value), ptype2dtype(dd, type), pos);
+		PTyped(value, type, pos): {
+			dtype = ptype2dtype(dd, type);
+			// TODO: If this is dtype is auto, we do not need it
+			DTyped(rec(value), dtype, pos);
+		}
 		PWith(struct, value, fields, pos): desugarPWith(dd, pexp);
 		PMaybe(value, match, otherwise, pos): desugarPMaybe(dd, pexp);
 
@@ -360,17 +352,25 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 				}
 				Some(struct): {
 					if (length(c.args) == length(struct.structArgs)) {
+						vars = extractDVars(makeSet(), body0);
+
 						body1 = foldi(c.args, body0, \i, acc, arg : string -> {
-							if (arg == "__") {
+							if (arg == "__" || !containsSet(vars, arg)) {
+								// If "arg" does not appears in body0, no need to bind
 								acc
 							} else {
-								// TODO: Check if "arg" appears in body0. If not, no need to bind
 								structArg = struct.structArgs[i];
 								DLet(arg, DField(switchvar, structArg.id, c.pos), acc, c.pos)
 							}
 						});
-						// Add a downcast
-						DDowncast(switchvar, DTypeName(c.id, [], c.pos), body1, c.pos)
+						// Check if switchvar occurs in the body.
+						// If not, no need for downcast
+						if (body1 != body0 || containsSet(vars, switchvar.id)) {
+							// Add a downcast
+							typars = map(struct.typars, \__ -> DTypeName("auto", [], c.pos));
+							stype = DTypeName(c.id, typars, c.pos);
+							DDowncast(switchvar, stype, body1, c.pos);
+						} else body1;
 					} else {
 						dd.onError(c.pos, c.id + " expects " + i2s(length(struct.structArgs)) + " args, got " + i2s(length(c.args)));
 						body0;
@@ -435,4 +435,10 @@ desugarPMaybe(dd : DDesugar, m : PMaybe) -> DExp {
 	println("TODO: Expand maybe");
 	pexp2dexp(dd, m.otherwise);
 }
-	
+
+getDTypePar(d : DType) -> DTypePar {
+	switch (d) {
+		DTypePar(__, __): d;
+		default: DTypePar("", -1);
+	}
+}

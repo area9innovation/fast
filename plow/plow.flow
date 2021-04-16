@@ -17,7 +17,6 @@ main() {
 	allincludes = filter(concat([".", getFlowDir() + "/lib", getFlowDir()], includes), neq(""));
 
 	errors = ref 0;
-
 	cache = makePlowCache(\e -> {
 		errors := ^errors + 1;
 		println(e);
