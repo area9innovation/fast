@@ -17,6 +17,7 @@ prettyDModule(d : DModule) -> void {
 	iter(d.forbids, \f : DForbid -> {
 		println("  forbid " + f.path);
 	});
+	// TODO:
 	//	exported : DExport, 
 	traverseInOrder(d.structs, \sid, s : DStruct -> {
 		println("  struct " + prettyDStruct(input, s));

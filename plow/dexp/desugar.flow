@@ -49,7 +49,7 @@ getDImports(p : PExp) -> [DImport] {
 }
 
 getDummyDModule() -> DModule {
-	DModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), makeTree(), [], -1);
+	DModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), [], -1);
 }
 
 desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) -> DModule {
@@ -127,24 +127,11 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	typedefs = fold(toplevels, makeTree(), \acc, tl : PTopLevel -> {
 		switch (tl) {
 			PTypeDef(id, type, pos): {
-				typedef = DTypeDef(id, ptype2dtype(dd2, type), pos);
+				typedef = ptype2dtype(dd2, type);
 				if (containsKeyTree(acc, id)) {
 					dd.onError(pos, "Duplicate type def " + id);
 				};
 				setTree(acc, id, typedef);
-			}
-			default: acc;
-		}
-	});
-
-	natives = fold(toplevels, makeTree(), \acc, tl : PTopLevel -> {
-		switch (tl) {
-			PNative(id, isIo, type, name, pos): {
-				nativ = DNative(id, isIo, ptype2dtype(dd, type), name, pos);
-				if (containsKeyTree(acc, id)) {
-					dd.onError(pos, "Duplicate native def " + id);
-				};
-				setTree(acc, id, nativ);
 			}
 			default: acc;
 		}
@@ -161,12 +148,12 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 				// See if there is a type definition. If so, also extract polymorphism from that
 				mtypedef = lookupTree(typedefs, id);
 				typars = mtypedef ?? {
-					extractDTypars(typars0, mtypedef.type)
+					extractDTypars(typars0, mtypedef)
 				} : typars0;
 
 				// If we have a type def, add it
 				dexp1 = mtypedef ?? {
-					DTyped(dexp, mtypedef.type, pos)
+					DTyped(dexp, mtypedef, pos)
 				} : dexp;
 
 				global = DGlobal(id, set2array(typars), dexp1, pos);
@@ -180,6 +167,23 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 			default: Pair(ord, acc);
 		}
 	});
+	globals = globalsOrder.second;
+
+	natives = fold(toplevels, makeTree(), \acc, tl : PTopLevel -> {
+		switch (tl) {
+			PNative(id, isIo, type, name, pos): {
+				nativ = DNative(id, isIo, ptype2dtype(dd, type), name, lookupTree(globals, name), pos);
+				if (containsKeyTree(acc, id)) {
+					dd.onError(pos, "Duplicate native def " + id);
+				};
+				
+				setTree(acc, id, nativ);
+			}
+			default: acc;
+		}
+	});
+
+	// TODO: Should we retire the fallback natives from globals?
 
 	// TODO: Traverse the typenames mentioned in the exported names and put those
 	// in exportedTypeNames if they are not in exportedTypes
@@ -193,9 +197,8 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		exports,
 		structs,
 		unions,
-		typedefs,
 		natives,
-		globalsOrder.second,
+		globals,
 		list2array(globalsOrder.first),
 		pexp.pos,
 	);
