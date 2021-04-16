@@ -38,6 +38,7 @@ export {
 	getDImports(p : PExp) -> [DImport];
 }
 
+
 getDImports(p : PExp) -> [DImport] {
 	module = getPModule(p);
 	filtermap(module.toplevels, \tl -> {
@@ -249,35 +250,35 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PInt(v, pos): DInt(v, pos);
 		PDouble(v, pos): DDouble(v, pos);
 		PString(v, pos): DString(v, pos);
-		PVar(var, pos): DVar(var, pos);
-		PCallOp(op, args, pos): DCallOp(op, map(args, rec), pos);
+		PVar(var, pos): DVar(var, pos, dd.mkTyvar());
+		PCallOp(op, args, pos): DCallOp(op, map(args, rec), pos, dd.mkTyvar());
 		PStringInclude(path, pos): DStringInclude(path, pos);
-		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos);
-		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos);
+		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos, dd.mkTyvar());
+		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos, dd.mkTyvar());
 		PCall(fn, args, pos): {
 			// Check if this is a struct constructor
 			switch (fn) {
 				PVar(id, __): {
 					mst = dd.resolveStructName(id);
 					mst ?? {
-						DConstruct(mst.id, map(args, rec), pos);
-					} : DCall(rec(fn), map(args, rec), pos);
+						DConstruct(mst.id, map(args, rec), pos, dd.mkTyvar());
+					} : DCall(rec(fn), map(args, rec), pos, dd.mkTyvar());
 				}
-				default: DCall(rec(fn), map(args, rec), pos);
+				default: DCall(rec(fn), map(args, rec), pos, dd.mkTyvar());
 			}
 		}
 		PLambda(args, body, pos): DLambda(map(args, \a -> {
 			DArgType(a.id, ptype2dtype(dd, a.type), a.pos)
-		}), rec(body), pos);
-		PRef(value, pos): DRef(rec(value), pos);
-		PField(value, field, pos): DField(rec(value), field, pos);
-		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos);
-		PArray(exps, pos): DArray(map(exps, rec), pos);
+		}), rec(body), pos, dd.mkTyvar());
+		PRef(value, pos): DRef(rec(value), pos, dd.mkTyvar());
+		PField(value, field, pos): DField(rec(value), field, pos, dd.mkTyvar());
+		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos, dd.mkTyvar());
+		PArray(exps, pos): DArray(map(exps, rec), pos, dd.mkTyvar());
 		PSequence(exps, pos): {
 			dexps = map(exps, rec);
 			if (exps == []) DVoid(pos)
 			else if (length(dexps) == 1) dexps[0]
-			else DSequence(dexps, pos);
+			else DSequence(dexps, pos, dd.mkTyvar());
 		}
 		PSwitch(value, cases, pos): desugarPSwitch(dd, pexp);
 		PCast(value, target, pos): DCast(rec(value), ptype2dtype(dd, target), pos);
@@ -333,27 +334,27 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DExp {
 		pos = s.value.pos;
 		DLet(
 			name, pexp2dexp(dd, s.value),
-			desugarDSwitchWithVar(dd, s, DVar(name, pos), DTypeName("auto", [], pos)),
-			pos
+			desugarDSwitchWithVar(dd, s, DVar(name, pos, dd.mkTyvar()), DTypeName("auto", [], pos)),
+			pos, dd.mkTyvar()
 		);
 	};
 	switch (s.value) {
 		PVar(n, pos): {
-			desugarDSwitchWithVar(dd, s, DVar(n,pos), DTypeName("auto", [], pos));
+			desugarDSwitchWithVar(dd, s, DVar(n, pos, dd.mkTyvar()), DTypeName("auto", [], pos));
 		}
 		PTyped(value, subtype, pos): {
 			stype = ptype2dtype(dd, subtype);
 			switch (value) {
 				PVar(n, pos2): {	
-					desugarDSwitchWithVar(dd, s, DVar(n, pos2), stype);
+					desugarDSwitchWithVar(dd, s, DVar(n, pos2, dd.mkTyvar()), stype);
 				}
 				default: {
 					// We know the type, so OK
 					name = makeTempDName(dd);
 					DLet(
 						name, pexp2dexp(dd, s.value),
-						desugarDSwitchWithVar(dd, s, DVar(name, pos), stype),
-						pos
+						desugarDSwitchWithVar(dd, s, DVar(name, pos, dd.mkTyvar()), stype),
+						pos, dd.mkTyvar()
 					);
 				}
 			}
@@ -398,7 +399,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 								acc
 							} else {
 								structArg = struct.structArgs[i];
-								DLet(arg, DField(switchvar, structArg.id, c.pos), acc, c.pos)
+								DLet(arg, DField(switchvar, structArg.id, c.pos, dd.mkTyvar()), acc, c.pos, dd.mkTyvar())
 							}
 						});
 						// Check if switchvar occurs in the body.
@@ -407,7 +408,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 							// Add a downcast
 							typars = map(struct.typars, \__ -> DTypeName("auto", [], c.pos));
 							stype = DTypeName(c.id, typars, c.pos);
-							DDowncast(switchvar, stype, body1, c.pos);
+							DDowncast(switchvar, stype, body1, c.pos, dd.mkTyvar());
 						} else body1;
 					} else {
 						dd.onError(c.pos, c.id + " expects " + i2s(length(struct.structArgs)) + " args, got " + i2s(length(c.args)));
@@ -451,7 +452,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 		}
 	}));
 
-	DSwitch(switchvar, type, unions, def, s.pos)
+	DSwitch(switchvar, type, unions, def, s.pos, dd.mkTyvar())
 }
 
 desugarPWith(dd : DDesugar, w : PWith) -> DWith {
@@ -461,10 +462,10 @@ desugarPWith(dd : DDesugar, w : PWith) -> DWith {
 			map(w.fields, \f : PFieldAssign -> {
 				// TODO: Check that this field exists in this struct
 				DFieldAssign(f.id, pexp2dexp(dd, f.value), f.pos)
-			}), w.pos)
+			}), w.pos, dd.mkTyvar())
 	} : {
 		dd.onError(w.pos, "Unknown struct for with: " + w.struct);
-		DWith(w.struct, pexp2dexp(dd, w.value), [], w.pos)
+		DWith(w.struct, pexp2dexp(dd, w.value), [], w.pos, dd.mkTyvar())
 	}
 }
 

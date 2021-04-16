@@ -1,4 +1,6 @@
 import plow/dexp/dexp;
+import plow/types/typeof;
+import plow/types/pretty;
 import string;
 import text/blueprint;
 
@@ -41,7 +43,8 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 	pr = \s : string -> {
 		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
 		pre = i + s;
-		println(rpad(pre, " ", 60) + " " + takeBefore(line, "\n", line));
+		typ = prettyTType(dexpType(TTypeEnv(makeTree(), \ -> 0), d));
+		println(rpad(pre, " ", 60) + " " + rpad(typ, " ", 40) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
 		DVoid(pos): pr("void");
@@ -49,58 +52,58 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 		DInt(v, pos): pr("int");
 		DDouble(v, pos): pr("double");
 		DString(v, pos): pr("string");
-		DLambda(args, body, pos): {
-			pr("lambda " + superglue(args, \a : DArgType -> (if (a.id != "") a.id + ":" else "ERROR") + prettyDType(input, a.type), ","));
-			rec(body);
-		}
 		DStringInclude(path, pos): {
 			pr("String include " + path);
 		}
-		DVar(var, pos): {
+		DLambda(args, body, pos, tyvar): {
+			pr("lambda " + superglue(args, \a : DArgType -> (if (a.id != "") a.id + ":" else "ERROR") + prettyDType(input, a.type), ","));
+			rec(body);
+		}
+		DVar(var, pos, tyvar): {
 			pr("'" + var + "'");
 		}
-		DLet(var, value, body, pos): {
+		DLet(var, value, body, pos, tyvar): {
 			pr("let " + var);
 			rec(value);
 			rec(body);
 		}
-		DIf(cond, then, else_, pos): {
+		DIf(cond, then, else_, pos, tyvar): {
 			pr("if");
 			rec(cond);
 			rec(then);
 			rec(else_);
 		}
-		DCall(fn, args, pos): {
+		DCall(fn, args, pos, tyvar): {
 			pr("call");
 			rec(fn);
 			iter(args, rec);
 		}
-		DCallOp(op, args, pos): {
+		DCallOp(op, args, pos, tyvar): {
 			pr("op: " + op);
 			iter(args, rec);
 		}
-		DRef(value, pos): {
+		DRef(value, pos, tyvar): {
 			pr("ref");
 			rec(value);
 		}
-		DField(value, field, pos): {
+		DField(value, field, pos, tyvar): {
 			pr("field ." + field);
 			rec(value);
 		}
-		DSetMutable(lhs, field, value, pos): {
+		DSetMutable(lhs, field, value, pos, tyvar): {
 			pr("set mutable field" + field);
 			rec(lhs);
 			rec(value);
 		}
-		DArray(exps, pos): {
+		DArray(exps, pos, tyvar): {
 			pr("array");
 			iter(exps, rec);
 		}
-		DSequence(exps, pos): {
+		DSequence(exps, pos, tyvar): {
 			pr("sequence");
 			iter(exps, rec);
 		}
-		DSwitch(value, typ, cases, mdef, pos): {
+		DSwitch(value, typ, cases, mdef, pos, tyvar): {
 			pr("switch");
 			rec(value);
 			type(typ);
@@ -122,16 +125,16 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			pr("typed : " + prettyDType(input, typ));
 			rec(value);
 		}
-		DWith(struct, value, fields, pos): {
+		DWith(struct, value, fields, pos, tyvar): {
 			pr("with " + struct);
 			rec(value);
 			// iter(fields, rec);
 		}
-		DConstruct(structid, args, pos): {
+		DConstruct(structid, args, pos, tyvar): {
 			pr("construct " + structid);
 			iter(args, rec);
 		}
-		DDowncast(value, subtype, scope, pos): {
+		DDowncast(value, subtype, scope, pos, tyvar): {
 			pr("downcast");
 			rec(value);
 			type(subtype);

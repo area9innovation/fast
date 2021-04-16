@@ -1,0 +1,6 @@
+export {
+	TType ::= TTypeName, TTypeVar, TTypeFunction;
+		TTypeVar(id : int);
+		TTypeName(id : string, typars : [TType]);
+		TTypeFunction(args : [TType], returnType : TType);
+}

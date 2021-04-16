@@ -10,11 +10,10 @@ The restriction of the mini-lambda in the entire compiler is too untyped.
 2. Once files and dependents are parsed, desugar the program to DExp:
    DExp = Desugared Expressions
 
-   Status: Partially done.
+   Status: Almost done.
 
 3. Once dependencies are desugared, do type inference
-
-   TExp = Typed Expressions
+   TExp = Typed Expressions. This is similar to BExp
 
 4. Then plug into the backends.
 

@@ -1,0 +1,14 @@
+import plow/types/type;
+import text/blueprint;
+
+export {
+	prettyTType(t : TType) -> string;
+}
+
+prettyTType(t : TType) -> string {
+	switch (t) {
+		TTypeVar(id): "a" + i2s(id);
+		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, prettyTType, ", ") + ">");
+		TTypeFunction(args, returnType): "(" + superglue(args, prettyTType, ", ") + ") -> " + prettyTType(returnType);
+	}
+}

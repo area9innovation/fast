@@ -1,0 +1,64 @@
+import plow/types/type;
+import plow/types/typeenv;
+import plow/dexp/dexp;
+
+export {
+	// What is the TType of this expression?
+	dexpType(env : TTypeEnv, e : DExp) -> TType;
+
+	// Convert this to a ttype
+	dtype2ttype(env : TTypeEnv, d : DType) -> TType;
+}
+
+dexpType(env : TTypeEnv, e : DExp) -> TType {
+	n = \s -> TTypeName(s, []);
+	switch (e) {
+		DVoid(pos): n("void");
+		DBool(v, pos): n("bool");
+		DInt(v, pos): n("int"); 
+		DDouble(v, pos): n("double");
+		DString(v, pos): n("string");
+		DStringInclude(path, pos): n("string");
+		DVar(id, pos, tyvar): TTypeVar(tyvar);
+		DLet(id, value, body, pos, tyvar): TTypeVar(tyvar);
+		DIf(cond, then, else_, pos, tyvar): TTypeVar(tyvar);
+		DCall(fn, args, pos, tyvar): TTypeVar(tyvar);
+		DCallOp(op, args, pos, tyvar): TTypeVar(tyvar);
+		DConstruct(structid, args, pos, tyvar): TTypeVar(tyvar);
+		DLambda(args, body, pos, tyvar): TTypeVar(tyvar);
+		DRef(value, pos, tyvar): TTypeVar(tyvar);
+		DField(value, field, pos, tyvar): TTypeVar(tyvar);
+		DSetMutable(lhs, field, value, pos, tyvar): TTypeVar(tyvar);
+		DArray(exps, pos, tyvar): TTypeVar(tyvar);
+		DSequence(exps, pos, tyvar): TTypeVar(tyvar);
+		DSwitch(value, type, cases, defaultCase, pos, tyvar): TTypeVar(tyvar);
+		DCast(value, target, pos): dtype2ttype(env, target);
+		DDowncast(value, subtype, scope, pos, tyvar): TTypeVar(tyvar);
+		DTyped(value, subtype, pos): dtype2ttype(env, subtype);
+		DWith(struct, value, fields, pos, tyvar): TTypeVar(tyvar);
+	}
+}
+
+dtype2ttype(env : TTypeEnv, d : DType) -> TType {
+	switch (d) {
+		DTypePar(id, pos): {
+			mtyvar = lookupTree(env.typars, id);
+			mtyvar ?? {
+				TTypeVar(mtyvar);
+			} : {
+				println("Unresolved type par!");
+				TTypeVar(env.mkTyvar());
+			}
+		}
+		DTypeName(id, typars, pos): {
+			if (id == "auto") {
+				TTypeVar(env.mkTyvar())
+			} else {
+				TTypeName(id, map(typars, \tv -> dtype2ttype(env, tv)));
+			}
+		}
+		DTypeFunction(args, returnType, pos): {
+			TTypeFunction(map(args, \tv -> dtype2ttype(env, tv)), dtype2ttype(env, returnType));
+		}
+	}
+}

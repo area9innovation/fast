@@ -10,5 +10,7 @@ export {
 		onError : (int, string) -> void,
 		// For unique ids
 		nextId : ref int,
+		// Make a tyvar id
+		mkTyvar : () -> int,
 	);
 }

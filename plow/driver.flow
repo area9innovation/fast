@@ -91,15 +91,13 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 			ref makeTree(), ref makeSet()
 		);
 
-		dd = DDesugar(\n -> {
+		dd = makeDDesugar(path, cache, \n -> {
 				// OK, scan our imports for this struct
 				importLookup(cache.modules, structLookup, imports, n)
 			}, \n -> {
 				// OK, scan our imports for this struct
 				importLookup(cache.modules, unionLookup, imports, n)
-			}, makeOnError(path, cache.onError), 
-			cache.nextId
-		);
+			});
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
@@ -110,6 +108,20 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		cache.onError(file + " could not be found");
 		getDummyDModule();
 	}
+}
+
+makeDDesugar(path : string, cache : PlowCache, 
+		resolveStructName : (string) -> Maybe<DStruct>,
+		resolveUnionName : (string) -> Maybe<DUnion>) -> DDesugar {
+	tyvarId = ref 0;
+	DDesugar(resolveStructName, resolveUnionName, 
+		makeOnError(path, cache.onError), 
+		cache.nextId,
+		\ -> {
+			atomicRefIntAddition(tyvarId, 1);
+			^tyvarId;
+		}
+	);
 }
 
 makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void {

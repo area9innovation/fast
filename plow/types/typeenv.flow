@@ -1,0 +1,10 @@
+import ds/tree;
+
+export {
+	TTypeEnv(
+		// Map from type par to tyvar
+		typars : Tree<string, int>,
+		// Construct a new type var
+		mkTyvar : () -> int,
+	);
+}

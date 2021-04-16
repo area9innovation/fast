@@ -55,31 +55,31 @@ export {
 
 		DStringInclude(path : string, pos : int);
 
-		DRef(value : DExp, pos : int);
-		DField(value : DExp, field : string, pos : int);
-		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int);
-		DVar(id : string, pos : int);
-		DLet(id : string, value : DExp, body : DExp, pos : int);
-		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int);
+		DRef(value : DExp, pos : int, tyvar : int);
+		DField(value : DExp, field : string, pos : int, tyvar : int);
+		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int, tyvar : int);
+		DVar(id : string, pos : int, tyvar : int);
+		DLet(id : string, value : DExp, body : DExp, pos : int, tyvar : int);
+		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int, tyvar : int);
 		// Array construction
-		DArray(exps : [DExp], pos : int);
-		DSequence(exps : [DExp], pos : int);
-		DCall(fn : DExp, args : [DExp], pos : int);
+		DArray(exps : [DExp], pos : int, tyvar : int);
+		DSequence(exps : [DExp], pos : int, tyvar : int);
+		DCall(fn : DExp, args : [DExp], pos : int, tyvar : int);
 		// For built-in operators
-		DCallOp(op : string, args : [DExp], pos : int);
+		DCallOp(op : string, args : [DExp], pos : int, tyvar : int);
 		// Struct constructo
-		DConstruct(structid : string, args : [DExp], pos : int);
-		DLambda(args : [DArgType], body : DExp, pos : int);
+		DConstruct(structid : string, args : [DExp], pos : int, tyvar : int);
+		DLambda(args : [DArgType], body : DExp, pos : int, tyvar : int);
 			DArgType(id : string, type : DType, pos : int);
 
-		DSwitch(value : DVar, type : DType, cases : [DCase], defaultCase : Maybe<DExp>, pos : int);
+		DSwitch(value : DVar, type : DType, cases : [DCase], defaultCase : Maybe<DExp>, pos : int, tyvar : int);
 			DCase(id : string, body : DExp, pos : int);
 		DCast(value : DExp, target : DType, pos : int);
 		// This does a downcast from a supertype to a subtype
-		DDowncast(value : DExp, subtype : DType, scope : DExp, pos : int);
+		DDowncast(value : DExp, subtype : DType, scope : DExp, pos : int, tyvar : int);
 		DTyped(value : DExp, subtype : DType, pos : int);
 
-		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int);
+		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int, tyvar : int);
 			DFieldAssign(id : string, value : DExp, pos : int);
 
 	DType ::= DTypePar, DTypeName, DTypeFunction;

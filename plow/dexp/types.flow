@@ -16,13 +16,13 @@ extractDTyparsFromDExp(e : DExp) -> Set<string> {
 
 foldDTypesInDExp(e : DExp, acc : ?, fn : (?, DType) -> ?) -> ? {
 	switch (e) {
-		DLambda(args, body, __): {
+		DLambda(args, body, __, tyvar): {
 			nacc = fold(args, acc, \nacc, a -> {
 				fn(nacc, a.type)
 			});
 			foldDTypesInDExp(body, nacc, fn)
 		}
-		DSwitch(value, type, cases, defaultCase, pos): {
+		DSwitch(value, type, cases, defaultCase, pos, tyvar): {
 			acc0 = foldDTypesInDExp(value, fn(acc, type), fn);
 			acc1 = fold(cases, acc0, \cacc, case -> {
 				foldDTypesInDExp(case.body, cacc, fn)
@@ -31,7 +31,7 @@ foldDTypesInDExp(e : DExp, acc : ?, fn : (?, DType) -> ?) -> ? {
 				foldDTypesInDExp(defaultCase, acc1, fn)
 			} : acc1;
 		}
-		DDowncast(value, subtype, scope, pos): {
+		DDowncast(value, subtype, scope, pos, tyvar): {
 			nacc = foldDTypesInDExp(value, fn(acc, subtype), fn);
 			foldDTypesInDExp(scope, nacc, fn)
 		}
@@ -60,3 +60,4 @@ extractDTypars(acc : Set<string>, d : DType) -> Set<string> {
 		}
 	}
 }
+

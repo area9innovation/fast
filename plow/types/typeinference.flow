@@ -1,0 +1,9 @@
+import plow/types/typeof;
+
+export {
+	ttypeInferenceDGlobal(t : TTypeEnv, d : DGlobal) -> void;
+}
+
+ttypeInferenceDGlobal(t : TTypeEnv, d : DGlobal) -> void {
+	
+}
