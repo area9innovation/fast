@@ -1,0 +1,103 @@
+import plow/types/typeenv;
+import plow/types/pretty;
+
+export {
+	// Extract the best type
+	eclass2TType(env : TTypeEnv, eclass : int) -> TType;
+}
+
+emptyTType = TTypeName("ERROR", []);
+
+eclass2TType(env : TTypeEnv, eclass : int) -> TType {
+	if (eclass == 0) {
+		emptyTType;
+	} else {
+		mtype = lookupTree(^(env.etypes), eclass);
+		mtype ?? {
+			mtype
+		} : {
+			// Set up that we have an empty type going here
+			env.etypes := setTree(^(env.etypes), eclass, emptyTType);
+			nodes = getEClassNodes(env.egraph, eclass);
+			tt = extractTType(env, eclass, nodes);
+			if (tt != emptyTType) {
+				env.etypes := setTree(^(env.etypes), eclass, tt);
+			}
+		//	println("Resolved " + i2s(eclass) + " as " + prettyTType(tt));
+			tt;
+		}
+	}
+}
+
+extractTType(env : TTypeEnv, eclass : int, nodes : Set<ENode<TType>>) -> TType {
+	mtype = foldSet(nodes, emptyTType, \acc, node -> {
+		ntype = enode2TType(env, node);
+		bestTType(env, acc, ntype);
+	});
+	if (mtype != emptyTType) {
+		// Make sure to define the tyvars in the same class
+		iterSet(nodes, \node -> {
+			switch (node.head) {
+				TTypeVar(tv): {
+					env.tyvars := setTree(^(env.tyvars), tv, mtype);
+				}
+				default: {}
+			}
+		});
+		mtype;
+	} else {
+		println("Unbounded type");
+		TTypeVar(env.mkTyvar());
+	}
+}
+
+enode2TType(env : TTypeEnv, enode : ENode<TType>) -> TType {
+	switch (enode.head : TType) {
+		TTypeVar(id): resolveTTypeVar(env, id);
+		TTypeName(id, typars): {
+			TTypeName(id, map(enode.args, \root -> {
+				eclass2TType(env, root)
+			}))
+		}
+		TTypeFunction(args, returnType): {
+			children : [TType] = map(enode.args, \root -> eclass2TType(env, root));
+			// The last child is the return type
+			n = length(children);
+			if (n == 0) {
+				println("Not supposed to happen 2");
+				TTypeVar(env.mkTyvar());
+			} else {
+				TTypeFunction(subrange(children, 0, n - 1), children[n - 1]);
+			}
+		}
+	}
+}
+
+bestTType(env : TTypeEnv, left : TType, right : TType) -> TType {
+	if (left == emptyTType) right
+	else {
+		switch (left) {
+			TTypeName(id, typars): left;
+			TTypeVar(id): {
+				switch (right) {
+					TTypeName(__, typars): right;
+					TTypeFunction(args, returnType): right;
+					TTypeVar(rid): if (id < rid) left else right;
+				}
+			}
+			TTypeFunction(args, returnType): left;
+		}
+	}
+}
+
+resolveTTypeVar(env : TTypeEnv, tyvar : int) -> TType {
+	mtype = lookupTree(^(env.tyvars), tyvar);
+	mtype ?? {
+		mtype
+	} : {
+		foldTree(env.typars, TTypeVar(tyvar), \tp, tvv, acc -> {
+			if (tvv == tyvar) TTypeName(tp, [])
+			else acc;
+		})
+	}
+}

@@ -6,6 +6,8 @@ export {
 }
 
 unifyTType(env : TTypeEnv, left : TType, right : TType) -> TType {
-	println("TODO: Unify " + prettyTType(left) + " and " + prettyTType(right));
+	lroot = addEExp(env.egraph, left);
+	rroot = addEExp(env.egraph, right);
+	unionEClass(env.egraph, lroot, rroot);
 	left;
 }

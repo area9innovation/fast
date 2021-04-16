@@ -1,18 +1,31 @@
 import plow/types/typeof;
 import plow/dexp/pretty;
 import plow/types/unify;
+import plow/types/extract;
 
 export {
 	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
 }
 
 ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
-	fold(d.order, env, \acc, id -> {
+	nenv = fold(d.order, env, \acc, id -> {
 		mglobal = lookupTree(d.globals, id);
 		mglobal ?? {
 			ttypeInferenceDGlobal(acc, mglobal)
 		} : {acc}
 	});
+
+	canonicalizeEGraph(nenv.egraph);
+
+	println("Type equivalences:");
+	iterEGraph(nenv.egraph, \root, nodes : Set<ENode<TType>> -> {
+		equi = foldSet(nodes, "", \acc, node : ENode<TType> -> {
+			acc + "   " + prettyTType(node.head) + (if (node.args != []) "<" + superglue(node.args, i2s, ", ") + ">" else "")
+		});
+		extract = eclass2TType(nenv, root);
+		println(i2s(root) + ": " + prettyTType(extract) + " from " + equi);
+	});
+	nenv;
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {

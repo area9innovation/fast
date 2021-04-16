@@ -1,5 +1,6 @@
 import ds/tree;
 import plow/types/type;
+import ds/egraph;
 
 export {
 	TTypeEnv(
@@ -12,12 +13,33 @@ export {
 
 		// The types of local ids so far
 		localTypes : Tree<string, TType>,
+
+		// The egraph with the type equivalent classes
+		egraph : EGraph<TType>,
+
+		// When we start to extract equivalence classes
+		etypes : ref Tree<int, TType>,
+		// When we start to extract types
+		tyvars : ref Tree<int, TType>,
 	);
 
 	makeTTypeEnv() -> TTypeEnv;
 }
 
-
 makeTTypeEnv() -> TTypeEnv {
-	TTypeEnv(makeTree(), \ -> 0, \tv, error -> println(error), makeTree());
+	TTypeEnv(makeTree(), \ -> 0, \tv, error -> println(error), makeTree(), makeEGraph(splitTType), ref makeTree(), ref makeTree());
+}
+
+splitTType(t : TType) -> Pair<TType, [TType]> {
+	switch (t) {
+		TTypeName(id, typars): Pair(TTypeName(id, []), typars);
+		TTypeVar(id): Pair(t, []);
+		TTypeFunction(args, returnType): {
+			Pair(
+				// Make sure we keep the arity
+				TTypeFunction(map(args, \__ -> TTypeName("", [])), TTypeName("", [])), 
+				arrayPush(args, returnType)
+			);
+		}
+	}
 }
