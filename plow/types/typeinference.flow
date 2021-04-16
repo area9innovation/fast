@@ -1,9 +1,53 @@
 import plow/types/typeof;
+import plow/dexp/pretty;
+import plow/types/unify;
 
 export {
-	ttypeInferenceDGlobal(t : TTypeEnv, d : DGlobal) -> void;
+	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
 }
 
-ttypeInferenceDGlobal(t : TTypeEnv, d : DGlobal) -> void {
-	
+ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
+	fold(d.order, env, \acc, id -> {
+		mglobal = lookupTree(d.globals, id);
+		mglobal ?? {
+			ttypeInferenceDGlobal(acc, mglobal)
+		} : {acc}
+	});
 }
+
+ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
+	typars = fold(d.typars, makeTree(), \acc, tp -> {
+		setTree(acc, tp, env.mkTyvar())
+	});
+	nenv = TTypeEnv(env with typars = typars);
+	if (d.recursive) {
+		println("TODO: Handle recursive defs");
+		type = ttypeInferenceDExp(nenv, d.value);
+		TTypeEnv(env with localTypes = setTree(env.localTypes, d.id, type));
+	} else {
+		type = ttypeInferenceDExp(nenv, d.value);
+		TTypeEnv(env with localTypes = setTree(env.localTypes, d.id, type));
+	}
+}
+
+ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
+	switch (d) {
+		DVoid(pos): TTypeName("void", []);
+		DBool(v, pos): TTypeName("bool", []);
+		DInt(v, pos): TTypeName("int", []); 
+		DDouble(v, pos): TTypeName("double", []);
+		DString(v, pos): TTypeName("string", []);
+		DStringInclude(path, pos): TTypeName("string", []);
+		//DVar(id, pos, tyvar): 
+
+		DTyped(value, type, pos): {
+			valtype = ttypeInferenceDExp(env, value);
+			unifyTType(env, valtype, dtype2ttype(env, type));
+		}
+		default: {
+			println("TODO: Infer the type of " + d.structname);
+			TTypeVar(env.mkTyvar());
+		}
+	}
+}
+

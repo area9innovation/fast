@@ -1,0 +1,11 @@
+import plow/types/pretty;
+import plow/types/typeenv;
+
+export {
+	unifyTType(env : TTypeEnv, left : TType, right : TType) -> TType;
+}
+
+unifyTType(env : TTypeEnv, left : TType, right : TType) -> TType {
+	println("TODO: Unify " + prettyTType(left) + " and " + prettyTType(right));
+	left;
+}

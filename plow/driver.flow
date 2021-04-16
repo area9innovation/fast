@@ -4,6 +4,8 @@ import plow/dexp/pretty;
 
 import plow/pexp/parse;
 
+import plow/types/typeinference;
+
 import plow/lookup;
 
 import fast/fast_path;
@@ -102,6 +104,11 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		dmod = desugarPExp(dd, flowpath, path, p);
 
 		setConcurrentHashMap(cache.modules.modules, flowpath, dmod);
+
+		// TODO: Check if we need a real type environment
+		tenv = ttypeInference(makeTTypeEnv(), dmod);
+
+		// TODO: Concert to BExp
 
 		dmod;
 	} else {

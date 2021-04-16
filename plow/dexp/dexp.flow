@@ -33,7 +33,7 @@ export {
 		pos : int
 	);
 
-	DGlobal(id : string, typars : [string], value : DExp, pos : int);
+	DGlobal(id : string, typars : [string], recursive : bool, value : DExp, pos : int);
 	DNative(id : string, isIo : bool, type : DType, name : string, fallback : Maybe<DGlobal>, pos : int);
 
 	DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);

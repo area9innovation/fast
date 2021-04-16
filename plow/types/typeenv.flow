@@ -1,4 +1,5 @@
 import ds/tree;
+import plow/types/type;
 
 export {
 	TTypeEnv(
@@ -6,5 +7,17 @@ export {
 		typars : Tree<string, int>,
 		// Construct a new type var
 		mkTyvar : () -> int,
+		// Report an error associated with a given tyvar
+		onError : (tyvar : int, error : string) -> void,
+
+		// The types of local ids so far
+		localTypes : Tree<string, TType>,
 	);
+
+	makeTTypeEnv() -> TTypeEnv;
+}
+
+
+makeTTypeEnv() -> TTypeEnv {
+	TTypeEnv(makeTree(), \ -> 0, \tv, error -> println(error), makeTree());
 }

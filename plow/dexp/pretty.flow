@@ -43,7 +43,7 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 	pr = \s : string -> {
 		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
 		pre = i + s;
-		typ = prettyTType(dexpType(TTypeEnv(makeTree(), \ -> 0), d));
+		typ = prettyTType(dexpType(makeTTypeEnv(), d));
 		println(rpad(pre, " ", 60) + " " + rpad(typ, " ", 40) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
