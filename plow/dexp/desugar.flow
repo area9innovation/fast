@@ -147,7 +147,23 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	globalsOrder = fold2(toplevels, makeList(), makeTree(), \ord, acc, tl : PTopLevel -> {
 		switch (tl) {
 			PGlobal(id, value, pos): {
-				global = DGlobal(id, pexp2dexp(dd2, value), pos);
+				// Convert the body
+				dexp = pexp2dexp(dd2, value);
+				// Extract any polymorphism
+				typars0 = extractDTyparsFromDExp(dexp);
+
+				// See if there is a type definition. If so, also extract polymorphism from that
+				mtypedef = lookupTree(typedefs, id);
+				typars = mtypedef ?? {
+					extractDTypars(typars0, mtypedef.type)
+				} : typars0;
+
+				// If we have a type def, add it
+				dexp1 = mtypedef ?? {
+					DTyped(dexp, mtypedef.type, pos)
+				} : dexp;
+
+				global = DGlobal(id, set2array(typars), dexp1, pos);
 				Pair(Cons(id, ord), setTree(acc, id, global));
 			}
 			default: Pair(ord, acc);

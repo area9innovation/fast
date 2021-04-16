@@ -25,11 +25,11 @@ global = idpos "=" ws brace optsemi $"global"
 
 functionOrStruct = 
 	// Forward declaration
-	  idpos fntype brace optsemi $"fndef_typed" 
-	| idpos fntype exp semi $"fndef_typed"
-	| idpos fntype semi $"typedef"
-	| idpos fntypeauto brace optsemi $"fndef_typed" 
-	| idpos fntypeauto exp semi $"fndef_typed" 
+	  idpos lambdatype brace optsemi $"fndef_typed" 
+	| idpos lambdatype exp semi $"fndef_typed"
+	| idpos lambdatype semi $"typedef"
+	| idpos lambdatypeauto brace optsemi $"fndef_typed" 
+	| idpos lambdatypeauto exp semi $"fndef_typed" 
 	| idpos '(' ws structargs ')' ws semi $"structdef" // This is a struct!
 
 	// Forward type declarations
@@ -122,7 +122,11 @@ lambda = backslash $$pos ws lambdaargs "->" ws exp "" $"lambda" $"setpos"; // Th
 		| $"list";
 
 	lambdaarg = id ":" ws type $"argtype" |
-		idpos $"var" $$pos $"auto" $"setpos" $"argtype";	// We add auto automatically
+		id $$pos $"auto" $"setpos" $"argtype";	// We add auto automatically
+
+lambdatype = $$pos "(" ws lambdaargs ")" ws "->" ws type $"fntype" $"setpos";
+lambdatypeauto = $$pos "(" ws lambdaargs ")" ws $$pos $"auto" $"setpos" $"fntype" $"setpos";
+
 
 exps = $"list" exp $"cons" ("," ws exp $"cons")* ("," ws)? 
 	| $"list";
@@ -150,7 +154,6 @@ type =
 	;
 
 fntype = $$pos "(" ws argtypes ")" ws "->" ws type $"fntype" $"setpos";
-fntypeauto = $$pos "(" ws argtypes ")" ws $$pos $"auto" $"setpos" $"fntype" $"setpos";
 	argtypes = $"list" argtype $"cons" ("," ws argtype $"cons")* ("," ws)? | $"list";
 	argtype = $$pos id ":" ws type $"argtype" $"setpos" | type $$"" $"swap" $"argtype";
 

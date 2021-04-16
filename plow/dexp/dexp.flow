@@ -35,7 +35,7 @@ export {
 	);
 
 	DTopLevel ::= DGlobal, DNative, DUnion, DStruct, DTypeDef;
-		DGlobal(id : string, value : DExp, pos : int);
+		DGlobal(id : string, typars : [string], value : DExp, pos : int);
 		DNative(id : string, isIo : bool, type : DType, name : string, pos : int);
 		DTypeDef(id : string, type : DType, pos : int);
 

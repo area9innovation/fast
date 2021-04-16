@@ -1,11 +1,17 @@
 import plow/dexp/rec;
 
 export {
+	extractDTyparsFromDExp(e : DExp) -> Set<string>;
+
 	// Visit all types in this expression
 	foldDTypesInDExp(e : DExp, i : ?, fn : (?, DType) -> ?) -> ?;
 
 	// Find all type-pars in this type
 	extractDTypars(acc : Set<string>, d : DType) -> Set<string>;
+}
+
+extractDTyparsFromDExp(e : DExp) -> Set<string> {
+	foldDTypesInDExp(e, makeSet(), extractDTypars);
 }
 
 foldDTypesInDExp(e : DExp, acc : ?, fn : (?, DType) -> ?) -> ? {

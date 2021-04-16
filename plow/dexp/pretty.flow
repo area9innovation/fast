@@ -27,7 +27,7 @@ prettyDModule(d : DModule) -> void {
 	iter(d.order, \id -> {
 		mglobal = lookupTree(d.globals, id);
 		mglobal ?? {
-			println(" " + id + "=");
+			println(" " + id + "<" + strGlue(mglobal.typars, ", ") + ">" + "=");
 			prettyDExp(input, "  ", mglobal.value);
 		} : {}
 	});
@@ -49,7 +49,7 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 		DDouble(v, pos): pr("double");
 		DString(v, pos): pr("string");
 		DLambda(args, body, pos): {
-			pr("lambda " + superglue(args, \a : DArgType -> a.id + ":" + prettyDType(input, a.type), ","));
+			pr("lambda " + superglue(args, \a : DArgType -> (if (a.id != "") a.id + ":" else "ERROR") + prettyDType(input, a.type), ","));
 			rec(body);
 		}
 		DStringInclude(path, pos): {
