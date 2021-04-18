@@ -6,6 +6,8 @@ import plow/types/builtin;
 import plow/types/polymorphism;
 import plow/types/util;
 
+import ds/egraph_dot;
+
 export {
 	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
 }
@@ -28,12 +30,20 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		extract = eclass2TType(nenv, root);
 		println("Class " + i2s(root) + ": " + prettyTType(extract) + " from " + equi);
 	});
-	println("Type vars:");
-	traverseInOrder(^(nenv.tyvars), \tyvar, type -> {
-		eclass = addEExp(nenv.egraph, TTypeVar(tyvar));
-		etype = lookupTreeDef(^(nenv.etypes), eclass, type);
-		println("Tyvar " + i2s(tyvar) + ": " + prettyTType(type) + " vs " + prettyTType(etype));
+
+	canonicalizeEGraph(nenv.egraph);
+
+	dot = egraph2dot(nenv.egraph, \enode : ENode<TType> -> {
+		switch (enode.head) {
+			TTypeName(id, typars): id;
+			TTypeVar(id): "a" + i2s(id);
+			TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
+			TTypeOverload(unique, overloads): "overload";
+			TTypeSupertype(unique, subtypes): "supertype";
+		}
 	});
+	setFileContent("egraph.dot", dot);
+
 	nenv;
 }
 

@@ -12,7 +12,7 @@ prettyBExp(b : BExp) -> string {
 		BInt(v): i2s(v);
 		BDouble(v): d2s(v);
 		BString(v): toString(v);
-		BVar(id, type): id + ":" + prettyBType(type);
+		BVar(id, type): id + "/*" + prettyBType(type) + "*/";
 		BLet(id, value, body, type): {
 			blueprint("
 					%id% = %value%;
