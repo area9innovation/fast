@@ -9,23 +9,19 @@ export {
 emptyTType = TTypeName("ERROR", []);
 
 eclass2TType(env : TTypeEnv, eclass : int) -> TType {
-	if (eclass == 0) {
-		emptyTType;
-	} else {
-		mtype = lookupTree(^(env.etypes), eclass);
-		mtype ?? {
-			mtype
-		} : {
-			// Set up that we have an empty type going here
-			env.etypes := setTree(^(env.etypes), eclass, emptyTType);
-			nodes = getEClassNodes(env.egraph, eclass);
-			tt = extractTType(env, eclass, nodes);
-			if (tt != emptyTType) {
-				env.etypes := setTree(^(env.etypes), eclass, tt);
-			}
-		//	println("Resolved " + i2s(eclass) + " as " + prettyTType(tt));
-			tt;
+	mtype = lookupTree(^(env.etypes), eclass);
+	mtype ?? {
+		mtype
+	} : {
+		// Set up that we have an empty type going here
+		env.etypes := setTree(^(env.etypes), eclass, emptyTType);
+		nodes = getEClassNodes(env.egraph, eclass);
+		tt = extractTType(env, eclass, nodes);
+		if (tt != emptyTType) {
+			env.etypes := setTree(^(env.etypes), eclass, tt);
 		}
+	//	println("Resolved " + i2s(eclass) + " as " + prettyTType(tt));
+		tt;
 	}
 }
 

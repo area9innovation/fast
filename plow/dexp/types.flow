@@ -31,8 +31,8 @@ foldDTypesInDExp(e : DExp, acc : ?, fn : (?, DType) -> ?) -> ? {
 				foldDTypesInDExp(defaultCase, acc1, fn)
 			} : acc1;
 		}
-		DDowncast(value, subtype, scope, pos, tyvar): {
-			nacc = foldDTypesInDExp(value, fn(acc, subtype), fn);
+		DDowncast(var, subtype, scope, pos, tyvar): {
+			nacc = fn(acc, subtype);
 			foldDTypesInDExp(scope, nacc, fn)
 		}
 		DCast(value, target, pos): {

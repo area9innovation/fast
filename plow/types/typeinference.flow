@@ -101,9 +101,30 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		// DSetMutable(lhs, field, value, pos, tyvar): 
 		// DArray(exps, pos, tyvar): 
 		// DSequence(exps, pos, tyvar): 
-		// DSwitch(value, type, cases, defaultCase, pos, tyvar): 
+		DSwitch(value, type, cases, defaultCase, pos, tyvar): {
+			tvalue = ttypeInferenceDExp(env, value);
+			ttype = dtype2ttype(env, type);
+			stype = unifyTType(env, tvalue, ttype);
+
+			caseType = fold(cases, TTypeVar(env.mkTyvar()), \acc, c -> {
+				// TODO: Maybe introduce a "super-type allowed" construct
+				tbody = ttypeInferenceDExp(env, c.body);
+				unifyTType(env, acc, tbody)
+			});
+
+			defaultCase ?? {
+				dtype = ttypeInferenceDExp(env, defaultCase);
+				unifyTType(env, dtype, caseType)
+			} : {
+				caseType
+			}
+		}
 		// DCast(value, target, pos): 
-		// DDowncast(value, subtype, scope, pos, tyvar): 
+		DDowncast(var, subtype, scope, pos, tyvar): {
+			tsubtype = dtype2ttype(env, subtype);
+			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, var, tsubtype));
+			ttypeInferenceDExp(nenv, scope);
+		}
 		// DWith(struct, value, fields, pos, tyvar): 
 	}
 }

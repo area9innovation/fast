@@ -134,9 +134,8 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			pr("construct " + structid);
 			iter(args, rec);
 		}
-		DDowncast(value, subtype, scope, pos, tyvar): {
-			pr("downcast");
-			rec(value);
+		DDowncast(var, subtype, scope, pos, tyvar): {
+			pr("downcast " + var);
 			type(subtype);
 			rec(scope);
 		}
