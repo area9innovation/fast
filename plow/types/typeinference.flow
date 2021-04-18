@@ -2,6 +2,8 @@ import plow/types/typeof;
 import plow/dexp/pretty;
 import plow/types/unify;
 import plow/types/extract;
+import plow/types/builtin;
+import plow/types/polymorphism;
 
 export {
 	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
@@ -54,7 +56,6 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DDouble(v, pos): TTypeName("double", []);
 		DString(v, pos): TTypeName("string", []);
 		DStringInclude(path, pos): TTypeName("string", []);
-		//DVar(id, pos, tyvar): 
 		DVar(id, pos, tyvar): {
 			mtype = lookupTree(env.localTypes, id);
 			type = mtype ?? {
@@ -68,11 +69,12 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			valtype = ttypeInferenceDExp(env, value);
 			unifyTType(env, valtype, dtype2ttype(env, type));
 		}
-		default: {
-			println("TODO: Infer the type of " + d.structname);
-			TTypeVar(env.mkTyvar());
+		DLet(id, value, body, pos, tyvar): {
+			tvalue = ttypeInferenceDExp(env, value);
+			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, id, tvalue));
+			tbody = ttypeInferenceDExp(nenv, body);
+			restype(tyvar, tbody);
 		}
-		// DLet(id, value, body, pos, tyvar): 
 		DIf(cond, then, else_, pos, tyvar): {
 			tcond = ttypeInferenceDExp(env, cond);
 			unifyTType(env, tcond, TTypeName("bool", []));
@@ -82,8 +84,28 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			type = unifyTType(env, tthen, telse);
 			restype(tyvar, type);
 		}
-		// DCall(fn, args, pos, tyvar): 
-		// DCallOp(op, args, pos, tyvar): 
+		DCall(fn, args, pos, tyvar): {
+			fntype1 = ttypeInferenceDExp(env, fn);
+			argtypes = map(args, \a -> ttypeInferenceDExp(env, a));
+			rettype = TTypeVar(env.mkTyvar());
+			fntype2 = TTypeFunction(argtypes, rettype);
+			type = unifyTType(env, fntype1, fntype2);
+			restype(tyvar, type);
+		}
+		DCallOp(op, args, pos, tyvar): {
+			moptype = getBuiltinTType(op);
+			moptype ?? {
+				optype = instantiateTTypePar(env, moptype);
+				argtypes = map(args, \a -> ttypeInferenceDExp(env, a));
+				rettype = TTypeVar(env.mkTyvar());
+				fntype = TTypeFunction(argtypes, rettype);
+				type = unifyTType(env, moptype, fntype);
+				restype(tyvar, type);
+			} : {
+				env.onError(tyvar, "Unknown operator " + op);
+				TTypeVar(env.mkTyvar());
+			}
+		}
 		// DConstruct(structid, args, pos, tyvar): 
 		DLambda(args, body, pos, tyvar): {
 			argTypes = map(args, \arg -> {
@@ -112,20 +134,26 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				unifyTType(env, acc, tbody)
 			});
 
-			defaultCase ?? {
+			btype = defaultCase ?? {
 				dtype = ttypeInferenceDExp(env, defaultCase);
 				unifyTType(env, dtype, caseType)
 			} : {
 				caseType
-			}
+			};
+			restype(tyvar, btype);
 		}
 		// DCast(value, target, pos): 
 		DDowncast(var, subtype, scope, pos, tyvar): {
 			tsubtype = dtype2ttype(env, subtype);
 			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, var, tsubtype));
-			ttypeInferenceDExp(nenv, scope);
+			dtype = ttypeInferenceDExp(nenv, scope);
+			restype(tyvar, dtype);
 		}
 		// DWith(struct, value, fields, pos, tyvar): 
+		default: {
+			println("TODO: Infer the type of " + d.structname);
+			TTypeVar(env.mkTyvar());
+		}
 	}
 }
 

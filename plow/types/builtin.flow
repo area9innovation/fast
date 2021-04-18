@@ -1,0 +1,31 @@
+import plow/types/type;
+import maybe;
+import ds/tree;
+
+export {
+	voidTType : TType = TTypeName("void", []);
+	boolTType : TType = TTypeName("bool", []);
+	intTType : TType= TTypeName("int", []);
+	doubleTType : TType = TTypeName("double", []);
+	stringTType : TType = TTypeName("string", []);
+	getBuiltinTType(op : string) -> Maybe<TType>;
+}
+
+builtinTOps : ref Maybe<Tree<string, TType>> = ref None();
+
+getBuiltinTType(op : string) -> Maybe<TType> {
+	ot = onlyOnce(builtinTOps, \ -> {
+		typar1 = TTypeName("?", []);
+		pairs2tree([
+			Pair("==", {
+				TTypeFunction([typar1, typar1], boolTType)
+			}),
+			Pair("+", TTypeOverload([
+				TTypeFunction([intTType, intTType], intTType),
+				TTypeFunction([doubleTType, doubleTType], doubleTType),
+				TTypeFunction([stringTType, stringTType], stringTType),
+			])),
+		])
+	});
+	lookupTree(ot, op);
+}

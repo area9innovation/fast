@@ -1,6 +1,7 @@
 export {
-	TType ::= TTypeName, TTypeVar, TTypeFunction;
+	TType ::= TTypeName, TTypeVar, TTypeFunction, TTypeOverload;
 		TTypeVar(id : int);
 		TTypeName(id : string, typars : [TType]);
 		TTypeFunction(args : [TType], returnType : TType);
+		TTypeOverload(overloads : [TType]);
 }

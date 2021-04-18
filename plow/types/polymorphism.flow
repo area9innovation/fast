@@ -1,0 +1,27 @@
+import plow/types/typeenv;
+
+export {
+	instantiateTTypePar(env : TTypeEnv, t : TType) -> TType;
+}
+
+instantiateTTypePar(env : TTypeEnv, t : TType) -> TType {
+	doInstantiateTTypePar(env, ref makeTree(), t);
+}
+
+doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : TType) -> TType {
+	rec = \tt -> doInstantiateTTypePar(env, typars, tt);
+	switch (t) {
+		TTypeName(id, tyargs): if (id != "" && trim2(id, "?") == "") {
+			tv = TTypeVar(env.mkTyvar());
+			typars := setTree(^typars, id, tv);
+			tv;
+		} else {
+			TTypeName(id, map(tyargs, rec));
+		}
+		TTypeVar(id): t;
+		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
+		TTypeOverload(overloads): {
+			TTypeOverload(map(overloads, rec));
+		}
+	}
+}

@@ -52,5 +52,12 @@ splitTType(t : TType) -> Pair<TType, [TType]> {
 				arrayPush(args, returnType)
 			);
 		}
+		TTypeOverload(overloads): {
+			Pair(
+				TTypeOverload([]),
+				overloads
+			)
+		}
 	}
+
 }
