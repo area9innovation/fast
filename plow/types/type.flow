@@ -3,5 +3,6 @@ export {
 		TTypeVar(id : int);
 		TTypeName(id : string, typars : [TType]);
 		TTypeFunction(args : [TType], returnType : TType);
-		TTypeOverload(overloads : [TType]);
+		// To avoid collapsing equivalence classes, we have a unique id here
+		TTypeOverload(unique : TType, overloads : [TType]);
 }

@@ -55,9 +55,12 @@ export {
 
 		DStringInclude(path : string, pos : int);
 
+		// TODO: Is this an op?
 		DRef(value : DExp, pos : int, tyvar : int);
+
 		DField(value : DExp, field : string, pos : int, tyvar : int);
 		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int, tyvar : int);
+
 		DVar(id : string, pos : int, tyvar : int);
 		DLet(id : string, value : DExp, body : DExp, pos : int, tyvar : int);
 		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int, tyvar : int);

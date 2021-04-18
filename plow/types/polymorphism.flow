@@ -20,8 +20,8 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 		}
 		TTypeVar(id): t;
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
-		TTypeOverload(overloads): {
-			TTypeOverload(map(overloads, rec));
+		TTypeOverload(typar, overloads): {
+			TTypeOverload(rec(typar), map(overloads, rec));
 		}
 	}
 }

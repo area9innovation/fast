@@ -122,7 +122,12 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		// DField(value, field, pos, tyvar): 
 		// DSetMutable(lhs, field, value, pos, tyvar): 
 		// DArray(exps, pos, tyvar): 
-		// DSequence(exps, pos, tyvar): 
+		DSequence(exps, pos, tyvar): {
+			stype = fold(exps, voidTType, \acc, e -> {
+				ttypeInferenceDExp(env, e);
+			});
+			restype(tyvar, stype);
+		}
 		DSwitch(value, type, cases, defaultCase, pos, tyvar): {
 			tvalue = ttypeInferenceDExp(env, value);
 			ttype = dtype2ttype(env, type);

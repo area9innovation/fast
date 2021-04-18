@@ -66,7 +66,7 @@ enode2TType(env : TTypeEnv, enode : ENode<TType>) -> TType {
 				TTypeFunction(subrange(children, 0, n - 1), children[n - 1]);
 			}
 		}
-		TTypeOverload(overloads): {
+		TTypeOverload(typar, overloads): {
 			children : [TTypeFunction] = filtermap(enode.args, \root -> {
 				tfn = eclass2TType(env, root);
 				switch (tfn) {
@@ -77,7 +77,7 @@ enode2TType(env : TTypeEnv, enode : ENode<TType>) -> TType {
 					}
 				}
 			});
-			TTypeOverload(children);
+			TTypeOverload(typar, uniq(children));
 		}
 	}
 }
@@ -98,7 +98,7 @@ bestTType(env : TTypeEnv, left : TType, right : TType) -> TType {
 					TTypeName(__, typars): right;
 					TTypeFunction(args, returnType): right;
 					TTypeVar(rid): if (id < rid) left else right;
-					TTypeOverload(overloads): {
+					TTypeOverload(typar, overloads): {
 						todo();
 						right;
 					}
@@ -108,7 +108,7 @@ bestTType(env : TTypeEnv, left : TType, right : TType) -> TType {
 				// TODO: Check that the right side is compatible
 				left;
 			}
-			TTypeOverload(overloads): {
+			TTypeOverload(typar, overloads): {
 				todo();
 				right;
 			}

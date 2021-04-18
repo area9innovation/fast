@@ -10,7 +10,7 @@ prettyTType(t : TType) -> string {
 		TTypeVar(id): "a" + i2s(id);
 		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, prettyTType, ", ") + ">");
 		TTypeFunction(args, returnType): "(" + superglue(args, prettyTType, ", ") + ") -> " + prettyTType(returnType);
-		TTypeOverload(overloads): {
+		TTypeOverload(typar, overloads): {
 			"overloads " + superglue(overloads, prettyTType, ", ");
 		}
 	}
