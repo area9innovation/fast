@@ -1,0 +1,12 @@
+import plow/types/type;
+
+export {
+	makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType;
+}
+
+makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType {
+	n = length(subtypes);
+	if (n == 1) {
+		subtypes[0]
+	} else TTypeSupertype(type, buildSet(subtypes));
+}

@@ -26,31 +26,31 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 			Pair("<", TTypeFunction([typar1, typar1], boolTType)),
 			Pair(">=", TTypeFunction([typar1, typar1], boolTType)),
 			Pair(">", TTypeFunction([typar1, typar1], boolTType)),
-			Pair("+", TTypeOverload(typar1, [
+			Pair("+", TTypeOverload(typar1, buildSet([
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
 				TTypeFunction([stringTType, stringTType], stringTType),
-			])),
-			Pair("-", TTypeOverload(typar1, [
+			]))),
+			Pair("-", TTypeOverload(typar1, buildSet([
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
-			])),
-			Pair("negate", TTypeOverload(typar1, [
+			]))),
+			Pair("negate", TTypeOverload(typar1, buildSet([
 				TTypeFunction([intTType], intTType),
 				TTypeFunction([doubleTType], doubleTType),
-			])),
-			Pair("*", TTypeOverload(typar1, [
+			]))),
+			Pair("*", TTypeOverload(typar1, buildSet([
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
-			])),
-			Pair("/", TTypeOverload(typar1, [
+			]))),
+			Pair("/", TTypeOverload(typar1, buildSet([
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
-			])),
-			Pair("%", TTypeOverload(typar1, [
+			]))),
+			Pair("%", TTypeOverload(typar1, buildSet([
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
-			])),
+			]))),
 			// ":="
 			// "deref"
 		])

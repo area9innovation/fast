@@ -4,6 +4,7 @@ import plow/types/unify;
 import plow/types/extract;
 import plow/types/builtin;
 import plow/types/polymorphism;
+import plow/types/util;
 
 export {
 	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
@@ -25,7 +26,11 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			acc + "   " + prettyTType(node.head) + (if (node.args != []) "<" + superglue(node.args, i2s, ", ") + ">" else "")
 		});
 		extract = eclass2TType(nenv, root);
-		println(i2s(root) + ": " + prettyTType(extract) + " from " + equi);
+		println("Class " + i2s(root) + ": " + prettyTType(extract) + " from " + equi);
+	});
+	println("Type vars:");
+	traverseInOrder(^(nenv.tyvars), \tyvar, type -> {
+		println("Tyvar " + i2s(tyvar) + ": " + prettyTType(type));
 	});
 	nenv;
 }
@@ -48,7 +53,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 	restype = \tv, type -> {
 		unifyTType(env, type, TTypeVar(tv));
-	}
+	};
 	switch (d) {
 		DVoid(pos): TTypeName("void", []);
 		DBool(v, pos): TTypeName("bool", []);
@@ -81,7 +86,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 			tthen = ttypeInferenceDExp(env, then);
 			telse = ttypeInferenceDExp(env, else_);
-			type = TTypeSupertype(TTypeVar(tyvar), [tthen, telse]);
+			type = makeTTypeSupertype(TTypeVar(tyvar), [tthen, telse]);
 			restype(tyvar, type);
 		}
 		DCall(fn, args, pos, tyvar): {
@@ -90,7 +95,8 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			rettype = TTypeVar(env.mkTyvar());
 			fntype2 = TTypeFunction(argtypes, rettype);
 			type = unifyTType(env, fntype1, fntype2);
-			restype(tyvar, type);
+
+			restype(tyvar, rettype);
 		}
 		DCallOp(op, args, pos, tyvar): {
 			moptype = getBuiltinTType(op);
@@ -100,7 +106,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				rettype = TTypeVar(env.mkTyvar());
 				fntype = TTypeFunction(argtypes, rettype);
 				type = unifyTType(env, moptype, fntype);
-				restype(tyvar, type);
+				restype(tyvar, rettype);
 			} : {
 				env.onError(tyvar, "Unknown operator " + op);
 				TTypeVar(env.mkTyvar());
@@ -130,17 +136,27 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			type = TTypeFunction(argTypes, retType);
 			restype(tyvar, type);
 		}
-		// DRef(value, pos, tyvar): 
+		DRef(value, pos, tyvar): {
+			vtype = ttypeInferenceDExp(env, value);
+			type = TTypeName("ref", [makeTTypeSupertype(TTypeVar(tyvar), [vtype])]);
+			restype(tyvar, type);
+		}
 		DField(value, field, pos, tyvar): {
 			// OK, this is an overload of all structs with a field
 			tvalue = ttypeInferenceDExp(env, value);
 			fieldFunctions = env.resolveField(field);
 			type = if (length(fieldFunctions) == 1) fieldFunctions[0]
-			else TTypeOverload(TTypeVar(tyvar), fieldFunctions);
+			else TTypeOverload(TTypeVar(tyvar), buildSet(fieldFunctions));
 			restype(tyvar, type);
 		}
 		// DSetMutable(lhs, field, value, pos, tyvar): 
-		// DArray(exps, pos, tyvar): 
+		DArray(exps, pos, tyvar): {
+			vtypes = map(exps, \e -> {
+				ttypeInferenceDExp(env, e);
+			});
+			type = TTypeName("array", [makeTTypeSupertype(TTypeVar(tyvar), vtypes)]);
+			restype(tyvar, type);
+		}
 		DSequence(exps, pos, tyvar): {
 			stype = fold(exps, voidTType, \acc, e -> {
 				ttypeInferenceDExp(env, e);
@@ -161,7 +177,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			} : {
 				caseTypes
 			};
-			restype(tyvar, TTypeSupertype(TTypeVar(tyvar), btypes));
+			restype(tyvar, makeTTypeSupertype(TTypeVar(tyvar), btypes));
 		}
 		// DCast(value, target, pos): 
 		DDowncast(var, subtype, scope, pos, tyvar): {

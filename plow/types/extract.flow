@@ -6,6 +6,14 @@ export {
 	eclass2TType(env : TTypeEnv, eclass : int) -> TType;
 }
 
+/*
+TODO:
+- The structure of this thing should be different.
+We should iterate over all eclasses, and attempt to extract new
+information from them. If we can find a new type, or resolve
+something, we should unify with that result in a loop.
+*/
+
 emptyTType = TTypeName("ERROR", []);
 
 eclass2TType(env : TTypeEnv, eclass : int) -> TType {
@@ -75,14 +83,19 @@ enode2TType(env : TTypeEnv, enode : ENode<TType>) -> TType {
 				// OK, structural change! Merge this into the graph!
 				children[0];
 			} else {
-				TTypeOverload(typar, children);
+				TTypeOverload(typar, buildSet(children));
 			}
 		}
 		TTypeSupertype(typar, subtypes): {
 			children : [TType] = uniq(map(enode.args, \root -> {
 				eclass2TType(env, root);
 			}));
-			TTypeSupertype(typar, children);
+			if (length(children) == 1) {
+				// OK, structural change! Merge this into the graph!
+				children[0];
+			} else {
+				TTypeSupertype(typar, buildSet(children));
+			}
 		}
 	}
 }

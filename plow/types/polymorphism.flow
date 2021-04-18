@@ -28,10 +28,10 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 		TTypeVar(id): t;
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(typar, overloads): {
-			TTypeOverload(rec(typar), map(overloads, rec));
+			TTypeOverload(rec(typar), mapSet(overloads, rec));
 		}
 		TTypeSupertype(typar, subtypes): {
-			TTypeSupertype(rec(typar), map(subtypes, rec));
+			TTypeSupertype(rec(typar), mapSet(subtypes, rec));
 		}
 	}
 }
