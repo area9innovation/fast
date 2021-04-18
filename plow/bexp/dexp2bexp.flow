@@ -1,0 +1,84 @@
+import plow/dexp/dexp;
+import plow/dexp/pretty;
+import plow/types/typeenv;
+import plow/types/builtin;
+import plow/bexp/bexp;
+
+export {
+	dexp2bexp(env : BExpEnv, d : DExp) -> BExp;
+
+	BExpEnv(
+		egraph : EGraph<TType>,
+		eclassType : Tree<int, TType>,
+	);
+}
+
+dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
+	todo = \ -> {
+		println("Convert " + d.structname);
+		// prettyDExp("", "", d);
+		BString("ERROR!");
+	}
+	rec = \ee -> {
+		dexp2bexp(env, ee);
+	}
+	type = \tv : int -> {
+		eclass = addEExp(env.egraph, TTypeVar(tv));
+		mtype = lookupTree(env.eclassType, eclass);
+		mtype ?? {
+			ttype2btype(env, mtype)
+		} : {
+			BTypeName("Error!", []);
+		}
+	}
+	switch (d) {
+		DVoid(pos): BVoid();
+		DBool(v, pos): BBool(v);
+		DInt(v, pos): BInt(v);
+		DDouble(v, pos): BDouble(v);
+		DString(v, pos): BString(v);
+		DStringInclude(path, pos): {
+			BString(getFileContent(path));
+		}
+		DVar(id, pos, tyvar): BVar(id, type(tyvar));
+		DLet(id, value, body, pos, tyvar): todo();
+		DIf(cond, then, else_, pos, tyvar): todo();
+		DCall(fn, args, pos, tyvar): todo();
+		DCallOp(op, args, pos, tyvar): {
+			moptype = getBuiltinTType(op);
+			moptype ?? {
+				BCall(BVar(op, ttype2btype(env, moptype)), map(args, rec), type(tyvar))
+			} : {
+				todo();
+			}
+		}
+		DConstruct(structid, args, pos, tyvar): todo();
+		DLambda(args, body, pos, tyvar): {
+			BLambda(map(args, \a -> a.id), rec(body), type(tyvar));
+		}
+		DRef(value, pos, tyvar): todo();
+		DField(value, field, pos, tyvar): todo();
+		DSetMutable(lhs, field, value, pos, tyvar): todo();
+		DArray(exps, pos, tyvar): todo();
+		DSequence(exps, pos, tyvar): todo();
+		DSwitch(value, stype, cases, defaultCase, pos, tyvar): todo();
+		DCast(value, target, pos): todo();
+		DDowncast(value, subtype, scope, pos, tyvar): todo();
+		DTyped(value, subtype, pos): rec(value);
+		DWith(struct, value, fields, pos, tyvar): todo();
+	}
+}
+
+ttype2btype(env : BExpEnv, type : TType) -> BType {
+	switch (type) {
+		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
+		TTypeVar(tyvar): {
+			BTypeName("ERROR", []);
+		}
+		TTypeFunction(args, returnType): {
+			BTypeFunction(map(args, \a -> ttype2btype(env, a)), ttype2btype(env, returnType));
+		}
+		TTypeOverload(__, __): BTypeName("ERROR", []);
+		TTypeSupertype(__, __): BTypeName("ERROR", []);
+	}
+}

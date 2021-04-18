@@ -2,12 +2,12 @@ import plow/types/pretty;
 import plow/types/typeenv;
 
 export {
-	unifyTType(env : TTypeEnv, left : TType, right : TType) -> TType;
+	unifyTType(env : TTypeEnv, left : TType, right : TType) -> void;
 }
 
-unifyTType(env : TTypeEnv, left : TType, right : TType) -> TType {
+unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 	lroot = addEExp(env.egraph, left);
 	rroot = addEExp(env.egraph, right);
 	unionEClass(env.egraph, lroot, rroot);
-	left;
+	{}
 }

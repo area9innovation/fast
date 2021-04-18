@@ -1,0 +1,29 @@
+import ds/list;
+import ds/set;
+
+export {
+	BValue ::= BVoid, BBool, BInt, BDouble, BString;
+		BVoid();
+		BBool(v : bool);
+		BInt(v : int);
+		BDouble(v : double);
+		BString(v : string);
+
+	BExp ::= BValue, 
+		BVar, BLet, BIf, BCall, BLambda, BSequence, BSwitch;
+
+		BVar(id : string, type : BType);
+		BLet(id : string, value : BExp, body : BExp, type : BType);
+		BIf(cond : BExp, then : BExp, else_ : BExp, type : BType);
+		BSequence(exps : [BExp], type : BType);
+		BCall(fn : BExp, args : [BExp], type : BType);
+		BLambda(args : [string], body : BExp, type : BType);
+
+		BSwitch(value : BVar, switchType : BType, cases : [BCase], defaultCase : Maybe<BExp>, type : BType);
+			BCase(id : string, body : BExp);
+
+	BType ::= BTypePar, BTypeName, BTypeFunction;
+		BTypePar(id : string);
+		BTypeName(id : string, typars : [BType]);
+		BTypeFunction(args : [BType], returnType : BType);
+}

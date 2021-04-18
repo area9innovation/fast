@@ -1,0 +1,92 @@
+import text/blueprint;
+import plow/bexp/bexp;
+
+export {
+	prettyBExp(b : BExp) -> string;
+}
+
+prettyBExp(b : BExp) -> string {
+	switch (b) {
+		BVoid(): "{}";
+		BBool(v): b2s(v);
+		BInt(v): i2s(v);
+		BDouble(v): d2s(v);
+		BString(v): toString(v);
+		BVar(id, type): id + ":" + prettyBType(type);
+		BLet(id, value, body, type): {
+			blueprint("
+					%id% = %value%;
+					%body% : %type%",
+				[
+					"id", id,
+					"value", prettyBExp(value),
+					"body", prettyBExp(value),
+					"type", prettyBType(type),
+			]);
+		}
+		BIf(cond, then, else_, type): {
+			blueprint("
+					if (%c%) // %type%
+						%then%
+					else
+						%else%",
+				[
+					"c", prettyBExp(cond),
+					"then", prettyBExp(then),
+					"else", prettyBExp(else_),
+					"type", prettyBType(type),
+			]);
+		}
+		BCall(fn, args, type): {
+			blueprint("
+					%fn%(%args%) /* %type% */",
+				[
+					"fn", prettyBExp(fn),
+					"args", superglue(args, prettyBExp, ", "),
+					"type", prettyBType(type),
+			]);
+		}
+		BLambda(args, body, type): {
+			blueprint("
+					\\%args% -> /* %type% */ %body%",
+				[
+					"args", strGlue(args, ", "),
+					"body", prettyBExp(body),
+					"type", prettyBType(type),
+			]);
+		}
+		BSequence(exps, type): {
+			blueprint("
+					{ /* %type% */
+						%exps%
+					}",
+				[
+					"exps", superglue(exps, prettyBExp, ";\n"),
+					"type", prettyBType(type),
+			]);
+		}
+		BSwitch(value, switchType, cases, defaultCase, type): {
+			blueprint("
+					switch (%value% : %type1%) {
+						%cases%
+						%default%
+					} /* %type2% */",
+				[
+					"value", prettyBExp(value),
+					"cases", superglue(cases, \case -> {
+						case.id + "(): " + prettyBExp(case.body);
+					}, ";\n"),
+					"type1", prettyBType(switchType),
+					"type2", prettyBType(type),
+			]);
+		}
+	}
+}
+
+prettyBType(t : BType) -> string {
+	switch (t) {
+		BTypePar(id): id;
+		BTypeName(id, typars): id + (if (typars != []) "<" + superglue(typars, prettyBType, ", ") + ">" else "")
+		BTypeFunction(args, returnType): "(" + superglue(args, prettyBType, ", ") + ") -> " + prettyBType(returnType);
+	}
+}

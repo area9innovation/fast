@@ -1,0 +1,152 @@
+import plow/types/typeenv;
+import plow/types/pretty;
+
+export {
+	// Sort out the relation between these types
+	compareTType(env : TTypeEnv, left : TType, right : TType) -> TTypeOrder;
+
+	emptyTType = TTypeName("ERROR", []);
+
+	TTypeOrder ::= TTypeEqual, TTypeSubtype, TTypeDifferent, TTypeMorePrecise;
+		// This is the same type
+		TTypeEqual(type : TType);
+
+		// One is a sub type of the other
+		TTypeSubtype(subtype : TType, supertype : TType);
+
+		// These types are not compatible
+		TTypeDifferent(error : string);
+
+		// The left one is more precise
+		TTypeMorePrecise(precise : TType, imprecise : TType);
+}
+
+compareTType(env : TTypeEnv, left : TType, right : TType) -> TTypeOrder {
+	todo = \ -> {
+		println("Compare types " + prettyTType(left) + " and " + prettyTType(right));
+		TTypeDifferent("TODO");
+	}
+	if (left == right) TTypeEqual(left)
+	else if (left == emptyTType) TTypeMorePrecise(right, left)
+	else if (right == emptyTType) TTypeMorePrecise(left, right)
+	else switch (left) {
+		TTypeName(lid, ltypars): {
+			switch (right) {
+				TTypeName(rid, rtypars): {
+					if (lid == rid) {
+						if (length(ltypars) == length(rtypars)) {
+							foldi(ltypars, TTypeEqual(left), \i, acc : TTypeOrder, ltypar -> {
+								cc = compareTType(env, ltypar, rtypars[i]);
+								combineTTypeOrder(env, acc, cc)
+							});
+						} else TTypeDifferent("# typar args differ for " + lid);
+					} else if (lid == "flow") {
+						TTypeMorePrecise(right, left);
+					} else if (rid == "flow") {
+						TTypeMorePrecise(left, right);
+					} else {
+						println("TODO: Check subtyping relation between " + lid + " and " + rid);
+						TTypeDifferent("TODO");
+					}
+				}
+				TTypeVar(id): todo();
+				TTypeFunction(args, returnType): todo();
+				TTypeOverload(unique, overloads): {
+					foldSet(overloads, TTypeMorePrecise(left, right), \acc : TTypeOrder, overload -> {
+						cc = matchTOverload(env, left, overload);
+						switch (cc) {
+							TTypeDifferent(__): acc;
+							default: {
+								combineTTypeOrder(env, acc, cc)
+							}
+						}
+					});
+				}
+				TTypeSupertype(unique, subtypes): todo();
+			}
+		}
+		TTypeVar(id): {
+			switch (right) {
+				TTypeName(__, typars): TTypeMorePrecise(right, left);
+				TTypeFunction(args, returnType): TTypeMorePrecise(right, left);
+				TTypeVar(rid): if (id < rid) TTypeMorePrecise(left, right) else TTypeMorePrecise(right, left);
+				TTypeOverload(typar, overloads): {
+					todo();
+				}
+				TTypeSupertype(typar, subtypes): {
+					todo();
+				}
+			}
+		}
+		TTypeFunction(largs, lreturnType): {
+			switch (right) {
+				TTypeName(id, typars): TTypeDifferent("function != " + id);
+				TTypeVar(id): TTypeMorePrecise(left, right);
+				TTypeFunction(rargs, rreturnType): {
+					if (length(largs) == length(rargs)) {
+						foldi(largs, compareTType(env, lreturnType, rreturnType), \i, acc : TTypeOrder, larg -> {
+							cc : TTypeOrder = compareTType(env, rargs[i], larg);
+							combineTTypeOrder(env, acc, cc);
+						});
+					} else {
+						TTypeDifferent("# args differ");
+					}
+				}
+				TTypeOverload(unique, overloads): todo();
+				TTypeSupertype(unique, subtypes): todo();
+			}
+		}
+		TTypeOverload(typar, overloads): {
+			foldSet(overloads, TTypeMorePrecise(right, left), \acc : TTypeOrder, overload -> {
+				cc = matchTOverload(env, overload, right);
+				switch (cc) {
+					TTypeDifferent(__): acc;
+					default: {
+						combineTTypeOrder(env, acc, cc)
+					}
+				}
+			});
+		}
+		TTypeSupertype(typar, subtypes): {
+			todo();
+		}
+	}
+}
+
+combineTTypeOrder(env : TTypeEnv, l : TTypeOrder, r : TTypeOrder) -> TTypeOrder {
+	todo = \ -> {
+		println("Combine type orders " + toString(l) + " and " + toString(r));
+		TTypeDifferent("TODO");
+	}
+	switch (l) {
+		TTypeEqual(ltype): {
+			switch (r) {
+				TTypeEqual(rtype): compareTType(env, ltype, rtype);
+				TTypeSubtype(subtype, supertype): {
+					todo();
+				}
+				TTypeDifferent(__): r;
+				TTypeMorePrecise(precise, imprecise): compareTType(env, ltype, precise);
+			}
+		}
+		TTypeSubtype(subtype, supertype): {
+			todo();
+		}
+		TTypeDifferent(__): l;
+		TTypeMorePrecise(precise, __): {
+			switch (r) {
+				TTypeEqual(rtype): compareTType(env, precise, rtype);
+				TTypeSubtype(subtype, supertype): todo();
+				TTypeDifferent(__): r;
+				TTypeMorePrecise(rprecise, __): compareTType(env, precise, rprecise);
+			}
+		}
+	}
+}
+
+matchTOverload(env : TTypeEnv, overload : TType, right : TType) -> TTypeOrder {
+	switch (overload) {
+		TTypeFunction(args, rt): compareTType(env, rt, right);
+		default: TTypeDifferent("Expected function");
+	}
+}

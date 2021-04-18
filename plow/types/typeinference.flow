@@ -30,7 +30,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	});
 	println("Type vars:");
 	traverseInOrder(^(nenv.tyvars), \tyvar, type -> {
-		println("Tyvar " + i2s(tyvar) + ": " + prettyTType(type));
+		eclass = addEExp(nenv.egraph, TTypeVar(tyvar));
+		etype = lookupTreeDef(^(nenv.etypes), eclass, type);
+		println("Tyvar " + i2s(tyvar) + ": " + prettyTType(type) + " vs " + prettyTType(etype));
 	});
 	nenv;
 }
@@ -39,7 +41,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
 		setTree(acc, tp, env.mkTyvar())
 	});
-	nenv = TTypeEnv(env with typars = typars);
+	nenv = if (false) TTypeEnv(env with typars = typars) else env;
 	if (d.recursive) {
 		println("TODO: Handle recursive defs");
 		type = ttypeInferenceDExp(nenv, d.value);
@@ -53,6 +55,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 	restype = \tv, type -> {
 		unifyTType(env, type, TTypeVar(tv));
+		type;
 	};
 	switch (d) {
 		DVoid(pos): TTypeName("void", []);
@@ -73,6 +76,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DTyped(value, type, pos): {
 			valtype = ttypeInferenceDExp(env, value);
 			unifyTType(env, valtype, dtype2ttype(env, type));
+			valtype;
 		}
 		DLet(id, value, body, pos, tyvar): {
 			tvalue = ttypeInferenceDExp(env, value);
@@ -94,7 +98,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			argtypes = map(args, \a -> ttypeInferenceDExp(env, a));
 			rettype = TTypeVar(env.mkTyvar());
 			fntype2 = TTypeFunction(argtypes, rettype);
-			type = unifyTType(env, fntype1, fntype2);
+			unifyTType(env, fntype1, fntype2);
 
 			restype(tyvar, rettype);
 		}
@@ -105,7 +109,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				argtypes = map(args, \a -> ttypeInferenceDExp(env, a));
 				rettype = TTypeVar(env.mkTyvar());
 				fntype = TTypeFunction(argtypes, rettype);
-				type = unifyTType(env, moptype, fntype);
+				unifyTType(env, moptype, fntype);
 				restype(tyvar, rettype);
 			} : {
 				env.onError(tyvar, "Unknown operator " + op);
@@ -166,7 +170,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DSwitch(value, type, cases, defaultCase, pos, tyvar): {
 			tvalue = ttypeInferenceDExp(env, value);
 			ttype = dtype2ttype(env, type);
-			stype = unifyTType(env, tvalue, ttype);
+			unifyTType(env, tvalue, ttype);
 
 			caseTypes = map(cases, \c -> {
 				ttypeInferenceDExp(env, c.body);

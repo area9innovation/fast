@@ -1,5 +1,7 @@
 import plow/types/typeenv;
 import plow/types/pretty;
+import plow/types/util;
+import plow/types/comparison;
 
 export {
 	// Extract the best type
@@ -14,8 +16,6 @@ information from them. If we can find a new type, or resolve
 something, we should unify with that result in a loop.
 */
 
-emptyTType = TTypeName("ERROR", []);
-
 eclass2TType(env : TTypeEnv, eclass : int) -> TType {
 	mtype = lookupTree(^(env.etypes), eclass);
 	mtype ?? {
@@ -28,8 +28,13 @@ eclass2TType(env : TTypeEnv, eclass : int) -> TType {
 		if (tt != emptyTType) {
 			// If this type is new, we should unify it
 			env.etypes := setTree(^(env.etypes), eclass, tt);
+
+			nclass = addEExp(env.egraph, tt);
+			if (nclass != eclass) {
+				println("More work to do");
+			}
 		}
-	//	println("Resolved " + i2s(eclass) + " as " + prettyTType(tt));
+		// println("Resolved " + i2s(eclass) + " as " + prettyTType(tt));
 		tt;
 	}
 }
@@ -40,15 +45,6 @@ extractTType(env : TTypeEnv, eclass : int, nodes : Set<ENode<TType>>) -> TType {
 		bestTType(env, acc, ntype);
 	});
 	if (mtype != emptyTType) {
-		// Make sure to define the tyvars in the same class
-		iterSet(nodes, \node -> {
-			switch (node.head) {
-				TTypeVar(tv): {
-					env.tyvars := setTree(^(env.tyvars), tv, mtype);
-				}
-				default: {}
-			}
-		});
 		mtype;
 	} else {
 		println("Unbounded type");
@@ -90,66 +86,33 @@ enode2TType(env : TTypeEnv, enode : ENode<TType>) -> TType {
 			children : [TType] = uniq(map(enode.args, \root -> {
 				eclass2TType(env, root);
 			}));
-			if (length(children) == 1) {
-				// OK, structural change! Merge this into the graph!
-				children[0];
-			} else {
-				TTypeSupertype(typar, buildSet(children));
-			}
+			makeTTypeSupertype(typar, children);
 		}
 	}
 }
 
 bestTType(env : TTypeEnv, left : TType, right : TType) -> TType {
-	todo = \ -> {
-		println("find best type from " + prettyTType(left) + " and " + prettyTType(right));
-	}
-	if (left == emptyTType) right
-	else {
-		switch (left) {
-			TTypeName(id, typars): {
-				// TODO: Check that the right side is compatible
-				left;
-			}
-			TTypeVar(id): {
-				switch (right) {
-					TTypeName(__, typars): right;
-					TTypeFunction(args, returnType): right;
-					TTypeVar(rid): if (id < rid) left else right;
-					TTypeOverload(typar, overloads): {
-						todo();
-						right;
-					}
-					TTypeSupertype(typar, subtypes): {
-						todo();
-						right;
-					}
-				}
-			}
-			TTypeFunction(args, returnType): {
-				// TODO: Check that the right side is compatible
-				left;
-			}
-			TTypeOverload(typar, overloads): {
-				todo();
-				right;
-			}
-			TTypeSupertype(typar, subtypes): {
-				todo();
-				right;
-			}
+	com = compareTType(env, left, right);
+	switch (com) {
+		TTypeEqual(type): type;
+		TTypeSubtype(subtype, supertype): {
+			// TODO: Depending on we want the max or min, we should give either here
+			subtype;
+		}
+		TTypeDifferent(error): {
+			env.onError(-1, "Incompatible types: " + error);
+			left;
+		}
+		TTypeMorePrecise(precise, imprecise): {
+			precise;
 		}
 	}
 }
 
 resolveTTypeVar(env : TTypeEnv, tyvar : int) -> TType {
-	mtype = lookupTree(^(env.tyvars), tyvar);
-	mtype ?? {
-		mtype
-	} : {
-		foldTree(env.typars, TTypeVar(tyvar), \tp, tvv, acc -> {
-			if (tvv == tyvar) TTypeName(tp, [])
-			else acc;
-		})
-	}
+	// Reverse mapping
+	foldTree(env.typars, TTypeVar(tyvar), \tp, tvv, acc -> {
+		if (tvv == tyvar) TTypeName(tp, [])
+		else acc;
+	})
 }

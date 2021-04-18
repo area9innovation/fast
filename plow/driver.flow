@@ -1,12 +1,15 @@
+import plow/pexp/parse;
+
+import plow/lookup;
+
 import plow/dexp/dexp;
 import plow/dexp/desugar;
 import plow/dexp/pretty;
 
-import plow/pexp/parse;
-
 import plow/types/typeinference;
 
-import plow/lookup;
+import plow/bexp/dexp2bexp;
+import plow/bexp/pretty;
 
 import fast/fast_path;
 
@@ -121,7 +124,19 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		)
 		tenv = ttypeInference(tenv0, dmod);
 
-		// TODO: Concert to BExp
+		benv = BExpEnv(
+			tenv.egraph,
+			^(tenv.etypes)
+		);
+
+		println("\nTyped program:");
+		iter(dmod.order, \tl -> {
+			mglobal = lookupTree(dmod.globals, tl);
+			mglobal ?? {
+				bexp = dexp2bexp(benv, mglobal.value);
+				println(tl + " = " + prettyBExp(bexp));
+			} : {}		
+		});
 
 		dmod;
 	} else {
