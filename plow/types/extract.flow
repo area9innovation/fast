@@ -18,6 +18,7 @@ eclass2TType(env : TTypeEnv, eclass : int) -> TType {
 		nodes = getEClassNodes(env.egraph, eclass);
 		tt = extractTType(env, eclass, nodes);
 		if (tt != emptyTType) {
+			// If this type is new, we should unify it
 			env.etypes := setTree(^(env.etypes), eclass, tt);
 		}
 	//	println("Resolved " + i2s(eclass) + " as " + prettyTType(tt));
@@ -67,17 +68,21 @@ enode2TType(env : TTypeEnv, enode : ENode<TType>) -> TType {
 			}
 		}
 		TTypeOverload(typar, overloads): {
-			children : [TTypeFunction] = filtermap(enode.args, \root -> {
-				tfn = eclass2TType(env, root);
-				switch (tfn) {
-					TTypeFunction(__, __): Some(tfn);
-					default: {
-						env.onError(-1, "Expected function in overload");
-						None();
-					}
-				}
-			});
-			TTypeOverload(typar, uniq(children));
+			children : [TType] = uniq(map(enode.args, \root -> {
+				eclass2TType(env, root);
+			}));
+			if (length(children) == 1) {
+				// OK, structural change! Merge this into the graph!
+				children[0];
+			} else {
+				TTypeOverload(typar, children);
+			}
+		}
+		TTypeSupertype(typar, subtypes): {
+			children : [TType] = uniq(map(enode.args, \root -> {
+				eclass2TType(env, root);
+			}));
+			TTypeSupertype(typar, children);
 		}
 	}
 }
@@ -102,6 +107,10 @@ bestTType(env : TTypeEnv, left : TType, right : TType) -> TType {
 						todo();
 						right;
 					}
+					TTypeSupertype(typar, subtypes): {
+						todo();
+						right;
+					}
 				}
 			}
 			TTypeFunction(args, returnType): {
@@ -109,6 +118,10 @@ bestTType(env : TTypeEnv, left : TType, right : TType) -> TType {
 				left;
 			}
 			TTypeOverload(typar, overloads): {
+				todo();
+				right;
+			}
+			TTypeSupertype(typar, subtypes): {
 				todo();
 				right;
 			}

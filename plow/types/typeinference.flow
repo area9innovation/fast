@@ -81,7 +81,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 			tthen = ttypeInferenceDExp(env, then);
 			telse = ttypeInferenceDExp(env, else_);
-			type = unifyTType(env, tthen, telse);
+			type = TTypeSupertype(TTypeVar(tyvar), [tthen, telse]);
 			restype(tyvar, type);
 		}
 		DCall(fn, args, pos, tyvar): {
@@ -106,7 +106,19 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				TTypeVar(env.mkTyvar());
 			}
 		}
-		// DConstruct(structid, args, pos, tyvar): 
+		DConstruct(structid, args, pos, tyvar): {
+			mstruct = env.resolveStructName(structid);
+			mstruct ?? {
+				argTypes = map(args, \arg -> {
+					ttypeInferenceDExp(env, arg)
+				});
+				sttype = TTypeName(structid, argTypes);
+				restype(tyvar, sttype);
+			} : {
+				env.onError(tyvar, "Unknown struct " + structid);
+				TTypeVar(env.mkTyvar());
+			}
+		}
 		DLambda(args, body, pos, tyvar): {
 			argTypes = map(args, \arg -> {
 				dtype2ttype(env, arg.type)
@@ -119,7 +131,14 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			restype(tyvar, type);
 		}
 		// DRef(value, pos, tyvar): 
-		// DField(value, field, pos, tyvar): 
+		DField(value, field, pos, tyvar): {
+			// OK, this is an overload of all structs with a field
+			tvalue = ttypeInferenceDExp(env, value);
+			fieldFunctions = env.resolveField(field);
+			type = if (length(fieldFunctions) == 1) fieldFunctions[0]
+			else TTypeOverload(TTypeVar(tyvar), fieldFunctions);
+			restype(tyvar, type);
+		}
 		// DSetMutable(lhs, field, value, pos, tyvar): 
 		// DArray(exps, pos, tyvar): 
 		DSequence(exps, pos, tyvar): {
@@ -133,19 +152,16 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			ttype = dtype2ttype(env, type);
 			stype = unifyTType(env, tvalue, ttype);
 
-			caseType = fold(cases, TTypeVar(env.mkTyvar()), \acc, c -> {
-				// TODO: Maybe introduce a "super-type allowed" construct
-				tbody = ttypeInferenceDExp(env, c.body);
-				unifyTType(env, acc, tbody)
+			caseTypes = map(cases, \c -> {
+				ttypeInferenceDExp(env, c.body);
 			});
 
-			btype = defaultCase ?? {
-				dtype = ttypeInferenceDExp(env, defaultCase);
-				unifyTType(env, dtype, caseType)
+			btypes = defaultCase ?? {
+				arrayPush(caseTypes, ttypeInferenceDExp(env, defaultCase));
 			} : {
-				caseType
+				caseTypes
 			};
-			restype(tyvar, btype);
+			restype(tyvar, TTypeSupertype(TTypeVar(tyvar), btypes));
 		}
 		// DCast(value, target, pos): 
 		DDowncast(var, subtype, scope, pos, tyvar): {
@@ -161,4 +177,3 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 	}
 }
-

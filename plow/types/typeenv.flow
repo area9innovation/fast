@@ -1,6 +1,7 @@
 import ds/tree;
 import plow/types/type;
 import ds/egraph;
+import plow/dexp/dexp;
 
 export {
 	TTypeEnv(
@@ -13,6 +14,12 @@ export {
 
 		// Get the type of an id
 		resolveId : (string) -> TType,
+
+		// Give all the typenames that have this field
+		resolveField : (string) -> [TType],
+
+		// Find the definition of this struct
+		resolveStructName : (string) -> Maybe<DStruct>,
 
 		// The types of local ids so far
 		localTypes : Tree<string, TType>,
@@ -34,8 +41,16 @@ makeTTypeEnv() -> TTypeEnv {
 		makeTree(), \ -> 0, 
 		\tv, error -> println(error), 
 		\id -> {
-			println("TODO: Find the type of " + id);
+			println("TODO: Find the type of var '" + id + "'");
 			TTypeName("ERROR", [])
+		},
+		\field -> {
+			println("TODO: Find the types that have field '" + field + "'");
+			[];
+		},
+		\struct -> {
+			println("TODO: Find the struct type '" + struct + "'");
+			None();
 		},
 		makeTree(), makeEGraph(splitTType), ref makeTree(), ref makeTree()
 	);
@@ -58,6 +73,11 @@ splitTType(t : TType) -> Pair<TType, [TType]> {
 				overloads
 			)
 		}
+		TTypeSupertype(typar, subtypes): {
+			Pair(
+				TTypeOverload(typar, []),
+				subtypes
+			)
+		}
 	}
-
 }

@@ -46,7 +46,7 @@ dtype2ttype(env : TTypeEnv, d : DType) -> TType {
 			mtyvar ?? {
 				TTypeVar(mtyvar);
 			} : {
-				println("Unresolved type par!");
+// 				println("Unresolved type par!");
 				TTypeVar(env.mkTyvar());
 			}
 		}

@@ -11,17 +11,27 @@ instantiateTTypePar(env : TTypeEnv, t : TType) -> TType {
 doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : TType) -> TType {
 	rec = \tt -> doInstantiateTTypePar(env, typars, tt);
 	switch (t) {
-		TTypeName(id, tyargs): if (id != "" && trim2(id, "?") == "") {
-			tv = TTypeVar(env.mkTyvar());
-			typars := setTree(^typars, id, tv);
-			tv;
-		} else {
-			TTypeName(id, map(tyargs, rec));
+		TTypeName(id, tyargs): {
+			if (id != "" && trim2(id, "?") == "") {
+				mtype = lookupTree(^typars, id);
+				mtype ?? {
+					mtype;
+				} : {
+					tv = TTypeVar(env.mkTyvar());
+					typars := setTree(^typars, id, tv);
+					tv;
+				}
+			} else {
+				TTypeName(id, map(tyargs, rec));
+			}
 		}
 		TTypeVar(id): t;
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(typar, overloads): {
 			TTypeOverload(rec(typar), map(overloads, rec));
+		}
+		TTypeSupertype(typar, subtypes): {
+			TTypeSupertype(rec(typar), map(subtypes, rec));
 		}
 	}
 }

@@ -17,6 +17,9 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 	ot = onlyOnce(builtinTOps, \ -> {
 		typar1 = TTypeName("?", []);
 		pairs2tree([
+			Pair("||", TTypeFunction([boolTType, boolTType], boolTType)),
+			Pair("&&", TTypeFunction([boolTType, boolTType], boolTType)),
+			Pair("not", TTypeFunction([boolTType], boolTType)),
 			Pair("==", TTypeFunction([typar1, typar1], boolTType)),
 			Pair("!=", TTypeFunction([typar1, typar1], boolTType)),
 			Pair("<=", TTypeFunction([typar1, typar1], boolTType)),
@@ -31,6 +34,10 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 			Pair("-", TTypeOverload(typar1, [
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
+			])),
+			Pair("negate", TTypeOverload(typar1, [
+				TTypeFunction([intTType], intTType),
+				TTypeFunction([doubleTType], doubleTType),
 			])),
 			Pair("*", TTypeOverload(typar1, [
 				TTypeFunction([intTType, intTType], intTType),

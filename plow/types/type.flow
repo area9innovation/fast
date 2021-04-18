@@ -1,8 +1,10 @@
 export {
-	TType ::= TTypeName, TTypeVar, TTypeFunction, TTypeOverload;
+	TType ::= TTypeName, TTypeVar, TTypeFunction, TTypeOverload, TTypeSupertype;
 		TTypeVar(id : int);
 		TTypeName(id : string, typars : [TType]);
 		TTypeFunction(args : [TType], returnType : TType);
 		// To avoid collapsing equivalence classes, we have a unique id here
 		TTypeOverload(unique : TType, overloads : [TType]);
+		// Find a type which contains all subtypes
+		TTypeSupertype(unique : TType, subtypes : [TType]);
 }
