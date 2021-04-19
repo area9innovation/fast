@@ -3,10 +3,12 @@ import plow/dexp/pretty;
 import plow/types/unify;
 import plow/types/extract;
 import plow/types/builtin;
+import plow/types/cost;
 import plow/types/polymorphism;
 import plow/types/util;
 
 import ds/egraph_dot;
+import ds/egraph_extract;
 
 export {
 	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
@@ -20,26 +22,51 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		} : {acc}
 	});
 
-	canonicalizeEGraph(nenv.egraph);
-	resolveEClasses(nenv);
+	canonicalizeEGraph(env.egraph);
+	extractEClassTType(nenv, 10);
+}
 
-	println("Check out the classes:");
-	iteri(nenv.egraph.eclass.values, \i, val : ref Set<ENode<TType>> -> {
-		if (i < nenv.egraph.nextId) {
-			class = getEClassRoot(nenv.egraph, i);
-			println(i2s(i) + " ->  " + i2s(class) 
-				+ (if (isEmptySet(^val)) "" 
-					else " with nodes " + superglue(set2array(^val), ttypeENode2string, ", ")
-				) 
-				
-			);
+extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
+	// println("Cost based extraction:");
+	types = extractEClassTypes(env.egraph);
+
+/*	println("Classes:");
+	iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
+		root = env.egraph.eclass.parents[i];
+		println(i2s(i) + " -> " + i2s(^root) + " : " + superglue(set2array(^value), ttypeENode2string, ", "));
+	});
+*/
+	update = ref false;
+	traverseInOrder(types, \eclass, type -> {
+		nclass = addEExp(env.egraph, type);
+		if (nclass != eclass) {
+			// println("Added " + prettyTType(type) + " to " + i2s(eclass));
+			finalClass = unionEClass(env.egraph, nclass, eclass);
+			canonicalizeEGraph(env.egraph);
+			unifyEClassChildren(env.egraph, eclass, type);
+			canonicalizeEGraph(env.egraph);
+			update := true;
 		}
 	});
 
-	dot = egraph2dot(nenv.egraph, ttypeENode2string);
-	setFileContent("egraph.dot", dot);
+	tenv = TTypeEnv(env with etypes = types);
 
-	nenv;
+	canonicalizeEGraph(env.egraph);
+	if (iterations > 0 && ^update) {
+		extractEClassTType(tenv, iterations - 1);
+	} else {
+		if (false) {
+			println("Final Classes:");
+			iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
+				root = env.egraph.eclass.parents[i];
+				println(i2s(i) + " -> " + i2s(^root) + " : " + superglue(set2array(^value), ttypeENode2string, ", "));
+			});
+			dot = egraph2dot(env.egraph, ttypeENode2string);
+			setFileContent("egraph.dot", dot);
+			{}
+		}
+		tenv;
+	}
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
@@ -75,7 +102,13 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			type = mtype ?? {
 				mtype
 			} : {
-				env.resolveId(id);
+				moptype = getBuiltinTType(id);
+				switch (moptype) {
+					None(): env.resolveId(id);
+					Some(optype): {
+						instantiateTTypePar(env, optype);
+					}
+				}
 			};
 			restype(tyvar, type);
 		}
@@ -107,20 +140,6 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			unifyTType(env, fntype1, fntype2);
 
 			restype(tyvar, rettype);
-		}
-		DCallOp(op, args, pos, tyvar): {
-			moptype = getBuiltinTType(op);
-			moptype ?? {
-				optype = instantiateTTypePar(env, moptype);
-				argtypes = map(args, \a -> ttypeInferenceDExp(env, a));
-				rettype = TTypeVar(env.mkTyvar());
-				fntype = TTypeFunction(argtypes, rettype);
-				unifyTType(env, moptype, fntype);
-				restype(tyvar, rettype);
-			} : {
-				env.onError(tyvar, "Unknown operator " + op);
-				TTypeVar(env.mkTyvar());
-			}
 		}
 		DConstruct(structid, args, pos, tyvar): {
 			mstruct = env.resolveStructName(structid);

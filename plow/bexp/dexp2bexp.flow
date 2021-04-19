@@ -24,6 +24,7 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 	}
 	type = \tv : int -> {
 		eclass = addEExp(env.egraph, TTypeVar(tv));
+		// println("a" + i2s(tv) + " is in " + i2s(eclass) );
 		mtype = lookupTree(env.eclassType, eclass);
 		mtype ?? {
 			ttype2btype(env, mtype)
@@ -43,14 +44,8 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 		DVar(id, pos, tyvar): BVar(id, type(tyvar));
 		DLet(id, value, body, pos, tyvar): todo();
 		DIf(cond, then, else_, pos, tyvar): todo();
-		DCall(fn, args, pos, tyvar): todo();
-		DCallOp(op, args, pos, tyvar): {
-			moptype = getBuiltinTType(op);
-			moptype ?? {
-				BCall(BVar(op, ttype2btype(env, moptype)), map(args, rec), type(tyvar))
-			} : {
-				todo();
-			}
+		DCall(fn, args, pos, tyvar): {
+			BCall(rec(fn), map(args, rec), type(tyvar))
 		}
 		DConstruct(structid, args, pos, tyvar): todo();
 		DLambda(args, body, pos, tyvar): {
@@ -73,12 +68,17 @@ ttype2btype(env : BExpEnv, type : TType) -> BType {
 	switch (type) {
 		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
 		TTypeVar(tyvar): {
-			BTypeName("ERROR", []);
+			BTypeName("ERROR " + i2s(tyvar), []);
 		}
 		TTypeFunction(args, returnType): {
 			BTypeFunction(map(args, \a -> ttype2btype(env, a)), ttype2btype(env, returnType));
 		}
-		TTypeOverload(__, __): BTypeName("ERROR", []);
-		TTypeSupertype(__, __): BTypeName("ERROR", []);
+		TTypeOverload(tt, overloads): {
+			println(overloads);
+			BTypeName("ERROR overload " + toString(tt), []);
+		}
+		TTypeSupertype(__, subtypes): {
+			BTypeName("ERROR supertype", []);
+		}
 	}
 }

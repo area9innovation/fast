@@ -124,10 +124,7 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		)
 		tenv = ttypeInference(tenv0, dmod);
 
-		benv = BExpEnv(
-			tenv.egraph,
-			^(tenv.etypes)
-		);
+		benv = BExpEnv(tenv.egraph, tenv.etypes);
 
 		println("\nTyped program:");
 		iter(dmod.order, \tl -> {

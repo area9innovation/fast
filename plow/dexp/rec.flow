@@ -14,7 +14,6 @@ getDExpChildren(e : DExp) -> [DExp] {
 		DLet(id, value, body, pos, tyvar): [value, body];
 		DIf(cond, then, else_, pos, tyvar): [cond, then, else_];
 		DCall(fn, args, pos, tyvar): concat([fn], args);
-		DCallOp(op, args, pos, tyvar): args;
 		DConstruct(structid, args, pos, tyvar): args;
 		DLambda(args, body, pos, tyvar): [body];
 		DRef(value, pos, tyvar): [value];
@@ -46,7 +45,6 @@ dexpApi = RecApi(
 			DLet(id, value, body, pos, tyvar): DLet(id, v, v, pos, tyvar);
 			DIf(cond, then, else_, pos, tyvar): DIf(v, v, v, pos, tyvar);
 			DCall(fn, args, pos, tyvar): DCall(v, [], pos, tyvar);
-			DCallOp(op, args, pos, tyvar): DCallOp(op, [], pos, tyvar);
 			DConstruct(structid, args, pos, tyvar): DConstruct(structid, [], pos, tyvar);
 			DLambda(args, body, pos, tyvar): DLambda(args, v, pos, tyvar);
 			DRef(value, pos, tyvar): DRef(v, pos, tyvar);

@@ -253,7 +253,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PDouble(v, pos): DDouble(v, pos);
 		PString(v, pos): DString(v, pos);
 		PVar(var, pos): DVar(var, pos, dd.mkTyvar());
-		PCallOp(op, args, pos): DCallOp(op, map(args, rec), pos, dd.mkTyvar());
+		PCallOp(op, args, pos): DCall(DVar(op, pos, dd.mkTyvar()), map(args, rec), pos, dd.mkTyvar());
 		PStringInclude(path, pos): DStringInclude(path, pos);
 		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos, dd.mkTyvar());
 		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos, dd.mkTyvar());

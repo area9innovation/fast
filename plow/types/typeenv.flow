@@ -28,7 +28,7 @@ export {
 		egraph : EGraph<TType>,
 
 		// When we start to extract equivalence classes
-		etypes : ref Tree<int, TType>,
+		etypes : Tree<int, TType>,
 		// When we start to extract types
 		tyvars : ref Tree<int, TType>,
 	);
@@ -52,7 +52,7 @@ makeTTypeEnv() -> TTypeEnv {
 			println("TODO: Find the struct type '" + struct + "'");
 			None();
 		},
-		makeTree(), makeEGraph(splitTType), ref makeTree(), ref makeTree()
+		makeTree(), makeEGraph(splitTType), makeTree(), ref makeTree()
 	);
 }
 

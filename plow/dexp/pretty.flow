@@ -78,10 +78,6 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			rec(fn);
 			iter(args, rec);
 		}
-		DCallOp(op, args, pos, tyvar): {
-			pr("op: " + op);
-			iter(args, rec);
-		}
 		DRef(value, pos, tyvar): {
 			pr("ref");
 			rec(value);

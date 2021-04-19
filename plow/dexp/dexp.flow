@@ -48,7 +48,7 @@ export {
 		DString(v : string, pos : int);
 
 	DExp ::= DValue, DStringInclude,
-		DVar, DLet, DIf, DCall, DCallOp, DConstruct, DLambda,
+		DVar, DLet, DIf, DCall, DConstruct, DLambda,
 		DRef, DField, DSetMutable, DArray, DSequence, DSwitch, 
 		DCast, DDowncast, DTyped,
 		DWith;
@@ -68,8 +68,6 @@ export {
 		DArray(exps : [DExp], pos : int, tyvar : int);
 		DSequence(exps : [DExp], pos : int, tyvar : int);
 		DCall(fn : DExp, args : [DExp], pos : int, tyvar : int);
-		// For built-in operators
-		DCallOp(op : string, args : [DExp], pos : int, tyvar : int);
 		// Struct constructo
 		DConstruct(structid : string, args : [DExp], pos : int, tyvar : int);
 		DLambda(args : [DArgType], body : DExp, pos : int, tyvar : int);

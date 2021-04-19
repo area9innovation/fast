@@ -23,7 +23,6 @@ dexpType(env : TTypeEnv, e : DExp) -> TType {
 		DLet(id, value, body, pos, tyvar): TTypeVar(tyvar);
 		DIf(cond, then, else_, pos, tyvar): TTypeVar(tyvar);
 		DCall(fn, args, pos, tyvar): TTypeVar(tyvar);
-		DCallOp(op, args, pos, tyvar): TTypeVar(tyvar);
 		DConstruct(structid, args, pos, tyvar): TTypeVar(tyvar);
 		DLambda(args, body, pos, tyvar): TTypeVar(tyvar);
 		DRef(value, pos, tyvar): TTypeVar(tyvar);
