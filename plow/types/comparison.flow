@@ -7,9 +7,8 @@ export {
 
 	emptyTType = TTypeName("ERROR", []);
 
-	TTypeOrder ::= TTypeEqual, TTypeSubtype, TTypeDifferent, TTypeMorePrecise;
-		// This is the same type
-		TTypeEqual(type : TType);
+	TTypeOrder ::= TTypePrefer, TTypeSubtype, TTypeDifferent;
+		TTypePrefer(type : TType);
 
 		// One is a sub type of the other
 		TTypeSubtype(subtype : TType, supertype : TType);
@@ -17,61 +16,51 @@ export {
 		// These types are not compatible
 		TTypeDifferent(error : string);
 
-		// The left one is more precise
-		TTypeMorePrecise(precise : TType, imprecise : TType);
 }
 
 compareTType(env : TTypeEnv, left : TType, right : TType) -> TTypeOrder {
+	// println("Compare types " + prettyTType(left) + " and " + prettyTType(right));
 	todo = \ -> {
-		println("Compare types " + prettyTType(left) + " and " + prettyTType(right));
-		TTypeDifferent("TODO");
+		println("TODO: Compare types " + prettyTType(left) + " and " + prettyTType(right));
+		TTypeDifferent("TODO: Compare " + prettyTType(left) + " and " + prettyTType(right));
 	}
-	if (left == right) TTypeEqual(left)
-	else if (left == emptyTType) TTypeMorePrecise(right, left)
-	else if (right == emptyTType) TTypeMorePrecise(left, right)
+	if (left == right) TTypePrefer(left)
+	else if (left == emptyTType) TTypePrefer(right)
+	else if (right == emptyTType) TTypePrefer(left)
 	else switch (left) {
 		TTypeName(lid, ltypars): {
 			switch (right) {
 				TTypeName(rid, rtypars): {
 					if (lid == rid) {
 						if (length(ltypars) == length(rtypars)) {
-							foldi(ltypars, TTypeEqual(left), \i, acc : TTypeOrder, ltypar -> {
+							foldi(ltypars, TTypePrefer(left), \i, acc : TTypeOrder, ltypar -> {
 								cc = compareTType(env, ltypar, rtypars[i]);
 								combineTTypeOrder(env, acc, cc)
 							});
 						} else TTypeDifferent("# typar args differ for " + lid);
 					} else if (lid == "flow") {
-						TTypeMorePrecise(right, left);
+						TTypePrefer(right);
 					} else if (rid == "flow") {
-						TTypeMorePrecise(left, right);
+						TTypePrefer(left);
 					} else {
-						println("TODO: Check subtyping relation between " + lid + " and " + rid);
-						TTypeDifferent("TODO");
+						compareTTypenames(env, left, right)
 					}
 				}
-				TTypeVar(id): todo();
-				TTypeFunction(args, returnType): todo();
+				TTypeVar(id): TTypePrefer(left);
+				TTypeFunction(args, returnType): TTypeDifferent(lid + " != fn");
 				TTypeOverload(unique, overloads): {
-					foldSet(overloads, TTypeMorePrecise(left, right), \acc : TTypeOrder, overload -> {
-						cc = matchTOverload(env, left, overload);
-						switch (cc) {
-							TTypeDifferent(__): acc;
-							default: {
-								combineTTypeOrder(env, acc, cc)
-							}
-						}
-					});
+					compareTOverload(env, right, left);
 				}
 				TTypeSupertype(unique, subtypes): todo();
 			}
 		}
 		TTypeVar(id): {
 			switch (right) {
-				TTypeName(__, typars): TTypeMorePrecise(right, left);
-				TTypeFunction(args, returnType): TTypeMorePrecise(right, left);
-				TTypeVar(rid): if (id < rid) TTypeMorePrecise(left, right) else TTypeMorePrecise(right, left);
+				TTypeName(__, typars): TTypePrefer(right);
+				TTypeFunction(args, returnType): TTypePrefer(right);
+				TTypeVar(rid): if (id < rid) TTypePrefer(left) else TTypePrefer(right);
 				TTypeOverload(typar, overloads): {
-					todo();
+					compareTOverload(env, right, left);
 				}
 				TTypeSupertype(typar, subtypes): {
 					todo();
@@ -81,31 +70,34 @@ compareTType(env : TTypeEnv, left : TType, right : TType) -> TTypeOrder {
 		TTypeFunction(largs, lreturnType): {
 			switch (right) {
 				TTypeName(id, typars): TTypeDifferent("function != " + id);
-				TTypeVar(id): TTypeMorePrecise(left, right);
+				TTypeVar(id): TTypePrefer(left);
 				TTypeFunction(rargs, rreturnType): {
 					if (length(largs) == length(rargs)) {
-						foldi(largs, compareTType(env, lreturnType, rreturnType), \i, acc : TTypeOrder, larg -> {
-							cc : TTypeOrder = compareTType(env, rargs[i], larg);
-							combineTTypeOrder(env, acc, cc);
+						args : [TType] = filtermapi(largs, \i, larg -> {
+							extractBestType(compareTType(env, rargs[i], larg));
 						});
+						mrt : Maybe<TType> = extractBestType(compareTType(env, lreturnType, rreturnType));
+						mrt ?? {
+							if (length(args) == length(rargs)) {
+								TTypePrefer(TTypeFunction(args, mrt))
+							} else {
+								TTypeDifferent("Could not join functions");
+							}
+						} : {
+							TTypeDifferent("Could not join functions");
+						}
 					} else {
 						TTypeDifferent("# args differ");
 					}
 				}
-				TTypeOverload(unique, overloads): todo();
+				TTypeOverload(unique, overloads): {
+					compareTOverload(env, right, left);
+				}
 				TTypeSupertype(unique, subtypes): todo();
 			}
 		}
 		TTypeOverload(typar, overloads): {
-			foldSet(overloads, TTypeMorePrecise(right, left), \acc : TTypeOrder, overload -> {
-				cc = matchTOverload(env, overload, right);
-				switch (cc) {
-					TTypeDifferent(__): acc;
-					default: {
-						combineTTypeOrder(env, acc, cc)
-					}
-				}
-			});
+			compareTOverload(env, left, right)
 		}
 		TTypeSupertype(typar, subtypes): {
 			todo();
@@ -113,40 +105,54 @@ compareTType(env : TTypeEnv, left : TType, right : TType) -> TTypeOrder {
 	}
 }
 
+compareTOverload(env : TTypeEnv, ov : TTypeOverload, right : TType) -> TTypeOrder {
+	foldSet(ov.overloads, TTypePrefer(right), \acc : TTypeOrder, overload -> {
+		cc = compareTType(env, overload, right);
+		switch (cc) {
+			TTypeDifferent(__): acc;
+			default: {
+				combineTTypeOrder(env, acc, cc)
+			}
+		}
+	});
+}
+
 combineTTypeOrder(env : TTypeEnv, l : TTypeOrder, r : TTypeOrder) -> TTypeOrder {
 	todo = \ -> {
 		println("Combine type orders " + toString(l) + " and " + toString(r));
-		TTypeDifferent("TODO");
+		TTypeDifferent("TODO " + toString(l) + " and " + toString(r));
 	}
 	switch (l) {
-		TTypeEqual(ltype): {
+		TTypePrefer(ltype): {
 			switch (r) {
-				TTypeEqual(rtype): compareTType(env, ltype, rtype);
+				TTypePrefer(rtype): compareTType(env, ltype, rtype);
 				TTypeSubtype(subtype, supertype): {
 					todo();
 				}
 				TTypeDifferent(__): r;
-				TTypeMorePrecise(precise, imprecise): compareTType(env, ltype, precise);
 			}
 		}
 		TTypeSubtype(subtype, supertype): {
 			todo();
 		}
 		TTypeDifferent(__): l;
-		TTypeMorePrecise(precise, __): {
-			switch (r) {
-				TTypeEqual(rtype): compareTType(env, precise, rtype);
-				TTypeSubtype(subtype, supertype): todo();
-				TTypeDifferent(__): r;
-				TTypeMorePrecise(rprecise, __): compareTType(env, precise, rprecise);
-			}
-		}
 	}
 }
 
-matchTOverload(env : TTypeEnv, overload : TType, right : TType) -> TTypeOrder {
-	switch (overload) {
-		TTypeFunction(args, rt): compareTType(env, rt, right);
-		default: TTypeDifferent("Expected function");
+extractBestType(t : TTypeOrder) -> Maybe<TType> {
+	switch (t) {
+		TTypePrefer(type): Some(type);
+		TTypeSubtype(subtype, supertype): Some(subtype);
+		TTypeDifferent(error): None()
+	}
+}
+
+// We know these are different, so figure them out
+compareTTypenames(env : TTypeEnv, left : TTypeName, right : TTypeName) -> TTypeOrder {
+	basic = \t -> contains(["void", "bool", "int", "double", "string"], t);
+	if (basic(left.id) || basic(right.id)) TTypeDifferent("Could not combine " + left.id  + " and " + right.id)
+	else {
+		println("TODO: Check subtyping relation between " + left.id + " and " + right.id);
+		TTypeDifferent("TODO: Subtyping between " + left.id + " and " + right.id);
 	}
 }

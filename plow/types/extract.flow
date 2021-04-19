@@ -4,107 +4,167 @@ import plow/types/util;
 import plow/types/comparison;
 
 export {
-	// Extract the best type
-	eclass2TType(env : TTypeEnv, eclass : int) -> TType;
+	// Resolve eclasses
+	resolveEClasses(env : TTypeEnv) -> void;
 }
 
-/*
-TODO:
-- The structure of this thing should be different.
-We should iterate over all eclasses, and attempt to extract new
-information from them. If we can find a new type, or resolve
-something, we should unify with that result in a loop.
-*/
+resolveEClasses(env : TTypeEnv) -> void {
+	// Resolve all eclasses
+	renv = ResolveTEnv(env, ref getEClasses(env.egraph), ref makeSet(), ref makeTree());
+	doResolveEClasses(renv);
 
-eclass2TType(env : TTypeEnv, eclass : int) -> TType {
-	mtype = lookupTree(^(env.etypes), eclass);
-	mtype ?? {
-		mtype
-	} : {
-		// Set up that we have an empty type going here
-		env.etypes := setTree(^(env.etypes), eclass, emptyTType);
-		nodes = getEClassNodes(env.egraph, eclass);
-		tt = extractTType(env, eclass, nodes);
-		if (tt != emptyTType) {
-			// If this type is new, we should unify it
-			env.etypes := setTree(^(env.etypes), eclass, tt);
+	// Then merge the results in a second pass
+	update = ref false;
+	traverseInOrder(^(renv.resolved), \class, type -> {
+		println("Adding " + prettyTType(type) + " to " + i2s(class));
+		nclass = addEExp(env.egraph, type);
+		if (nclass != class) {
+			finalClass = unionEClass(env.egraph, nclass, class);
+			// OK, do structural unification on the children
+		//	unifyEClassChildren(env.egraph, finalClass, type);
 
-			nclass = addEExp(env.egraph, tt);
-			if (nclass != eclass) {
-				println("More work to do");
-			}
+			update := true;
 		}
-		// println("Resolved " + i2s(eclass) + " as " + prettyTType(tt));
-		tt;
-	}
-}
-
-extractTType(env : TTypeEnv, eclass : int, nodes : Set<ENode<TType>>) -> TType {
-	mtype = foldSet(nodes, emptyTType, \acc, node -> {
-		ntype = enode2TType(env, node);
-		bestTType(env, acc, ntype);
 	});
-	if (mtype != emptyTType) {
-		mtype;
-	} else {
-		println("Unbounded type");
-		TTypeVar(env.mkTyvar());
+	canonicalizeEGraph(env.egraph);
+	if (^update) {
+		resolveEClasses(env);
 	}
 }
 
-enode2TType(env : TTypeEnv, enode : ENode<TType>) -> TType {
+unifyEClassChildren(egraph : EGraph<TType>, eclass : int, type : TType) -> void {
+	split = egraph.splitChildren(type);
+	nodes = getEClassNodes(egraph, eclass);
+	iterSet(nodes, \node -> {
+		println("We have a match " + toString(node.head));
+		if (node.head == split.first && length(split.second) == length(node.args)) {
+			iteri(split.second, \i, child -> {
+				childClass = addEExp(egraph, child);
+				unionEClass(egraph, childClass, node.args[i]);
+				{}
+			})
+		}
+	});
+}
+
+ResolveTEnv(
+	env : TTypeEnv,
+	// The set of eclasses yet to resolve
+	eclassQueue : ref Set<int>,
+	// Resolving
+	resolving : ref Set<int>,
+	// The classes we have resolved
+	resolved : ref Tree<int, TType>,
+);
+
+doResolveEClasses(renv : ResolveTEnv) -> void {
+	mclass : Maybe<PopSetResult<int>> = popMinSet(^(renv.eclassQueue));
+	mclass ?? {
+		eclass = mclass.value;
+		renv.eclassQueue := mclass.rest;
+		mres = eclass2TType(renv, eclass);
+		switch (mres) {
+			None(): {
+				// It was not resolved, so add it back in
+				// renv.eclassQueue := insertSet(^(renv.eclassQueue), eclass);
+			}
+			Some(__): {}
+		};
+		// OK, proceed
+		doResolveEClasses(renv);
+	} : {}
+}
+
+eclass2TType(renv : ResolveTEnv, eclass : int) -> Maybe<TType> {
+	mtype = lookupTree(^(renv.resolved), eclass);
+	mtype ?? {
+		Some(mtype)
+	} : {
+		// Mark that we are solving this one
+		renv.resolving := insertSet(^(renv.resolving), eclass);
+
+		nodes = getEClassNodes(renv.env.egraph, eclass);
+		if (isEmptySet(nodes)) {
+			None();
+		} else {
+			mtt = extractTType(renv, nodes);
+			mtt ?? {
+				renv.resolved := setTree(^(renv.resolved), eclass, mtt);
+			} : {};
+			mtt
+		}
+	}
+}
+
+extractTType(renv : ResolveTEnv, nodes : Set<ENode<TType>>) -> Maybe<TType> {
+	foldSet(nodes, None(), \acc : Maybe<TType>, node -> {
+		mtype = enode2TType(renv, node);
+		mtype ?? {
+			switch (acc) {
+				None(): Some(mtype);
+				Some(nacc): bestTType(renv.env, nacc, mtype);
+			}
+		} : acc;
+	});
+}
+
+enode2TType(renv : ResolveTEnv, enode : ENode<TType>) -> Maybe<TType> {
 	switch (enode.head : TType) {
-		TTypeVar(id): resolveTTypeVar(env, id);
+		TTypeVar(id): Some(resolveTTypeVar(renv.env, id));
 		TTypeName(id, typars): {
-			TTypeName(id, map(enode.args, \root -> {
-				eclass2TType(env, root)
-			}))
+			mtypars = filtermap(enode.args, \root -> {
+				eclass2TType(renv, root)
+			});
+			if (length(mtypars) == length(typars)) {
+				Some(TTypeName(id, mtypars));
+			} else None();
 		}
 		TTypeFunction(args, returnType): {
-			children : [TType] = map(enode.args, \root -> eclass2TType(env, root));
+			children : [TType] = filtermap(enode.args, \root -> eclass2TType(renv, root));
 			// The last child is the return type
 			n = length(children);
-			if (n == 0) {
-				println("Not supposed to happen 2");
-				TTypeVar(env.mkTyvar());
+			if (n != length(args) + 1) {
+				println(children);
+				None();
 			} else {
-				TTypeFunction(subrange(children, 0, n - 1), children[n - 1]);
+				Some(TTypeFunction(subrange(children, 0, n - 1), children[n - 1]));
 			}
 		}
 		TTypeOverload(typar, overloads): {
-			children : [TType] = uniq(map(enode.args, \root -> {
-				eclass2TType(env, root);
-			}));
-			if (length(children) == 1) {
+			children : [TType] = filtermap(enode.args, \root -> {
+				eclass2TType(renv, root);
+			});
+			if (length(children) != sizeSet(overloads)) {
 				// OK, structural change! Merge this into the graph!
-				children[0];
+				None()
 			} else {
-				TTypeOverload(typar, buildSet(children));
+				Some(TTypeOverload(typar, buildSet(children)));
 			}
 		}
 		TTypeSupertype(typar, subtypes): {
-			children : [TType] = uniq(map(enode.args, \root -> {
-				eclass2TType(env, root);
-			}));
-			makeTTypeSupertype(typar, children);
+			children : [TType] = filtermap(enode.args, \root -> {
+				eclass2TType(renv, root);
+			});
+			if (length(children) != sizeSet(subtypes)) {
+				None();
+			} else {
+				Some(makeTTypeSupertype(typar, children));
+			}
 		}
 	}
 }
 
-bestTType(env : TTypeEnv, left : TType, right : TType) -> TType {
+bestTType(env : TTypeEnv, left : TType, right : TType) -> Maybe<TType> {
 	com = compareTType(env, left, right);
 	switch (com) {
-		TTypeEqual(type): type;
+		TTypePrefer(type): Some(type);
 		TTypeSubtype(subtype, supertype): {
 			// TODO: Depending on we want the max or min, we should give either here
-			subtype;
+			Some(subtype);
 		}
 		TTypeDifferent(error): {
 			env.onError(-1, "Incompatible types: " + error);
-			left;
-		}
-		TTypeMorePrecise(precise, imprecise): {
-			precise;
+			None();
 		}
 	}
 }

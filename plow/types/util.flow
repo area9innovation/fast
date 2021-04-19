@@ -1,7 +1,9 @@
 import plow/types/type;
+import ds/egraph;
 
 export {
 	makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType;
+	ttypeENode2string(enode : ENode<TType>) -> string;
 }
 
 makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType {
@@ -9,4 +11,14 @@ makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType {
 	if (n == 1) {
 		subtypes[0]
 	} else TTypeSupertype(type, buildSet(subtypes));
+}
+
+ttypeENode2string(enode : ENode<TType>) -> string {
+	switch (enode.head) {
+		TTypeName(id, typars): id;
+		TTypeVar(id): "a" + i2s(id);
+		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
+		TTypeOverload(unique, overloads): "overload";
+		TTypeSupertype(unique, subtypes): "supertype";
+	}
 }

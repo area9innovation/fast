@@ -21,27 +21,22 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	});
 
 	canonicalizeEGraph(nenv.egraph);
+	resolveEClasses(nenv);
 
-	println("Type equivalences:");
-	iterEGraph(nenv.egraph, \root, nodes : Set<ENode<TType>> -> {
-		equi = foldSet(nodes, "", \acc, node : ENode<TType> -> {
-			acc + "   " + prettyTType(node.head) + (if (node.args != []) "<" + superglue(node.args, i2s, ", ") + ">" else "")
-		});
-		extract = eclass2TType(nenv, root);
-		println("Class " + i2s(root) + ": " + prettyTType(extract) + " from " + equi);
-	});
-
-	canonicalizeEGraph(nenv.egraph);
-
-	dot = egraph2dot(nenv.egraph, \enode : ENode<TType> -> {
-		switch (enode.head) {
-			TTypeName(id, typars): id;
-			TTypeVar(id): "a" + i2s(id);
-			TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
-			TTypeOverload(unique, overloads): "overload";
-			TTypeSupertype(unique, subtypes): "supertype";
+	println("Check out the classes:");
+	iteri(nenv.egraph.eclass.values, \i, val : ref Set<ENode<TType>> -> {
+		if (i < nenv.egraph.nextId) {
+			class = getEClassRoot(nenv.egraph, i);
+			println(i2s(i) + " ->  " + i2s(class) 
+				+ (if (isEmptySet(^val)) "" 
+					else " with nodes " + superglue(set2array(^val), ttypeENode2string, ", ")
+				) 
+				
+			);
 		}
 	});
+
+	dot = egraph2dot(nenv.egraph, ttypeENode2string);
 	setFileContent("egraph.dot", dot);
 
 	nenv;
@@ -65,6 +60,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 	restype = \tv, type -> {
 		unifyTType(env, type, TTypeVar(tv));
+
 		type;
 	};
 	switch (d) {

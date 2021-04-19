@@ -1,13 +1,48 @@
 import plow/types/pretty;
 import plow/types/typeenv;
+import ds/egraph_dot;
 
 export {
 	unifyTType(env : TTypeEnv, left : TType, right : TType) -> void;
 }
 
 unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
+	//println("Unify " + prettyTType(left) + " and " + prettyTType(right));
 	lroot = addEExp(env.egraph, left);
 	rroot = addEExp(env.egraph, right);
 	unionEClass(env.egraph, lroot, rroot);
-	{}
+
+	// Do recursive unification
+	switch (left) {
+		TTypeName(lid, ltypars): {
+			switch (right) {
+				TTypeName(rid, rtypars): {
+					if (lid == rid) {
+						unifyTTypes(env, ltypars, rtypars);
+					}
+				}
+				default: {}
+			}
+		}
+		TTypeFunction(largs, lreturnType): {
+			switch (right) {
+				TTypeFunction(rargs, rreturnType): {
+					unifyTTypes(env, largs, rargs);
+					unifyTType(env, lreturnType, rreturnType);
+				}
+				default: {}
+			}
+		}
+		TTypeVar(lid): {}
+		TTypeOverload(lunique, loverloads): {}
+		TTypeSupertype(unique, subtypes): {}
+	}
+}
+
+unifyTTypes(env : TTypeEnv, left : [TType], right : [TType]) -> void {
+	if (length(left) == length(right)) {
+		iteri(left, \i, larg -> {
+			unifyTType(env, larg, right[i])
+		});
+	}
 }
