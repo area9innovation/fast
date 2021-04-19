@@ -3,7 +3,11 @@ import plow/types/typeenv;
 import ds/egraph_dot;
 
 export {
+	// Unify these two types into the same equivalence class
 	unifyTType(env : TTypeEnv, left : TType, right : TType) -> void;
+
+	// Structurally, transitively unify this recursive type against this class
+	unifyEClassChildren(egraph : EGraph<TType>, eclass : int, type : TType) -> void;
 }
 
 unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
@@ -45,4 +49,20 @@ unifyTTypes(env : TTypeEnv, left : [TType], right : [TType]) -> void {
 			unifyTType(env, larg, right[i])
 		});
 	}
+}
+
+unifyEClassChildren(egraph : EGraph<TType>, eclass : int, type : TType) -> void {
+	split = egraph.splitChildren(type);
+	nodes = getEClassNodes(egraph, eclass);
+	iterSet(nodes, \node -> {
+		cnode = canonicalizeENode(egraph, node);
+		// println("We have a match " + toString(cnode.head) + " to " + prettyTType(type));
+		if (cnode.head == split.first && length(split.second) == length(cnode.args)) {
+			iteri(split.second, \i, child -> {
+				childClass = addEExp(egraph, child);
+				unionEClass(egraph, childClass, cnode.args[i]);
+				{}
+			})
+		}
+	});
 }

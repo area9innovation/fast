@@ -1,7 +1,6 @@
 import plow/types/typeof;
 import plow/dexp/pretty;
 import plow/types/unify;
-import plow/types/extract;
 import plow/types/builtin;
 import plow/types/cost;
 import plow/types/polymorphism;
@@ -11,6 +10,7 @@ import ds/egraph_dot;
 import ds/egraph_extract;
 
 export {
+	// Given a module, figure out what the types are
 	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
 }
 
@@ -26,25 +26,18 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	extractEClassTType(nenv, 10);
 }
 
+// OK, based on the egraph we have, extract the "cheapest" types
 extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 	// println("Cost based extraction:");
 	types = extractEClassTypes(env.egraph);
 
-/*	println("Classes:");
-	iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
-		root = env.egraph.eclass.parents[i];
-		println(i2s(i) + " -> " + i2s(^root) + " : " + superglue(set2array(^value), ttypeENode2string, ", "));
-	});
-*/
 	update = ref false;
 	traverseInOrder(types, \eclass, type -> {
 		nclass = addEExp(env.egraph, type);
 		if (nclass != eclass) {
-			// println("Added " + prettyTType(type) + " to " + i2s(eclass));
+			// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
 			finalClass = unionEClass(env.egraph, nclass, eclass);
-			canonicalizeEGraph(env.egraph);
 			unifyEClassChildren(env.egraph, eclass, type);
-			canonicalizeEGraph(env.egraph);
 			update := true;
 		}
 	});
