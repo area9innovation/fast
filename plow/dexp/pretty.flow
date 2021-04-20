@@ -56,7 +56,7 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			pr("String include " + path);
 		}
 		DLambda(args, body, pos, tyvar): {
-			pr("lambda " + superglue(args, \a : DArgType -> (if (a.id != "") a.id + ":" else "ERROR") + prettyDType(input, a.type), ","));
+			pr("lambda " + superglue(args, \a : DArgType -> (if (a.id != "") a.id + ":" else "MISSING LAMBDA ARG NAME") + prettyDType(input, a.type), ","));
 			rec(body);
 		}
 		DVar(var, pos, tyvar): {

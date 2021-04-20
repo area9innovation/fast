@@ -44,7 +44,7 @@ functionOrStruct =
 
 exp = 
 	// These optsemi should really be semi, but we have too much legacy without
-	(idpos "=" ws exp optsemi (exp | $$pos $"void" $"setpos") $"let"	// The else is error recovery for the common case of missing a body
+	(idpos "=" ws exp optsemi expsemi $"sequence" $"let"
 		| idpos ":" ws type "=" ws exp optsemi exp $"let_typed"
 	)
 	|> exp ":=" $$pos $"swap" ws exp $":=" $"setpos"

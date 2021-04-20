@@ -1104,32 +1104,8 @@ parse_exp(acc : DParseAcc) -> bool {
 					if (parse_ws(acc)) {
 						if (parse_exp(acc)) {
 							if (parse_optsemi(acc)) {
-								{
-									pushDCheckpoint(acc);
-									if (if (parse_exp(acc)) {
-										discardDCheckpoint(acc)
-									} else {
-										{
-											pushDCheckpoint(acc);
-											if (if (addMatched(acc, i2s(acc.i))) {
-												if (addVerbatim(acc, "void")) {
-													if (addVerbatim(acc, "setpos")) {
-														discardDCheckpoint(acc)
-													} else {
-														restoreDCheckpoint(acc)
-													}
-												} else {
-													restoreDCheckpoint(acc)
-												}
-											} else {
-												restoreDCheckpoint(acc)
-											}) {
-												discardDCheckpoint(acc)
-											} else {
-												restoreDCheckpoint(acc)
-											}
-										}
-									}) {
+								if (parse_expsemi(acc)) {
+									if (addVerbatim(acc, "sequence")) {
 										if (addVerbatim(acc, "let")) {
 											discardDCheckpoint(acc)
 										} else {
@@ -1138,6 +1114,8 @@ parse_exp(acc : DParseAcc) -> bool {
 									} else {
 										restoreDCheckpoint(acc)
 									}
+								} else {
+									restoreDCheckpoint(acc)
 								}
 							} else {
 								restoreDCheckpoint(acc)

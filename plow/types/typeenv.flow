@@ -42,7 +42,7 @@ makeTTypeEnv() -> TTypeEnv {
 		\tv, error -> println(error), 
 		\id -> {
 			println("TODO: Find the type of var '" + id + "'");
-			TTypeName("ERROR", [])
+			TTypeName("ERROR: Find type of var " + id, [])
 		},
 		\field -> {
 			println("TODO: Find the types that have field '" + field + "'");

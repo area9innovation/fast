@@ -16,22 +16,24 @@ export {
 
 ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	// Resolve the types of natives
-	traverseInOrder(d.natives, \nat, nativ -> {
+	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
 		type = dtype2ttype(env, nativ.type);
-		// TODO: Maybe we should set the local type here?
 		unifyTType(env, type, TTypeVar(nativ.tyvar));
+		TTypeEnv(acc with localTypes = setTree(acc.localTypes, nat, type))
 	});
 
+	// Set the type of top levels?
+
 	// The handle all globals
-	nenv = fold(d.order, env, \acc, id -> {
+	genv = fold(d.order, nenv, \acc, id -> {
 		mglobal = lookupTree(d.globals, id);
 		mglobal ?? {
 			ttypeInferenceDGlobal(acc, mglobal)
 		} : {acc}
 	});
 
-	canonicalizeEGraph(env.egraph);
-	extractEClassTType(nenv, 10);
+	canonicalizeEGraph(genv.egraph);
+	extractEClassTType(genv, 10);
 }
 
 // OK, based on the egraph we have, extract the "cheapest" types
@@ -70,6 +72,7 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
+	// println("Inference of global " + d.id);
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
 		setTree(acc, tp, env.mkTyvar())
 	});
@@ -90,6 +93,15 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 		type;
 	};
+	if (false) {
+		println("Locals:");
+		traverseInOrder(env.localTypes, \var, t -> {
+			println(var);
+		})
+		println("for inference of");
+		prettyDExp("", "", d);
+		println("");
+	}
 	switch (d) {
 		DVoid(pos): TTypeName("void", []);
 		DBool(v, pos): TTypeName("bool", []);

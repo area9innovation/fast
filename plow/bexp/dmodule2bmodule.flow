@@ -1,0 +1,36 @@
+import plow/bexp/dexp2bexp;
+import plow/bexp/bmodule;
+
+export {
+	dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule;
+}
+
+dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
+	BModule(
+		d.flowpath,
+		d.fullpath,
+		d.imports,
+		d.forbids,
+		d.exported,
+		d.structs,
+		d.unions,
+		mapTree(d.natives, \nat -> {
+			BNative(nat.id, nat.isIo, resolveBType(env, nat.tyvar), nat.name, 
+				{
+					fb = nat.fallback;
+					fb ?? {
+						bg : BGlobal = dglobal2bglobal(env, fb);
+						Some(bg)
+					} : None()
+				},
+				nat.pos
+			)
+		}),
+		mapTree(d.globals, \gl -> dglobal2bglobal(env, gl)),
+		d.order
+	)
+}
+
+dglobal2bglobal(env : BExpEnv, d : DGlobal) -> BGlobal {
+	BGlobal(d.id, d.typars, d.recursive, dexp2bexp(env, d.value), d.pos);
+}
