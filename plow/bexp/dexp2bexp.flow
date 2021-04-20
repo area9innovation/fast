@@ -58,7 +58,11 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 		DLambda(args, body, pos, tyvar): {
 			BLambda(map(args, \a -> a.id), rec(body), type(tyvar));
 		}
-		DRef(value, pos, tyvar): todo();
+		DRef(value, pos, tyvar): {
+			typ = type(tyvar);
+			// The type of __ref is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
+			BCall(BVar("__ref", typ), [rec(value)], typ);
+		}
 		DField(value, field, pos, tyvar): todo();
 		DSetMutable(lhs, field, value, pos, tyvar): todo();
 		DArray(exps, pos, tyvar): todo();

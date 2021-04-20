@@ -8,10 +8,15 @@ export {
 	intTType : TType= TTypeName("int", []);
 	doubleTType : TType = TTypeName("double", []);
 	stringTType : TType = TTypeName("string", []);
+	refTType : (TType) -> TType;
 	getBuiltinTType(op : string) -> Maybe<TType>;
 }
 
 builtinTOps : ref Maybe<Tree<string, TType>> = ref None();
+
+refTType(rt : TType) -> TType {
+	TTypeName("ref", [rt]);
+}
 
 getBuiltinTType(op : string) -> Maybe<TType> {
 	ot = onlyOnce(builtinTOps, \ -> {
@@ -51,8 +56,8 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
 			]))),
-			// ":="
-			// "deref"
+			Pair(":=", TTypeFunction([refTType(typar1), typar1], voidTType)), // TODO: Add supertype?
+			Pair("deref", TTypeFunction([refTType(typar1)], typar1)), // TODO: Add supertype?
 		])
 	});
 	lookupTree(ot, op);

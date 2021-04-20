@@ -21,7 +21,7 @@ extractTTypes(costs : Tree<int, EClassCost<TType>>) -> Tree<int, TType> {
 			// println(i2s(eclass) + " = " + prettyTType(mtype));
 			setTree(acc, eclass, mtype)
 		} : {
-			println("Could not extract type from " + toString(ecost.node) + " with eclass " + i2s(eclass));
+			println("Could not extract type from " + ttypeENode2string(ecost.node) + " with eclass " + i2s(eclass));
 			acc;
 		}
 	});
@@ -33,39 +33,41 @@ extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType>
 		enode = mcost.node;
 		switch (enode.head : TType) {
 			TTypeVar(id): Some(enode.head);
-			TTypeName(id, typars): {
+			TTypeName(id, __): {
 				mtypars = filtermap(enode.args, \root : int -> {
 					extractTType(costs, root)
 				});
-				if (length(mtypars) == length(typars)) {
+				if (length(mtypars) == length(enode.args)) {
 					Some(TTypeName(id, mtypars));
-				} else None();
+				} else {
+					None();
+				}
 			}
-			TTypeFunction(args, returnType): {
+			TTypeFunction(__, __): {
 				children : [TType] = filtermap(enode.args, \root -> extractTType(costs, root));
 				// The last child is the return type
 				n = length(children);
-				if (n != length(args) + 1) {
+				if (n != length(enode.args)) {
 					None();
 				} else {
 					Some(TTypeFunction(subrange(children, 0, n - 1), children[n - 1]));
 				}
 			}
-			TTypeOverload(typar, overloads): {
+			TTypeOverload(typar, __): {
 				children : [TType] = filtermap(enode.args, \root -> {
 					extractTType(costs, root);
 				});
-				if (length(children) != sizeSet(overloads)) {
+				if (length(children) != length(enode.args)) {
 					None()
 				} else {
 					Some(TTypeOverload(typar, buildSet(children)));
 				}
 			}
-			TTypeSupertype(typar, subtypes): {
+			TTypeSupertype(typar, __): {
 				children : [TType] = filtermap(enode.args, \root -> {
 					extractTType(costs, root);
 				});
-				if (length(children) != sizeSet(subtypes)) {
+				if (length(children) != length(enode.args)) {
 					None();
 				} else {
 					Some(makeTTypeSupertype(typar, children));
@@ -81,7 +83,10 @@ extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType>
 calculateTTypeCost(e : ENode<TType>, childCosts : [EClassCost<TType>]) -> EClassCost<TType> {
 	costs = map(childCosts, \cc -> cc.cost);
 	switch (e.head) {
-		TTypeName(id, typars): EClassCost(1 + sum(costs), e);
+		TTypeName(id, typars): {
+			if (id == "flow") EClassCost(5, e)
+			else EClassCost(1 + sum(costs), e);
+		}
 		TTypeVar(id): EClassCost(5 + sum(costs), e);
 		TTypeFunction(args, returnType): EClassCost(1 + sum(costs), e);
 		TTypeOverload(unique, overloads): {

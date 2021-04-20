@@ -179,7 +179,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 		DRef(value, pos, tyvar): {
 			vtype = ttypeInferenceDExp(env, value);
-			type = TTypeName("ref", [makeTTypeSupertype(TTypeVar(tyvar), [vtype])]);
+			type = TTypeName("ref", [if (true) vtype else makeTTypeSupertype(TTypeVar(tyvar), [vtype])]);
 			restype(tyvar, type);
 		}
 		DField(value, field, pos, tyvar): {
