@@ -8,7 +8,26 @@ export {
 }
 
 prettyBModule(bmodule : BModule) -> string {
-	list2string(fold(bmodule.order, makeList(), \acc, tl -> {
+	head = "\nMODULE " + bmodule.flowpath + " (" + bmodule.fullpath + "):\n"
+		+ concatStrings(map(bmodule.imports, \i : DImport -> {
+			"import " + i.path + ";\n"
+		}))
+		+ concatStrings(map(bmodule.forbids, \i : DForbid -> {
+			"forbid " + i.path + ";\n"
+		}))
+		;
+
+/*
+	// TODO:
+	//	exported : DExport, 
+	traverseInOrder(d.structs, \sid, s : DStruct -> {
+		println("  struct " + prettyDStruct(input, s));
+	});
+	//	unions : Tree<string, DUnion>,
+	//	typedefs : Tree<string, DTypeDef>,
+	//	natives : Tree<string, DNative>,
+*/
+	globals = list2string(fold(bmodule.order, makeList(), \acc, tl -> {
 		mglobal = lookupTree(bmodule.globals, tl);
 		mglobal ?? {
 			glob = blueprint("
@@ -25,6 +44,8 @@ prettyBModule(bmodule : BModule) -> string {
 			Cons(glob, acc);
 		} : {acc}
 	}));
+
+	head + "\n" + globals;
 }
 
 prettyBExp(b : BExp) -> string {

@@ -33,6 +33,8 @@ PlowCache(
 	includes : [string], 
 	// Map of the Modules we have already parsed and desugared
 	modules : BModules,
+	structLookup : BLookupFromImport<DStruct>,
+	unionLookup: BLookupFromImport<DUnion>,
 	// What is the next id
 	nextId : ref int,
 );
@@ -43,7 +45,35 @@ makePlowCache(
 	// The includes we should use to find files
 	includes : [string]
 ) -> PlowCache {
-	PlowCache(onError, includes, makeBModules(), ref 0);
+	// A helper to lookup structs.
+	structLookup = BLookupFromImport(\module, n -> {
+			lookupTree(module.structs, n)
+		}, \module, n -> {
+			containsSet(module.exported.exportedTypes, n)
+		},
+		\spath, struct, error -> {
+			makeOnError(spath, onError)(struct.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+
+	// A helper to lookup unions.
+	unionLookup = BLookupFromImport(\module, n -> {
+			lookupTree(module.unions, n)
+		}, 
+		\module, n -> {
+			containsSet(module.exported.exportedTypes, n)
+		},
+		\upath, struct, error -> {
+			makeOnError(upath, onError)(struct.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+
+	PlowCache(
+		onError, includes, makeBModules(), structLookup, unionLookup,
+		ref 0
+	);
 }
 
 compilePlow(cache : PlowCache, file : string) -> BModule {
@@ -65,37 +95,12 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		// A helper to lookup structs. TODO: Should this be in the plowcache?
-		structLookup = BLookupFromImport(\module, n -> {
-				lookupTree(module.structs, n)
-			}, \module, n -> {
-				containsSet(module.exported.exportedTypes, n)
-			},
-			\spath, struct, error -> {
-				makeOnError(spath, cache.onError)(struct.pos, error)
-			},
-			ref makeTree(), ref makeSet()
-		);
-
-		// A helper to lookup unions. TODO: Should this be in the plowcache?
-		unionLookup = BLookupFromImport(\module, n -> {
-				lookupTree(module.unions, n)
-			}, 
-			\module, n -> {
-				containsSet(module.exported.exportedTypes, n)
-			},
-			\upath, struct, error -> {
-				makeOnError(upath, cache.onError)(struct.pos, error)
-			},
-			ref makeTree(), ref makeSet()
-		);
-
 		dd = makeDDesugar(path, cache, \n -> {
 				// OK, scan our imports for this struct
-				lookupFromImport(cache.modules, structLookup, imports, n)
+				lookupFromImport(cache.modules, cache.structLookup, imports, n)
 			}, \n -> {
 				// OK, scan our imports for this struct
-				lookupFromImport(cache.modules, unionLookup, imports, n)
+				lookupFromImport(cache.modules, cache.unionLookup, imports, n)
 			});
 
 		dmod = desugarPExp(dd, flowpath, path, p);
@@ -120,11 +125,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		setCachedBModule(cache.modules, flowpath, bmodule);
 
 		if (false) {
-			println("DModule:");
 			prettyDModule(dmod);
 		}
 
-		println("\nTyped module:");
 		println(prettyBModule(bmodule));
 
 		bmodule;

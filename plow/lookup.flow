@@ -18,12 +18,15 @@ export {
 		visited : ref Set<string>,
 	);
 	
+	// This is the main function to find a given id
 	lookupFromImport(modules : BModules, m : BLookupFromImport<?>, imports : [DImport], name : string) -> Maybe<?>;
 }
 
 lookupFromImport(modules : BModules, m : BLookupFromImport<?>, imports : [DImport], name : string) -> Maybe<?> {
 	m.visited := makeSet();
 	doImportLookup(modules, m, imports, name);
+
+	// TODO: If none, then we could check all modules to try to find it as a fallback
 }
 
 doImportLookup(modules : BModules, m : BLookupFromImport<?>, imports : [DImport], name : string) -> Maybe<?> {
