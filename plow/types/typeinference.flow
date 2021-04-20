@@ -15,6 +15,14 @@ export {
 }
 
 ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
+	// Resolve the types of natives
+	traverseInOrder(d.natives, \nat, nativ -> {
+		type = dtype2ttype(env, nativ.type);
+		// TODO: Maybe we should set the local type here?
+		unifyTType(env, type, TTypeVar(nativ.tyvar));
+	});
+
+	// The handle all globals
 	nenv = fold(d.order, env, \acc, id -> {
 		mglobal = lookupTree(d.globals, id);
 		mglobal ?? {
@@ -37,7 +45,6 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 		if (nclass != eclass) {
 			// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
 			finalClass = unionEClass(env.egraph, nclass, eclass);
-			unifyEClassChildren(env.egraph, eclass, type);
 			update := true;
 		}
 	});

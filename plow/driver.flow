@@ -67,7 +67,7 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		if (true) {
+		if (false) {
 			iter(mods, prettyDModule)
 		}
 

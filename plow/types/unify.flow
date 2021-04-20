@@ -5,16 +5,13 @@ import ds/egraph_dot;
 export {
 	// Unify these two types into the same equivalence class
 	unifyTType(env : TTypeEnv, left : TType, right : TType) -> void;
-
-	// Structurally, transitively unify this recursive type against this class
-	unifyEClassChildren(egraph : EGraph<TType>, eclass : int, type : TType) -> void;
 }
 
 unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 	//println("Unify " + prettyTType(left) + " and " + prettyTType(right));
 	lroot = addEExp(env.egraph, left);
 	rroot = addEExp(env.egraph, right);
-	unionEClass(env.egraph, lroot, rroot);
+	root = unionEClass(env.egraph, lroot, rroot);
 
 	// Do recursive unification
 	switch (left) {
@@ -23,6 +20,8 @@ unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 				TTypeName(rid, rtypars): {
 					if (lid == rid) {
 						unifyTTypes(env, ltypars, rtypars);
+					} else {
+						println("TODO: Find the relation between these named types and unify typars");
 					}
 				}
 				default: {}
@@ -34,12 +33,35 @@ unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 					unifyTTypes(env, largs, rargs);
 					unifyTType(env, lreturnType, rreturnType);
 				}
+				TTypeOverload(__, __): unifyTTypeOverload(env, right, left);
 				default: {}
 			}
 		}
 		TTypeVar(lid): {}
-		TTypeOverload(lunique, loverloads): {}
-		TTypeSupertype(unique, subtypes): {}
+		TTypeOverload(lunique, loverloads): {
+			unifyTTypeOverload(env, left, right);
+		}
+		TTypeSupertype(unique, subtypes): {
+			println("TODO: Unify supertypes");
+		}
+	}
+}
+
+unifyTTypeOverload(env : TTypeEnv, overload : TTypeOverload, type : TType) -> void {
+	good = filter(set2array(overload.overloads), \ol -> {
+		possibleTTypeMatch(ol, type)
+	});
+	n = length(good);
+	if (n < sizeSet(overload.overloads)) {
+		// OK, we have new information
+		if (n == 1) {
+			// println("Resolved overload");
+			winner = good[0];
+			unifyTType(env, winner, type);
+		} else {
+			// At least the type overload is smaller
+			// We could probably unify this into the set, but hey, it is not required
+		}
 	}
 }
 
@@ -51,18 +73,54 @@ unifyTTypes(env : TTypeEnv, left : [TType], right : [TType]) -> void {
 	}
 }
 
-unifyEClassChildren(egraph : EGraph<TType>, eclass : int, type : TType) -> void {
-	split = egraph.splitChildren(type);
-	nodes = getEClassNodes(egraph, eclass);
-	iterSet(nodes, \node -> {
-		cnode = canonicalizeENode(egraph, node);
-		// println("We have a match " + toString(cnode.head) + " to " + prettyTType(type));
-		if (cnode.head == split.first && length(split.second) == length(cnode.args)) {
-			iteri(split.second, \i, child -> {
-				childClass = addEExp(egraph, child);
-				unionEClass(egraph, childClass, cnode.args[i]);
-				{}
-			})
+// Can these two types potentially match? Used to resolve overloads
+possibleTTypeMatch(left : TType, right : TType) -> bool {
+	if (left == right) true
+	else {
+		switch (left) {
+			TTypeVar(__): true;
+			TTypeName(lid, ltps): {
+				switch (right) {
+					TTypeVar(__): true;
+					TTypeName(rid, rtps): {
+						lid == rid
+						&& length(ltps) == length(rtps)
+						&& forall(mapi(ltps, \i, ltp -> possibleTTypeMatch(ltp, rtps[i])), idfn)
+					}
+					TTypeFunction(args, returnType): false;
+					TTypeOverload(unique, overloads): possibleTTypeMatch(right, left);
+					TTypeSupertype(unique, subtypes): possibleTTypeMatch(right, left);
+				}
+			}
+			TTypeFunction(largs, lrt): {
+				switch (right) {
+					TTypeVar(__): true;
+					TTypeName(id, typars): false;
+					TTypeFunction(rargs, rrt): {
+						length(largs) == length(rargs)
+						&& forall(mapi(largs, \i, la -> possibleTTypeMatch(la, rargs[i])), idfn)
+						&& possibleTTypeMatch(lrt, rrt)
+					}
+					TTypeOverload(unique, overloads): possibleTTypeMatch(right, left);
+					TTypeSupertype(unique, subtypes): possibleTTypeMatch(right, left);
+				}
+			}
+			TTypeOverload(unique, overloads): existsSet(overloads, \ol -> possibleTTypeMatch(ol, right));
+			TTypeSupertype(__, lsubtypes): {
+				switch (right) {
+					TTypeVar(id): true;
+					TTypeName(id, typars): {
+						println("TODO: Is " + id + " a super type for " + toString(set2array(lsubtypes)));
+						false;
+					}
+					TTypeFunction(args, returnType): false;
+					TTypeOverload(unique, overloads): false;
+					TTypeSupertype(__, rsubtypes): {
+						println("TODO: Is this a super type?");
+						false;
+					}
+				}
+			}
 		}
-	});
+	}
 }

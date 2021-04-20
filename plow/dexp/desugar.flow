@@ -175,7 +175,8 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	natives = fold(toplevels, makeTree(), \acc, tl : PTopLevel -> {
 		switch (tl) {
 			PNative(id, isIo, type, name, pos): {
-				nativ = DNative(id, isIo, ptype2dtype(dd, type), name, lookupTree(globals, name), pos);
+				dtype = ptype2dtype(dd, type);
+				nativ = DNative(id, isIo, dtype, name, lookupTree(globals, name), dd.mkTyvar(), pos);
 				if (containsKeyTree(acc, id)) {
 					dd.onError(pos, "Duplicate native def " + id);
 				};

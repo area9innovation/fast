@@ -39,10 +39,12 @@ prettyBExp(b : BExp) -> string {
 		}
 		BCall(fn, args, type): {
 			blueprint("
-					%fn%(%args%) /* %type% */",
+					%fn%(
+						%args%
+					) /* %type% */",
 				[
 					"fn", prettyBExp(fn),
-					"args", superglue(args, prettyBExp, ", "),
+					"args", superglue(args, prettyBExp, ",\n"),
 					"type", prettyBType(type),
 			]);
 		}

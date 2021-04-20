@@ -34,7 +34,7 @@ export {
 	);
 
 	DGlobal(id : string, typars : [string], recursive : bool, value : DExp, pos : int);
-	DNative(id : string, isIo : bool, type : DType, name : string, fallback : Maybe<DGlobal>, pos : int);
+	DNative(id : string, isIo : bool, type : DType, name : string, fallback : Maybe<DGlobal>, tyvar : int, pos : int);
 
 	DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);
 	DStruct(id : string, typars : [string], structArgs : [DStructArg], pos : int);

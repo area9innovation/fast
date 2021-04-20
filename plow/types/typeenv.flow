@@ -12,7 +12,7 @@ export {
 		// Report an error associated with a given tyvar
 		onError : (tyvar : int, error : string) -> void,
 
-		// Get the type of an id
+		// Get the type of an id (not a type, but global)
 		resolveId : (string) -> TType,
 
 		// Give all the typenames that have this field
