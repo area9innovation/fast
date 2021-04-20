@@ -159,7 +159,7 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 
 				recursive = containsSet(extractDVars(makeSet(), dexp1), id);
 
-				global = DGlobal(id, set2array(typars), recursive, dexp1, pos);
+				global = DGlobal(id, set2array(typars), recursive, dexp1, dd.mkTyvar(), pos);
 
 				if (containsKeyTree(acc, id)) {
 					dd.onError(pos, "Duplicate definition of " + id);

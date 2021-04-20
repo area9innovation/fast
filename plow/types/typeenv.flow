@@ -21,7 +21,10 @@ export {
 		// Find the definition of this struct
 		resolveStructName : (string) -> Maybe<DStruct>,
 
-		// The types of local ids so far
+		// The types of module-level ids. These need instantiation
+		moduleTypes : Tree<string, TType>,
+
+		// The types of local ids so far, instantiated
 		localTypes : Tree<string, TType>,
 
 		// The egraph with the type equivalent classes
@@ -38,7 +41,10 @@ export {
 
 makeTTypeEnv() -> TTypeEnv {
 	TTypeEnv(
-		makeTree(), \ -> 0, 
+		makeTree(), \ -> {
+			println("TODO: Replace mktyvar in TTypeEnv");
+			0
+		}, 
 		\tv, error -> println(error), 
 		\id -> {
 			println("TODO: Find the type of var '" + id + "'");
@@ -52,7 +58,8 @@ makeTTypeEnv() -> TTypeEnv {
 			println("TODO: Find the struct type '" + struct + "'");
 			None();
 		},
-		makeTree(), makeEGraph(splitTType), makeTree(), ref makeTree()
+		makeTree(), makeTree(),
+		makeEGraph(splitTType), makeTree(), ref makeTree()
 	);
 }
 

@@ -18,6 +18,6 @@ export {
 		order : [string]
 	);
 
-	BGlobal(id : string, typars : [string], recursive : bool, value : BExp, pos : int);
+	BGlobal(id : string, typars : [string], recursive : bool, value : BExp, type : BType, pos : int);
 	BNative(id : string, isIo : bool, type : BType, name : string, fallback : Maybe<BGlobal>, pos : int);
 }

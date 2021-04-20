@@ -42,7 +42,7 @@ unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 			unifyTTypeOverload(env, left, right);
 		}
 		TTypeSupertype(unique, subtypes): {
-			println("TODO: Unify supertypes");
+			unifyTSupertype(env, left, right);
 		}
 	}
 }
@@ -63,6 +63,13 @@ unifyTTypeOverload(env : TTypeEnv, overload : TTypeOverload, type : TType) -> vo
 			// We could probably unify this into the set, but hey, it is not required
 		}
 	}
+}
+
+unifyTSupertype(env : TTypeEnv, super : TTypeSupertype, type : TType) -> void {
+	// unifyTType(env, super.unique, type)
+/*	supertypes = map(super.subtypes, \st -> {
+		unifyTSubType(env, st, type);
+	});*/
 }
 
 unifyTTypes(env : TTypeEnv, left : [TType], right : [TType]) -> void {
@@ -123,4 +130,8 @@ possibleTTypeMatch(left : TType, right : TType) -> bool {
 			}
 		}
 	}
+}
+
+possibleSuperTType(subtype : TType, supertype : TType) -> bool {
+	false;
 }

@@ -4,6 +4,8 @@ import ds/egraph;
 export {
 	makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType;
 	ttypeENode2string(enode : ENode<TType>) -> string;
+
+	replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType;
 }
 
 makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType {
@@ -20,5 +22,17 @@ ttypeENode2string(enode : ENode<TType>) -> string {
 		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
 		TTypeOverload(unique, overloads): "overload";
 		TTypeSupertype(unique, subtypes): "supertype";
+	}
+}
+
+
+replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType {
+	rec = \tt -> replaceTTypeVars(tyvars, tt);
+	switch (type) {
+		TTypeVar(id): lookupTreeDef(tyvars, id, type);
+		TTypeName(id, typars): TTypeName(id, map(typars, rec));
+		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
+		TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));
+		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, mapSet(subtypes, rec));
 	}
 }

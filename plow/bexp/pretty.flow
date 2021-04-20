@@ -3,6 +3,7 @@ import plow/bexp/bexp;
 
 export {
 	prettyBExp(b : BExp) -> string;
+	prettyBType(t : BType) -> string;
 }
 
 prettyBExp(b : BExp) -> string {

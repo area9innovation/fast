@@ -19,7 +19,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
 		type = dtype2ttype(env, nativ.type);
 		unifyTType(env, type, TTypeVar(nativ.tyvar));
-		TTypeEnv(acc with localTypes = setTree(acc.localTypes, nat, type))
+		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
 	});
 
 	// Set the type of top levels?
@@ -72,19 +72,33 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
-	// println("Inference of global " + d.id);
+	println("Inference of global " + d.id);
+
+	// Instantiate the typars
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
 		setTree(acc, tp, env.mkTyvar())
 	});
-	nenv = if (false) TTypeEnv(env with typars = typars) else env;
-	if (d.recursive) {
+	nenv = TTypeEnv(env with typars = typars);
+
+	type = if (d.recursive) {
 		println("TODO: Handle recursive defs");
-		type = ttypeInferenceDExp(nenv, d.value);
-		TTypeEnv(env with localTypes = setTree(env.localTypes, d.id, type));
+		ttypeInferenceDExp(nenv, d.value);
 	} else {
-		type = ttypeInferenceDExp(nenv, d.value);
-		TTypeEnv(env with localTypes = setTree(env.localTypes, d.id, type));
-	}
+		ttypeInferenceDExp(nenv, d.value);
+	};
+	// Replace the typars back
+
+	ftype = replaceTTypeVars(
+		foldTree(typars, makeTree(), \tp, tv, acc -> {
+			// TODO: Check that the eclass for this one does not contain
+			// anything else
+			setTree(acc, tv, TTypeName(tp, []))
+		}),
+		type
+	);
+	// println("Inference " + d.id + " is " + prettyTType(ftype));
+	unifyTType(env, ftype, TTypeVar(d.tyvar));
+	TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
 }
 
 ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
@@ -116,7 +130,16 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			} : {
 				moptype = getBuiltinTType(id);
 				switch (moptype) {
-					None(): env.resolveId(id);
+					None(): {
+						modtype = lookupTree(env.moduleTypes, id);
+						switch (modtype) {
+							None(): env.resolveId(id);
+							Some(mdtype): {
+								itype = instantiateTTypePar(env, mdtype);
+								itype;
+							}
+						}
+					}
 					Some(optype): {
 						instantiateTTypePar(env, optype);
 					}

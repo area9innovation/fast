@@ -8,7 +8,7 @@ import plow/dexp/pretty;
 
 import plow/types/typeinference;
 
-import plow/bexp/dexp2bexp;
+import plow/bexp/dmodule2bmodule;
 import plow/bexp/pretty;
 
 import fast/fast_path;
@@ -121,17 +121,17 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 				println("TODO: Find type of " + id);
 				TTypeVar(dd.mkTyvar());
 			},
-		)
-		tenv = ttypeInference(tenv0, dmod);
+		);
+		tenv = ttypeInference(tenv1, dmod);
 
 		benv = BExpEnv(tenv.egraph, tenv.etypes);
+		bmodule = dmodule2bmodule(benv, dmod);
 
 		println("\nTyped program:");
-		iter(dmod.order, \tl -> {
-			mglobal = lookupTree(dmod.globals, tl);
+		iter(bmodule.order, \tl -> {
+			mglobal = lookupTree(bmodule.globals, tl);
 			mglobal ?? {
-				bexp = dexp2bexp(benv, mglobal.value);
-				println(tl + " = " + prettyBExp(bexp));
+				println(tl + ":" + prettyBType(mglobal.type) + " = " + prettyBExp(mglobal.value));
 			} : {}		
 		});
 
