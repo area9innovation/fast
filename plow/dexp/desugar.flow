@@ -284,7 +284,25 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 			else DSequence(dexps, pos, dd.mkTyvar());
 		}
 		PSwitch(value, cases, pos): desugarPSwitch(dd, pexp);
-		PCast(value, target, pos): DCast(rec(value), ptype2dtype(dd, target), pos);
+		PCast(value, target, pos): {
+			fromType = switch (value) {
+				PTyped(val, fromt, __): getPTypeName(fromt).id;
+				default: "";
+			};
+			toType = getPTypeName(target).id;
+			nat = \n -> DCall(DVar(n, pos, dd.mkTyvar()), [rec(value)], pos, dd.mkTyvar());
+			if (fromType == "double" && toType == "int") {
+				nat("trunc")
+			} else if (fromType == "int" && toType == "double") {
+				nat("i2d")
+			} else if (fromType == "int" && toType == "string") {
+				nat("i2s")
+			} else if (fromType == "double" && toType == "string") {
+				nat("d2s")
+			} else {
+				DCast(rec(value), ptype2dtype(dd, target), pos);
+			}
+		}
 		PTyped(value, type, pos): {
 			dtype = ptype2dtype(dd, type);
 			// TODO: If this is dtype is auto, we do not need it
@@ -370,7 +388,6 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DExp {
 
 // OK, once we know we have a var for the switch, this is how we go
 desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType) -> DSwitch {
-
 	defaults = filter(s.cases, \c : PCase -> c.id == "default");
 	def : Maybe<DExp> = if (length(defaults) == 1) Some(pexp2dexp(dd, defaults[0].body))
 		else if (defaults == []) None()
@@ -484,3 +501,4 @@ getDTypePar(d : DType) -> DTypePar {
 		default: DTypePar("", -1);
 	}
 }
+

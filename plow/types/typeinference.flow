@@ -274,7 +274,13 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			};
 			restype(tyvar, makeTTypeSupertype(TTypeVar(tyvar), btypes));
 		}
-		// DCast(value, target, pos): 
+		DCast(value, target, pos): {
+			tvalue = ttypeInferenceDExp(env, value);
+			ttarget = dtype2ttype(env, target);
+			// We allow casting a type to a supertype
+			unifyTType(env, makeTTypeSupertype(TTypeVar(env.mkTyvar()), [tvalue]), ttarget);
+			ttarget;
+		}
 		DDowncast(var, subtype, scope, pos, tyvar): {
 			tsubtype = dtype2ttype(env, subtype);
 			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, var, tsubtype));
