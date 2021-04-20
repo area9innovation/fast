@@ -33,6 +33,13 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	});
 
 	canonicalizeEGraph(genv.egraph);
+
+	if (true) {
+		dot = egraph2dot(env.egraph, ttypeENode2string);
+		setFileContent("egraph-pre.dot", dot);
+		{}
+	}
+
 	extractEClassTType(genv, 10);
 }
 
@@ -86,19 +93,16 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	} else {
 		ttypeInferenceDExp(nenv, d.value);
 	};
-	// Replace the typars back
 
-	ftype = replaceTTypeVars(
-		foldTree(typars, makeTree(), \tp, tv, acc -> {
-			// TODO: Check that the eclass for this one does not contain
-			// anything else
-			setTree(acc, tv, TTypeName(tp, []))
-		}),
-		type
-	);
+	// Now, unify the typars and their corresponding tyvars
+	traverseInOrder(typars, \tp, tv -> {
+		typar = TTypeName(tp, []);
+		unifyTType(env, typar, TTypeVar(tv));
+	});
+
 	// println("Inference " + d.id + " is " + prettyTType(ftype));
-	unifyTType(env, ftype, TTypeVar(d.tyvar));
-	TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
+	unifyTType(env, type, TTypeVar(d.tyvar));
+	TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, type));
 }
 
 ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
