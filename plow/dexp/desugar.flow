@@ -187,8 +187,9 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		}
 	});
 
-	// TODO: Should we retire the fallback natives from globals?
-
+	// TODO: Should we retire the fallback natives from globals? 
+	// If so, be sure to do type inference on them
+	
 	// TODO: Traverse the typenames mentioned in the exported names and put those
 	// in exportedTypeNames if they are not in exportedTypes
 	exports = exports0;

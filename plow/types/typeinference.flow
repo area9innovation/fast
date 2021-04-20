@@ -22,10 +22,13 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
 	});
 
-	// Set the type of top levels?
+	// Set the type of top levels, so mutual recursion has something to bite on
+	tenv = foldTree(d.globals, nenv, \id, global, acc -> {
+		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, TTypeVar(global.tyvar)))
+	});
 
 	// The handle all globals
-	genv = fold(d.order, nenv, \acc, id -> {
+	genv = fold(d.order, tenv, \acc, id -> {
 		mglobal = lookupTree(d.globals, id);
 		mglobal ?? {
 			ttypeInferenceDGlobal(acc, mglobal)
@@ -93,12 +96,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	});
 	nenv = TTypeEnv(env with typars = typars);
 
-	type = if (d.recursive) {
-		println("TODO: Handle recursive defs");
-		ttypeInferenceDExp(nenv, d.value);
-	} else {
-		ttypeInferenceDExp(nenv, d.value);
-	};
+	type = ttypeInferenceDExp(nenv, d.value);
 
 	// Now, unify the typars and their corresponding tyvars, and abstract the final type again
 	ftype = replaceTTypeVars(
