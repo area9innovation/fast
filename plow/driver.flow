@@ -23,7 +23,7 @@ export {
 	) -> PlowCache;
 
 	// Parse and desugar a file, and all the transitive imports
-	compilePlow(cache : PlowCache, file : string) -> DModule;
+	compilePlow(cache : PlowCache, file : string) -> BModule;
 }
 
 PlowCache(
@@ -32,7 +32,7 @@ PlowCache(
 	// The includes we should use to find files
 	includes : [string], 
 	// Map of the Modules we have already parsed and desugared
-	modules : DModules,
+	modules : BModules,
 	// What is the next id
 	nextId : ref int,
 );
@@ -43,15 +43,15 @@ makePlowCache(
 	// The includes we should use to find files
 	includes : [string]
 ) -> PlowCache {
-	PlowCache(onError, includes, makeDModules(), ref 0);
+	PlowCache(onError, includes, makeBModules(), ref 0);
 }
 
-compilePlow(cache : PlowCache, file : string) -> DModule {
+compilePlow(cache : PlowCache, file : string) -> BModule {
 	path = fastPath2path(cache.includes, changeFileExt(file, ".flow"));
 	flowpath = path2fastPath(cache.includes, path);
 
-	if (hasCachedDModule(cache.modules, flowpath)) {
-		getCachedDModule(cache.modules, flowpath);
+	if (hasCachedBModule(cache.modules, flowpath)) {
+		getCachedBModule(cache.modules, flowpath);
 	} else if (fileExists(path)) {
 		// OK, we have to parse this
 		code = getFileContent(path);
@@ -65,12 +65,8 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		if (false) {
-			iter(mods, prettyDModule)
-		}
-
 		// A helper to lookup structs. TODO: Should this be in the plowcache?
-		structLookup = DLookupFromImport(\module, n -> {
+		structLookup = BLookupFromImport(\module, n -> {
 				lookupTree(module.structs, n)
 			}, \module, n -> {
 				containsSet(module.exported.exportedTypes, n)
@@ -82,7 +78,7 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		);
 
 		// A helper to lookup unions. TODO: Should this be in the plowcache?
-		unionLookup = DLookupFromImport(\module, n -> {
+		unionLookup = BLookupFromImport(\module, n -> {
 				lookupTree(module.unions, n)
 			}, 
 			\module, n -> {
@@ -104,10 +100,8 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
-		// TODO: Check if we need a real type environment
-		tenv0 = makeTTypeEnv();
 		tenv1 = TTypeEnv(
-			tenv0 with
+			makeTTypeEnv() with
 			mkTyvar = dd.mkTyvar,
 			onError = \tv, error -> {
 				pos = 0;
@@ -123,18 +117,20 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		benv = BExpEnv(tenv.egraph, tenv.etypes);
 		bmodule = dmodule2bmodule(benv, dmod);
 
-		setCachedDModule(cache.modules, flowpath, dmod);
+		setCachedBModule(cache.modules, flowpath, bmodule);
 
-		println("DModule:");
-		prettyDModule(dmod);
+		if (false) {
+			println("DModule:");
+			prettyDModule(dmod);
+		}
 
-		println("\nTyped program:");
+		println("\nTyped module:");
 		println(prettyBModule(bmodule));
 
-		dmod;
+		bmodule;
 	} else {
 		cache.onError(file + " could not be found");
-		getDummyDModule();
+		getDummyBModule();
 	}
 }
 

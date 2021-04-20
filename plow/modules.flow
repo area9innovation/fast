@@ -4,39 +4,34 @@ import sys/concurrent;
 import plow/dexp/desugar;
 
 export {
-	// A concurrent hash map from flowpath to DMondule 
-	DModules(modules : native);
+	// A concurrent hash map from flowpath to BModule 
+	BModules(modules : native);
 
-	makeDModules() -> DModules;
+	makeBModules() -> BModules;
 
-	hasCachedDModule(m : DModules, flowpath : string) -> bool;
-	getCachedDModule(m : DModules, flowpath : string) -> DModule;
-	setCachedDModule(m : DModules, flowpath : string, dmod : DModule) -> void;
+	getDummyBModule() -> BModule;
+
+	hasCachedBModule(m : BModules, flowpath : string) -> bool;
+	getCachedBModule(m : BModules, flowpath : string) -> BModule;
+	setCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void;
 }
 
-makeDModules() -> DModules {
-	DModules(initConcurrentHashMap())
+makeBModules() -> BModules {
+	BModules(initConcurrentHashMap())
 }
 
-/*
 getDummyBModule() -> BModule {
 	BModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), []);
 }
 
-getCachedBModule(m : DModules, path : string) -> BModule {
-	getConcurrentHashMap(m.modules, path, getDummyBModule());
-}
-
-*/
-
-hasCachedDModule(m : DModules, flowpath : string) -> bool {
+hasCachedBModule(m : BModules, flowpath : string) -> bool {
 	containsConcurrentHashMap(m.modules, flowpath);
 }
 
-getCachedDModule(m : DModules, flowpath : string) -> DModule {
-	getConcurrentHashMap(m.modules, flowpath, getDummyDModule());
+getCachedBModule(m : BModules, flowpath : string) -> BModule {
+	getConcurrentHashMap(m.modules, flowpath, getDummyBModule());
 }
 
-setCachedDModule(m : DModules, flowpath : string, dmod : DModule) -> void {
-	setConcurrentHashMap(m.modules, flowpath, dmod);
+setCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void {
+	setConcurrentHashMap(m.modules, flowpath, bmod);
 }
