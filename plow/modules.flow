@@ -1,0 +1,42 @@
+import plow/bexp/bmodule;
+import sys/concurrent;
+
+import plow/dexp/desugar;
+
+export {
+	// A concurrent hash map from flowpath to DMondule 
+	DModules(modules : native);
+
+	makeDModules() -> DModules;
+
+	hasCachedDModule(m : DModules, flowpath : string) -> bool;
+	getCachedDModule(m : DModules, flowpath : string) -> DModule;
+	setCachedDModule(m : DModules, flowpath : string, dmod : DModule) -> void;
+}
+
+makeDModules() -> DModules {
+	DModules(initConcurrentHashMap())
+}
+
+/*
+getDummyBModule() -> BModule {
+	BModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), []);
+}
+
+getCachedBModule(m : DModules, path : string) -> BModule {
+	getConcurrentHashMap(m.modules, path, getDummyBModule());
+}
+
+*/
+
+hasCachedDModule(m : DModules, flowpath : string) -> bool {
+	containsConcurrentHashMap(m.modules, flowpath);
+}
+
+getCachedDModule(m : DModules, flowpath : string) -> DModule {
+	getConcurrentHashMap(m.modules, flowpath, getDummyDModule());
+}
+
+setCachedDModule(m : DModules, flowpath : string, dmod : DModule) -> void {
+	setConcurrentHashMap(m.modules, flowpath, dmod);
+}

@@ -13,8 +13,6 @@ import plow/bexp/pretty;
 
 import fast/fast_path;
 
-import sys/concurrent;
-
 export {
 	// Constructs a compilation cache
 	makePlowCache(
@@ -45,15 +43,15 @@ makePlowCache(
 	// The includes we should use to find files
 	includes : [string]
 ) -> PlowCache {
-	PlowCache(onError, includes, DModules(initConcurrentHashMap()), ref 0);
+	PlowCache(onError, includes, makeDModules(), ref 0);
 }
 
 compilePlow(cache : PlowCache, file : string) -> DModule {
 	path = fastPath2path(cache.includes, changeFileExt(file, ".flow"));
 	flowpath = path2fastPath(cache.includes, path);
 
-	if (containsConcurrentHashMap(cache.modules.modules, flowpath)) {
-		getConcurrentHashMap(cache.modules.modules, flowpath, getDummyDModule());
+	if (hasCachedDModule(cache.modules, flowpath)) {
+		getCachedDModule(cache.modules, flowpath);
 	} else if (fileExists(path)) {
 		// OK, we have to parse this
 		code = getFileContent(path);
@@ -72,7 +70,7 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		}
 
 		// A helper to lookup structs. TODO: Should this be in the plowcache?
-		structLookup = DImportLookup(\module, n -> {
+		structLookup = DLookupFromImport(\module, n -> {
 				lookupTree(module.structs, n)
 			}, \module, n -> {
 				containsSet(module.exported.exportedTypes, n)
@@ -84,7 +82,7 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		);
 
 		// A helper to lookup unions. TODO: Should this be in the plowcache?
-		unionLookup = DImportLookup(\module, n -> {
+		unionLookup = DLookupFromImport(\module, n -> {
 				lookupTree(module.unions, n)
 			}, 
 			\module, n -> {
@@ -98,15 +96,13 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 
 		dd = makeDDesugar(path, cache, \n -> {
 				// OK, scan our imports for this struct
-				importLookup(cache.modules, structLookup, imports, n)
+				lookupFromImport(cache.modules, structLookup, imports, n)
 			}, \n -> {
 				// OK, scan our imports for this struct
-				importLookup(cache.modules, unionLookup, imports, n)
+				lookupFromImport(cache.modules, unionLookup, imports, n)
 			});
 
 		dmod = desugarPExp(dd, flowpath, path, p);
-
-		setConcurrentHashMap(cache.modules.modules, flowpath, dmod);
 
 		// TODO: Check if we need a real type environment
 		tenv0 = makeTTypeEnv();
@@ -126,6 +122,8 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 
 		benv = BExpEnv(tenv.egraph, tenv.etypes);
 		bmodule = dmodule2bmodule(benv, dmod);
+
+		setCachedDModule(cache.modules, flowpath, dmod);
 
 		println("DModule:");
 		prettyDModule(dmod);
