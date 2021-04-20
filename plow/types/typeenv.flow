@@ -42,7 +42,7 @@ export {
 makeTTypeEnv() -> TTypeEnv {
 	TTypeEnv(
 		makeTree(), \ -> {
-			println("TODO: Replace mktyvar in TTypeEnv");
+//			println("TODO: Replace mktyvar in TTypeEnv");
 			0
 		}, 
 		\tv, error -> println(error), 

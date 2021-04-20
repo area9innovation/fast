@@ -12,6 +12,7 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 	rec = \tt -> doInstantiateTTypePar(env, typars, tt);
 	switch (t) {
 		TTypeName(id, tyargs): {
+			ityargs = map(tyargs, rec);
 			if (id != "" && trim2(id, "?") == "") {
 				mtype = lookupTree(^typars, id);
 				mtype ?? {
@@ -22,7 +23,7 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 					tv;
 				}
 			} else {
-				TTypeName(id, map(tyargs, rec));
+				TTypeName(id, ityargs);
 			}
 		}
 		TTypeVar(id): t;

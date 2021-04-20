@@ -127,13 +127,11 @@ compilePlow(cache : PlowCache, file : string) -> DModule {
 		benv = BExpEnv(tenv.egraph, tenv.etypes);
 		bmodule = dmodule2bmodule(benv, dmod);
 
+		println("DModule:");
+		prettyDModule(dmod);
+
 		println("\nTyped program:");
-		iter(bmodule.order, \tl -> {
-			mglobal = lookupTree(bmodule.globals, tl);
-			mglobal ?? {
-				println(tl + ":" + prettyBType(mglobal.type) + " = " + prettyBExp(mglobal.value));
-			} : {}		
-		});
+		println(prettyBModule(bmodule));
 
 		dmod;
 	} else {

@@ -1,9 +1,30 @@
 import text/blueprint;
-import plow/bexp/bexp;
+import plow/bexp/bmodule;
 
 export {
+	prettyBModule(b : BModule) -> string;
 	prettyBExp(b : BExp) -> string;
 	prettyBType(t : BType) -> string;
+}
+
+prettyBModule(bmodule : BModule) -> string {
+	list2string(fold(bmodule.order, makeList(), \acc, tl -> {
+		mglobal = lookupTree(bmodule.globals, tl);
+		mglobal ?? {
+			glob = blueprint("
+					%id% : %type% =
+						%body%
+					
+				",
+				[
+					"id", tl,
+					"type", prettyBType(mglobal.type),
+					"body", prettyBExp(mglobal.value)
+				]
+			);
+			Cons(glob, acc);
+		} : {acc}
+	}));
 }
 
 prettyBExp(b : BExp) -> string {
@@ -51,7 +72,8 @@ prettyBExp(b : BExp) -> string {
 		}
 		BLambda(args, body, type): {
 			blueprint("
-					\\%args% -> /* %type% */ %body%",
+					\\%args% -> /* %type% */ 
+						%body%",
 				[
 					"args", strGlue(args, ", "),
 					"body", prettyBExp(body),

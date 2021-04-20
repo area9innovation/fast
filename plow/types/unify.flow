@@ -8,7 +8,7 @@ export {
 }
 
 unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
-	//println("Unify " + prettyTType(left) + " and " + prettyTType(right));
+	// println("Unify " + prettyTType(left) + " and " + prettyTType(right));
 	lroot = addEExp(env.egraph, left);
 	rroot = addEExp(env.egraph, right);
 	root = unionEClass(env.egraph, lroot, rroot);
