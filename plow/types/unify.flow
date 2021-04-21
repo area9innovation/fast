@@ -21,7 +21,7 @@ unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 					if (lid == rid) {
 						unifyTTypes(env, ltypars, rtypars);
 					} else {
-						println("TODO: Find the relation between these named types and unify typars");
+						unifyTTypeNames(env, left, right);
 					}
 				}
 				default: {}
@@ -47,9 +47,15 @@ unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 	}
 }
 
+unifyTTypeNames(env : TTypeEnv, left : TTypeName, right : TTypeName) {
+	// TODO: This is correct if one is a union with exactly the other type in it
+	// otherwise, it is a problem
+	env.onError(-1, left.id + " and " + right.id + " are not compatible (TODO: Check if one is a single-struct union)");
+}
+
 unifyTTypeOverload(env : TTypeEnv, overload : TTypeOverload, type : TType) -> void {
 	good = filter(set2array(overload.overloads), \ol -> {
-		possibleTTypeMatch(ol, type)
+		possibleTTypeMatch(env, ol, type)
 	});
 	n = length(good);
 	if (n < sizeSet(overload.overloads)) {
@@ -66,10 +72,9 @@ unifyTTypeOverload(env : TTypeEnv, overload : TTypeOverload, type : TType) -> vo
 }
 
 unifyTSupertype(env : TTypeEnv, super : TTypeSupertype, type : TType) -> void {
-	// unifyTType(env, super.unique, type)
-/*	supertypes = map(super.subtypes, \st -> {
-		unifyTSubType(env, st, type);
-	});*/
+	iterSet(super.subtypes, \st -> {
+		subtypeUnifyTType(env, st, type);
+	})
 }
 
 unifyTTypes(env : TTypeEnv, left : [TType], right : [TType]) -> void {
@@ -80,8 +85,67 @@ unifyTTypes(env : TTypeEnv, left : [TType], right : [TType]) -> void {
 	}
 }
 
+// Check that st is a sutype of type, and if so, unify any typars
+subtypeUnifyTType(env : TTypeEnv, sub : TType, super : TType) -> void{
+	error = \ -> {
+		env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+	};
+	switch (sub) {
+		TTypeName(subid, subtypars): {
+			switch (super) {
+				TTypeName(superid, supertypars): {
+					subtypeTTypenames(env, sub, super);
+				}
+				TTypeVar(id): {}
+				default: error();
+			}
+		}
+		TTypeVar(id): {}
+		TTypeFunction(largs, lreturnType): {
+			switch (super) {
+				TTypeFunction(rargs, rreturnType): {
+					if (length(largs) == length(rargs)) {
+						// We reverse the polarity
+						iteri(largs, \i, larg -> {
+							subtypeUnifyTType(env, rargs[i], larg)
+						});
+						subtypeUnifyTType(env, lreturnType, rreturnType)
+					} else {
+						error();
+					}
+				}
+				TTypeVar(id): {}
+				default: error();
+			}
+		}
+		TTypeOverload(unique, overloads): {
+			error();
+		}
+		TTypeSupertype(unique, subtypes): {
+			error();
+		}
+	}
+}
+
+subtypeTTypenames(env : TTypeEnv, sub : TTypeName, super : TTypeName) -> void {
+	if (sub.id == super.id) {
+		if (length(sub.typars) == length(super.typars)) {
+			iteri(sub.typars, \i, larg -> {
+				subtypeUnifyTType(env, larg, super.typars[i])
+			});
+		} else {
+			env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+		}
+	} else {
+		supers = env.resolveSupertypes(sub.id);
+		
+		println("TODO: Check that " + sub.id + " is a subtype of " + super.id + " and unify typars");
+	}
+}
+
+
 // Can these two types potentially match? Used to resolve overloads
-possibleTTypeMatch(left : TType, right : TType) -> bool {
+possibleTTypeMatch(env : TTypeEnv, left : TType, right : TType) -> bool {
 	if (left == right) true
 	else {
 		switch (left) {
@@ -92,11 +156,11 @@ possibleTTypeMatch(left : TType, right : TType) -> bool {
 					TTypeName(rid, rtps): {
 						lid == rid
 						&& length(ltps) == length(rtps)
-						&& forall(mapi(ltps, \i, ltp -> possibleTTypeMatch(ltp, rtps[i])), idfn)
+						&& forall(mapi(ltps, \i, ltp -> possibleTTypeMatch(env, ltp, rtps[i])), idfn)
 					}
 					TTypeFunction(args, returnType): false;
-					TTypeOverload(unique, overloads): possibleTTypeMatch(right, left);
-					TTypeSupertype(unique, subtypes): possibleTTypeMatch(right, left);
+					TTypeOverload(unique, overloads): possibleTTypeMatch(env, right, left);
+					TTypeSupertype(unique, subtypes): possibleTTypeMatch(env, right, left);
 				}
 			}
 			TTypeFunction(largs, lrt): {
@@ -105,33 +169,40 @@ possibleTTypeMatch(left : TType, right : TType) -> bool {
 					TTypeName(id, typars): false;
 					TTypeFunction(rargs, rrt): {
 						length(largs) == length(rargs)
-						&& forall(mapi(largs, \i, la -> possibleTTypeMatch(la, rargs[i])), idfn)
-						&& possibleTTypeMatch(lrt, rrt)
+						&& forall(mapi(largs, \i, la -> possibleTTypeMatch(env, la, rargs[i])), idfn)
+						&& possibleTTypeMatch(env, lrt, rrt)
 					}
-					TTypeOverload(unique, overloads): possibleTTypeMatch(right, left);
-					TTypeSupertype(unique, subtypes): possibleTTypeMatch(right, left);
+					TTypeOverload(unique, overloads): possibleTTypeMatch(env, right, left);
+					TTypeSupertype(unique, subtypes): possibleTTypeMatch(env, right, left);
 				}
 			}
-			TTypeOverload(unique, overloads): existsSet(overloads, \ol -> possibleTTypeMatch(ol, right));
+			TTypeOverload(unique, overloads): existsSet(overloads, \ol -> possibleTTypeMatch(env, ol, right));
 			TTypeSupertype(__, lsubtypes): {
-				switch (right) {
-					TTypeVar(id): true;
-					TTypeName(id, typars): {
-						println("TODO: Is " + id + " a super type for " + toString(set2array(lsubtypes)));
-						false;
-					}
-					TTypeFunction(args, returnType): false;
-					TTypeOverload(unique, overloads): false;
-					TTypeSupertype(__, rsubtypes): {
-						println("TODO: Is this a super type?");
-						false;
-					}
-				}
+				forall(set2array(lsubtypes), \st -> {
+					possibleSuperTType(env, st, right)
+				})
 			}
 		}
 	}
 }
 
-possibleSuperTType(subtype : TType, supertype : TType) -> bool {
-	false;
+possibleSuperTType(env : TTypeEnv, subtype : TType, supertype : TType) -> bool {
+	switch (subtype) {
+		TTypeName(sid, __): {
+			supers = env.resolveSupertypes(sid);
+			if (supers == []) false
+			else switch (supertype) {
+				TTypeName(superid, __): {
+					contains(supers, superid);
+				}
+				TTypeVar(__): true;
+				default: false;
+			}
+		}
+		default: {
+			println("TODO: Is this a possible supertype?");
+			false;
+		}
+	}
 }
+

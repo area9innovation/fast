@@ -21,6 +21,9 @@ export {
 		// Find the definition of this struct
 		resolveStructName : (string) -> Maybe<DStruct>,
 
+		// Find the supertypes of this type
+		resolveSupertypes : (string) -> [string],
+
 		// The types of module-level ids. These need instantiation
 		moduleTypes : Tree<string, TType>,
 
@@ -57,6 +60,10 @@ makeTTypeEnv() -> TTypeEnv {
 		\struct -> {
 			println("TODO: Find the struct type '" + struct + "'");
 			None();
+		},
+		\tn -> {
+			println("TODO: Find supertypes of " + tn);
+			[]
 		},
 		makeTree(), makeTree(),
 		makeEGraph(splitTType), makeTree(), ref makeTree()

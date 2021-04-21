@@ -9,10 +9,12 @@ export {
 }
 
 makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType {
-	n = length(subtypes);
-	if (n == 1) {
+	ss = buildSet(subtypes);
+	if (sizeSet(ss) == 1) {
 		subtypes[0]
-	} else TTypeSupertype(type, buildSet(subtypes));
+	} else {
+		TTypeSupertype(type, ss);
+	}
 }
 
 ttypeENode2string(enode : ENode<TType>) -> string {
@@ -24,7 +26,6 @@ ttypeENode2string(enode : ENode<TType>) -> string {
 		TTypeSupertype(unique, subtypes): "supertype";
 	}
 }
-
 
 replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType {
 	rec = \tt -> replaceTTypeVars(tyvars, tt);

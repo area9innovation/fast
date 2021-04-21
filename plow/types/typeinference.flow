@@ -322,7 +322,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			etype = lookupTree(env.localTypes, var);
 			etype ?? {
 				// Relate the subtype with the supertype
-				unifyTType(env, makeTTypeSupertype(TTypeVar(tyvar), [tsubtype]), etype);
+				unifyTType(env, makeTTypeSupertype(TTypeVar(tyvar), [etype, tsubtype]), etype);
 			} : {}
 
 			restype(tyvar, dtype);
