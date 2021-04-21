@@ -71,10 +71,13 @@ extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int)
 				if (length(children) != length(enode.args)) {
 					None();
 				} else {
+					cset = buildSet(children);
 					if (children == []) {
 						Some(TTypeVar(env.mkTyvar()))
+					} else if (sizeSet(cset) == 1) {
+						Some(children[0]);
 					} else {
-						Some(makeTTypeSupertype(typar, children));
+						Some(TTypeSupertype(typar, cset));
 					}
 				}
 			}

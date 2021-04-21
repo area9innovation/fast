@@ -2,7 +2,7 @@ import plow/types/type;
 import ds/egraph;
 
 export {
-	makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType;
+	makeTTypeSupertype(mkTyvar : () -> int, subtypes : [TType]) -> TType;
 	ttypeENode2string(enode : ENode<TType>) -> string;
 
 	replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType;
@@ -10,12 +10,12 @@ export {
 	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
 }
 
-makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType {
+makeTTypeSupertype(mkTyvar : () -> int, subtypes : [TType]) -> TType {
 	ss = buildSet(subtypes);
 	if (sizeSet(ss) == 1) {
 		subtypes[0]
 	} else {
-		TTypeSupertype(type, ss);
+		TTypeSupertype(TTypeVar(mkTyvar()), ss);
 	}
 }
 
