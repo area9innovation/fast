@@ -9,10 +9,10 @@ import math/stringmath;
 main() {
 	file0 = "mini/tests/positions.flow";
 	file3 = "mini/tests/fact.flow";
-	file = "plow/tests/field.flow";
+	file5 = "plow/tests/field.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
-	file5 = "mini/tests";
+	file = "plow/tests";
 
 	includes = strSplit(getUrlParameter("I"), ",");
 	allincludes = filter(concat([".", getFlowDir() + "/lib", getFlowDir()], includes), neq(""));
@@ -26,8 +26,7 @@ main() {
 	t = timestamp();
 
 	if (!isDirectory(file)) {
-		d = compilePlow(cache, file);
-		// prettyDModule(d);
+		b = compilePlow(cache, file);
 		{}
 	} else {
 		files = filter(readDirectoryRecursively(file), \f -> endsWith(f, ".flow"));
@@ -35,7 +34,7 @@ main() {
 		iter(files, \fil -> {
 			// println(fil);
 			if (^errors < 1000) {
-				d = compilePlow(cache, fil);
+				b = compilePlow(cache, fil);
 			}
 		});	
 	};

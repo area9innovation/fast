@@ -87,18 +87,15 @@ calculateTTypeCost(e : ENode<TType>, childCosts : [EClassCost<TType>]) -> EClass
 			if (id == "flow") EClassCost(5, e)
 			else EClassCost(1 + sum(costs), e);
 		}
-		TTypeVar(id): EClassCost(5 + sum(costs), e);
+		TTypeVar(id): EClassCost(10 + sum(costs), e);
 		TTypeFunction(args, returnType): EClassCost(1 + sum(costs), e);
 		TTypeOverload(unique, overloads): {
-			fold(childCosts, EClassCost(intMax, e), \acc, childcost -> {
-				if (childcost.cost < acc.cost) {
-					childcost
-				} else acc
-			});
+			// We do not want these
+			EClassCost(100 + sum(costs), e);
 		}
 		TTypeSupertype(unique, subtypes): {
-			println("TODO: Find the cost of this supertype");
-			EClassCost(2 + sum(costs), e);
+			// We do not want these
+			EClassCost(100 + sum(costs), e);
 		}
 	}
 }
