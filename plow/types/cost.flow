@@ -1,4 +1,4 @@
-import plow/types/type;
+import plow/types/typeenv;
 import plow/types/util;
 import plow/types/pretty;
 import math/math;
@@ -6,17 +6,18 @@ import ds/egraph_extract;
 
 export {
 	// Extracts the types of the eclass we can find
-	extractEClassTypes(e : EGraph<TType>) -> Tree<int, TType>;
+	extractEClassTypes(env : TTypeEnv) -> Tree<int, TType>;
 }
 
-extractEClassTypes(egraph : EGraph<TType>) -> Tree<int, TType> {
+extractEClassTypes(env : TTypeEnv) -> Tree<int, TType> {
+	egraph = env.egraph;
 	extract = extractEGraph(egraph, calculateTTypeCost);
-	extractTTypes(extract);
+	extractTTypes(env, extract);
 }
 
-extractTTypes(costs : Tree<int, EClassCost<TType>>) -> Tree<int, TType> {
+extractTTypes(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>) -> Tree<int, TType> {
 	foldTree(costs, makeTree(), \eclass, ecost, acc -> {
-		mtype = extractTType(costs, eclass);
+		mtype = extractTType(env, costs, eclass);
 		mtype ?? {
 			// println(i2s(eclass) + " = " + prettyTType(mtype));
 			setTree(acc, eclass, mtype)
@@ -27,7 +28,7 @@ extractTTypes(costs : Tree<int, EClassCost<TType>>) -> Tree<int, TType> {
 	});
 }
 
-extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType> {
+extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType> {
 	mcost = lookupTree(costs, eclass);
 	mcost ?? {
 		enode = mcost.node;
@@ -35,7 +36,7 @@ extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType>
 			TTypeVar(id): Some(enode.head);
 			TTypeName(id, __): {
 				mtypars = filtermap(enode.args, \root : int -> {
-					extractTType(costs, root)
+					extractTType(env, costs, root)
 				});
 				if (length(mtypars) == length(enode.args)) {
 					Some(TTypeName(id, mtypars));
@@ -44,7 +45,7 @@ extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType>
 				}
 			}
 			TTypeFunction(__, __): {
-				children : [TType] = filtermap(enode.args, \root -> extractTType(costs, root));
+				children : [TType] = filtermap(enode.args, \root -> extractTType(env, costs, root));
 				// The last child is the return type
 				n = length(children);
 				if (n != length(enode.args)) {
@@ -55,7 +56,7 @@ extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType>
 			}
 			TTypeOverload(typar, __): {
 				children : [TType] = filtermap(enode.args, \root -> {
-					extractTType(costs, root);
+					extractTType(env, costs, root);
 				});
 				if (length(children) != length(enode.args)) {
 					None()
@@ -65,12 +66,16 @@ extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType>
 			}
 			TTypeSupertype(typar, __): {
 				children : [TType] = filtermap(enode.args, \root -> {
-					extractTType(costs, root);
+					extractTType(env, costs, root);
 				});
 				if (length(children) != length(enode.args)) {
 					None();
 				} else {
-					Some(makeTTypeSupertype(typar, children));
+					if (children == []) {
+						Some(TTypeVar(env.mkTyvar()))
+					} else {
+						Some(makeTTypeSupertype(typar, children));
+					}
 				}
 			}
 		}
@@ -82,20 +87,21 @@ extractTType(costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType>
 
 calculateTTypeCost(e : ENode<TType>, childCosts : [EClassCost<TType>]) -> EClassCost<TType> {
 	costs = map(childCosts, \cc -> cc.cost);
+	ccosts = sum(costs) / 10;
 	switch (e.head) {
 		TTypeName(id, typars): {
-			if (id == "flow") EClassCost(5, e)
-			else EClassCost(1 + sum(costs), e);
+			if (id == "flow") EClassCost(50, e)
+			else EClassCost(10 +ccosts, e);
 		}
-		TTypeVar(id): EClassCost(10 + sum(costs), e);
-		TTypeFunction(args, returnType): EClassCost(1 + sum(costs), e);
+		TTypeVar(id): EClassCost(20 + ccosts, e);
+		TTypeFunction(args, returnType): EClassCost(10 + ccosts, e);
 		TTypeOverload(unique, overloads): {
 			// We do not want these
-			EClassCost(100 + sum(costs), e);
+			EClassCost(100 + ccosts, e);
 		}
 		TTypeSupertype(unique, subtypes): {
 			// We do not want these
-			EClassCost(100 + sum(costs), e);
+			EClassCost(100 + ccosts, e);
 		}
 	}
 }

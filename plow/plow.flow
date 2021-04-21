@@ -9,10 +9,10 @@ import math/stringmath;
 main() {
 	file0 = "mini/tests/positions.flow";
 	file3 = "mini/tests/fact.flow";
-	file = "mini/tests/maybe.flow";
+	file = "mini/tests/fold.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
-	file5 = "plow/tests";
+	file5 = "mini/tests";
 
 	includes = strSplit(getUrlParameter("I"), ",");
 	allincludes = filter(concat([".", getFlowDir() + "/lib", getFlowDir()], includes), neq(""));

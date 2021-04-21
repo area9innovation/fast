@@ -65,7 +65,11 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 		}
 		DField(value, field, pos, tyvar): BField(rec(value), field, type(tyvar));	
 		DSetMutable(lhs, field, value, pos, tyvar): todo();
-		DArray(exps, pos, tyvar): todo();
+		DArray(exps, pos, tyvar): {
+			typ = type(tyvar);
+			// The type of __array is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
+			BCall(BVar("__array", typ), map(exps, rec), typ);
+		}
 		DSequence(exps, pos, tyvar): BSequence(map(exps, rec), type(tyvar));
 		DSwitch(value, stype, cases, defaultCase, pos, tyvar): {
 			swtype = type(value.tyvar);
@@ -94,6 +98,7 @@ ttype2btype(env : BExpEnv, type : TType) -> BType {
 	switch (type) {
 		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
 		TTypeVar(tyvar): {
+			println(type);
 			BTypeName("ERROR TYVAR " + i2s(tyvar), []);
 		}
 		TTypeFunction(args, returnType): {
@@ -104,6 +109,7 @@ ttype2btype(env : BExpEnv, type : TType) -> BType {
 			BTypeName("ERROR overload " + toString(tt), []);
 		}
 		TTypeSupertype(__, subtypes): {
+			println(type);
 			BTypeName("ERROR supertype", []);
 		}
 	}
