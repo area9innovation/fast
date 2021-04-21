@@ -20,6 +20,9 @@ export {
 	
 	// This is the main function to find a given id
 	lookupFromImport(modules : BModules, m : BLookupFromImport<?>, imports : [DImport], name : string) -> Maybe<?>;
+
+	// Find all hits across all modules
+	lookupsFromImport(modules : BModules, m : BLookupFromImport<[?]>, imports : [DImport], name : string) -> [?];
 }
 
 lookupFromImport(modules : BModules, m : BLookupFromImport<?>, imports : [DImport], name : string) -> Maybe<?> {
@@ -64,4 +67,19 @@ doImportLookup(modules : BModules, m : BLookupFromImport<?>, imports : [DImport]
 			None();
 		}
 	}
+}
+
+
+lookupsFromImport(modules : BModules, m : BLookupFromImport<[?]>, imports : [DImport], name : string) -> [?] {
+	concatA(
+		map(imports, \impor : DImport -> {
+			module : BModule = getCachedBModule(modules, impor.path);
+			deep = lookupsFromImport(modules, m, module.imports, name);
+			modfind = m.lookup(module, name);
+			switch (modfind) {
+				None(): deep;
+				Some(val): concat(deep, val);
+			}
+		})
+	)
 }

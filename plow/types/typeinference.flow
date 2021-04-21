@@ -47,6 +47,10 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			others = tenv.resolveField(name);
 			concat(istructs, others);
 		},
+		resolveSupertypes = \name -> {
+			println("Look for supertypes of " +name + " in this module");
+			tenv.resolveSupertypes(name);
+		}
 	);
 
 	// The handle all globals

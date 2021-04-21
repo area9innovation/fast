@@ -38,6 +38,7 @@ PlowCache(
 	structLookup : BLookupFromImport<DStruct>,
 	unionLookup : BLookupFromImport<DUnion>,
 	fieldLookup : BLookupFromImport<[string]>,
+	superTypeLookup : BLookupFromImport<[string]>,
 	globalLookup : BLookupFromImport<BGlobal>,
 	nativeLookup : BLookupFromImport<BNative>,
 	// What is the next id
@@ -109,11 +110,24 @@ makePlowCache(
 	}, \upath, nat, error -> {
 		println("TODO: What about the position of this field?");
 		makeOnError(upath, onError)(0, error)
-	}, ref makeTree(), ref makeSet())
+	}, ref makeTree(), ref makeSet()
+	);
+
+	superTypeLookup = BLookupFromImport(\module, n -> {
+		println("Check if " + n + " is a subtype of this module");
+		Some([])
+	}, \module, n -> {
+		true;
+	}, \upath, nat, error -> {
+		println("TODO: What about the position of this field?");
+		makeOnError(upath, onError)(0, error)
+	}, ref makeTree(), ref makeSet()
+	);
 
 	PlowCache(
 		onError, includes, makeBModules(), 
-		structLookup, unionLookup, fieldLookup, globalLookup, nativeLookup,
+		structLookup, unionLookup, fieldLookup, superTypeLookup,
+		globalLookup, nativeLookup,
 		ref 0
 	);
 }
@@ -178,6 +192,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 						dd.resolveStructName(str);
 					})
 				} : []
+			},
+			resolveSupertypes = \id -> {
+				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
 			}
 		);
 		tenv = ttypeInference(tenv1, dmod);

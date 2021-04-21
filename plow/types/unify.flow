@@ -138,8 +138,11 @@ subtypeTTypenames(env : TTypeEnv, sub : TTypeName, super : TTypeName) -> void {
 		}
 	} else {
 		supers = env.resolveSupertypes(sub.id);
-		
-		println("TODO: Check that " + sub.id + " is a subtype of " + super.id + " and unify typars");
+		if (contains(supers, super.id)) {
+			println("TODO: Unify typars for " + sub.id + " with supertype " + super.id);
+		} else {
+			env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+		}
 	}
 }
 
