@@ -27,7 +27,7 @@ export {
 		exportedTypeNames : Set<string>, 
 		// Structs and unions where the structure is exported
 		exportedTypes : Set<string>, 
-		// Globals and functinos that are exported
+		// Globals and functions that are exported
 		exportedGlobals : Set<string>, 
 		// Placement of the export section
 		pos : int

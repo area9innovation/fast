@@ -10,6 +10,7 @@ import plow/types/typeinference;
 
 import plow/bexp/dmodule2bmodule;
 import plow/bexp/pretty;
+import plow/bexp/btype2ttype;
 
 import fast/fast_path;
 
@@ -34,7 +35,9 @@ PlowCache(
 	// Map of the Modules we have already parsed and desugared
 	modules : BModules,
 	structLookup : BLookupFromImport<DStruct>,
-	unionLookup: BLookupFromImport<DUnion>,
+	unionLookup : BLookupFromImport<DUnion>,
+	globalLookup : BLookupFromImport<BGlobal>,
+	nativeLookup : BLookupFromImport<BNative>,
 	// What is the next id
 	nextId : ref int,
 );
@@ -70,8 +73,32 @@ makePlowCache(
 		ref makeTree(), ref makeSet()
 	);
 
+	globalLookup = BLookupFromImport(\module, n -> {
+			lookupTree(module.globals, n);
+		},
+		\module, n -> {
+			containsSet(module.exported.exportedGlobals, n)
+		},
+		\upath, gl, error -> {
+			makeOnError(upath, onError)(gl.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+	nativeLookup = BLookupFromImport(\module, n -> {
+			lookupTree(module.natives, n);
+		},
+		\module, n -> {
+			containsSet(module.exported.exportedGlobals, n);
+		},
+		\upath, nat, error -> {
+			makeOnError(upath, onError)(nat.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+
 	PlowCache(
-		onError, includes, makeBModules(), structLookup, unionLookup,
+		onError, includes, makeBModules(), 
+		structLookup, unionLookup, globalLookup, nativeLookup,
 		ref 0
 	);
 }
@@ -109,12 +136,24 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			makeTTypeEnv() with
 			mkTyvar = dd.mkTyvar,
 			onError = \tv, error -> {
+				// TODO: Traverse the module and find the tyvar and thus the position
 				pos = 0;
 				dd.onError(pos, "TODO: Find pos for " + i2s(tv) + ": " + error);
 			},
 			resolveId = \id -> {
-				println("TODO: Find type of " + id);
-				TTypeVar(dd.mkTyvar());
+				mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
+				mbmod ?? {
+					btype2ttype(mbmod.type);
+				} : {
+					mbnat : Maybe<BNative> = lookupFromImport(cache.modules, cache.nativeLookup, imports, id);
+					switch (mbnat) {
+						None(): {
+							dd.onError(0, "Unknown id " + id);
+							TTypeVar(dd.mkTyvar());
+						}
+						Some(bnat): btype2ttype(bnat.type);
+					}
+				}
 			},
 		);
 		tenv = ttypeInference(tenv1, dmod);

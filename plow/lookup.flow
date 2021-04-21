@@ -4,7 +4,7 @@ import ds/set;
 import sys/concurrent;
 
 export {
-	// A structure to help do lookups in the modules tree
+	// A structure to help do lookups in the modules import tree
 	BLookupFromImport(
 		// A function to lookup a name in a module (not transitively)
 		lookup : (BModule, string) -> Maybe<?>,
