@@ -87,14 +87,14 @@ extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int)
 
 calculateTTypeCost(e : ENode<TType>, childCosts : [EClassCost<TType>]) -> EClassCost<TType> {
 	costs = map(childCosts, \cc -> cc.cost);
-	ccosts = sum(costs) / 10;
+	ccosts = sum(costs);
 	switch (e.head) {
 		TTypeName(id, typars): {
-			if (id == "flow") EClassCost(50, e)
-			else EClassCost(10 +ccosts, e);
+			if (id == "flow") EClassCost(5, e)
+			else EClassCost(max(0, ccosts - 1), e);
 		}
-		TTypeVar(id): EClassCost(20 + ccosts, e);
-		TTypeFunction(args, returnType): EClassCost(10 + ccosts, e);
+		TTypeVar(id): EClassCost(5 + ccosts, e);
+		TTypeFunction(args, returnType): EClassCost(max(0, ccosts - 1), e);
 		TTypeOverload(unique, overloads): {
 			// We do not want these
 			EClassCost(100 + ccosts, e);

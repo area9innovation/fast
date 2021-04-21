@@ -7,9 +7,9 @@ import fs/filesystem;
 import math/stringmath;
 
 main() {
-	file = "mini/tests/positions.flow";
+	file0 = "mini/tests/positions.flow";
 	file3 = "mini/tests/fact.flow";
-	file0 = "plow/tests/array.flow";
+	file = "mini/tests/fold.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 	file5 = "mini/tests";
