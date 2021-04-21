@@ -146,6 +146,7 @@ prettyBExp(b : BExp) -> string {
 					"cases", superglue(cases, \case -> {
 						case.id + "(): " + prettyBExp(case.body);
 					}, ";\n"),
+					"default", defaultCase ?? ("default: " + prettyBExp(defaultCase)) : "",
 					"type1", prettyBType(switchType),
 					"type2", prettyBType(type),
 			]);
