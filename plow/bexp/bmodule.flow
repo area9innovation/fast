@@ -12,6 +12,8 @@ export {
 		exported : DExport, 
 		structs : Tree<string, DStruct>,
 		unions : Tree<string, DUnion>,
+		// What structs have this field?
+		fields : Tree<string, [string]>,
 		natives : Tree<string, BNative>,
 		globals : Tree<string, BGlobal>, 
 		// The order of globals in the source code

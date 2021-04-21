@@ -1,5 +1,6 @@
 import plow/types/typeof;
 import plow/dexp/pretty;
+import plow/dexp/types;
 import plow/types/unify;
 import plow/types/builtin;
 import plow/types/cost;
@@ -27,6 +28,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, TTypeVar(global.tyvar)))
 	});
 
+	// Make a field map
+	fields = makeDFieldMap(d.structs);
+
 	// Make sure we can find local structs
 	senv = TTypeEnv(tenv with
 		resolveStructName = \name -> {
@@ -34,7 +38,18 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			lstruct ?? {
 				Some(lstruct)
 			}: tenv.resolveStructName(name);
-		}
+		},
+		resolveField = \name -> {
+			structs = getTreeArrayValue(fields, name);
+			istructs = filtermap(structs, \str -> {
+				lstruct = lookupTree(d.structs, str);
+				lstruct ?? {
+					Some(TTypeName(str, map(lstruct.typars, \__ -> TTypeVar(tenv.mkTyvar()))));
+				} : None();
+			});
+			others = tenv.resolveField(name);
+			concat(istructs, others);
+		},
 	);
 
 	// The handle all globals
@@ -248,7 +263,10 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			// OK, this is an overload of all structs with a field
 			tvalue = ttypeInferenceDExp(env, value);
 			fieldFunctions = env.resolveField(field);
-			type = if (length(fieldFunctions) == 1) fieldFunctions[0]
+			type = if (fieldFunctions == []) {
+				env.onError(tyvar, "Unknown field " + field);
+				TTypeVar(env.mkTyvar());
+			} else if (length(fieldFunctions) == 1) fieldFunctions[0]
 			else TTypeOverload(TTypeVar(tyvar), buildSet(fieldFunctions));
 			restype(tyvar, type);
 		}

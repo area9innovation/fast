@@ -1,5 +1,6 @@
 import plow/bexp/dexp2bexp;
 import plow/bexp/bmodule;
+import plow/dexp/types;
 
 export {
 	dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule;
@@ -14,6 +15,7 @@ dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
 		d.exported,
 		d.structs,
 		d.unions,
+		makeDFieldMap(d.structs),
 		mapTree(d.natives, \nat -> {
 			BNative(nat.id, nat.isIo, resolveBType(env, nat.tyvar), nat.name, 
 				{

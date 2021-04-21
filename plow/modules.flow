@@ -21,7 +21,7 @@ makeBModules() -> BModules {
 }
 
 getDummyBModule() -> BModule {
-	BModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), []);
+	BModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), makeTree(), []);
 }
 
 hasCachedBModule(m : BModules, flowpath : string) -> bool {

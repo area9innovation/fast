@@ -8,6 +8,9 @@ export {
 
 	// Find all type-pars in this type
 	extractDTypars(acc : Set<string>, d : DType) -> Set<string>;
+
+	// Build a map from field to structs that have that field
+	makeDFieldMap(structs : Tree<string, DStruct>) -> Tree<string, [string]>;
 }
 
 extractDTyparsFromDExp(e : DExp) -> Set<string> {
@@ -61,3 +64,10 @@ extractDTypars(acc : Set<string>, d : DType) -> Set<string> {
 	}
 }
 
+makeDFieldMap(structs : Tree<string, DStruct>) -> Tree<string, [string]> {
+	foldTree(structs, makeTree(), \st, stru, acc -> {
+		fold(stru.structArgs, acc, \acc2, sa -> {
+			treePushToArrayValue(acc2, sa.id, st)
+		})
+	});
+}

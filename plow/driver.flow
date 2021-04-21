@@ -36,6 +36,7 @@ PlowCache(
 	modules : BModules,
 	structLookup : BLookupFromImport<DStruct>,
 	unionLookup : BLookupFromImport<DUnion>,
+	fieldLookup : BLookupFromImport<[string]>,
 	globalLookup : BLookupFromImport<BGlobal>,
 	nativeLookup : BLookupFromImport<BNative>,
 	// What is the next id
@@ -53,6 +54,7 @@ makePlowCache(
 			lookupTree(module.structs, n)
 		}, \module, n -> {
 			containsSet(module.exported.exportedTypes, n)
+			|| containsSet(module.exported.exportedTypeNames, n)
 		},
 		\spath, struct, error -> {
 			makeOnError(spath, onError)(struct.pos, error)
@@ -66,6 +68,7 @@ makePlowCache(
 		}, 
 		\module, n -> {
 			containsSet(module.exported.exportedTypes, n)
+			|| containsSet(module.exported.exportedTypeNames, n)
 		},
 		\upath, struct, error -> {
 			makeOnError(upath, onError)(struct.pos, error)
@@ -95,10 +98,21 @@ makePlowCache(
 		},
 		ref makeTree(), ref makeSet()
 	);
+	fieldLookup = BLookupFromImport(\module, n -> {
+		lookupTree(module.fields, n);
+	}, \module, n -> {
+		structs = getTreeArrayValue(module.fields, n);
+		forall(structs, \s -> {
+			containsSet(module.exported.exportedTypes, n)
+		})
+	}, \upath, nat, error -> {
+		println("TODO: What about the position of this field?");
+		makeOnError(upath, onError)(0, error)
+	}, ref makeTree(), ref makeSet())
 
 	PlowCache(
 		onError, includes, makeBModules(), 
-		structLookup, unionLookup, globalLookup, nativeLookup,
+		structLookup, unionLookup, fieldLookup, globalLookup, nativeLookup,
 		ref 0
 	);
 }
@@ -155,6 +169,14 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					}
 				}
 			},
+			resolveField = \id -> {
+				mstructs : Maybe<[string]> = lookupFromImport(cache.modules, cache.fieldLookup, imports, id);
+				mstructs ?? {
+					filtermap(mstructs, \str -> {
+						makeTStructInstantiation(dd, str);
+					})
+				} : []
+			}
 		);
 		tenv = ttypeInference(tenv1, dmod);
 
@@ -173,6 +195,15 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	} else {
 		cache.onError(file + " could not be found");
 		getDummyBModule();
+	}
+}
+
+
+makeTStructInstantiation(dd : DDesugar, str : string) -> Maybe<TTypeName> {
+	mstr = dd.resolveStructName(str);
+	switch (mstr) {
+		Some(strdef): Some(TTypeName(str, map(strdef.typars, \__ -> TTypeVar(dd.mkTyvar()))));
+		None(): None();
 	}
 }
 
