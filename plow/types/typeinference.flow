@@ -139,8 +139,7 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 	if (iterations > 0 && ^update) {
 		unifyEClasses(tenv, iterations - 1);
 	} else {
-		if (true) {
-			canonicalizeEGraph(env.egraph);
+		if (false) {
 			println("Final Classes:");
 			iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
 				root = env.egraph.eclass.parents[i];

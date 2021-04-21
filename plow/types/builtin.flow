@@ -9,6 +9,7 @@ export {
 	doubleTType : TType = TTypeName("double", []);
 	stringTType : TType = TTypeName("string", []);
 	refTType : (TType) -> TType;
+	arrayTType : (TType) -> TType;
 	getBuiltinTType(op : string) -> Maybe<TType>;
 }
 
@@ -16,6 +17,10 @@ builtinTOps : ref Maybe<Tree<string, TType>> = ref None();
 
 refTType(rt : TType) -> TType {
 	TTypeName("ref", [rt]);
+}
+
+arrayTType(rt : TType) -> TType {
+	TTypeName("array", [rt]);
 }
 
 getBuiltinTType(op : string) -> Maybe<TType> {
@@ -58,6 +63,7 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 			]))),
 			Pair(":=", TTypeFunction([refTType(typar1), typar1], voidTType)), // TODO: Add supertype?
 			Pair("deref", TTypeFunction([refTType(typar1)], typar1)), // TODO: Add supertype?
+			Pair("index", TTypeFunction([arrayTType(typar1), intTType], typar1)),
 		])
 	});
 	lookupTree(ot, op);
