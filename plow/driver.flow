@@ -105,7 +105,7 @@ makePlowCache(
 	}, \module, n -> {
 		structs = getTreeArrayValue(module.fields, n);
 		forall(structs, \s -> {
-			containsSet(module.exported.exportedTypes, n)
+			containsSet(module.exported.exportedTypes, s)
 		})
 	}, \upath, nat, error -> {
 		println("TODO: What about the position of this field?");

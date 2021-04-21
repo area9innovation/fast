@@ -72,9 +72,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 		]),
 		// Unary operators
 		pairs2tree([
-			un("negate"),
-			un("not"),
-			un("deref"),
+			un("__negate"),
+			un("__not"),
+			un("__deref"),
 
 			Pair("unescape", \e -> {
 				switch (e) {
@@ -132,7 +132,7 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			bin("<="), bin("<"), bin(">"), bin(">="),
 			bin("+"), bin("-"), 
 			bin("*"), bin("/"), bin("%"), 
-			bin("index"), 
+			bin("__index"), 
 			Pair("dot", \val, field -> {
 				PField(val, getPString(field), todo())
 			}),

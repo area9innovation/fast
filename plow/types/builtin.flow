@@ -29,7 +29,7 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 		pairs2tree([
 			Pair("||", TTypeFunction([boolTType, boolTType], boolTType)),
 			Pair("&&", TTypeFunction([boolTType, boolTType], boolTType)),
-			Pair("not", TTypeFunction([boolTType], boolTType)),
+			Pair("__not", TTypeFunction([boolTType], boolTType)),
 			Pair("==", TTypeFunction([typar1, typar1], boolTType)),
 			Pair("!=", TTypeFunction([typar1, typar1], boolTType)),
 			Pair("<=", TTypeFunction([typar1, typar1], boolTType)),
@@ -45,7 +45,7 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 				TTypeFunction([intTType, intTType], intTType),
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
 			]))),
-			Pair("negate", TTypeOverload(typar1, buildSet([
+			Pair("__negate", TTypeOverload(typar1, buildSet([
 				TTypeFunction([intTType], intTType),
 				TTypeFunction([doubleTType], doubleTType),
 			]))),
@@ -62,8 +62,8 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 				TTypeFunction([doubleTType, doubleTType], doubleTType),
 			]))),
 			Pair(":=", TTypeFunction([refTType(typar1), typar1], voidTType)), // TODO: Add supertype?
-			Pair("deref", TTypeFunction([refTType(typar1)], typar1)), // TODO: Add supertype?
-			Pair("index", TTypeFunction([arrayTType(typar1), intTType], typar1)),
+			Pair("__deref", TTypeFunction([refTType(typar1)], typar1)), // TODO: Add supertype?
+			Pair("__index", TTypeFunction([arrayTType(typar1), intTType], typar1)),
 		])
 	});
 	lookupTree(ot, op);

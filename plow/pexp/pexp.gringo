@@ -62,19 +62,19 @@ exp =
 	|> exp "??" $$pos $"swap" ws <exp ":" ws exp $"maybe" $"setpos"
 
 	|> (
-		'!' $$pos ws exp $"not" $"setpos"
-		| "-" $$pos ws exp $"negate" $"setpos"
+		'!' $$pos ws exp $"__not" $"setpos"
+		| "-" $$pos ws exp $"__negate" $"setpos"
 		| lambda
 		| exp (
 			("(" $$pos $"swap" ws exps ")" ws $"call" $"setpos")
 			| with
 			| "." $$pos $"swap" ws idpos "::=" ws exp $"::=" $"setpos"
 			| "." $$pos $"swap" ws idpos $"dot" $"setpos"
-			| "[" $$pos $"swap" ws exp "]" ws $"index" $"setpos"
+			| "[" $$pos $"swap" ws exp "]" ws $"__index" $"setpos"
 		)*
 	)
 
-	|> $$pos '^' ws exp $"deref" $"setpos"
+	|> $$pos '^' ws exp $"__deref" $"setpos"
 
 	|> (
 		$$pos "if" !letterOrDigit ws "(" ws exp ")" ws exp "else" ws exp $"ifelse" $"setpos"
