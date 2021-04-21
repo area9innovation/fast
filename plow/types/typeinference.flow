@@ -30,6 +30,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	// Make a field map
 	fields = makeDFieldMap(d.structs);
+	supers = makeDSupers(d.unions);
 
 	// Make sure we can find local structs
 	senv = TTypeEnv(tenv with
@@ -48,8 +49,10 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			concat(istructs, others);
 		},
 		resolveSupertypes = \name -> {
-			println("Look for supertypes of " +name + " in this module");
-			tenv.resolveSupertypes(name);
+			concat(
+				getTreeArrayValue(supers, name),
+				tenv.resolveSupertypes(name)
+			);
 		}
 	);
 
