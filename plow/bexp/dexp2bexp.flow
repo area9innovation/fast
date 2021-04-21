@@ -81,7 +81,10 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 			);
 		}
 		DCast(value, target, pos): todo();
-		DDowncast(value, subtype, scope, pos, tyvar): todo();
+		DDowncast(value, subtype, scope, pos, tyvar): {
+			// We probably do not need this in the backends. It is purely a type checking thing
+			rec(scope);
+		}
 		DTyped(value, subtype, pos): rec(value);
 		DWith(struct, value, fields, pos, tyvar): todo();
 	}

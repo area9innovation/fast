@@ -16,8 +16,10 @@ export {
 		BLet(id : string, value : BExp, body : BExp, type : BType);
 		BIf(cond : BExp, then : BExp, else_ : BExp, type : BType);
 		BSequence(exps : [BExp], type : BType);
+
 		BConstruct(struct : string, args : [BExp], type : BType);
 		BField(value : BExp, field : string, type : BType);
+
 		BCall(fn : BExp, args : [BExp], type : BType);
 		BLambda(args : [string], body : BExp, type : BType);
 
