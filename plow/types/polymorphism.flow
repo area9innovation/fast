@@ -1,7 +1,15 @@
 import plow/types/typeenv;
+import plow/types/pretty;
+import plow/types/util;
+import plow/types/typeof;
 
 export {
+	// Instantiates typars into tyvars
 	instantiateTTypePar(env : TTypeEnv, t : TType) -> TType;
+
+	// Given a typename we know is part of the union, with this instantiation,
+	// instantiate the corresponding typename
+	instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TTypeName, struct : string) -> Maybe<TType>;
 }
 
 instantiateTTypePar(env : TTypeEnv, t : TType) -> TType {
@@ -36,3 +44,21 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 		}
 	}
 }
+
+instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TTypeName, struct : string) -> Maybe<TType> {
+	stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == struct);
+	stype ?? {
+		if (length(unionInstance.typars) == length(union.typars)) {
+			typars : Tree<TType, TType> = foldi(unionInstance.typars, makeTree(), \i, acc : Tree<TType, TType>, typar : TType -> {
+				name : string = union.typars[i].id;
+				setTree(acc, TTypeName(name, []), typar);
+			});
+			Some(replaceTType(typars, dtype2ttype(env, false, stype)));
+		} else {
+			env.onError(-1, "Expected #" + i2s(length(union.typars)) + " typars, got " + prettyTType(unionInstance));
+			None();
+		}
+	} : None();
+}
+
+

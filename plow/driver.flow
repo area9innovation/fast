@@ -195,7 +195,8 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			},
 			resolveSupertypes = \id -> {
 				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
-			}
+			},
+			resolveUnionName = dd.resolveUnionName
 		);
 		tenv = ttypeInference(tenv1, dmod);
 

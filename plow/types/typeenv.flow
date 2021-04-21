@@ -21,6 +21,9 @@ export {
 		// Find the definition of this struct
 		resolveStructName : (string) -> Maybe<DStruct>,
 
+		// Find the definition of this union
+		resolveUnionName : (string) -> Maybe<DUnion>,
+
 		// Find the supertypes of this type
 		resolveSupertypes : (string) -> [string],
 
@@ -59,6 +62,10 @@ makeTTypeEnv() -> TTypeEnv {
 		},
 		\struct -> {
 			println("TODO: Find the struct type '" + struct + "'");
+			None();
+		},
+		\union -> {
+			println("TODO: Find the union type '" + union + "'");
 			None();
 		},
 		\tn -> {

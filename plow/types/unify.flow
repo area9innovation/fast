@@ -1,5 +1,6 @@
 import plow/types/pretty;
 import plow/types/typeenv;
+import plow/types/polymorphism;
 import ds/egraph_dot;
 
 export {
@@ -128,20 +129,35 @@ subtypeUnifyTType(env : TTypeEnv, sub : TType, super : TType) -> void{
 }
 
 subtypeTTypenames(env : TTypeEnv, sub : TTypeName, super : TTypeName) -> void {
+	error = \ -> {
+		env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+	}
 	if (sub.id == super.id) {
 		if (length(sub.typars) == length(super.typars)) {
 			iteri(sub.typars, \i, larg -> {
 				subtypeUnifyTType(env, larg, super.typars[i])
 			});
 		} else {
-			env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+			error();
 		}
 	} else {
 		supers = env.resolveSupertypes(sub.id);
 		if (contains(supers, super.id)) {
-			println("TODO: Unify typars for " + sub.id + " with supertype " + super.id);
+			munion = env.resolveUnionName(super.id);
+			munion ?? {
+				mstruct = instantiateTTypeNameFromUnion(env, munion, super, sub.id);
+				switch (mstruct) {
+					None(): error();
+					Some(struct): {
+						// OK, we unify the instantiated struct with the subtype
+						unifyTType(env, sub, struct);
+					}
+				}
+			} : {
+				env.onError(-1, "Unknown union " + super.id + " when checking if " + prettyTType(sub) + " is a subtype of " + prettyTType(super));
+			}
 		} else {
-			env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+			error();
 		}
 	}
 }
@@ -208,4 +224,3 @@ possibleSuperTType(env : TTypeEnv, subtype : TType, supertype : TType) -> bool {
 		}
 	}
 }
-

@@ -6,6 +6,8 @@ export {
 	ttypeENode2string(enode : ENode<TType>) -> string;
 
 	replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType;
+
+	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
 }
 
 makeTTypeSupertype(type : TType, subtypes : [TType]) -> TType {
@@ -35,5 +37,21 @@ replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType {
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));
 		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, mapSet(subtypes, rec));
+	}
+}
+
+replaceTType(types : Tree<TType, TType>, type : TType) -> TType {
+	mrep = lookupTree(types, type);
+	mrep ?? {
+		mrep
+	} : {
+		rec = \tt -> replaceTType(types, tt);
+		switch (type) {
+			TTypeVar(id): type;
+			TTypeName(id, typars): TTypeName(id, map(typars, rec));
+			TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
+			TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));
+			TTypeSupertype(unique, subtypes): TTypeSupertype(unique, mapSet(subtypes, rec));
+		}
 	}
 }
