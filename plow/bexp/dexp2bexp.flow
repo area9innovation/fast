@@ -53,7 +53,7 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 			BCall(rec(fn), map(args, rec), type(tyvar))
 		}
 		DConstruct(structid, args, pos, tyvar): {
-			todo();
+			BConstruct(structid, map(args, rec), type(tyvar))
 		}
 		DLambda(args, body, pos, tyvar): {
 			BLambda(map(args, \a -> a.id), rec(body), type(tyvar));
@@ -63,7 +63,7 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 			// The type of __ref is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
 			BCall(BVar("__ref", typ), [rec(value)], typ);
 		}
-		DField(value, field, pos, tyvar): todo();
+		DField(value, field, pos, tyvar): BField(rec(value), field, type(tyvar));	
 		DSetMutable(lhs, field, value, pos, tyvar): todo();
 		DArray(exps, pos, tyvar): todo();
 		DSequence(exps, pos, tyvar): BSequence(map(exps, rec), type(tyvar));

@@ -173,7 +173,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 				mstructs : Maybe<[string]> = lookupFromImport(cache.modules, cache.fieldLookup, imports, id);
 				mstructs ?? {
 					filtermap(mstructs, \str -> {
-						makeTStructInstantiation(dd, str);
+						dd.resolveStructName(str);
 					})
 				} : []
 			}
@@ -198,14 +198,6 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	}
 }
 
-
-makeTStructInstantiation(dd : DDesugar, str : string) -> Maybe<TTypeName> {
-	mstr = dd.resolveStructName(str);
-	switch (mstr) {
-		Some(strdef): Some(TTypeName(str, map(strdef.typars, \__ -> TTypeVar(dd.mkTyvar()))));
-		None(): None();
-	}
-}
 
 makeDDesugar(path : string, cache : PlowCache, 
 		resolveStructName : (string) -> Maybe<DStruct>,

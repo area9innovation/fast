@@ -67,7 +67,7 @@ prettyBExp(b : BExp) -> string {
 				[
 					"id", id,
 					"value", prettyBExp(value),
-					"body", prettyBExp(value),
+					"body", prettyBExp(body),
 					"type", prettyBType(type),
 			]);
 		}
@@ -81,6 +81,26 @@ prettyBExp(b : BExp) -> string {
 					"c", prettyBExp(cond),
 					"then", prettyBExp(then),
 					"else", prettyBExp(else_),
+					"type", prettyBType(type),
+			]);
+		}
+		BConstruct(struct, args, type): {
+			blueprint("
+					%struct%( // struct
+						%args%
+					) /* %type% */",
+				[
+					"struct", struct,
+					"args", superglue(args, prettyBExp, ",\n"),
+					"type", prettyBType(type),
+			]);
+		}
+		BField(value, field, type): {
+			blueprint("
+					%value%.%field% /* %type% */",
+				[
+					"value", prettyBExp(value),
+					"field", field,
 					"type", prettyBType(type),
 			]);
 		}

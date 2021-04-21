@@ -16,7 +16,7 @@ export {
 		resolveId : (string) -> TType,
 
 		// Give all the typenames that have this field
-		resolveField : (string) -> [TType],
+		resolveField : (string) -> [DStruct],
 
 		// Find the definition of this struct
 		resolveStructName : (string) -> Maybe<DStruct>,

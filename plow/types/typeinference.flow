@@ -42,10 +42,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		resolveField = \name -> {
 			structs = getTreeArrayValue(fields, name);
 			istructs = filtermap(structs, \str -> {
-				lstruct = lookupTree(d.structs, str);
-				lstruct ?? {
-					Some(TTypeName(str, map(lstruct.typars, \__ -> TTypeVar(tenv.mkTyvar()))));
-				} : None();
+				lookupTree(d.structs, str);
 			});
 			others = tenv.resolveField(name);
 			concat(istructs, others);
@@ -262,12 +259,22 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DField(value, field, pos, tyvar): {
 			// OK, this is an overload of all structs with a field
 			tvalue = ttypeInferenceDExp(env, value);
-			fieldFunctions = env.resolveField(field);
-			type = if (fieldFunctions == []) {
+			fieldStructs : [DStruct] = env.resolveField(field);
+
+			fieldTypes = filtermap(fieldStructs, \struct : DStruct -> {
+				mft = find(struct.structArgs, \sa -> sa.id == field);
+				type : Maybe<TType> = maybeMap(mft, \ft -> {
+					dtype2ttype(env, true, ft.type)
+				});
+				type
+			});
+
+			type = if (fieldTypes == []) {
 				env.onError(tyvar, "Unknown field " + field);
 				TTypeVar(env.mkTyvar());
-			} else if (length(fieldFunctions) == 1) fieldFunctions[0]
-			else TTypeOverload(TTypeVar(tyvar), buildSet(fieldFunctions));
+			} else if (length(fieldTypes) == 1) {
+				fieldTypes[0]
+			} else TTypeOverload(TTypeVar(tyvar), buildSet(fieldTypes));
 			restype(tyvar, type);
 		}
 		// DSetMutable(lhs, field, value, pos, tyvar): 
