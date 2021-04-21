@@ -27,8 +27,18 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, TTypeVar(global.tyvar)))
 	});
 
+	// Make sure we can find local structs
+	senv = TTypeEnv(tenv with
+		resolveStructName = \name -> {
+			lstruct = lookupTree(d.structs, name);
+			lstruct ?? {
+				Some(lstruct)
+			}: tenv.resolveStructName(name);
+		}
+	);
+
 	// The handle all globals
-	genv = fold(d.order, tenv, \acc, id -> {
+	genv = fold(d.order, senv, \acc, id -> {
 		mglobal = lookupTree(d.globals, id);
 		mglobal ?? {
 			ttypeInferenceDGlobal(acc, mglobal)
