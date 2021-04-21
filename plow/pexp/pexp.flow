@@ -1,6 +1,9 @@
 import ds/list;
 
 export {
+	// This is the AST used for parsing. As such, it is a "complete" expression
+	// grammar so that Gringo has a strongly typed construct for semantic actions
+
 	PValue ::= PVoid, PBool, PInt, PDouble, PString;
 		PVoid(pos : int);
 		PBool(v : bool, pos : int);

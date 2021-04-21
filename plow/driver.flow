@@ -23,7 +23,7 @@ export {
 		includes : [string]
 	) -> PlowCache;
 
-	// Parse and desugar a file, and all the transitive imports
+	// Parse, desugar and type a file, and all the transitive imports
 	compilePlow(cache : PlowCache, file : string) -> BModule;
 }
 
@@ -34,6 +34,7 @@ PlowCache(
 	includes : [string], 
 	// Map of the Modules we have already parsed and desugared
 	modules : BModules,
+	// Helpers to look up things in imports
 	structLookup : BLookupFromImport<DStruct>,
 	unionLookup : BLookupFromImport<DUnion>,
 	fieldLookup : BLookupFromImport<[string]>,
@@ -121,6 +122,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	path = fastPath2path(cache.includes, changeFileExt(file, ".flow"));
 	flowpath = path2fastPath(cache.includes, path);
 
+	// TODO: We could add a "stop" flag and cancel compilation in those cases
 	if (hasCachedBModule(cache.modules, flowpath)) {
 		getCachedBModule(cache.modules, flowpath);
 	} else if (fileExists(path)) {

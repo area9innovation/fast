@@ -34,6 +34,7 @@ doImportLookup(modules : BModules, m : BLookupFromImport<?>, imports : [DImport]
 	seen ?? {
 		Some(seen)
 	} : {
+		// TODO: We could track visited and avoid infinite recursion in import loops
 		mfind = fold(imports, None(), \acc, impor : DImport -> {
 			if (acc == None()) {
 				module : BModule = getCachedBModule(modules, impor.path);
@@ -55,6 +56,8 @@ doImportLookup(modules : BModules, m : BLookupFromImport<?>, imports : [DImport]
 		});
 		mfind ?? {
 			// OK, add to the cache
+			// TODO: We could add a "strict" mode where we do not do this
+			// and the name lookup will be import-exact
 			m.cache := setTree(^(m.cache), name, mfind);
 			Some(mfind);
 		} : {

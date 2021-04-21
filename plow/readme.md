@@ -1,32 +1,48 @@
-# New plan
+# Plow - a flow compiler
 
-The Forth stuff is too complicated.
-The restriction of the mini-lambda in the entire compiler is too untyped.
+This compiler has these representations:
 
 1. Have complete AST after parsing, using typed Gringo grammar.
       PExp = Parsed Expressions
+   `parsePExp` converts a string to `PExp`.
    Status: Done. Can parse all code we have.
 
 2. Once files and dependents are parsed, desugar the program to DExp:
-   DExp = Desugared Expressions
+   DExp = Desugared Expressions.
+   `desugarPExp` converts a `PExp` to `DExp`, using a `DDesugar` environment
+   for struct and union lookups.
+   Status: Done.
 
-   Status: Almost done.
-
-3. Once dependencies are desugared, do type inference
-   TExp = Typed Expressions. This is similar to BExp
+3. Once dependencies are desugared, do type inference and convert the result to
+   ``BExp`. Typing happens in `ttypeInference` and then we get a bmodule from
+   `dmodule2bmodule`.
+   BExp = Backend, Typed Expressions.
+   Status: Subtyping to be done.
 
 4. Then plug into the backends.
+
+This pipeline is exposed by 
+
+	compilePlow(cache : PlowCache, file : string) -> BModule;
+
+where `PlowCache` is a cache for modules.
 
 # TODOs
 
 - Positions on some operators are off a bit.
 - Implement Maybe & With desugaring
+- Subtyping inference
+- Add a compile server
+  - Add option to only type check given ids
 
 # Type inference
 
 Use the egraph over types and tyvars.
 Use lower/upper types as from
 https://gilmi.me/blog/post/2021/04/13/giml-typing-polymorphic-variants
+
+We use overload types to handle the overloading of +, - as well as
+dot on structs, which can be considered as an overloaded function.
 
 # Rewrite syntax
 
