@@ -17,7 +17,7 @@ export {
 ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	// Resolve the types of natives
 	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
-		type = dtype2ttype(env, nativ.type);
+		type = dtype2ttype(env, false, nativ.type);
 		unifyTType(env, type, TTypeVar(nativ.tyvar));
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
 	});
@@ -78,7 +78,7 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 				}
 			});
 		}
-		if (true) {
+		if (false) {
 			dot = egraph2dot(env.egraph, ttypeENode2string);
 			setFileContent("egraph.dot", dot);
 			{}
@@ -174,7 +174,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 		DTyped(value, type, pos): {
 			valtype = ttypeInferenceDExp(env, value);
-			unifyTType(env, valtype, dtype2ttype(env, type));
+			unifyTType(env, valtype, dtype2ttype(env, true, type));
 			valtype;
 		}
 		DLet(id, value, body, pos, tyvar): {
@@ -220,7 +220,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 		DLambda(args, body, pos, tyvar): {
 			argTypes = map(args, \arg -> {
-				dtype2ttype(env, arg.type)
+				dtype2ttype(env, true, arg.type)
 			});
 			nenv = foldi(args, env, \i, acc, arg -> {
 				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, argTypes[i]))
@@ -258,7 +258,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 		DSwitch(value, type, cases, defaultCase, pos, tyvar): {
 			tvalue = ttypeInferenceDExp(env, value);
-			ttype = dtype2ttype(env, type);
+			ttype = dtype2ttype(env, true, type);
 			unifyTType(env, tvalue, ttype);
 
 			caseTypes = map(cases, \c -> {
@@ -274,13 +274,13 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 		DCast(value, target, pos): {
 			tvalue = ttypeInferenceDExp(env, value);
-			ttarget = dtype2ttype(env, target);
+			ttarget = dtype2ttype(env, true, target);
 			// We allow casting a type to a supertype
 			unifyTType(env, makeTTypeSupertype(TTypeVar(env.mkTyvar()), [tvalue]), ttarget);
 			ttarget;
 		}
 		DDowncast(var, subtype, scope, pos, tyvar): {
-			tsubtype = dtype2ttype(env, subtype);
+			tsubtype = dtype2ttype(env, true, subtype);
 			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, var, tsubtype));
 			dtype = ttypeInferenceDExp(nenv, scope);
 			restype(tyvar, dtype);

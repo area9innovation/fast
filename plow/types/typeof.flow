@@ -3,11 +3,11 @@ import plow/types/typeenv;
 import plow/dexp/dexp;
 
 export {
-	// What is the TType of this expression?
+	// What is the TType of this expression? This instantiates polymorphism
 	dexpType(env : TTypeEnv, e : DExp) -> TType;
 
-	// Convert this to a ttype
-	dtype2ttype(env : TTypeEnv, d : DType) -> TType;
+	// Convert this to a ttype, instantiating polymorphism
+	dtype2ttype(env : TTypeEnv, instantiate : bool, d : DType) -> TType;
 }
 
 dexpType(env : TTypeEnv, e : DExp) -> TType {
@@ -31,33 +31,35 @@ dexpType(env : TTypeEnv, e : DExp) -> TType {
 		DArray(exps, pos, tyvar): TTypeVar(tyvar);
 		DSequence(exps, pos, tyvar): TTypeVar(tyvar);
 		DSwitch(value, type, cases, defaultCase, pos, tyvar): TTypeVar(tyvar);
-		DCast(value, target, pos): dtype2ttype(env, target);
+		DCast(value, target, pos): dtype2ttype(env, true, target);
 		DDowncast(value, subtype, scope, pos, tyvar): TTypeVar(tyvar);
-		DTyped(value, subtype, pos): dtype2ttype(env, subtype);
+		DTyped(value, subtype, pos): dtype2ttype(env, true, subtype);
 		DWith(struct, value, fields, pos, tyvar): TTypeVar(tyvar);
 	}
 }
 
-dtype2ttype(env : TTypeEnv, d : DType) -> TType {
+dtype2ttype(env : TTypeEnv, instantiate : bool, d : DType) -> TType {
 	switch (d) {
 		DTypePar(id, pos): {
-			mtyvar = lookupTree(env.typars, id);
-			mtyvar ?? {
-				TTypeVar(mtyvar);
-			} : {
-// 				println("Unresolved type par!");
-				TTypeVar(env.mkTyvar());
-			}
+			if (instantiate) {
+				mtyvar = lookupTree(env.typars, id);
+				mtyvar ?? {
+					TTypeVar(mtyvar);
+				} : {
+	// 				println("Unresolved type par!");
+					TTypeVar(env.mkTyvar());
+				}
+			} else TTypeName(id, []);
 		}
 		DTypeName(id, typars, pos): {
 			if (id == "auto") {
 				TTypeVar(env.mkTyvar())
 			} else {
-				TTypeName(id, map(typars, \tv -> dtype2ttype(env, tv)));
+				TTypeName(id, map(typars, \tv -> dtype2ttype(env, instantiate, tv)));
 			}
 		}
 		DTypeFunction(args, returnType, pos): {
-			TTypeFunction(map(args, \tv -> dtype2ttype(env, tv)), dtype2ttype(env, returnType));
+			TTypeFunction(map(args, \tv -> dtype2ttype(env, instantiate, tv)), dtype2ttype(env, instantiate, returnType));
 		}
 	}
 }

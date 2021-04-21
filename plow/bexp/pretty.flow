@@ -27,6 +27,10 @@ prettyBModule(bmodule : BModule) -> string {
 	//	typedefs : Tree<string, DTypeDef>,
 	//	natives : Tree<string, DNative>,
 */
+	natives = foldTree(bmodule.natives, "", \nat, bnat, acc -> {
+		acc + "native " + nat + " : " + prettyBType(bnat.type) + "\n"
+	});
+
 	globals = list2string(fold(bmodule.order, makeList(), \acc, tl -> {
 		mglobal = lookupTree(bmodule.globals, tl);
 		mglobal ?? {
@@ -45,7 +49,7 @@ prettyBModule(bmodule : BModule) -> string {
 		} : {acc}
 	}));
 
-	head + "\n" + globals;
+	head + "\n" + natives + "\n" + globals;
 }
 
 prettyBExp(b : BExp) -> string {
