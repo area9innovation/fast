@@ -13,11 +13,7 @@ export {
 makeTTypeSupertype(mkTyvar : () -> int, subtypes : [TType]) -> TType {
 	ss = buildSet(subtypes);
 	ss2 = foldSet(ss, makeSet(), extractTSupers);
-	if (sizeSet(ss2) == 1) {
-		set2array(ss2)[0]
-	} else {
-		TTypeSupertype(TTypeVar(mkTyvar()), ss2);
-	}
+	TTypeSupertype(TTypeVar(mkTyvar()), ss2);
 }
 
 extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {

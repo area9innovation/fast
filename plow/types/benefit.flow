@@ -1,6 +1,7 @@
 import plow/types/typeenv;
 import plow/types/util;
 import plow/types/pretty;
+import plow/types/supertype;
 import math/math;
 import ds/egraph_extract;
 
@@ -95,7 +96,8 @@ extractTType(env : ExtractEnv, eclass : int) -> Maybe<TType> {
 						if (children == []) {
 							None();
 						} else {
-							set(TTypeSupertype(typar, cset));
+							super = TTypeSupertype(typar, cset);
+							set(resolveTSupertype(env.env, super));
 						}
 					}
 				}

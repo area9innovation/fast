@@ -1,0 +1,33 @@
+import plow/types/typeenv;
+import plow/types/polymorphism;
+
+export {
+	// This attempts to resolve a set of subtypes
+	resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType;
+}
+
+resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
+	supers = foldSet(super.subtypes, makeSet(), \acc, st -> {
+		switch (st) {
+			TTypeName(id, typars): {
+				supers0 = env.resolveSupertypes(id);
+				supers = if (supers0 == []) [id] else supers0;
+				supset = buildSet(supers);
+				if (isEmptySet(acc)) supset
+				else intersectSets(supset, acc)
+			}
+			TTypeVar(tyvar): acc;
+			TTypeFunction(args, returnType): acc;
+			TTypeOverload(unique, overloads): acc;
+			TTypeSupertype(unique, __): acc;
+		}
+	});
+	if (sizeSet(supers) == 1) {
+		name = set2array(supers)[0];
+		type = instantiateTTypeName(env, name);
+		println(name + " becomes " + prettyTType(type));
+		type
+	} else {
+		super;
+	}
+}

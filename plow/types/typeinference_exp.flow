@@ -103,10 +103,18 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			mstruct = env.resolveStructName(structid);
 			mstruct ?? {
 				argTypes = map(args, \arg -> {
-					supertype([ttypeInferenceDExp(env, arg)])
+					ttypeInferenceDExp(env, arg)
 				});
-				sttype = TTypeName(structid, argTypes);
-				restype(tyvar, sttype);
+				itype = instantiateTTypeNameForStruct(env, mstruct);
+				if (length(argTypes) == length(itype.second)) {
+					iteri(itype.second, \i, fields : Pair<string, TType> -> {
+						unifyTType(env, pos, supertype([argTypes[i]]), fields.second);
+					});
+				} else {
+					env.onError(pos, "Struct " + structid + " expects " + i2s(length(itype.second)) + " arguments, got " + i2s(length(argTypes)));
+				}
+
+				restype(tyvar, itype.first);
 			} : {
 				env.onError(pos, "Unknown struct " + structid);
 				TTypeVar(env.mkTyvar());
@@ -182,7 +190,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			unifyTType(env, pos, supertype([tvalue]), ttype);
 
 			// Relate the type of the value with all structs mentioned
-			caseTypes = filtermap(cases, \c -> instantiateTTypeName(env, c.id));
+			caseTypes = map(cases, \c -> instantiateTTypeName(env, c.id));
 			unifyTType(env, pos, supertype(caseTypes), supertype([tvalue]));
 
 			// Find the resulting type of the bodies
