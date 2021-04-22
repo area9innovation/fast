@@ -2059,8 +2059,8 @@ parse_exp11(acc : DParseAcc) -> bool {
 									{
 										pushDCheckpoint(acc);
 										pushDCheckpoint(acc);
-										if (if (matchString(acc, "(")) {
-											if (addMatched(acc, i2s(acc.i))) {
+										if (if (addMatched(acc, i2s(acc.i))) {
+											if (matchString(acc, "(")) {
 												if (addVerbatim(acc, "swap")) {
 													if (parse_ws(acc)) {
 														if (parse_exps(acc)) {
@@ -2103,8 +2103,8 @@ parse_exp11(acc : DParseAcc) -> bool {
 											} else {
 												{
 													pushDCheckpoint(acc);
-													if (if (matchString(acc, ".")) {
-														if (addMatched(acc, i2s(acc.i))) {
+													if (if (addMatched(acc, i2s(acc.i))) {
+														if (matchString(acc, ".")) {
 															if (addVerbatim(acc, "swap")) {
 																if (parse_ws(acc)) {
 																	if (parse_idpos(acc)) {
@@ -2148,8 +2148,8 @@ parse_exp11(acc : DParseAcc) -> bool {
 													} else {
 														{
 															pushDCheckpoint(acc);
-															if (if (matchString(acc, ".")) {
-																if (addMatched(acc, i2s(acc.i))) {
+															if (if (addMatched(acc, i2s(acc.i))) {
+																if (matchString(acc, ".")) {
 																	if (addVerbatim(acc, "swap")) {
 																		if (parse_ws(acc)) {
 																			if (parse_idpos(acc)) {
@@ -2181,8 +2181,8 @@ parse_exp11(acc : DParseAcc) -> bool {
 															} else {
 																{
 																	pushDCheckpoint(acc);
-																	if (if (matchString(acc, "[")) {
-																		if (addMatched(acc, i2s(acc.i))) {
+																	if (if (addMatched(acc, i2s(acc.i))) {
+																		if (matchString(acc, "[")) {
 																			if (addVerbatim(acc, "swap")) {
 																				if (parse_ws(acc)) {
 																					if (parse_exp(acc)) {
@@ -2911,8 +2911,8 @@ parse_exp13(acc : DParseAcc) -> bool {
 parse_with(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
-		if (matchString(acc, "(")) {
-			if (addMatched(acc, i2s(acc.i))) {
+		if (addMatched(acc, i2s(acc.i))) {
+			if (matchString(acc, "(")) {
 				if (addVerbatim(acc, "swap")) {
 					if (parse_ws(acc)) {
 						if (parse_exp(acc)) {
@@ -3063,18 +3063,18 @@ parse_fieldassign(acc : DParseAcc) -> bool {
 parse_switch(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
-		if (matchString(acc, "switch")) {
-			{
-				pushDCheckpoint(acc);
-				if (if (parse_letterOrDigit(acc)) {
-					restoreDCheckpoint(acc)
-				} else {
-					{
-						restoreDCheckpoint(acc);
-						true
-					}
-				}) {
-					if (addMatched(acc, i2s(acc.i))) {
+		if (addMatched(acc, i2s(acc.i))) {
+			if (matchString(acc, "switch")) {
+				{
+					pushDCheckpoint(acc);
+					if (if (parse_letterOrDigit(acc)) {
+						restoreDCheckpoint(acc)
+					} else {
+						{
+							restoreDCheckpoint(acc);
+							true
+						}
+					}) {
 						if (parse_ws(acc)) {
 							if (matchString(acc, "(")) {
 								if (parse_ws(acc)) {
@@ -3138,9 +3138,9 @@ parse_switch(acc : DParseAcc) -> bool {
 					} else {
 						restoreDCheckpoint(acc)
 					}
-				} else {
-					restoreDCheckpoint(acc)
 				}
+			} else {
+				restoreDCheckpoint(acc)
 			}
 		} else {
 			restoreDCheckpoint(acc)
@@ -3471,8 +3471,8 @@ parse_expsemi(acc : DParseAcc) -> bool {
 parse_lambda(acc : DParseAcc) -> bool {
 	{
 		pushDCheckpoint(acc);
-		if (parse_backslash(acc)) {
-			if (addMatched(acc, i2s(acc.i))) {
+		if (addMatched(acc, i2s(acc.i))) {
+			if (parse_backslash(acc)) {
 				if (parse_ws(acc)) {
 					if (parse_lambdaargs(acc)) {
 						if (matchString(acc, "->")) {

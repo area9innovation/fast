@@ -5,11 +5,11 @@ import string;
 import text/blueprint;
 
 export {
-	prettyDModule(d : DModule) -> void;
-	prettyDExp(input : string, i : string, d : DExp) -> void;
+	prettyDModule(env : TTypeEnv, d : DModule) -> void;
+	prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void;
 }
 
-prettyDModule(d : DModule) -> void {
+prettyDModule(env : TTypeEnv, d : DModule) -> void {
 	input = getFileContent(d.fullpath);
 	println(d.flowpath + " (" + d.fullpath + "):");
 
@@ -31,19 +31,19 @@ prettyDModule(d : DModule) -> void {
 		mglobal = lookupTree(d.globals, id);
 		mglobal ?? {
 			println(" " + id + "<" + strGlue(mglobal.typars, ", ") + ">" + "=");
-			prettyDExp(input, "  ", mglobal.value);
+			prettyDExp(env, input, "  ", mglobal.value);
 		} : {}
 	});
 }
 
 
-prettyDExp(input : string, i : string, d : DExp) -> void {
-	rec = \e -> prettyDExp(input, i + " ", e);
+prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
+	rec = \e -> prettyDExp(env, input, i + " ", e);
 	type = \t -> println(i + " " + prettyDType(input, t));
 	pr = \s : string -> {
 		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
 		pre = i + s;
-		typ = prettyTType(dexpType(makeTTypeEnv(), d));
+		typ = prettyTType(dexpType(env, d));
 		println(rpad(pre, " ", 60) + " " + rpad(typ, " ", 40) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
@@ -105,7 +105,7 @@ prettyDExp(input : string, i : string, d : DExp) -> void {
 			type(typ);
 			iter(cases, \case : DCase -> {
 				pr("  case " + case.id);
-				prettyDExp(input, i + "    ", case.body);
+				prettyDExp(env, input, i + "    ", case.body);
 			});
 			mdef ?? {
 				pr("  default:");

@@ -203,7 +203,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		if (true) {
 			locals = getTreeKeys(env.localTypes);
 			println(indent + "Locals " + toString(locals) + " for inference of");
-			prettyDExp("", indent, d);
+			prettyDExp(env, "", indent, d);
 		}
 
 		inferenceIndent := indent + "  ";

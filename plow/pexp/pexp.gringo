@@ -66,11 +66,11 @@ exp =
 		| "-" $$pos ws exp $"__negate" $"setpos"
 		| lambda
 		| exp (
-			("(" $$pos $"swap" ws exps ")" ws $"call" $"setpos")
+			( $$pos "(" $"swap" ws exps ")" ws $"call" $"setpos")
 			| with
-			| "." $$pos $"swap" ws idpos "::=" ws exp $"::=" $"setpos"
-			| "." $$pos $"swap" ws idpos $"dot" $"setpos"
-			| "[" $$pos $"swap" ws exp "]" ws $"__index" $"setpos"
+			| $$pos "." $"swap" ws idpos "::=" ws exp $"::=" $"setpos"
+			| $$pos "." $"swap" ws idpos $"dot" $"setpos"
+			| $$pos "[" $"swap" ws exp "]" ws $"__index" $"setpos"
 		)*
 	)
 
@@ -95,11 +95,11 @@ exp =
 		| $$pos "[" ws exps "]" ws $"array" $"setpos"
 	);
 
-with = '(' $$pos $"swap" ws exp "with" s fields ')' ws $"with" $"setpos";
+with = $$pos '(' $"swap" ws exp "with" s fields ')' ws $"with" $"setpos";
 	fields = $"list" fieldassign $"cons" ("," ws fieldassign $"cons")*  ("," ws)? | $"list";
 		fieldassign = idpos '=' ws exp $"fieldassign";
 
-switch = "switch" !letterOrDigit $$pos ws
+switch = $$pos "switch" !letterOrDigit ws
 		'(' ws exp ')' ws 
 		'{' ws cases #'}' ws $"switch" $"setpos";
 
@@ -117,7 +117,7 @@ brace = $$pos "{" ws expsemi "}" ws $"sequence" $"setpos";
 	expsemi = $"list" exp $"cons" (optsemi exp $"cons")* optsemi
 		| $"list";
 
-lambda = backslash $$pos ws lambdaargs "->" ws exp "" $"lambda" $"setpos"; // The "" makes right-recursion disappear
+lambda = $$pos backslash ws lambdaargs "->" ws exp "" $"lambda" $"setpos"; // The "" makes right-recursion disappear
 	lambdaargs = $"list" lambdaarg $"cons" ("," ws lambdaarg $"cons")* ("," ws)? 
 		| $"list";
 

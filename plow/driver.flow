@@ -203,8 +203,8 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		setCachedBModule(cache.modules, flowpath, bmodule);
 
-		if (false) {
-			prettyDModule(dmod);
+		if (true) {
+			prettyDModule(tenv, dmod);
 		}
 
 		println(prettyBModule(bmodule));
