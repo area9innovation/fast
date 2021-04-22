@@ -317,21 +317,35 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			tvalue = ttypeInferenceDExp(env, value);
 			fieldStructs : [DStruct] = env.resolveField(field);
 
-			fieldTypes = filtermap(fieldStructs, \struct : DStruct -> {
-				mft = find(struct.structArgs, \sa -> sa.id == field);
-				type : Maybe<TType> = maybeMap(mft, \ft -> {
-					dtype2ttype(env, true, ft.type)
+			fieldFnTypes = filtermap(fieldStructs, \struct : DStruct -> {
+				stypenameFields = instantiateTTypeNameForStruct(env, struct);
+				stypename = stypenameFields.first;
+				fields = stypenameFields.second;
+
+				mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
+				fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
+					// OK, the typars are wrong here, since we should use the type
+					// of the field
+					ft.second
 				});
-				type
+				fieldType ?? {
+					Some(TTypeFunction([stypename], fieldType));
+				} : None();
 			});
 
-			type = if (fieldTypes == []) {
+			fntype = if (fieldFnTypes == []) {
 				env.onError(pos, "Unknown field " + field);
 				TTypeVar(env.mkTyvar());
-			} else if (length(fieldTypes) == 1) {
-				fieldTypes[0]
-			} else TTypeOverload(TTypeVar(tyvar), buildSet(fieldTypes));
-			restype(tyvar, type);
+			} else if (length(fieldFnTypes) == 1) {
+				fieldFnTypes[0]
+			} else TTypeOverload(TTypeVar(tyvar), buildSet(fieldFnTypes));
+
+			rtype = TTypeVar(tyvar);
+
+			calltype = TTypeFunction([tvalue], rtype);
+
+			unifyTType(env, pos, calltype, fntype);
+			rtype;
 		}
 		// DSetMutable(lhs, field, value, pos, tyvar): 
 		DArray(exps, pos, tyvar): {

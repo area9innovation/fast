@@ -10,6 +10,10 @@ export {
 	// Given a typename we know is part of the union, with this instantiation,
 	// instantiate the corresponding typename
 	instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TTypeName, struct : string) -> Maybe<TType>;
+
+	// Given this struct definition, instantiate a typename for it, and a consistent set of field types
+	// Instantiates polymorphism.
+	instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]>;
 }
 
 instantiateTTypePar(env : TTypeEnv, t : TType) -> TType {
@@ -61,4 +65,17 @@ instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TT
 	} : None();
 }
 
+instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]> {
+	typars = map(struct.typars, \tp -> TTypeVar(env.mkTyvar()));
 
+	typarTree = foldi(struct.typars, makeTree(), \i, acc, tp -> {
+		setTree(acc, tp, typars[i].tyvar)
+	});
+
+	tn = TTypeName(struct.id, typars);
+	fields = map(struct.structArgs, \sa -> {
+		Pair(sa.id, dtype2ttype(TTypeEnv(env with typars = typarTree), true, sa.type))
+	});
+
+	Pair(tn, fields);
+}
