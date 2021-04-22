@@ -1,11 +1,12 @@
-import plow/types/typeof;
 import plow/dexp/pretty;
 import plow/dexp/types;
 import plow/types/unify;
 import plow/types/builtin;
+import plow/types/typeof;
 import plow/types/cost;
 import plow/types/polymorphism;
 import plow/types/util;
+import plow/types/simplify;
 
 import ds/egraph_dot;
 import ds/egraph_extract;
@@ -77,49 +78,30 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		setFileContent("egraph-pre.dot", dot);
 		{}
 	}
-
 	unifyEClasses(genv, 10);
 }
 
-// Structurally unify eclasses that have the same head
+// Structurally unify eclasses
 unifyEClasses(env : TTypeEnv, iterations : int) -> TTypeEnv {
-	unify : ref [Pair<[int], [int]>] = ref [];
+	unify : ref [ENodesUnify] = ref [];
 	iterEGraph(env.egraph, \root, nodes : Set<ENode<TType>> -> {
-		if (sizeSet(nodes) >= 2) {
-			unify := concat(^unify, unifyENodes(env, nodes));
-		}
+		unify := concat(^unify, unifyENodes(env, root, nodes));
 	});
-	if (^unify == [] || iterations <= 0) {
-		extractEClassTType(env, max(iterations, 5));
-	} else {
-		iter(^unify, \pairs : Pair<[int], [int]> -> {
-			iteri(pairs.first, \i, class1 -> {
-				unionEClass(env.egraph, class1, pairs.second[i]);
-				{}
-			})
+	update = ref false;
+	if (^unify != []) {
+		// Apply all updates to the graph
+		iter(^unify, \eunify : ENodesUnify -> {
+			update := applyENodesUnify(env, eunify) || ^update;
 		});
 		canonicalizeEGraph(env.egraph);
+	}
+
+	if (!^update || iterations <= 0) {
+		extractEClassTType(env, max(iterations, 5));
+	} else {
+		// Repeat
 		unifyEClasses(env, iterations - 1);
 	}
-}
-
-// We know there are at least two nodes here
-unifyENodes(env : TTypeEnv, nodes : Set<ENode<TType>>) -> [Pair<[int], [int]>] {
-	heads : Tree<TType, [ENode<TType>]> = foldSet(nodes, makeTree(), \acc, node -> {
-		treePushToArrayValue(acc, node.head, node);
-	});
-	foldTree(heads, [], \head, simnodes, acc -> {
-		if (length(simnodes) > 1) {
-			foldi(tail(simnodes), acc, \i, acc2, node -> {
-				prev = simnodes[i];
-				if (length(prev.args) == length(node.args)) {
-					arrayPush(acc2, Pair(prev.args, node.args))
-				} else {
-					acc2;
-				}
-			})
-		} else acc;
-	});
 }
 
 // OK, based on the egraph we have, extract the "cheapest" types
@@ -143,16 +125,20 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 	if (iterations > 0 && ^update) {
 		extractEClassTType(tenv, iterations - 1);
 	} else {
-		if (false) {
+		if (true) {
 			println("Final Classes:");
 			iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
 				root = env.egraph.eclass.parents[i];
 				if (isEmptySet(^value)) {
 
 				} else {
-					println("Class " + i2s(i) + " -> " + i2s(^root) + " : " + superglue(set2array(^value), \e : ENode<TType>-> {
-							ttypeENode2string(e) + "(" + superglue(e.args, i2s, ", ") + ")"
-						}, ", ")
+					println("Class " + i2s(i) + " -> " + i2s(^root) + " : " + 
+						rpad(superglue(set2array(^value), \e : ENode<TType>-> {
+							ttypeENode2string(e) + "(" + superglue(e.args, \ec -> {
+								eroot = getEClassRoot(env.egraph, ec);
+								i2s(eroot)
+							}, ", ") + ")"
+						}, ", "), " ", 70)
 						+ " gave " + prettyTType(lookupTreeDef(env.etypes, i, TTypeName("ERROR", [])))
 					);
 				}

@@ -93,7 +93,7 @@ calculateTTypeCost(e : ENode<TType>, childCosts : [EClassCost<TType>]) -> EClass
 	ccosts = sum(costs);
 	switch (e.head) {
 		TTypeName(id, typars): {
-			if (id == "flow") EClassCost(5, e)
+			if (id == "flow") EClassCost(1, e)
 			else EClassCost(max(0, ccosts - 1), e);
 		}
 		TTypeVar(id): EClassCost(5 + ccosts, e);
