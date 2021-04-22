@@ -13,7 +13,7 @@ extractDVars(acc : Set<string>, d : DExp) -> Set<string> {
 		DLet(var, value, body, pos, tyvar): {
 			acc1 = extractDVars(acc, value);
 			hasVar = containsSet(acc1, var);
-			acc2 = extractDVars(acc, body);
+			acc2 = extractDVars(acc1, body);
 			if (hasVar) acc2
 			else removeSet(acc2, var);
 		}
