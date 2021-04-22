@@ -5,11 +5,12 @@ import ds/egraph_dot;
 
 export {
 	// Unify these two types into the same equivalence class
-	unifyTType(env : TTypeEnv, left : TType, right : TType) -> void;
+	unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void;
 }
 
-unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
-	// println("Unify " + prettyTType(left) + " and " + prettyTType(right));
+unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
+	// env.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right));
+
 	lroot = addEExp(env.egraph, left);
 	rroot = addEExp(env.egraph, right);
 	root = unionEClass(env.egraph, lroot, rroot);
@@ -20,9 +21,9 @@ unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 			switch (right) {
 				TTypeName(rid, rtypars): {
 					if (lid == rid) {
-						unifyTTypes(env, ltypars, rtypars);
+						unifyTTypes(env, pos, ltypars, rtypars);
 					} else {
-						unifyTTypeNames(env, left, right);
+						unifyTTypeNames(env, pos, left, right);
 					}
 				}
 				default: {}
@@ -31,30 +32,30 @@ unifyTType(env : TTypeEnv, left : TType, right : TType) -> void {
 		TTypeFunction(largs, lreturnType): {
 			switch (right) {
 				TTypeFunction(rargs, rreturnType): {
-					unifyTTypes(env, largs, rargs);
-					unifyTType(env, lreturnType, rreturnType);
+					unifyTTypes(env, pos, largs, rargs);
+					unifyTType(env, pos, lreturnType, rreturnType);
 				}
-				TTypeOverload(__, __): unifyTTypeOverload(env, right, left);
+				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
 				default: {}
 			}
 		}
 		TTypeVar(lid): {}
 		TTypeOverload(lunique, loverloads): {
-			unifyTTypeOverload(env, left, right);
+			unifyTTypeOverload(env, pos, left, right);
 		}
 		TTypeSupertype(unique, subtypes): {
-			unifyTSupertype(env, left, right);
+			unifyTSupertype(env, pos, left, right);
 		}
 	}
 }
 
-unifyTTypeNames(env : TTypeEnv, left : TTypeName, right : TTypeName) {
+unifyTTypeNames(env : TTypeEnv, pos : int, left : TTypeName, right : TTypeName) {
 	// TODO: This is correct if one is a union with exactly the other type in it
 	// otherwise, it is a problem
-	env.onError(-1, left.id + " and " + right.id + " are not compatible (TODO: Check if one is a single-struct union)");
+	env.onError(pos, left.id + " and " + right.id + " are not compatible (TODO: Check if one is a single-struct union)");
 }
 
-unifyTTypeOverload(env : TTypeEnv, overload : TTypeOverload, type : TType) -> void {
+unifyTTypeOverload(env : TTypeEnv, pos : int, overload : TTypeOverload, type : TType) -> void {
 	good = filter(set2array(overload.overloads), \ol -> {
 		possibleTTypeMatch(env, ol, type)
 	});
@@ -64,7 +65,7 @@ unifyTTypeOverload(env : TTypeEnv, overload : TTypeOverload, type : TType) -> vo
 		if (n == 1) {
 			// println("Resolved overload");
 			winner = good[0];
-			unifyTType(env, winner, type);
+			unifyTType(env, pos, winner, type);
 		} else {
 			// At least the type overload is smaller
 			// We could probably unify this into the set, but hey, it is not required
@@ -72,30 +73,30 @@ unifyTTypeOverload(env : TTypeEnv, overload : TTypeOverload, type : TType) -> vo
 	}
 }
 
-unifyTSupertype(env : TTypeEnv, super : TTypeSupertype, type : TType) -> void {
+unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType) -> void {
 	iterSet(super.subtypes, \st -> {
-		subtypeUnifyTType(env, st, type);
+		subtypeUnifyTType(env, pos, st, type);
 	})
 }
 
-unifyTTypes(env : TTypeEnv, left : [TType], right : [TType]) -> void {
+unifyTTypes(env : TTypeEnv, pos : int, left : [TType], right : [TType]) -> void {
 	if (length(left) == length(right)) {
 		iteri(left, \i, larg -> {
-			unifyTType(env, larg, right[i])
+			unifyTType(env, pos, larg, right[i])
 		});
 	}
 }
 
 // Check that st is a sutype of type, and if so, unify any typars
-subtypeUnifyTType(env : TTypeEnv, sub : TType, super : TType) -> void{
+subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void{
 	error = \ -> {
-		env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+		env.onError(pos, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
 	};
 	switch (sub) {
 		TTypeName(subid, subtypars): {
 			switch (super) {
 				TTypeName(superid, supertypars): {
-					subtypeTTypenames(env, sub, super);
+					subtypeTTypenames(env, pos, sub, super);
 				}
 				TTypeVar(id): {}
 				default: error();
@@ -108,9 +109,9 @@ subtypeUnifyTType(env : TTypeEnv, sub : TType, super : TType) -> void{
 					if (length(largs) == length(rargs)) {
 						// We reverse the polarity
 						iteri(largs, \i, larg -> {
-							subtypeUnifyTType(env, rargs[i], larg)
+							subtypeUnifyTType(env, pos, rargs[i], larg)
 						});
-						subtypeUnifyTType(env, lreturnType, rreturnType)
+						subtypeUnifyTType(env, pos, lreturnType, rreturnType)
 					} else {
 						error();
 					}
@@ -128,14 +129,14 @@ subtypeUnifyTType(env : TTypeEnv, sub : TType, super : TType) -> void{
 	}
 }
 
-subtypeTTypenames(env : TTypeEnv, sub : TTypeName, super : TTypeName) -> void {
+subtypeTTypenames(env : TTypeEnv, pos : int, sub : TTypeName, super : TTypeName) -> void {
 	error = \ -> {
-		env.onError(-1, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
+		env.onError(pos, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
 	}
 	if (sub.id == super.id) {
 		if (length(sub.typars) == length(super.typars)) {
 			iteri(sub.typars, \i, larg -> {
-				subtypeUnifyTType(env, larg, super.typars[i])
+				subtypeUnifyTType(env, pos, larg, super.typars[i])
 			});
 		} else {
 			error();
@@ -150,11 +151,11 @@ subtypeTTypenames(env : TTypeEnv, sub : TTypeName, super : TTypeName) -> void {
 					None(): error();
 					Some(struct): {
 						// OK, we unify the instantiated struct with the subtype
-						unifyTType(env, sub, struct);
+						unifyTType(env, pos, sub, struct);
 					}
 				}
 			} : {
-				env.onError(-1, "Unknown union " + super.id + " when checking if " + prettyTType(sub) + " is a subtype of " + prettyTType(super));
+				env.onError(pos, "Unknown union " + super.id + " when checking if " + prettyTType(sub) + " is a subtype of " + prettyTType(super));
 			}
 		} else {
 			error();

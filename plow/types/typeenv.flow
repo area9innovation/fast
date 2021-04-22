@@ -9,8 +9,8 @@ export {
 		typars : Tree<string, int>,
 		// Construct a new type var
 		mkTyvar : () -> int,
-		// Report an error associated with a given tyvar
-		onError : (tyvar : int, error : string) -> void,
+		// Report an error associated with a given position
+		onError : (pos : int, error : string) -> void,
 
 		// Get the type of an id (not a type, but global)
 		resolveId : (string) -> TType,
@@ -51,7 +51,7 @@ makeTTypeEnv() -> TTypeEnv {
 //			println("TODO: Replace mktyvar in TTypeEnv");
 			0
 		}, 
-		\tv, error -> println(error), 
+		\pos, error -> println(error), 
 		\id -> {
 			println("TODO: Find the type of var '" + id + "'");
 			TTypeName("ERROR: Find type of var " + id, [])

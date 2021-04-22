@@ -104,10 +104,12 @@ makePlowCache(
 		lookupTree(module.fields, n);
 	}, \module, n -> {
 		structs = getTreeArrayValue(module.fields, n);
+		// TODO: Maybe this is too much. We should probably just restrict
+		// to those that are exported
 		forall(structs, \s -> {
 			containsSet(module.exported.exportedTypes, s)
 		})
-	}, \upath, nat, error -> {
+	}, \upath, n, error -> {
 		println("TODO: What about the position of this field?");
 		makeOnError(upath, onError)(0, error)
 	}, ref makeTree(), ref makeSet()
@@ -165,11 +167,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		tenv1 = TTypeEnv(
 			makeTTypeEnv() with
 			mkTyvar = dd.mkTyvar,
-			onError = \tv, error -> {
-				// TODO: Traverse the module and find the tyvar and thus the position
-				pos = 0;
-				dd.onError(pos, "TODO: Find pos for " + i2s(tv) + ": " + error);
-			},
+			onError = dd.onError,
 			resolveId = \id -> {
 				mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
 				mbmod ?? {
