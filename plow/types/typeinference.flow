@@ -3,7 +3,7 @@ import plow/dexp/types;
 import plow/types/unify;
 import plow/types/builtin;
 import plow/types/typeof;
-import plow/types/cost;
+import plow/types/benefit;
 import plow/types/polymorphism;
 import plow/types/util;
 import plow/types/simplify;

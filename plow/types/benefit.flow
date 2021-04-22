@@ -11,32 +11,36 @@ export {
 
 extractEClassTypes(env : TTypeEnv) -> Tree<int, TType> {
 	egraph = env.egraph;
-	extract = extractEGraph(egraph, calculateTTypeCost);
+	extract = extractEGraph(egraph, calculateTTypeBenefit);
 	extractTTypes(env, extract);
 }
 
-extractTTypes(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>) -> Tree<int, TType> {
-	foldTree(costs, makeTree(), \eclass, ecost, acc -> {
-		mtype = extractTType(env, costs, eclass);
+extractTTypes(env : TTypeEnv, benefits : Tree<int, EClassBenefit<TType>>) -> Tree<int, TType> {
+	foldTree(benefits, makeTree(), \eclass, ebenefit, acc -> {
+		mtype = extractTType(env, benefits, eclass);
 		mtype ?? {
-			// println(i2s(eclass) + " = " + prettyTType(mtype));
+			// println(i2s(eclass) + " = " + prettyTType(mtype) + " at benefit " + toString(ebenefit.benefit));
 			setTree(acc, eclass, mtype)
 		} : {
-			println("Could not extract type from " + ttypeENode2string(ecost.node) + " with eclass " + i2s(eclass));
+			println("Could not extract type from " + ttypeENode2string(ebenefit.node) + " with eclass " + i2s(eclass));
 			acc;
 		}
 	});
 }
 
-extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int) -> Maybe<TType> {
-	mcost = lookupTree(costs, eclass);
-	mcost ?? {
-		enode = mcost.node;
+extractTType(env : TTypeEnv, benefits : Tree<int, EClassBenefit<TType>>, eclass : int) -> Maybe<TType> {
+	// TODO: If we already extracted this, no need to do it again
+
+	mbenefit = lookupTree(benefits, eclass);
+	mbenefit ?? {
+		enode = mbenefit.node;
 		switch (enode.head : TType) {
-			TTypeVar(id): Some(enode.head);
+			TTypeVar(id): {
+				Some(enode.head);
+			}
 			TTypeName(id, __): {
 				mtypars = filtermap(enode.args, \root : int -> {
-					extractTType(env, costs, root)
+					extractTType(env, benefits, root)
 				});
 				if (length(mtypars) == length(enode.args)) {
 					Some(TTypeName(id, mtypars));
@@ -45,7 +49,7 @@ extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int)
 				}
 			}
 			TTypeFunction(__, __): {
-				children : [TType] = filtermap(enode.args, \root -> extractTType(env, costs, root));
+				children : [TType] = filtermap(enode.args, \root -> extractTType(env, benefits, root));
 				// The last child is the return type
 				n = length(children);
 				if (n != length(enode.args)) {
@@ -56,7 +60,7 @@ extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int)
 			}
 			TTypeOverload(typar, __): {
 				children : [TType] = filtermap(enode.args, \root -> {
-					extractTType(env, costs, root);
+					extractTType(env, benefits, root);
 				});
 				if (length(children) != length(enode.args)) {
 					None()
@@ -66,13 +70,14 @@ extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int)
 			}
 			TTypeSupertype(typar, __): {
 				children : [TType] = filtermap(enode.args, \root -> {
-					extractTType(env, costs, root);
+					extractTType(env, benefits, root);
 				});
 				if (length(children) != length(enode.args)) {
 					None();
 				} else {
 					cset = buildSet(children);
 					if (children == []) {
+						println("No super found");
 						Some(TTypeVar(env.mkTyvar()))
 					} else if (sizeSet(cset) == 1) {
 						Some(children[0]);
@@ -83,28 +88,28 @@ extractTType(env : TTypeEnv, costs : Tree<int, EClassCost<TType>>, eclass : int)
 			}
 		}
 	} : {
-		println("Have no cost for " + i2s(eclass));
+		println("Have no benefits for " + i2s(eclass));
 		None()
 	}
 }
 
-calculateTTypeCost(e : ENode<TType>, childCosts : [EClassCost<TType>]) -> EClassCost<TType> {
-	costs = map(childCosts, \cc -> cc.cost);
-	ccosts = sum(costs);
+calculateTTypeBenefit(e : ENode<TType>, childbenefits : [EClassBenefit<TType>]) -> EClassBenefit<TType> {
+	benefits = map(childbenefits, \cc -> cc.benefit);
+	cbenefits = sum(benefits);
 	switch (e.head) {
 		TTypeName(id, typars): {
-			if (id == "flow") EClassCost(1, e)
-			else EClassCost(max(0, ccosts - 1), e);
+			if (id == "flow") EClassBenefit(5, e)
+			else EClassBenefit(10 + cbenefits, e);
 		}
-		TTypeVar(id): EClassCost(5 + ccosts, e);
-		TTypeFunction(args, returnType): EClassCost(max(0, ccosts - 1), e);
+		TTypeVar(id): EClassBenefit(0, e);	// No benefit from these
+		TTypeFunction(args, returnType): EClassBenefit(10 + cbenefits, e);
 		TTypeOverload(unique, overloads): {
-			// We do not want these
-			EClassCost(100 + ccosts, e);
+			// We do not want these that much
+			EClassBenefit(1 + cbenefits, e);
 		}
 		TTypeSupertype(unique, subtypes): {
-			// We do not want these
-			EClassCost(100 + ccosts, e);
+			// We do not want these that much
+			EClassBenefit(1, e);
 		}
 	}
 }
