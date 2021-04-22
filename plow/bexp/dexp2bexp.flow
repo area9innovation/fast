@@ -98,18 +98,15 @@ ttype2btype(env : BExpEnv, type : TType) -> BType {
 	switch (type) {
 		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
 		TTypeVar(tyvar): {
-			println(type);
 			BTypeName("ERROR TYVAR " + i2s(tyvar), []);
 		}
 		TTypeFunction(args, returnType): {
 			BTypeFunction(map(args, \a -> ttype2btype(env, a)), ttype2btype(env, returnType));
 		}
 		TTypeOverload(tt, overloads): {
-			println(overloads);
 			BTypeName("ERROR overload " + toString(tt), []);
 		}
 		TTypeSupertype(__, subtypes): {
-			println(type);
 			BTypeName("ERROR supertype", []);
 		}
 	}

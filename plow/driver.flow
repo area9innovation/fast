@@ -207,8 +207,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		if (true) {
 			prettyDModule(tenv, dmod);
 		}
-
-		println(prettyBModule(bmodule));
+		if (false) {
+			println(prettyBModule(bmodule));
+		}
 
 		bmodule;
 	} else {

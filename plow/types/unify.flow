@@ -9,11 +9,13 @@ export {
 }
 
 unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
-	// env.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right));
-
 	lroot = addEExp(env.egraph, left);
 	rroot = addEExp(env.egraph, right);
 	root = unionEClass(env.egraph, lroot, rroot);
+
+	if (false) {
+		env.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root));
+	}
 
 	// Do recursive unification
 	switch (left) {

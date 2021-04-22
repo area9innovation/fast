@@ -9,7 +9,7 @@ export {
 		ENodesUnify ::= EClassMerge, EClassReplace;
 			// Merge two classes
 			EClassMerge(leftClass : int, rightClass : int);
-			EClassReplace(root : int, remove : [ENode<TType>], add : [ENode<TType>]);
+			EClassReplace(root : int, nodes : Set<ENode<TType>>);
 
 	// Lets us know if there was any change
 	applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool;
@@ -46,18 +46,27 @@ simplifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodes
 			TTypeSupertype(__, __): true;
 			default: false;
 		}
-	})
-	allSupers : Set<int> = fold(existingSupers, makeSet(), \acc, no -> {
+	});
+	others = filterSet(nodes, \node -> {
+		switch (node.head) {
+			TTypeSupertype(__, __): false;
+			default: true;
+		}
+	});
+	allSupers : Set<int> = removeSet(fold(existingSupers, makeSet(), \acc, no -> {
 		fold(no.args, acc, \acc2, arg -> {
 			extractSupertypes(env, acc2, arg)
 		});
-	});
+	}), root);
 	if (isEmptySet(allSupers)) {
 		[]
 	} else {
-		newNode : ENode<TType> = ENode(existingSupers[0].head, set2array(allSupers));
+		newRoots = mapSet(allSupers, \a -> getEClassRoot(env.egraph, a));
+		newNode : ENode<TType> = ENode(existingSupers[0].head, set2array(newRoots));
+		// println("New supertype for " + i2s(root));
+
 		[EClassReplace(
-			root, existingSupers, [newNode]
+			root, insertSet(others, newNode)
 		)];
 	}
 }
@@ -85,16 +94,10 @@ applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 				true;
 			}
 		}
-		EClassReplace(root, remove, add): {
-			orgnodes : Set<ENode<TType>> = getEClassNodes(env.egraph, root);
-			nodes0 = fold(remove, orgnodes, removeSet);
-			nodes = fold(add, nodes0, insertSet);
-			if (equalSet(orgnodes, nodes)) {
-				false;
-			} else {
-				setEClassNodes(env.egraph, root, nodes);
-				true;
-			}
+		EClassReplace(root, nodes): {
+			eset = getEClassNodes(env.egraph, root);
+			setEClassNodes(env.egraph, root, nodes);
+			!equalSet(eset, nodes);
 		}
 	}
 }

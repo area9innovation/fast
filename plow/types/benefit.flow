@@ -12,12 +12,19 @@ export {
 extractEClassTypes(env : TTypeEnv) -> Tree<int, TType> {
 	egraph = env.egraph;
 	extract = extractEGraph(egraph, calculateTTypeBenefit);
-	extractTTypes(env, extract);
+	extractTTypes(ExtractEnv(env, extract, ref makeTree()));
 }
 
-extractTTypes(env : TTypeEnv, benefits : Tree<int, EClassBenefit<TType>>) -> Tree<int, TType> {
-	foldTree(benefits, makeTree(), \eclass, ebenefit, acc -> {
-		mtype = extractTType(env, benefits, eclass);
+ExtractEnv(
+	env : TTypeEnv,
+	benefits : Tree<int, EClassBenefit<TType>>,
+	// Types we already have extracted
+	etypes : ref Tree<int, TType>,
+);
+
+extractTTypes(env : ExtractEnv) -> Tree<int, TType> {
+	foldTree(env.benefits, makeTree(), \eclass, ebenefit, acc -> {
+		mtype = extractTType(env, eclass);
 		mtype ?? {
 			// println(i2s(eclass) + " = " + prettyTType(mtype) + " at benefit " + toString(ebenefit.benefit));
 			setTree(acc, eclass, mtype)
@@ -28,68 +35,75 @@ extractTTypes(env : TTypeEnv, benefits : Tree<int, EClassBenefit<TType>>) -> Tre
 	});
 }
 
-extractTType(env : TTypeEnv, benefits : Tree<int, EClassBenefit<TType>>, eclass : int) -> Maybe<TType> {
-	// TODO: If we already extracted this, no need to do it again
+extractTType(env : ExtractEnv, eclass : int) -> Maybe<TType> {
+	mexist = lookupTree(^(env.etypes), eclass);
+	mexist ?? {
+		Some(mexist)
+	} : {
+		set = \tt -> {
+			env.etypes := setTree(^(env.etypes), eclass, tt);
+			Some(tt);
+		}
+		// TODO: If we already extracted this, no need to do it again
+		mbenefit = lookupTree(env.benefits, eclass);
+		mbenefit ?? {
+			enode = mbenefit.node;
 
-	mbenefit = lookupTree(benefits, eclass);
-	mbenefit ?? {
-		enode = mbenefit.node;
-		switch (enode.head : TType) {
-			TTypeVar(id): {
-				Some(enode.head);
-			}
-			TTypeName(id, __): {
-				mtypars = filtermap(enode.args, \root : int -> {
-					extractTType(env, benefits, root)
-				});
-				if (length(mtypars) == length(enode.args)) {
-					Some(TTypeName(id, mtypars));
-				} else {
-					None();
+			extractChildren = \ -> {
+				filtermap(enode.args, \root : int -> {
+					if (root == eclass) None()
+					else extractTType(env, root)
+				});			
+			};
+
+			switch (enode.head : TType) {
+				TTypeVar(id): {
+					Some(enode.head);
 				}
-			}
-			TTypeFunction(__, __): {
-				children : [TType] = filtermap(enode.args, \root -> extractTType(env, benefits, root));
-				// The last child is the return type
-				n = length(children);
-				if (n != length(enode.args)) {
-					None();
-				} else {
-					Some(TTypeFunction(subrange(children, 0, n - 1), children[n - 1]));
-				}
-			}
-			TTypeOverload(typar, __): {
-				children : [TType] = filtermap(enode.args, \root -> {
-					extractTType(env, benefits, root);
-				});
-				if (length(children) != length(enode.args)) {
-					None()
-				} else {
-					Some(TTypeOverload(typar, buildSet(children)));
-				}
-			}
-			TTypeSupertype(typar, __): {
-				children : [TType] = filtermap(enode.args, \root -> {
-					extractTType(env, benefits, root);
-				});
-				if (length(children) != length(enode.args)) {
-					None();
-				} else {
-					cset = buildSet(children);
-					if (children == []) {
-						println("No super found");
-						Some(TTypeVar(env.mkTyvar()))
-					} else if (sizeSet(cset) == 1) {
-						Some(children[0]);
+				TTypeName(id, __): {
+					mtypars = extractChildren();
+					if (length(mtypars) == length(enode.args)) {
+						set(TTypeName(id, mtypars));
 					} else {
-						Some(TTypeSupertype(typar, cset));
+						None();
+					}
+				}
+				TTypeFunction(__, __): {
+					children : [TType] = extractChildren();
+					// The last child is the return type
+					n = length(children);
+					if (n != length(enode.args)) {
+						None();
+					} else {
+						set(TTypeFunction(subrange(children, 0, n - 1), children[n - 1]));
+					}
+				}
+				TTypeOverload(typar, __): {
+					children : [TType] = extractChildren();
+					if (length(children) != length(enode.args)) {
+						None()
+					} else {
+						set(TTypeOverload(typar, buildSet(children)));
+					}
+				}
+				TTypeSupertype(typar, __): {
+					children : [TType] = extractChildren();
+					if (length(children) != length(enode.args)) {
+						None();
+					} else {
+						cset = buildSet(children);
+						if (children == []) {
+							None();
+						} else {
+							set(TTypeSupertype(typar, cset));
+						}
 					}
 				}
 			}
+		} : {
+			println("Have no benefits for " + i2s(eclass));
+			None()
 		}
-	} : {
-		println("Have no benefits for " + i2s(eclass));
-		None()
 	}
 }
 

@@ -7,6 +7,9 @@ export {
 	// Instantiates typars into tyvars
 	instantiateTTypePar(env : TTypeEnv, t : TType) -> TType;
 
+	// Given this typename, instantiate it as either a union or struct typename
+	instantiateTTypeName(env : TTypeEnv, name : string) -> Maybe<TType>;
+
 	// Given a typename we know is part of the union, with this instantiation,
 	// instantiate the corresponding typename
 	instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TTypeName, struct : string) -> Maybe<TType>;
@@ -78,4 +81,20 @@ instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [
 	});
 
 	Pair(tn, fields);
+}
+
+instantiateTTypeName(env : TTypeEnv, name : string) -> Maybe<TType> {
+	mstruct = env.resolveStructName(name);
+	mstruct ?? {
+		Some(instantiateTTypeNameForStruct(env, mstruct).first)
+	} : {
+		munion = env.resolveUnionName(name);
+		switch (munion) {
+			None(): None();
+			Some(union): {
+				typars = map(union.typars, \tp -> TTypeVar(env.mkTyvar()));
+				Some(TTypeName(name, typars));
+			}
+		}
+	}
 }
