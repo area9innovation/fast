@@ -13,7 +13,7 @@ export {
 		onError : (pos : int, error : string) -> void,
 
 		// Get the type of an id (not a type, but global)
-		resolveId : (string) -> TType,
+		resolveId : (pos : int, string) -> TType,
 
 		// Give all the typenames that have this field
 		resolveField : (string) -> [DStruct],
@@ -52,7 +52,7 @@ makeTTypeEnv() -> TTypeEnv {
 			0
 		}, 
 		\pos, error -> println(error), 
-		\id -> {
+		\pos, id -> {
 			println("TODO: Find the type of var '" + id + "'");
 			TTypeName("ERROR: Find type of var " + id, [])
 		},

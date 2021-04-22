@@ -116,8 +116,8 @@ makePlowCache(
 	);
 
 	superTypeLookup = BLookupFromImport(\module, n -> {
-		println("Check if " + n + " is a subtype of this module");
-		Some([])
+		supers = makeDSupers(module.unions);
+		Some(getTreeArrayValue(supers, n));
 	}, \module, n -> {
 		true;
 	}, \upath, nat, error -> {
@@ -168,7 +168,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			makeTTypeEnv() with
 			mkTyvar = dd.mkTyvar,
 			onError = dd.onError,
-			resolveId = \id -> {
+			resolveId = \pos, id -> {
 				mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
 				mbmod ?? {
 					btype2ttype(mbmod.type);
@@ -176,7 +176,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					mbnat : Maybe<BNative> = lookupFromImport(cache.modules, cache.nativeLookup, imports, id);
 					switch (mbnat) {
 						None(): {
-							dd.onError(0, "Unknown id " + id);
+							dd.onError(pos, "Unknown id " + id);
 							TTypeVar(dd.mkTyvar());
 						}
 						Some(bnat): btype2ttype(bnat.type);
@@ -194,6 +194,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			resolveSupertypes = \id -> {
 				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
 			},
+			resolveStructName = dd.resolveStructName,
 			resolveUnionName = dd.resolveUnionName
 		);
 		tenv = ttypeInference(tenv1, dmod);

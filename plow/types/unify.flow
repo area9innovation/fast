@@ -121,10 +121,14 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 			}
 		}
 		TTypeOverload(unique, overloads): {
-			error();
+			iterSet(overloads, \sb -> {
+				subtypeUnifyTType(env, pos, sb, super)
+			})
 		}
 		TTypeSupertype(unique, subtypes): {
-			error();
+			iterSet(subtypes, \sb -> {
+				subtypeUnifyTType(env, pos, sb, super)
+			})
 		}
 	}
 }

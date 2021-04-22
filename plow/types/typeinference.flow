@@ -38,7 +38,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			lstruct = lookupTree(d.structs, name);
 			lstruct ?? {
 				Some(lstruct)
-			}: tenv.resolveStructName(name);
+			} : tenv.resolveStructName(name);
 		},
 		resolveUnionName = \name -> {
 			lunion = lookupTree(d.unions, name);
@@ -237,7 +237,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 					None(): {
 						modtype = lookupTree(env.moduleTypes, id);
 						switch (modtype) {
-							None(): env.resolveId(id);
+							None(): env.resolveId(pos, id);
 							Some(mdtype): {
 								itype = instantiateTTypePar(env, mdtype);
 								// println(id + " = " + prettyTType(itype) + " from " + prettyTType(mdtype));
@@ -255,7 +255,8 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DTyped(value, type, pos): {
 			valtype = ttypeInferenceDExp(env, value);
 			ttype = dtype2ttype(env, true, type);
-			unifyTType(env, pos, valtype, ttype);
+
+			unifyTType(env, pos, makeTTypeSupertype(env.mkTyvar, [valtype, ttype]), ttype);
 			valtype;
 		}
 		DLet(id, value, body, pos, tyvar): {
@@ -305,7 +306,6 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			});
 			retType = ttypeInferenceDExp(nenv, body);
 			type = TTypeFunction(argTypes, retType);
-//			println(type);
 			restype(tyvar, type);
 		}
 		DRef(value, pos, tyvar): {
