@@ -43,8 +43,11 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 	pr = \s : string -> {
 		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
 		pre = i + s;
-		typ = prettyTType(dexpType(env, d));
-		println(rpad(pre, " ", 60) + " " + rpad(typ, " ", 40) + " " + takeBefore(line, "\n", line));
+		dtype = dexpType(env, d);
+		eclass = addEExp(env.egraph, dtype);
+		etype = lookupTreeDef(env.etypes, eclass, dtype);
+		typ = prettyTType(etype);
+		println(rpad(pre, " ", 60) + " " + i2s(eclass) + " : " + rpad(typ, " ", 40) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
 		DVoid(pos): pr("void");
