@@ -76,13 +76,29 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		}
 	});
 
+	// Extract structs and unions: 
+	// We do this twice. The first time, we pick up the arities.
+
 	// Extract structs & unions in our module, so we can include those in the lookup
-	structs = fold(toplevels, makeTree(), \acc, tl -> {
-		extractDStruct(dd, acc, tl)
-	});
-	unions = fold(toplevels, makeTree(), \acc, tl -> {
-		extractDUnion(dd, acc, tl)
-	});
+	dd0 = DDesugar(dd with onError = \p, e -> {}); // We ignore errors in the first pass
+	structs0 = fold(toplevels, makeTree(), \acc, tl -> extractDStruct(dd0, acc, tl));
+	unions0 = fold(toplevels, makeTree(), \acc, tl -> extractDUnion(dd0, acc, tl));
+
+	// Set up an environment now we know the arities of all names
+	dd1 = DDesugar(dd with 
+		resolveStructName = \name -> {
+			mst = lookupTree(structs0, name);
+			mst ?? Some(mst) : dd.resolveStructName(name);
+		},
+		resolveUnionName = \name -> {
+			mst = lookupTree(unions0, name);
+			mst ?? Some(mst) : dd.resolveUnionName(name);
+		},
+	);
+
+	// Extract structs & unions for real, checking arities
+	structs = fold(toplevels, makeTree(), \acc, tl -> extractDStruct(dd1, acc, tl));
+	unions = fold(toplevels, makeTree(), \acc, tl -> extractDUnion(dd1, acc, tl));
 
 	// Make sure our lookup knows about local structs and unions
 	dd2 = DDesugar(dd with 
@@ -175,7 +191,7 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	natives = fold(toplevels, makeTree(), \acc, tl : PTopLevel -> {
 		switch (tl) {
 			PNative(id, isIo, type, name, pos): {
-				dtype = ptype2dtype(dd, type);
+				dtype = ptype2dtype(dd2, type);
 				nativ = DNative(id, isIo, dtype, name, lookupTree(globals, name), dd.mkTyvar(), pos);
 				if (containsKeyTree(acc, id)) {
 					dd.onError(pos, "Duplicate native def " + id);
@@ -343,7 +359,26 @@ ptype2dtype(dd : DDesugar, p : PType) -> DType {
 }
 
 ptypename2dtypename(dd : DDesugar, p : PTypeName) -> DTypeName {
-	DTypeName(p.id, map(p.typars, \tp -> ptype2dtype(dd, tp)), p.pos);
+	mstruct = dd.resolveStructName(p.id);
+	ntypars = mstruct ?? length(mstruct.typars) : {
+		munion = dd.resolveUnionName(p.id);
+		switch (munion) {
+			None(): {
+				if (p.id == "array" || p.id == "ref") 1
+				else 0
+			}
+			Some(un): length(un.typars);
+		}
+	};
+	n = length(p.typars);
+	typars0 = map(p.typars, \tp -> ptype2dtype(dd, tp));
+	typars = if (n == 0 || n != ntypars) {
+		if (n != 0) {
+			dd.onError(p.pos, "Expected " + i2s(ntypars) + " for " + p.id + ", but got " + i2s(n));
+		}
+		concat(typars0, generate(n, ntypars, \__ -> DTypeName("auto", [], p.pos)))
+	} else typars0;
+	DTypeName(p.id, typars, p.pos);
 }
 
 pstructArg2dstructArg(dd : DDesugar, s : PStructArg) -> DStructArg {

@@ -254,7 +254,8 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 		DTyped(value, type, pos): {
 			valtype = ttypeInferenceDExp(env, value);
-			unifyTType(env, pos, valtype, dtype2ttype(env, true, type));
+			ttype = dtype2ttype(env, true, type);
+			unifyTType(env, pos, valtype, ttype);
 			valtype;
 		}
 		DLet(id, value, body, pos, tyvar): {
