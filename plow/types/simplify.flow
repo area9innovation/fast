@@ -22,7 +22,14 @@ unifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUni
 		treePushToArrayValue(acc, node.head, node);
 	});
 	foldTree(heads, simp, \head, simnodes : [ENode<TType>], acc -> {
-		if (length(simnodes) > 1) {
+		recurse = switch (head : TType) {
+			TTypeName(id, typars): true;
+			TTypeEClass(eclass): false;
+			TTypeFunction(args, returnType): true;
+			TTypeOverload(unique, overloads): false;
+			TTypeSupertype(unique, subtypes): false;
+		}
+		if (recurse && length(simnodes) > 1) {
 			// Unify children of the same head
 			foldi(tail(simnodes), acc, \i, acc2, node -> {
 				prev = simnodes[i];

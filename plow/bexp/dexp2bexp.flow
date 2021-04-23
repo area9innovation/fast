@@ -2,6 +2,7 @@ import plow/dexp/dexp;
 import plow/dexp/pretty;
 import plow/types/typeenv;
 import plow/types/builtin;
+import plow/types/benefit;
 import plow/bexp/bexp;
 
 export {
@@ -20,9 +21,12 @@ resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 	root = getEClassRoot(env.egraph, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
+		if (containsTTypeClass(mtype)) {
+			env.onError(pos, "Partially unresolved type " + prettyTType(mtype));
+		}
 		ttype2btype(env, mtype)
 	} : {
-		env.onError(pos, "Unresolved type equivalence class " + i2s(eclass));
+		env.onError(pos, "Unresolved type equivalence class " + i2s(root));
 		BTypeName("Error!", []);
 	}
 }

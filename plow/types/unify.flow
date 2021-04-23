@@ -238,8 +238,9 @@ possibleSuperTType(env : TTypeEnv, subtype : TType, supertype : TType) -> bool {
 				default: false;
 			}
 		}
+		TTypeEClass(__): true;
 		default: {
-			println("TODO: Is this a possible supertype?");
+			println("TODO: Is this a possible supertype? " + prettyTType(subtype) + " vs " + prettyTType(supertype));
 			false;
 		}
 	}

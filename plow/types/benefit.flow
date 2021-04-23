@@ -8,6 +8,7 @@ import ds/egraph_extract;
 export {
 	// Extracts the types of the eclass we can find
 	extractEClassTypes(env : TTypeEnv) -> Tree<int, TType>;
+	containsTTypeClass(t : TType) -> bool;
 }
 
 extractEClassTypes(env : TTypeEnv) -> Tree<int, TType> {
@@ -24,87 +25,59 @@ ExtractEnv(
 );
 
 extractTTypes(env : ExtractEnv) -> Tree<int, TType> {
-	foldTree(env.benefits, makeTree(), \eclass, ebenefit, acc -> {
-		mtype = extractTType(env, eclass);
-		mtype ?? {
-			// println(i2s(eclass) + " = " + prettyTType(mtype) + " at benefit " + toString(ebenefit.benefit));
-			setTree(acc, eclass, mtype)
-		} : {
-			println("Could not extract type from " + ttypeENode2string(ebenefit.node) + " with eclass " + i2s(eclass));
-			acc;
-		}
+	traverseInOrder(env.benefits, \eclass, ebenefit -> {
+		type = extractTType(env, eclass);
 	});
+	^(env.etypes)
 }
 
-extractTType(env : ExtractEnv, eclass : int) -> Maybe<TType> {
+extractTType(env : ExtractEnv, eclass : int) -> TType {
 	mexist = lookupTree(^(env.etypes), eclass);
 	mexist ?? {
-		Some(mexist)
+		mexist
 	} : {
 		set = \tt -> {
 			env.etypes := setTree(^(env.etypes), eclass, tt);
-			Some(tt);
+			tt;
 		}
-		// TODO: If we already extracted this, no need to do it again
 		mbenefit = lookupTree(env.benefits, eclass);
 		mbenefit ?? {
 			enode = mbenefit.node;
-
 			extractChildren = \ -> {
-				filtermap(enode.args, \root : int -> {
-					if (root == eclass) None()
+				map(enode.args, \root : int -> {
+					if (root == eclass) TTypeEClass(eclass)
 					else extractTType(env, root)
 				});			
 			};
 
 			switch (enode.head : TType) {
 				TTypeEClass(id): {
-					Some(enode.head);
+					enode.head;
 				}
 				TTypeName(id, __): {
-					mtypars = extractChildren();
-					if (length(mtypars) == length(enode.args)) {
-						set(TTypeName(id, mtypars));
-					} else {
-						None();
-					}
+					typars = extractChildren();
+					set(TTypeName(id, typars));
 				}
 				TTypeFunction(__, __): {
 					children : [TType] = extractChildren();
 					// The last child is the return type
 					n = length(children);
-					if (n != length(enode.args)) {
-						None();
-					} else {
-						set(TTypeFunction(subrange(children, 0, n - 1), children[n - 1]));
-					}
+					set(TTypeFunction(subrange(children, 0, n - 1), children[n - 1]));
 				}
 				TTypeOverload(typar, __): {
 					children : [TType] = extractChildren();
-					if (length(children) != length(enode.args)) {
-						None()
-					} else {
-						set(TTypeOverload(typar, buildSet(children)));
-					}
+					cset = buildSet(children);
+					set(TTypeOverload(typar, buildSet(children)));
 				}
 				TTypeSupertype(typar, __): {
 					children : [TType] = extractChildren();
-					if (length(children) != length(enode.args)) {
-						None();
-					} else {
-						cset = buildSet(children);
-						if (children == []) {
-							None();
-						} else {
-							super = TTypeSupertype(typar, cset);
-							set(resolveTSupertype(env.env, super));
-						}
-					}
+					cset = buildSet(children);
+					super = TTypeSupertype(typar, cset);
+					set(resolveTSupertype(env.env, super));
 				}
 			}
 		} : {
-			println("Have no benefits for " + i2s(eclass));
-			None()
+			TTypeEClass(eclass);
 		}
 	}
 }
@@ -118,14 +91,24 @@ calculateTTypeBenefit(e : ENode<TType>, childbenefits : [EClassBenefit<TType>]) 
 			else EClassBenefit(10 + cbenefits, e);
 		}
 		TTypeEClass(id): EClassBenefit(0, e);	// No benefit from these
-		TTypeFunction(args, returnType): EClassBenefit(10 + cbenefits, e);
+		TTypeFunction(args, returnType): EClassBenefit(5 + cbenefits, e);
 		TTypeOverload(unique, overloads): {
 			// We do not want these that much
-			EClassBenefit(1 + cbenefits, e);
+			EClassBenefit(1, e);
 		}
 		TTypeSupertype(unique, subtypes): {
 			// We do not want these that much
 			EClassBenefit(1, e);
 		}
+	}
+}
+
+containsTTypeClass(t : TType) -> bool {
+	switch (t) {
+		TTypeName(id, typars): exists(typars, containsTTypeClass);
+		TTypeEClass(eclass): true;
+		TTypeFunction(args, returnType): exists(args, containsTTypeClass) || containsTTypeClass(returnType);
+		TTypeOverload(unique, overloads): existsSet(overloads, containsTTypeClass);
+		TTypeSupertype(unique, subtypes): existsSet(subtypes, containsTTypeClass);
 	}
 }
