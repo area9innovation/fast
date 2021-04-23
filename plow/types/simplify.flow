@@ -6,10 +6,10 @@ export {
 	unifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUnify];
 
 		// Structure that defines what operations we should do on the eclasses
-		ENodesUnify ::= EClassMerge, EClassReplace;
+		ENodesUnify ::= EClassMerge, EClassInsert;
 			// Merge two classes
 			EClassMerge(leftClass : int, rightClass : int);
-			EClassReplace(root : int, nodes : Set<ENode<TType>>);
+			EClassInsert(root : int, node : ENode<TType>);
 
 	// Lets us know if there was any change
 	applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool;
@@ -65,9 +65,7 @@ simplifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodes
 		newNode : ENode<TType> = ENode(existingSupers[0].head, set2array(newRoots));
 		// println("New supertype for " + i2s(root));
 
-		[EClassReplace(
-			root, insertSet(others, newNode)
-		)];
+		[EClassInsert(root, newNode)];
 	}
 }
 
@@ -94,10 +92,10 @@ applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 				true;
 			}
 		}
-		EClassReplace(root, nodes): {
-			eset = getEClassNodes(env.egraph, root);
-			setEClassNodes(env.egraph, root, nodes);
-			!equalSet(eset, nodes);
+		EClassInsert(root, node): {
+			nroot = addENode(env.egraph, node);
+			join = unionEClass(env.egraph, root, nroot);
+			true;
 		}
 	}
 }

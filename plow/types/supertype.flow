@@ -1,4 +1,5 @@
 import plow/types/typeenv;
+import plow/types/util;
 import plow/types/polymorphism;
 
 export {
@@ -7,7 +8,7 @@ export {
 }
 
 resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
-	supers = foldSet(super.subtypes, makeSet(), \acc, st -> {
+	namedsupers = foldSet(super.subtypes, makeSet(), \acc, st -> {
 		switch (st) {
 			TTypeName(id, typars): {
 				supers0 = env.resolveSupertypes(id);
@@ -16,18 +17,29 @@ resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
 				if (isEmptySet(acc)) supset
 				else intersectSets(supset, acc)
 			}
-			TTypeVar(tyvar): acc;
-			TTypeFunction(args, returnType): acc;
-			TTypeOverload(unique, overloads): acc;
-			TTypeSupertype(unique, __): acc;
+			default: acc;
 		}
 	});
-	if (sizeSet(supers) == 1) {
-		name = set2array(supers)[0];
+
+	fnsupers = foldSet(super.subtypes, makeSet(), \acc, st -> {
+		switch (st) {
+			TTypeFunction(__, __): insertSet(acc, st);
+			default: acc;
+		}
+	});
+
+	if (sizeSet(namedsupers) == 1 && isEmptySet(fnsupers)) {
+		name = set2array(namedsupers)[0];
 		type = instantiateTTypeName(env, name);
-		println(name + " becomes " + prettyTType(type));
+		// println(name + " becomes " + prettyTType(type));
 		type
+	} else if (sizeSet(fnsupers) == 1 && isEmptySet(namedsupers)) {
+		fn : TTypeFunction = set2array(fnsupers)[0];
+		fn;
+		// TTypeFunction(fn.args, makeTTypeSupertype(env.mkTyvar, [fn.returnType]))
 	} else {
+		// OK, if we are dealing with functions or something like that, we could
+		// probably "expand" them
 		super;
 	}
 }

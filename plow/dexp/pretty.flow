@@ -47,7 +47,7 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 		eclass = addEExp(env.egraph, dtype);
 		etype = lookupTreeDef(env.etypes, eclass, dtype);
 		typ = prettyTType(etype);
-		println(rpad(pre, " ", 60) + " " + rpad(i2s(eclass) + " = " + prettyTType(dtype) + (" from " + typ), " ", 60) + " " + takeBefore(line, "\n", line));
+		println(rpad(pre, " ", 60) + " " + rpad(i2s(eclass) + " = " + typ + " (was " + prettyTType(dtype) + ")", " ", 60) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
 		DVoid(pos): pr("void");

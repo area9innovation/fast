@@ -127,7 +127,7 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 	if (iterations > 0 && ^update) {
 		unifyEClasses(tenv, 10, iterations - 1);
 	} else {
-		if (false) {
+		if (true) {
 			println("Final Classes at " + i2s(iterations));
 			dumpEClasses(env);
 		}
@@ -145,14 +145,14 @@ dumpEClasses(env : TTypeEnv) -> void {
 		root = env.egraph.eclass.parents[i];
 		if (isEmptySet(^value)) {
 		} else {
-			println("Class " + i2s(i) + " -> " + i2s(^root) + " : " + 
-				rpad(superglue(set2array(^value), \e : ENode<TType>-> {
+			println("Class " + i2s(i) + " -> " + i2s(^root) + " : "
+				+ rpad(prettyTType(lookupTreeDef(env.etypes, i, TTypeName("ERROR", []))), " ", 50) + " from "
+				+ superglue(set2array(^value), \e : ENode<TType>-> {
 					ttypeENode2string(e) + "(" + superglue(e.args, \ec -> {
 						eroot = getEClassRoot(env.egraph, ec);
 						i2s(eroot)
 					}, ", ") + ")"
-				}, ", "), " ", 70)
-				+ " gave " + prettyTType(lookupTreeDef(env.etypes, i, TTypeName("ERROR", [])))
+				}, ", ")
 			);
 		}
 	});

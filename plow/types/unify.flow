@@ -90,7 +90,7 @@ unifyTTypes(env : TTypeEnv, pos : int, left : [TType], right : [TType]) -> void 
 }
 
 // Check that st is a sutype of type, and if so, unify any typars
-subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void{
+subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void {
 	error = \ -> {
 		env.onError(pos, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
 	};
@@ -101,6 +101,9 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 					subtypeTTypenames(env, pos, sub, super);
 				}
 				TTypeVar(id): {}
+				TTypeSupertype(__, supers): {
+					// This is probably true
+				}
 				default: error();
 			}
 		}
