@@ -26,7 +26,7 @@ extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
 ttypeENode2string(enode : ENode<TType>) -> string {
 	switch (enode.head) {
 		TTypeName(id, typars): id;
-		TTypeEClass(id): "a" + i2s(id);
+		TTypeEClass(id): "e" + i2s(id);
 		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
 		TTypeOverload(unique, overloads): "overload";
 		TTypeSupertype(unique, subtypes): "supertype";

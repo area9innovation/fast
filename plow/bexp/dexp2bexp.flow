@@ -17,13 +17,12 @@ export {
 }
 
 resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
-	// println("a" + i2s(tv) + " is in " + i2s(eclass) );
 	root = getEClassRoot(env.egraph, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
 		ttype2btype(env, mtype)
 	} : {
-		env.onError(pos, "Unconstrained type equivalence class " + i2s(eclass) + "!");
+		env.onError(pos, "Unresolved type equivalence class " + i2s(eclass));
 		BTypeName("Error!", []);
 	}
 }

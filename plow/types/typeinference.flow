@@ -113,9 +113,9 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 
 	update = ref false;
 	traverseInOrder(types, \eclass, type -> {
-		// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
-		nclass = getTTypeEClass(env, type);
+		nclass = makeTTypeEClass(env, type);
 		if (nclass != eclass) {
+			// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
 			unionEClass(env.egraph, nclass, eclass);
 			update := true;
 		}

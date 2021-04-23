@@ -7,13 +7,13 @@ export {
 	// Unify these two types into the same equivalence class
 	unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void;
 
-	// What is the eclass for this type?
-	getTTypeEClass(env : TTypeEnv, type : TType) -> int;
+	// What is the eclass for this type? If none exist, make one
+	makeTTypeEClass(env : TTypeEnv, type : TType) -> int;
 }
 
 unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
-	lroot = getTTypeEClass(env, left);
-	rroot = getTTypeEClass(env, right);
+	lroot = makeTTypeEClass(env, left);
+	rroot = makeTTypeEClass(env, right);
 	root = unionEClass(env.egraph, lroot, rroot);
 
 	if (false) {
@@ -54,7 +54,7 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 	}
 }
 
-getTTypeEClass(env : TTypeEnv, type : TType) -> int {
+makeTTypeEClass(env : TTypeEnv, type : TType) -> int {
 	switch (type) {
 		TTypeEClass(eclass): eclass;
 		default: addEExp(env.egraph, type);
