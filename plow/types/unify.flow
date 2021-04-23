@@ -6,6 +6,9 @@ import ds/egraph_dot;
 export {
 	// Unify these two types into the same equivalence class
 	unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void;
+
+	// What is the eclass for this type?
+	getTTypeEClass(env : TTypeEnv, type : TType) -> int;
 }
 
 unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {

@@ -8,20 +8,22 @@ export {
 	dexp2bexp(env : BExpEnv, d : DExp) -> BExp;
 
 	BExpEnv(
+		onError : (int, string) -> void,
 		egraph : EGraph<TType>,
 		eclassType : Tree<int, TType>,
 	);
 
-	resolveBType(env : BExpEnv, eclass : int) -> BType;
+	resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType;
 }
 
-resolveBType(env : BExpEnv, eclass : int) -> BType {
+resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 	// println("a" + i2s(tv) + " is in " + i2s(eclass) );
-	mtype = lookupTree(env.eclassType, eclass);
+	root = getEClassRoot(env.egraph, eclass);
+	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
 		ttype2btype(env, mtype)
 	} : {
-		println("TODO: Report type error for " + i2s(eclass) + "!");
+		env.onError(pos, "Unconstrained type equivalence class " + i2s(eclass) + "!");
 		BTypeName("Error!", []);
 	}
 }
@@ -35,7 +37,7 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 	rec = \ee -> {
 		dexp2bexp(env, ee);
 	}
-	type = \tv : int -> resolveBType(env, tv);
+	type = \eclass : int -> resolveBType(env, d.pos, eclass);
 	switch (d) {
 		DVoid(pos): BVoid();
 		DBool(v, pos): BBool(v);
@@ -45,7 +47,9 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 		DStringInclude(path, pos): {
 			BString(getFileContent(path));
 		}
-		DVar(id, pos, eclass): BVar(id, type(eclass));
+		DVar(id, pos, eclass): {
+			BVar(id, type(eclass));
+		}
 		DLet(id, value, body, pos, eclass): BLet(id, rec(value), rec(body), type(eclass));
 		DIf(cond, then, else_, pos, eclass): BIf(rec(cond), rec(then), rec(else_), type(eclass));
 		DCall(fn, args, pos, eclass): {

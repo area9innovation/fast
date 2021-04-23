@@ -7,7 +7,7 @@ export {
 
 prettyTType(t : TType) -> string {
 	switch (t) {
-		TTypeEClass(id): "a" + i2s(id);
+		TTypeEClass(id): "e" + i2s(id);
 		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, prettyTType, ", ") + ">");
 		TTypeFunction(args, returnType): "(" + superglue(args, prettyTType, ", ") + ") -> " + prettyTType(returnType);
 		TTypeOverload(typar, overloads): "overloads{" + superglue(set2array(overloads), prettyTType, ", ") + "}";

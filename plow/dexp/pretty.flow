@@ -1,6 +1,7 @@
 import plow/dexp/dexp;
 import plow/types/typeof;
 import plow/types/pretty;
+import plow/types/unify;
 import string;
 import text/blueprint;
 
@@ -44,10 +45,17 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
 		pre = i + s;
 		dtype = dexpType(env, d);
-		eclass = addEExp(env.egraph, dtype);
-		etype = lookupTreeDef(env.etypes, eclass, dtype);
-		typ = prettyTType(etype);
-		println(rpad(pre, " ", 60) + " " + rpad(i2s(eclass) + " = " + typ + " (was " + prettyTType(dtype) + ")", " ", 60) + " " + takeBefore(line, "\n", line));
+
+		etype = switch (dtype) {
+			TTypeEClass(eclass): {
+				root = getEClassRoot(env.egraph, eclass);
+				mtype = lookupTree(env.etypes, root);
+				i2s(eclass) + mtype ?? (" = " + prettyTType(mtype) + " ") : "";
+			}
+			default: "";
+		};
+
+		println(rpad(pre, " ", 60) + " " + rpad(etype + "(desugar " + prettyTType(dtype) + ")", " ", 60) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
 		DVoid(pos): pr("void");

@@ -113,10 +113,10 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 
 	update = ref false;
 	traverseInOrder(types, \eclass, type -> {
-		nclass = addEExp(env.egraph, type);
+		// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
+		nclass = getTTypeEClass(env, type);
 		if (nclass != eclass) {
-			// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
-			finalClass = unionEClass(env.egraph, nclass, eclass);
+			unionEClass(env.egraph, nclass, eclass);
 			update := true;
 		}
 	});
@@ -129,9 +129,9 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 	} else {
 		if (true) {
 			println("Final Classes at " + i2s(iterations));
-			dumpEClasses(env);
+			dumpEClasses(tenv);
 		}
-		if (false) {
+		if (true) {
 			dot = egraph2dot(env.egraph, ttypeENode2string);
 			setFileContent("egraph.dot", dot);
 			{}
@@ -146,7 +146,7 @@ dumpEClasses(env : TTypeEnv) -> void {
 		if (isEmptySet(^value)) {
 		} else {
 			println("Class " + i2s(i) + " -> " + i2s(^root) + " : "
-				+ rpad(prettyTType(lookupTreeDef(env.etypes, i, TTypeName("ERROR", []))), " ", 50) + " from "
+				+ rpad(prettyTType(lookupTreeDef(env.etypes, i, TTypeName("Unresolved", []))), " ", 50) + " from "
 				+ superglue(set2array(^value), \e : ENode<TType>-> {
 					ttypeENode2string(e) + "(" + superglue(e.args, \ec -> {
 						eroot = getEClassRoot(env.egraph, ec);

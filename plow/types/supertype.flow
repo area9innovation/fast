@@ -36,7 +36,6 @@ resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
 	} else if (sizeSet(fnsupers) == 1 && isEmptySet(namedsupers)) {
 		fn : TTypeFunction = set2array(fnsupers)[0];
 		fn;
-		// TTypeFunction(fn.args, makeTTypeSupertype(env.mkTyvar, [fn.returnType]))
 	} else {
 		// OK, if we are dealing with functions or something like that, we could
 		// probably "expand" them
