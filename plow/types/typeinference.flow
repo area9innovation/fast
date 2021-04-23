@@ -1,7 +1,7 @@
 import plow/dexp/types;
 import plow/types/typeinference_exp;
 import plow/types/typeof;
-import plow/types/benefit;
+import plow/types/extract;
 import plow/types/polymorphism;
 import plow/types/util;
 import plow/types/simplify;
@@ -72,11 +72,11 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	canonicalizeEGraph(genv.egraph);
 
 	if (false) {
-		dot = egraph2dot(env.egraph, ttypeENode2string);
+		dot = egraph2dot(env.egraph, \n -> ttypeENode2string(env.egraph, n));
 		setFileContent("egraph-pre.dot", dot);
 		{}
 	}
-	unifyEClasses(genv, 10, 10);
+	extractEClassTType(genv, 10);
 }
 
 // Structurally unify eclasses
@@ -112,27 +112,33 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 	types = extractEClassTypes(env);
 
 	update = ref false;
-	traverseInOrder(types, \eclass, type -> {
-		nclass = makeTTypeEClass(env, type);
-		if (nclass != eclass) {
-			// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
-			unionEClass(env.egraph, nclass, eclass);
-			update := true;
+	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
+		if (unresolvedTType(type) || containsKeyTree(acc, eclass)) {
+			acc;
+		} else {
+			nclass = makeTTypeEClass(env, type);
+			if (nclass != eclass) {
+				// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
+				unionEClass(env.egraph, nclass, eclass);
+				update := true;
+			}
+			// println("Resolved type " + prettyTType(type) + " to " + i2s(eclass));
+			setTree(acc, eclass, type)
 		}
 	});
 
-	tenv = TTypeEnv(env with etypes = types);
+	tenv = TTypeEnv(env with etypes = etypes);
 
-	canonicalizeEGraph(env.egraph);
+	canonicalizeEGraph(tenv.egraph);
 	if (iterations > 0 && ^update) {
-		unifyEClasses(tenv, 10, iterations - 1);
+		unifyEClasses(tenv, 2, iterations - 1);
 	} else {
 		if (true) {
 			println("Final Classes at " + i2s(iterations));
 			dumpEClasses(tenv);
 		}
 		if (true) {
-			dot = egraph2dot(env.egraph, ttypeENode2string);
+			dot = egraph2dot(tenv.egraph, \n -> ttypeENode2string(tenv.egraph, n));
 			setFileContent("egraph.dot", dot);
 			{}
 		}
@@ -142,13 +148,14 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 
 dumpEClasses(env : TTypeEnv) -> void {
 	iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
-		root = env.egraph.eclass.parents[i];
+		root = getEClassRoot(env.egraph, i);
 		if (isEmptySet(^value)) {
+			// println("Class e" + i2s(root) + " from e" + i2s(i));
 		} else {
-			println("Class " + i2s(i) + " -> " + i2s(^root) + " : "
+			println("Class e" + i2s(root) + " : "
 				+ rpad(prettyTType(lookupTreeDef(env.etypes, i, TTypeName("Unresolved", []))), " ", 50) + " from "
 				+ superglue(set2array(^value), \e : ENode<TType>-> {
-					ttypeENode2string(e) + "(" + superglue(e.args, \ec -> {
+					ttypeENode2string(env.egraph, e) + "(" + superglue(e.args, \ec -> {
 						eroot = getEClassRoot(env.egraph, ec);
 						i2s(eroot)
 					}, ", ") + ")"

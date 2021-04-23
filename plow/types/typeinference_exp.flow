@@ -33,7 +33,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		unifyTType(env, d.pos, type, TTypeEClass(tv));
 		type;
 	};
-	supertype = \types : [TType] -> makeTTypeSupertype(env.mkEClass, types);
+	supertype = \types : [TType] -> makeTTypeSupertype(env.mkUnique, types);
 
 	switch (d) {
 		DVoid(pos): TTypeName("void", []);
@@ -44,8 +44,8 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DStringInclude(path, pos): TTypeName("string", []);
 		DVar(id, pos, eclass): {
 			mtype = lookupTree(env.localTypes, id);
-			type = mtype ?? {
-				supertype([mtype])
+			utype = mtype ?? {
+				mtype
 			} : {
 				moptype = getBuiltinTType(id);
 				switch (moptype) {
@@ -53,18 +53,14 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 						modtype = lookupTree(env.moduleTypes, id);
 						switch (modtype) {
 							None(): env.resolveId(pos, id);
-							Some(mdtype): {
-								itype = instantiateTTypePar(env, mdtype);
-								// println(id + " = " + prettyTType(itype) + " from " + prettyTType(mdtype));
-								itype;
-							}
+							Some(mdtype): mdtype;
 						}
 					}
-					Some(optype): {
-						instantiateTTypePar(env, optype);
-					}
+					Some(optype): optype;
 				}
 			};
+
+			type = instantiateTTypePar(env, utype);
 			restype(eclass, type);
 		}
 		DTyped(value, type, pos): {

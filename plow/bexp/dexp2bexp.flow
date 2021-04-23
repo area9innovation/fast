@@ -2,7 +2,7 @@ import plow/dexp/dexp;
 import plow/dexp/pretty;
 import plow/types/typeenv;
 import plow/types/builtin;
-import plow/types/benefit;
+import plow/types/extract;
 import plow/bexp/bexp;
 
 export {
@@ -21,7 +21,7 @@ resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 	root = getEClassRoot(env.egraph, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
-		if (containsTTypeClass(mtype)) {
+		if (unresolvedTType(mtype)) {
 			env.onError(pos, "Partially unresolved type " + prettyTType(mtype));
 		}
 		ttype2btype(env, mtype)

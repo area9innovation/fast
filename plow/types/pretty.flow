@@ -11,6 +11,6 @@ prettyTType(t : TType) -> string {
 		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, prettyTType, ", ") + ">");
 		TTypeFunction(args, returnType): "(" + superglue(args, prettyTType, ", ") + ") -> " + prettyTType(returnType);
 		TTypeOverload(typar, overloads): "overloads{" + superglue(set2array(overloads), prettyTType, ", ") + "}";
-		TTypeSupertype(typar, subtypes): "supertype{" + superglue(set2array(subtypes), prettyTType, ", ") + "}";
+		TTypeSupertype(unique, subtypes): "supertype" + i2s(unique) + "{" + superglue(set2array(subtypes), prettyTType, ", ") + "}";
 	}
 }

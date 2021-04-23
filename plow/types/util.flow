@@ -2,18 +2,19 @@ import plow/types/type;
 import ds/egraph;
 
 export {
-	makeTTypeSupertype(mkTyvar : () -> int, subtypes : [TType]) -> TType;
-	ttypeENode2string(enode : ENode<TType>) -> string;
+	makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType]) -> TType;
+
+	ttypeENode2string(egraph : EGraph<TType>, enode : ENode<TType>) -> string;
 
 	replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType;
 
 	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
 }
 
-makeTTypeSupertype(mkTyvar : () -> int, subtypes : [TType]) -> TType {
+makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType]) -> TType {
 	ss = buildSet(subtypes);
 	ss2 = foldSet(ss, makeSet(), extractTSupers);
-	TTypeSupertype(TTypeEClass(mkTyvar()), ss2);
+	TTypeSupertype(mkUnique(), ss2);
 }
 
 extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
@@ -23,13 +24,13 @@ extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
 	}
 }
 
-ttypeENode2string(enode : ENode<TType>) -> string {
+ttypeENode2string(egraph : EGraph<TType>, enode : ENode<TType>) -> string {
 	switch (enode.head) {
 		TTypeName(id, typars): id;
-		TTypeEClass(id): "e" + i2s(id);
+		TTypeEClass(id): "e" + i2s(getEClassRoot(egraph, id));
 		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
 		TTypeOverload(unique, overloads): "overload";
-		TTypeSupertype(unique, subtypes): "supertype";
+		TTypeSupertype(unique, subtypes): "supertype_" + i2s(unique);
 	}
 }
 

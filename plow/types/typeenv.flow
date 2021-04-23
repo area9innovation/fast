@@ -10,6 +10,8 @@ export {
 		typars : Tree<string, int>,
 		// Construct a new type eclass
 		mkEClass : () -> int,
+		// Make a unique id
+		mkUnique : () -> int,
 		// Report an error associated with a given position
 		onError : (pos : int, error : string) -> void,
 
@@ -45,10 +47,16 @@ export {
 }
 
 makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv {
+	unique = ref 0;
 	TTypeEnv(
 		makeTree(), \ -> {
 			makeEClass(egraph)
 		}, 
+		\ -> {
+			u = ^unique;
+			unique := u + 1;
+			u;
+		},
 		\pos, error -> println(error), 
 		\pos, id -> {
 			println("TODO: Find the type of var '" + id + "'");

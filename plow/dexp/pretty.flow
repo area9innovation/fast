@@ -50,12 +50,12 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			TTypeEClass(eclass): {
 				root = getEClassRoot(env.egraph, eclass);
 				mtype = lookupTree(env.etypes, root);
-				mtype ?? (prettyTType(mtype) + "  = e" + i2s(eclass)) : "";
+				mtype ?? ( rpad(prettyTType(mtype), " ", 30) + "= e" + i2s(eclass)) : "";
 			}
 			default: "";
 		};
 
-		println(rpad(pre, " ", 60) + " " + rpad(etype, " ", 30) + rpad("(desugar " + prettyTType(dtype) + ")", " ", 20) + " " + takeBefore(line, "\n", line));
+		println(rpad(pre, " ", 60) + " " + rpad(etype, " ", 40) + rpad("(desugar " + prettyTType(dtype) + ")", " ", 20) + " " + takeBefore(line, "\n", line));
 	}
 	switch (d : DExp) {
 		DVoid(pos): pr("void");

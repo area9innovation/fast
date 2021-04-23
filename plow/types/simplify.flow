@@ -1,4 +1,6 @@
 import plow/types/typeenv;
+import plow/types/extract;
+import plow/types/unify;
 
 export {
 	// Given a set of enodes in an equivalence class, find out how
@@ -6,18 +8,21 @@ export {
 	unifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUnify];
 
 		// Structure that defines what operations we should do on the eclasses
-		ENodesUnify ::= EClassMerge, EClassInsert;
+		ENodesUnify ::= EClassMerge, EClassInsert, EUnifyTypes;
 			// Merge two classes
 			EClassMerge(leftClass : int, rightClass : int);
 			EClassInsert(root : int, node : ENode<TType>);
+			EUnifyTypes(root : int, types : Set<TType>);
 
 	// Lets us know if there was any change
 	applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool;
 }
 
 unifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUnify] {
-	// Split members by the head
+	// First, do general simplification
 	simp = simplifyENodes(env, root, nodes);
+
+	// Split members by the head
 	heads : Tree<TType, [ENode<TType>]> = foldSet(nodes, makeTree(), \acc, node -> {
 		treePushToArrayValue(acc, node.head, node);
 	});
@@ -47,6 +52,13 @@ unifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUni
 }
 
 simplifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUnify] {
+	concatA([
+//		simplifySupertypes(env, root, nodes),
+		simplifyTOverloads(env, root, nodes),
+	])
+}
+
+simplifySupertypes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUnify] {
 	// OK, first look for all supers, and combine them
 	existingSupers : [ENode<TType>] = filter(set2array(nodes), \node -> {
 		switch (node.head) {
@@ -54,12 +66,8 @@ simplifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodes
 			default: false;
 		}
 	});
-	others = filterSet(nodes, \node -> {
-		switch (node.head) {
-			TTypeSupertype(__, __): false;
-			default: true;
-		}
-	});
+
+	// OK, find the super types to our supers
 	allSupers : Set<int> = removeSet(fold(existingSupers, makeSet(), \acc, no -> {
 		fold(no.args, acc, \acc2, arg -> {
 			extractSupertypes(env, acc2, arg)
@@ -71,6 +79,8 @@ simplifyENodes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodes
 		newRoots = mapSet(allSupers, \a -> getEClassRoot(env.egraph, a));
 		newNode : ENode<TType> = ENode(existingSupers[0].head, set2array(newRoots));
 		// println("New supertype for " + i2s(root));
+
+		// TODO: We could mark existingSupers as processed, so we do not do those next time
 
 		[EClassInsert(root, newNode)];
 	}
@@ -90,6 +100,21 @@ extractSupertypes(env : TTypeEnv, acc : Set<int>, eclass : int) -> Set<int> {
 	});
 }
 
+// Simplify any overloads based on any functions in the same equivalence class
+
+simplifyTOverloads(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [ENodesUnify] {
+	if (containsKeyTree(env.etypes, root)) {
+		[]
+	} else {
+		types = extractENodes(env, root, nodes);
+		if (sizeSet(types) <= 1) {
+			[];
+		} else {
+			[EUnifyTypes(root, types)];
+		}
+	}
+}
+
 applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 	switch (e) {
 		EClassMerge(leftClass, rightClass): {
@@ -100,9 +125,21 @@ applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 			}
 		}
 		EClassInsert(root, node): {
+			// println(prettyTType(node.head));
 			nroot = addENode(env.egraph, node);
 			join = unionEClass(env.egraph, root, nroot);
 			true;
+		}
+		EUnifyTypes(root, nodes): {
+			foldSet(nodes, false, \acc, node1 -> {
+				foldSet(nodes, acc, \acc2, node2 -> {
+					if (node1 != node2) {
+						// println(i2s(root) + ": " + prettyTType(node1) + " vs " + prettyTType(node2));
+						unifyTType(env, -1, node1, node2);
+						true;
+					} else false;
+				})
+			})
 		}
 	}
 }
