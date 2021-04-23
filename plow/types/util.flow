@@ -5,7 +5,7 @@ export {
 	makeTTypeSupertype(mkTyvar : () -> int, subtypes : [TType]) -> TType;
 	ttypeENode2string(enode : ENode<TType>) -> string;
 
-	replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType;
+	replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType;
 
 	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
 }
@@ -13,7 +13,7 @@ export {
 makeTTypeSupertype(mkTyvar : () -> int, subtypes : [TType]) -> TType {
 	ss = buildSet(subtypes);
 	ss2 = foldSet(ss, makeSet(), extractTSupers);
-	TTypeSupertype(TTypeVar(mkTyvar()), ss2);
+	TTypeSupertype(TTypeEClass(mkTyvar()), ss2);
 }
 
 extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
@@ -26,17 +26,17 @@ extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
 ttypeENode2string(enode : ENode<TType>) -> string {
 	switch (enode.head) {
 		TTypeName(id, typars): id;
-		TTypeVar(id): "a" + i2s(id);
+		TTypeEClass(id): "a" + i2s(id);
 		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
 		TTypeOverload(unique, overloads): "overload";
 		TTypeSupertype(unique, subtypes): "supertype";
 	}
 }
 
-replaceTTypeVars(tyvars : Tree<int, TType>, type : TType) -> TType {
-	rec = \tt -> replaceTTypeVars(tyvars, tt);
+replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType {
+	rec = \tt -> replaceTTypeEClasss(eclasss, tt);
 	switch (type) {
-		TTypeVar(id): lookupTreeDef(tyvars, id, type);
+		TTypeEClass(id): lookupTreeDef(eclasss, id, type);
 		TTypeName(id, typars): TTypeName(id, map(typars, rec));
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));
@@ -51,7 +51,7 @@ replaceTType(types : Tree<TType, TType>, type : TType) -> TType {
 	} : {
 		rec = \tt -> replaceTType(types, tt);
 		switch (type) {
-			TTypeVar(id): type;
+			TTypeEClass(id): type;
 			TTypeName(id, typars): TTypeName(id, map(typars, rec));
 			TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 			TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));

@@ -1,7 +1,7 @@
 import ds/set;
 export {
-	TType ::= TTypeName, TTypeVar, TTypeFunction, TTypeOverload, TTypeSupertype;
-		TTypeVar(tyvar : int);
+	TType ::= TTypeName, TTypeEClass, TTypeFunction, TTypeOverload, TTypeSupertype;
+		TTypeEClass(eclass : int);
 		TTypeName(id : string, typars : [TType]);
 		TTypeFunction(args : [TType], returnType : TType);
 		// To avoid collapsing equivalence classes, we have a unique id here

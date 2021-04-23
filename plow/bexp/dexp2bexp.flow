@@ -96,7 +96,7 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 ttype2btype(env : BExpEnv, type : TType) -> BType {
 	switch (type) {
 		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
-		TTypeVar(eclass): {
+		TTypeEClass(eclass): {
 			BTypeName("ERROR TYVAR " + i2s(eclass), []);
 		}
 		TTypeFunction(args, returnType): {

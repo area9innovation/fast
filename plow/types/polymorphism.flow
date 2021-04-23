@@ -4,7 +4,7 @@ import plow/types/util;
 import plow/types/typeof;
 
 export {
-	// Instantiates typars into tyvars
+	// Instantiates typars into eclasses
 	instantiateTTypePar(env : TTypeEnv, t : TType) -> TType;
 
 	// Given this typename, instantiate it as either a union or struct typename, or a basic type
@@ -23,7 +23,7 @@ instantiateTTypePar(env : TTypeEnv, t : TType) -> TType {
 	doInstantiateTTypePar(env, ref makeTree(), t);
 }
 
-doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : TType) -> TType {
+doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeEClass>, t : TType) -> TType {
 	rec = \tt -> doInstantiateTTypePar(env, typars, tt);
 	switch (t) {
 		TTypeName(id, tyargs): {
@@ -33,7 +33,7 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 				mtype ?? {
 					mtype;
 				} : {
-					tv = TTypeVar(env.mkEClass());
+					tv = TTypeEClass(env.mkEClass());
 					typars := setTree(^typars, id, tv);
 					tv;
 				}
@@ -41,7 +41,7 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 				TTypeName(id, ityargs);
 			}
 		}
-		TTypeVar(id): t;
+		TTypeEClass(id): t;
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(typar, overloads): {
 			TTypeOverload(rec(typar), mapSet(overloads, rec));
@@ -69,10 +69,10 @@ instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TT
 }
 
 instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]> {
-	typars = map(struct.typars, \tp -> TTypeVar(env.mkEClass()));
+	typars = map(struct.typars, \tp -> TTypeEClass(env.mkEClass()));
 
 	typarTree = foldi(struct.typars, makeTree(), \i, acc, tp -> {
-		setTree(acc, tp, typars[i].tyvar)
+		setTree(acc, tp, typars[i].eclass)
 	});
 
 	tn = TTypeName(struct.id, typars);
@@ -92,10 +92,10 @@ instantiateTTypeName(env : TTypeEnv, name : string) -> TType {
 		switch (munion) {
 			None(): {
 				typars = if (name == "array" || name == "ref") 1 else 0;
-				TTypeName(name, generate(0, typars, \__ -> TTypeVar(env.mkEClass())));
+				TTypeName(name, generate(0, typars, \__ -> TTypeEClass(env.mkEClass())));
 			}
 			Some(union): {
-				typars = map(union.typars, \tp -> TTypeVar(env.mkEClass()));
+				typars = map(union.typars, \tp -> TTypeEClass(env.mkEClass()));
 				TTypeName(name, typars);
 			}
 		}

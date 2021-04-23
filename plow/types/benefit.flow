@@ -58,7 +58,7 @@ extractTType(env : ExtractEnv, eclass : int) -> Maybe<TType> {
 			};
 
 			switch (enode.head : TType) {
-				TTypeVar(id): {
+				TTypeEClass(id): {
 					Some(enode.head);
 				}
 				TTypeName(id, __): {
@@ -117,7 +117,7 @@ calculateTTypeBenefit(e : ENode<TType>, childbenefits : [EClassBenefit<TType>]) 
 			if (id == "flow") EClassBenefit(5, e)
 			else EClassBenefit(10 + cbenefits, e);
 		}
-		TTypeVar(id): EClassBenefit(0, e);	// No benefit from these
+		TTypeEClass(id): EClassBenefit(0, e);	// No benefit from these
 		TTypeFunction(args, returnType): EClassBenefit(10 + cbenefits, e);
 		TTypeOverload(unique, overloads): {
 			// We do not want these that much

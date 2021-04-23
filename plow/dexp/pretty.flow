@@ -58,51 +58,51 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 		DStringInclude(path, pos): {
 			pr("String include " + path);
 		}
-		DLambda(args, body, pos, tyvar): {
+		DLambda(args, body, pos, eclass): {
 			pr("lambda " + superglue(args, \a : DArgType -> (if (a.id != "") a.id + ":" else "MISSING LAMBDA ARG NAME") + prettyDType(input, a.type), ","));
 			rec(body);
 		}
-		DVar(var, pos, tyvar): {
+		DVar(var, pos, eclass): {
 			pr("'" + var + "'");
 		}
-		DLet(var, value, body, pos, tyvar): {
+		DLet(var, value, body, pos, eclass): {
 			pr("let " + var);
 			rec(value);
 			rec(body);
 		}
-		DIf(cond, then, else_, pos, tyvar): {
+		DIf(cond, then, else_, pos, eclass): {
 			pr("if");
 			rec(cond);
 			rec(then);
 			rec(else_);
 		}
-		DCall(fn, args, pos, tyvar): {
+		DCall(fn, args, pos, eclass): {
 			pr("call");
 			rec(fn);
 			iter(args, rec);
 		}
-		DRef(value, pos, tyvar): {
+		DRef(value, pos, eclass): {
 			pr("ref");
 			rec(value);
 		}
-		DField(value, field, pos, tyvar): {
+		DField(value, field, pos, eclass): {
 			pr("field ." + field);
 			rec(value);
 		}
-		DSetMutable(lhs, field, value, pos, tyvar): {
+		DSetMutable(lhs, field, value, pos, eclass): {
 			pr("set mutable field" + field);
 			rec(lhs);
 			rec(value);
 		}
-		DArray(exps, pos, tyvar): {
+		DArray(exps, pos, eclass): {
 			pr("array");
 			iter(exps, rec);
 		}
-		DSequence(exps, pos, tyvar): {
+		DSequence(exps, pos, eclass): {
 			pr("sequence");
 			iter(exps, rec);
 		}
-		DSwitch(value, typ, cases, mdef, pos, tyvar): {
+		DSwitch(value, typ, cases, mdef, pos, eclass): {
 			pr("switch");
 			rec(value);
 			type(typ);
@@ -124,16 +124,16 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			pr("typed : " + prettyDType(input, typ));
 			rec(value);
 		}
-		DWith(struct, value, fields, pos, tyvar): {
+		DWith(struct, value, fields, pos, eclass): {
 			pr("with " + struct);
 			rec(value);
 			// iter(fields, rec);
 		}
-		DConstruct(structid, args, pos, tyvar): {
+		DConstruct(structid, args, pos, eclass): {
 			pr("construct " + structid);
 			iter(args, rec);
 		}
-		DDowncast(var, subtype, scope, pos, tyvar): {
+		DDowncast(var, subtype, scope, pos, eclass): {
 			pr("downcast " + var);
 			type(subtype);
 			rec(scope);

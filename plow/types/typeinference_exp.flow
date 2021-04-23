@@ -30,7 +30,7 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 	restype = \tv, type -> {
-		unifyTType(env, d.pos, type, TTypeVar(tv));
+		unifyTType(env, d.pos, type, TTypeEClass(tv));
 		type;
 	};
 	supertype = \types : [TType] -> makeTTypeSupertype(env.mkEClass, types);
@@ -42,7 +42,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DDouble(v, pos): TTypeName("double", []);
 		DString(v, pos): TTypeName("string", []);
 		DStringInclude(path, pos): TTypeName("string", []);
-		DVar(id, pos, tyvar): {
+		DVar(id, pos, eclass): {
 			mtype = lookupTree(env.localTypes, id);
 			type = mtype ?? {
 				supertype([mtype])
@@ -65,7 +65,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 					}
 				}
 			};
-			restype(tyvar, type);
+			restype(eclass, type);
 		}
 		DTyped(value, type, pos): {
 			valtype = ttypeInferenceDExp(env, value);
@@ -74,32 +74,32 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			unifyTType(env, pos, supertype([valtype, ttype]), ttype);
 			valtype;
 		}
-		DLet(id, value, body, pos, tyvar): {
+		DLet(id, value, body, pos, eclass): {
 			tvalue = ttypeInferenceDExp(env, value);
 			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, id, tvalue));
 			tbody = ttypeInferenceDExp(nenv, body);
-			restype(tyvar, tbody);
+			restype(eclass, tbody);
 		}
-		DIf(cond, then, else_, pos, tyvar): {
+		DIf(cond, then, else_, pos, eclass): {
 			tcond = ttypeInferenceDExp(env, cond);
 			unifyTType(env, pos, tcond, TTypeName("bool", []));
 
 			tthen = ttypeInferenceDExp(env, then);
 			telse = ttypeInferenceDExp(env, else_);
 			type = supertype([tthen, telse]);
-			restype(tyvar, type);
+			restype(eclass, type);
 		}
-		DCall(fn, args, pos, tyvar): {
+		DCall(fn, args, pos, eclass): {
 			fntype1 = ttypeInferenceDExp(env, fn);
 			argtypes = map(args, \a -> supertype([ttypeInferenceDExp(env, a)]));
-			rettype = TTypeVar(env.mkEClass());
+			rettype = TTypeEClass(env.mkEClass());
 			fntype2 = TTypeFunction(argtypes, rettype);
 
 			unifyTType(env, pos, fntype1, fntype2);
 
-			restype(tyvar, rettype);
+			restype(eclass, rettype);
 		}
-		DConstruct(structid, args, pos, tyvar): {
+		DConstruct(structid, args, pos, eclass): {
 			mstruct = env.resolveStructName(structid);
 			mstruct ?? {
 				argTypes = map(args, \arg -> {
@@ -114,13 +114,13 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 					env.onError(pos, "Struct " + structid + " expects " + i2s(length(itype.second)) + " arguments, got " + i2s(length(argTypes)));
 				}
 
-				restype(tyvar, itype.first);
+				restype(eclass, itype.first);
 			} : {
 				env.onError(pos, "Unknown struct " + structid);
-				TTypeVar(env.mkEClass());
+				TTypeEClass(env.mkEClass());
 			}
 		}
-		DLambda(args, body, pos, tyvar): {
+		DLambda(args, body, pos, eclass): {
 			argTypes = map(args, \arg -> {
 				dtype2ttype(env, true, arg.type)
 			});
@@ -129,14 +129,14 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			});
 			retType = ttypeInferenceDExp(nenv, body);
 			type = TTypeFunction(argTypes, retType);
-			restype(tyvar, type);
+			restype(eclass, type);
 		}
-		DRef(value, pos, tyvar): {
+		DRef(value, pos, eclass): {
 			vtype = ttypeInferenceDExp(env, value);
 			type = TTypeName("ref", [supertype([vtype])]);
-			restype(tyvar, type);
+			restype(eclass, type);
 		}
-		DField(value, field, pos, tyvar): {
+		DField(value, field, pos, eclass): {
 			// OK, this is an overload of all structs with a field
 			tvalue = ttypeInferenceDExp(env, value);
 			fieldStructs : [DStruct] = env.resolveField(field);
@@ -159,32 +159,32 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 			fntype = if (fieldFnTypes == []) {
 				env.onError(pos, "Unknown field " + field);
-				TTypeVar(env.mkEClass());
+				TTypeEClass(env.mkEClass());
 			} else if (length(fieldFnTypes) == 1) {
 				fieldFnTypes[0]
-			} else TTypeOverload(TTypeVar(tyvar), buildSet(fieldFnTypes));
+			} else TTypeOverload(TTypeEClass(eclass), buildSet(fieldFnTypes));
 
-			rtype = TTypeVar(tyvar);
+			rtype = TTypeEClass(eclass);
 			calltype = TTypeFunction([tvalue], rtype);
 
 			unifyTType(env, pos, calltype, fntype);
 			rtype;
 		}
-		// DSetMutable(lhs, field, value, pos, tyvar): 
-		DArray(exps, pos, tyvar): {
+		// DSetMutable(lhs, field, value, pos, eclass): 
+		DArray(exps, pos, eclass): {
 			vtypes = map(exps, \e -> {
 				ttypeInferenceDExp(env, e);
 			});
 			type = TTypeName("array", [supertype(vtypes)]);
-			restype(tyvar, type);
+			restype(eclass, type);
 		}
-		DSequence(exps, pos, tyvar): {
+		DSequence(exps, pos, eclass): {
 			stype = fold(exps, voidTType, \acc, e -> {
 				ttypeInferenceDExp(env, e);
 			});
-			restype(tyvar, stype);
+			restype(eclass, stype);
 		}
-		DSwitch(value, type, cases, defaultCase, pos, tyvar): {
+		DSwitch(value, type, cases, defaultCase, pos, eclass): {
 			tvalue = ttypeInferenceDExp(env, value);
 			ttype = dtype2ttype(env, true, type);
 			unifyTType(env, pos, supertype([tvalue]), ttype);
@@ -200,7 +200,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			} : {
 				caseBodyTypes
 			};
-			restype(tyvar, supertype(bodytypes));
+			restype(eclass, supertype(bodytypes));
 		}
 		DCast(value, target, pos): {
 			tvalue = ttypeInferenceDExp(env, value);
@@ -209,7 +209,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			unifyTType(env, pos, supertype([tvalue]), ttarget);
 			ttarget;
 		}
-		DDowncast(var, subtype, scope, pos, tyvar): {
+		DDowncast(var, subtype, scope, pos, eclass): {
 			tsubtype = dtype2ttype(env, true, subtype);
 			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, var, tsubtype));
 			dtype = ttypeInferenceDExp(nenv, scope);
@@ -220,12 +220,12 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				unifyTType(env, pos, supertype([etype, tsubtype]), etype);
 			} : {}
 
-			restype(tyvar, dtype);
+			restype(eclass, dtype);
 		}
-		// DWith(struct, value, fields, pos, tyvar): 
+		// DWith(struct, value, fields, pos, eclass): 
 		default: {
 			println("TODO: Infer the type of " + d.structname);
-			TTypeVar(env.mkEClass());
+			TTypeEClass(env.mkEClass());
 		}
 	}
 }

@@ -9,8 +9,8 @@ export {
 }
 
 unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
-	lroot = addEExp(env.egraph, left);
-	rroot = addEExp(env.egraph, right);
+	lroot = getTTypeEClass(env, left);
+	rroot = getTTypeEClass(env, right);
 	root = unionEClass(env.egraph, lroot, rroot);
 
 	if (false) {
@@ -41,13 +41,20 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 				default: {}
 			}
 		}
-		TTypeVar(lid): {}
+		TTypeEClass(lid): {}
 		TTypeOverload(lunique, loverloads): {
 			unifyTTypeOverload(env, pos, left, right);
 		}
 		TTypeSupertype(unique, subtypes): {
 			unifyTSupertype(env, pos, left, right);
 		}
+	}
+}
+
+getTTypeEClass(env : TTypeEnv, type : TType) -> int {
+	switch (type) {
+		TTypeEClass(eclass): eclass;
+		default: addEExp(env.egraph, type);
 	}
 }
 
@@ -100,14 +107,14 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				TTypeName(superid, supertypars): {
 					subtypeTTypenames(env, pos, sub, super);
 				}
-				TTypeVar(id): {}
+				TTypeEClass(id): {}
 				TTypeSupertype(__, supers): {
 					// This is probably true
 				}
 				default: error();
 			}
 		}
-		TTypeVar(id): {}
+		TTypeEClass(id): {}
 		TTypeFunction(largs, lreturnType): {
 			switch (super) {
 				TTypeFunction(rargs, rreturnType): {
@@ -121,7 +128,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 						error();
 					}
 				}
-				TTypeVar(id): {}
+				TTypeEClass(id): {}
 				default: error();
 			}
 		}
@@ -178,10 +185,10 @@ possibleTTypeMatch(env : TTypeEnv, left : TType, right : TType) -> bool {
 	if (left == right) true
 	else {
 		switch (left) {
-			TTypeVar(__): true;
+			TTypeEClass(__): true;
 			TTypeName(lid, ltps): {
 				switch (right) {
-					TTypeVar(__): true;
+					TTypeEClass(__): true;
 					TTypeName(rid, rtps): {
 						lid == rid
 						&& length(ltps) == length(rtps)
@@ -194,7 +201,7 @@ possibleTTypeMatch(env : TTypeEnv, left : TType, right : TType) -> bool {
 			}
 			TTypeFunction(largs, lrt): {
 				switch (right) {
-					TTypeVar(__): true;
+					TTypeEClass(__): true;
 					TTypeName(id, typars): false;
 					TTypeFunction(rargs, rrt): {
 						length(largs) == length(rargs)
@@ -224,7 +231,7 @@ possibleSuperTType(env : TTypeEnv, subtype : TType, supertype : TType) -> bool {
 				TTypeName(superid, __): {
 					contains(supers, superid);
 				}
-				TTypeVar(__): true;
+				TTypeEClass(__): true;
 				default: false;
 			}
 		}

@@ -39,8 +39,6 @@ export {
 
 		// When we start to extract equivalence classes
 		etypes : Tree<int, TType>,
-		// When we start to extract types
-		tyvars : ref Tree<int, TType>,
 	);
 
 	makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv;
@@ -73,6 +71,6 @@ makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv {
 			[]
 		},
 		makeTree(), makeTree(),
-		egraph, makeTree(), ref makeTree()
+		egraph, makeTree()
 	);
 }

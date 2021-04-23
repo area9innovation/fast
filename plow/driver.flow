@@ -176,7 +176,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					switch (mbnat) {
 						None(): {
 							dd.onError(pos, "Unknown id " + id);
-							TTypeVar(makeEClass(dd.egraph));
+							TTypeEClass(makeEClass(dd.egraph));
 						}
 						Some(bnat): btype2ttype(bnat.type);
 					}
