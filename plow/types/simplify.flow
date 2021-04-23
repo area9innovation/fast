@@ -126,9 +126,14 @@ applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 		}
 		EClassInsert(root, node): {
 			// println(prettyTType(node.head));
-			nroot = addENode(env.egraph, node);
-			join = unionEClass(env.egraph, root, nroot);
-			true;
+			switch (node.head) {
+				TTypeEClass(eclass): false;
+				default: {
+					nroot = addENode(env.egraph, node);
+					join = unionEClass(env.egraph, root, nroot);
+					true;
+				}
+			}
 		}
 		EUnifyTypes(root, nodes): {
 			foldSet(nodes, false, \acc, node1 -> {
@@ -137,7 +142,7 @@ applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 						// println(i2s(root) + ": " + prettyTType(node1) + " vs " + prettyTType(node2));
 						unifyTType(env, -1, node1, node2);
 						true;
-					} else false;
+					} else acc;
 				})
 			})
 		}

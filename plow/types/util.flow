@@ -9,6 +9,10 @@ export {
 	replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType;
 
 	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
+
+
+	unresolvedTType(t : TType) -> bool;
+	containsTTypeEClass(t : TType) -> bool;
 }
 
 makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType]) -> TType {
@@ -58,5 +62,26 @@ replaceTType(types : Tree<TType, TType>, type : TType) -> TType {
 			TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));
 			TTypeSupertype(unique, subtypes): TTypeSupertype(unique, mapSet(subtypes, rec));
 		}
+	}
+}
+
+
+unresolvedTType(t : TType) -> bool {
+	switch (t) {
+		TTypeName(id, typars): exists(typars, unresolvedTType);
+		TTypeEClass(eclass): true;
+		TTypeFunction(args, returnType): exists(args, unresolvedTType) || unresolvedTType(returnType);
+		TTypeOverload(unique, overloads): true;
+		TTypeSupertype(unique, subtypes): true;
+	}
+}
+
+containsTTypeEClass(t : TType) -> bool {
+	switch (t) {
+		TTypeName(id, typars): exists(typars, containsTTypeEClass);
+		TTypeEClass(eclass): true;
+		TTypeFunction(args, returnType): exists(args, containsTTypeEClass) || containsTTypeEClass(returnType);
+		TTypeOverload(unique, overloads): existsSet(overloads, containsTTypeEClass);
+		TTypeSupertype(unique, subtypes): existsSet(subtypes, containsTTypeEClass);
 	}
 }

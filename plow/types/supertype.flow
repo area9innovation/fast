@@ -21,24 +21,13 @@ resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
 		}
 	});
 
-	fnsupers = foldSet(super.subtypes, makeSet(), \acc, st -> {
-		switch (st) {
-			TTypeFunction(__, __): insertSet(acc, st);
-			default: acc;
-		}
-	});
-
-	if (sizeSet(namedsupers) == 1 && isEmptySet(fnsupers)) {
+	if (sizeSet(namedsupers) == 1) {
+		// OK, we found the name we should use
 		name = set2array(namedsupers)[0];
 		type = instantiateTTypeName(env, name);
 		// println(name + " becomes " + prettyTType(type));
 		type
-	} else if (sizeSet(fnsupers) == 1 && isEmptySet(namedsupers)) {
-		fn : TTypeFunction = set2array(fnsupers)[0];
-		fn;
 	} else {
-		// OK, if we are dealing with functions or something like that, we could
-		// probably "expand" them
 		super;
 	}
 }

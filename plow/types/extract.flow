@@ -12,8 +12,6 @@ export {
 	// Extract the types of a set of classes
 	extractEClasses(env : TTypeEnv, eclasses : Set<int>) -> Set<TType>;
 	extractENodes(env : TTypeEnv, eclass : int, enodes : Set<ENode<TType>>) -> Set<TType>;
-
-	unresolvedTType(t : TType) -> bool;
 }
 
 extractEClassTypes(env : TTypeEnv) -> Tree<int, TType> {
@@ -102,7 +100,12 @@ extractENode(env : ExtractEnv, eclass : int, enode : ENode<TType>) -> TType {
 			children : [TType] = extractChildren();
 			cset = buildSet(children);
 			super = TTypeSupertype(unique, cset);
-			set(resolveTSupertype(env.env, super));
+			if (isEmptySet(cset)) {
+				// We have no information.
+				set(TTypeEClass(eclass));
+			} else {
+				set(resolveTSupertype(env.env, super));
+			}
 		}
 	}
 }
@@ -125,15 +128,5 @@ calculateTTypeBenefit(e : ENode<TType>, childbenefits : [EClassBenefit<TType>]) 
 			// We do not want these that much
 			EClassBenefit(1, e);
 		}
-	}
-}
-
-unresolvedTType(t : TType) -> bool {
-	switch (t) {
-		TTypeName(id, typars): exists(typars, unresolvedTType);
-		TTypeEClass(eclass): true;
-		TTypeFunction(args, returnType): exists(args, unresolvedTType) || unresolvedTType(returnType);
-		TTypeOverload(unique, overloads): true; // existsSet(overloads, unresolvedTType);
-		TTypeSupertype(unique, subtypes): true; // existsSet(subtypes, unresolvedTType);
 	}
 }

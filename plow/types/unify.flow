@@ -57,9 +57,18 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 makeTTypeEClass(env : TTypeEnv, type : TType) -> int {
 	switch (type) {
 		TTypeEClass(eclass): eclass;
-		default: addEExp(env.egraph, type);
+		default: addTType2EGraph(env, type);
 	}
 }
+
+addTType2EGraph(env : TTypeEnv, e : TType) -> int {
+	split : Pair<TType, [TType]> = env.egraph.splitChildren(e);
+	enode = ENode(split.first, map(split.second, \child -> {
+		makeTTypeEClass(env, child)
+	}));
+	addENode(env.egraph, enode);
+}
+
 
 unifyTTypeNames(env : TTypeEnv, pos : int, left : TTypeName, right : TTypeName) {
 	// TODO: This is correct if one is a union with exactly the other type in it

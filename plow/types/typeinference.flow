@@ -76,7 +76,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		setFileContent("egraph-pre.dot", dot);
 		{}
 	}
-	extractEClassTType(genv, 10);
+	unifyEClasses(genv, 2, 3);
 }
 
 // Structurally unify eclasses
@@ -113,7 +113,7 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 
 	update = ref false;
 	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
-		if (unresolvedTType(type) || containsKeyTree(acc, eclass)) {
+		if (containsKeyTree(acc, eclass)) {
 			acc;
 		} else {
 			nclass = makeTTypeEClass(env, type);
@@ -122,8 +122,10 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 				unionEClass(env.egraph, nclass, eclass);
 				update := true;
 			}
-			// println("Resolved type " + prettyTType(type) + " to " + i2s(eclass));
-			setTree(acc, eclass, type)
+			if (!unresolvedTType(type) || iterations == 0) {
+				// println("Resolved type " + prettyTType(type) + " to " + i2s(eclass));
+				setTree(acc, nclass, type);
+			} else acc
 		}
 	});
 
