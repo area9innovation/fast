@@ -154,7 +154,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		dd = makeDDesugar(path, cache, \n -> {
+		dd = makeDDesugar(makeOnError(path, cache.onError), cache.nextId, \n -> {
 				// OK, scan our imports for this struct
 				lookupFromImport(cache.modules, cache.structLookup, imports, n)
 			}, \n -> {
@@ -165,8 +165,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		dmod = desugarPExp(dd, flowpath, path, p);
 
 		tenv1 = TTypeEnv(
-			makeTTypeEnv() with
-			mkTyvar = dd.mkTyvar,
+			makeTTypeEnv(dd.egraph) with
 			onError = dd.onError,
 			resolveId = \pos, id -> {
 				mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
@@ -177,7 +176,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					switch (mbnat) {
 						None(): {
 							dd.onError(pos, "Unknown id " + id);
-							TTypeVar(dd.mkTyvar());
+							TTypeVar(makeEClass(dd.egraph));
 						}
 						Some(bnat): btype2ttype(bnat.type);
 					}
@@ -216,21 +215,6 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		cache.onError(file + " could not be found");
 		getDummyBModule();
 	}
-}
-
-
-makeDDesugar(path : string, cache : PlowCache, 
-		resolveStructName : (string) -> Maybe<DStruct>,
-		resolveUnionName : (string) -> Maybe<DUnion>) -> DDesugar {
-	tyvarId = ref 0;
-	DDesugar(resolveStructName, resolveUnionName, 
-		makeOnError(path, cache.onError), 
-		cache.nextId,
-		\ -> {
-			atomicRefIntAddition(tyvarId, 1);
-			^tyvarId;
-		}
-	);
 }
 
 makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void {

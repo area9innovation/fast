@@ -1,14 +1,15 @@
 import ds/tree;
 import plow/types/type;
+import plow/types/split;
 import ds/egraph;
 import plow/dexp/dexp;
 
 export {
 	TTypeEnv(
-		// Map from type par to tyvar
+		// Map from type par to eclass
 		typars : Tree<string, int>,
-		// Construct a new type var
-		mkTyvar : () -> int,
+		// Construct a new type eclass
+		mkEClass : () -> int,
 		// Report an error associated with a given position
 		onError : (pos : int, error : string) -> void,
 
@@ -42,14 +43,13 @@ export {
 		tyvars : ref Tree<int, TType>,
 	);
 
-	makeTTypeEnv() -> TTypeEnv;
+	makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv;
 }
 
-makeTTypeEnv() -> TTypeEnv {
+makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv {
 	TTypeEnv(
 		makeTree(), \ -> {
-//			println("TODO: Replace mktyvar in TTypeEnv");
-			0
+			makeEClass(egraph)
 		}, 
 		\pos, error -> println(error), 
 		\pos, id -> {
@@ -73,34 +73,6 @@ makeTTypeEnv() -> TTypeEnv {
 			[]
 		},
 		makeTree(), makeTree(),
-		makeEGraph(splitTType), makeTree(), ref makeTree()
+		egraph, makeTree(), ref makeTree()
 	);
-}
-
-splitTType(t : TType) -> Pair<TType, [TType]> {
-	switch (t) {
-		TTypeName(id, typars): {
-			Pair(TTypeName(id, []), typars);
-		}
-		TTypeVar(id): Pair(t, []);
-		TTypeFunction(args, returnType): {
-			Pair(
-				// Make sure we keep the arity
-				TTypeFunction(map(args, \__ -> TTypeName("", [])), TTypeName("", [])), 
-				arrayPush(args, returnType)
-			);
-		}
-		TTypeOverload(typar, overloads): {
-			Pair(
-				TTypeOverload(typar, makeSet()),
-				set2array(overloads)
-			)
-		}
-		TTypeSupertype(typar, subtypes): {
-			Pair(
-				TTypeSupertype(typar, makeSet()),
-				set2array(subtypes)
-			)
-		}
-	}
 }

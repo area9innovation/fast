@@ -175,7 +175,7 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 
 				recursive = containsSet(extractDVars(makeSet(), dexp1), id);
 
-				global = DGlobal(id, set2array(typars), recursive, dexp1, dd.mkTyvar(), pos);
+				global = DGlobal(id, set2array(typars), recursive, dexp1, makeEClass(dd.egraph), pos);
 
 				if (containsKeyTree(acc, id)) {
 					dd.onError(pos, "Duplicate definition of " + id);
@@ -192,7 +192,7 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		switch (tl) {
 			PNative(id, isIo, type, name, pos): {
 				dtype = ptype2dtype(dd2, type);
-				nativ = DNative(id, isIo, dtype, name, lookupTree(globals, name), dd.mkTyvar(), pos);
+				nativ = DNative(id, isIo, dtype, name, lookupTree(globals, name), makeEClass(dd.egraph), pos);
 				if (containsKeyTree(acc, id)) {
 					dd.onError(pos, "Duplicate native def " + id);
 				};
@@ -270,35 +270,35 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PInt(v, pos): DInt(v, pos);
 		PDouble(v, pos): DDouble(v, pos);
 		PString(v, pos): DString(v, pos);
-		PVar(var, pos): DVar(var, pos, dd.mkTyvar());
-		PCallOp(op, args, pos): DCall(DVar(op, pos, dd.mkTyvar()), map(args, rec), pos, dd.mkTyvar());
+		PVar(var, pos): DVar(var, pos, makeEClass(dd.egraph));
+		PCallOp(op, args, pos): DCall(DVar(op, pos, makeEClass(dd.egraph)), map(args, rec), pos, makeEClass(dd.egraph));
 		PStringInclude(path, pos): DStringInclude(path, pos);
-		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos, dd.mkTyvar());
-		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos, dd.mkTyvar());
+		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos, makeEClass(dd.egraph));
+		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos, makeEClass(dd.egraph));
 		PCall(fn, args, pos): {
 			// Check if this is a struct constructor
 			switch (fn) {
 				PVar(id, __): {
 					mst = dd.resolveStructName(id);
 					mst ?? {
-						DConstruct(mst.id, map(args, rec), pos, dd.mkTyvar());
-					} : DCall(rec(fn), map(args, rec), pos, dd.mkTyvar());
+						DConstruct(mst.id, map(args, rec), pos, makeEClass(dd.egraph));
+					} : DCall(rec(fn), map(args, rec), pos, makeEClass(dd.egraph));
 				}
-				default: DCall(rec(fn), map(args, rec), pos, dd.mkTyvar());
+				default: DCall(rec(fn), map(args, rec), pos, makeEClass(dd.egraph));
 			}
 		}
 		PLambda(args, body, pos): DLambda(map(args, \a -> {
 			DArgType(a.id, ptype2dtype(dd, a.type), a.pos)
-		}), rec(body), pos, dd.mkTyvar());
-		PRef(value, pos): DRef(rec(value), pos, dd.mkTyvar());
-		PField(value, field, pos): DField(rec(value), field, pos, dd.mkTyvar());
-		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos, dd.mkTyvar());
-		PArray(exps, pos): DArray(map(exps, rec), pos, dd.mkTyvar());
+		}), rec(body), pos, makeEClass(dd.egraph));
+		PRef(value, pos): DRef(rec(value), pos, makeEClass(dd.egraph));
+		PField(value, field, pos): DField(rec(value), field, pos, makeEClass(dd.egraph));
+		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos, makeEClass(dd.egraph));
+		PArray(exps, pos): DArray(map(exps, rec), pos, makeEClass(dd.egraph));
 		PSequence(exps, pos): {
 			dexps = map(exps, rec);
 			if (exps == []) DVoid(pos)
 			else if (length(dexps) == 1) dexps[0]
-			else DSequence(dexps, pos, dd.mkTyvar());
+			else DSequence(dexps, pos, makeEClass(dd.egraph));
 		}
 		PSwitch(value, cases, pos): desugarPSwitch(dd, pexp);
 		PCast(value, target, pos): {
@@ -307,7 +307,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 				default: "";
 			};
 			toType = getPTypeName(target).id;
-			nat = \n -> DCall(DVar(n, pos, dd.mkTyvar()), [rec(value)], pos, dd.mkTyvar());
+			nat = \n -> DCall(DVar(n, pos, makeEClass(dd.egraph)), [rec(value)], pos, makeEClass(dd.egraph));
 			if (fromType == "double" && toType == "int") {
 				nat("trunc")
 			} else if (fromType == "int" && toType == "double") {
@@ -391,27 +391,27 @@ desugarPSwitch(dd : DDesugar, s : PSwitch) -> DExp {
 		pos = s.value.pos;
 		DLet(
 			name, pexp2dexp(dd, s.value),
-			desugarDSwitchWithVar(dd, s, DVar(name, pos, dd.mkTyvar()), DTypeName("auto", [], pos)),
-			pos, dd.mkTyvar()
+			desugarDSwitchWithVar(dd, s, DVar(name, pos, makeEClass(dd.egraph)), DTypeName("auto", [], pos)),
+			pos, makeEClass(dd.egraph)
 		);
 	};
 	switch (s.value) {
 		PVar(n, pos): {
-			desugarDSwitchWithVar(dd, s, DVar(n, pos, dd.mkTyvar()), DTypeName("auto", [], pos));
+			desugarDSwitchWithVar(dd, s, DVar(n, pos, makeEClass(dd.egraph)), DTypeName("auto", [], pos));
 		}
 		PTyped(value, subtype, pos): {
 			stype = ptype2dtype(dd, subtype);
 			switch (value) {
 				PVar(n, pos2): {	
-					desugarDSwitchWithVar(dd, s, DVar(n, pos2, dd.mkTyvar()), stype);
+					desugarDSwitchWithVar(dd, s, DVar(n, pos2, makeEClass(dd.egraph)), stype);
 				}
 				default: {
 					// We know the type, so OK
 					name = makeTempDName(dd);
 					DLet(
 						name, pexp2dexp(dd, s.value),
-						desugarDSwitchWithVar(dd, s, DVar(name, pos, dd.mkTyvar()), stype),
-						pos, dd.mkTyvar()
+						desugarDSwitchWithVar(dd, s, DVar(name, pos, makeEClass(dd.egraph)), stype),
+						pos, makeEClass(dd.egraph)
 					);
 				}
 			}
@@ -455,7 +455,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 								acc
 							} else {
 								structArg = struct.structArgs[i];
-								DLet(arg, DField(switchvar, structArg.id, c.pos, dd.mkTyvar()), acc, c.pos, dd.mkTyvar())
+								DLet(arg, DField(switchvar, structArg.id, c.pos, makeEClass(dd.egraph)), acc, c.pos, makeEClass(dd.egraph))
 							}
 						});
 						// Check if switchvar occurs in the body.
@@ -464,7 +464,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 							// Add a downcast
 							typars = map(struct.typars, \__ -> DTypeName("auto", [], c.pos));
 							stype = DTypeName(c.id, typars, c.pos);
-							DDowncast(switchvar.id, stype, body1, c.pos, dd.mkTyvar());
+							DDowncast(switchvar.id, stype, body1, c.pos, makeEClass(dd.egraph));
 						} else body1;
 					} else {
 						dd.onError(c.pos, c.id + " expects " + i2s(length(struct.structArgs)) + " args, got " + i2s(length(c.args)));
@@ -508,7 +508,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 		}
 	}));
 
-	DSwitch(switchvar, type, unions, def, s.pos, dd.mkTyvar())
+	DSwitch(switchvar, type, unions, def, s.pos, makeEClass(dd.egraph))
 }
 
 desugarPWith(dd : DDesugar, w : PWith) -> DWith {
@@ -518,10 +518,10 @@ desugarPWith(dd : DDesugar, w : PWith) -> DWith {
 			map(w.fields, \f : PFieldAssign -> {
 				// TODO: Check that this field exists in this struct
 				DFieldAssign(f.id, pexp2dexp(dd, f.value), f.pos)
-			}), w.pos, dd.mkTyvar())
+			}), w.pos, makeEClass(dd.egraph))
 	} : {
 		dd.onError(w.pos, "Unknown struct for with: " + w.struct);
-		DWith(w.struct, pexp2dexp(dd, w.value), [], w.pos, dd.mkTyvar())
+		DWith(w.struct, pexp2dexp(dd, w.value), [], w.pos, makeEClass(dd.egraph))
 	}
 }
 
@@ -537,4 +537,3 @@ getDTypePar(d : DType) -> DTypePar {
 		default: DTypePar("", -1);
 	}
 }
-

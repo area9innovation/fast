@@ -17,7 +17,7 @@ dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
 		d.unions,
 		makeDFieldMap(d.structs),
 		mapTree(d.natives, \nat -> {
-			BNative(nat.id, nat.isIo, resolveBType(env, nat.tyvar), nat.name, 
+			BNative(nat.id, nat.isIo, resolveBType(env, nat.eclass), nat.name, 
 				{
 					fb = nat.fallback;
 					fb ?? {
@@ -34,5 +34,5 @@ dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
 }
 
 dglobal2bglobal(env : BExpEnv, d : DGlobal) -> BGlobal {
-	BGlobal(d.id, d.typars, d.recursive, dexp2bexp(env, d.value), resolveBType(env, d.tyvar), d.pos);
+	BGlobal(d.id, d.typars, d.recursive, dexp2bexp(env, d.value), resolveBType(env, d.eclass), d.pos);
 }

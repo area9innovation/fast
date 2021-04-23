@@ -33,8 +33,8 @@ export {
 		pos : int
 	);
 
-	DGlobal(id : string, typars : [string], recursive : bool, value : DExp, tyvar : int, pos : int);
-	DNative(id : string, isIo : bool, type : DType, name : string, fallback : Maybe<DGlobal>, tyvar : int, pos : int);
+	DGlobal(id : string, typars : [string], recursive : bool, value : DExp, eclass : int, pos : int);
+	DNative(id : string, isIo : bool, type : DType, name : string, fallback : Maybe<DGlobal>, eclass : int, pos : int);
 
 	DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);
 	DStruct(id : string, typars : [string], structArgs : [DStructArg], pos : int);
@@ -56,31 +56,31 @@ export {
 		DStringInclude(path : string, pos : int);
 
 		// TODO: Is this an op?
-		DRef(value : DExp, pos : int, tyvar : int);
+		DRef(value : DExp, pos : int, eclass : int);
 
-		DField(value : DExp, field : string, pos : int, tyvar : int);
-		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int, tyvar : int);
+		DField(value : DExp, field : string, pos : int, eclass : int);
+		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int, eclass : int);
 
-		DVar(id : string, pos : int, tyvar : int);
-		DLet(id : string, value : DExp, body : DExp, pos : int, tyvar : int);
-		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int, tyvar : int);
+		DVar(id : string, pos : int, eclass : int);
+		DLet(id : string, value : DExp, body : DExp, pos : int, eclass : int);
+		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int, eclass : int);
 		// Array construction
-		DArray(exps : [DExp], pos : int, tyvar : int);
-		DSequence(exps : [DExp], pos : int, tyvar : int);
-		DCall(fn : DExp, args : [DExp], pos : int, tyvar : int);
+		DArray(exps : [DExp], pos : int, eclass : int);
+		DSequence(exps : [DExp], pos : int, eclass : int);
+		DCall(fn : DExp, args : [DExp], pos : int, eclass : int);
 		// Struct constructo
-		DConstruct(structid : string, args : [DExp], pos : int, tyvar : int);
-		DLambda(args : [DArgType], body : DExp, pos : int, tyvar : int);
+		DConstruct(structid : string, args : [DExp], pos : int, eclass : int);
+		DLambda(args : [DArgType], body : DExp, pos : int, eclass : int);
 			DArgType(id : string, type : DType, pos : int);
 
-		DSwitch(value : DVar, type : DType, cases : [DCase], defaultCase : Maybe<DExp>, pos : int, tyvar : int);
+		DSwitch(value : DVar, type : DType, cases : [DCase], defaultCase : Maybe<DExp>, pos : int, eclass : int);
 			DCase(id : string, body : DExp, pos : int);
 		DCast(value : DExp, target : DType, pos : int);
 		// This does a downcast from a supertype to a subtype
-		DDowncast(id : string, subtype : DType, scope : DExp, pos : int, tyvar : int);
+		DDowncast(id : string, subtype : DType, scope : DExp, pos : int, eclass : int);
 		DTyped(value : DExp, subtype : DType, pos : int);
 
-		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int, tyvar : int);
+		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int, eclass : int);
 			DFieldAssign(id : string, value : DExp, pos : int);
 
 	DType ::= DTypePar, DTypeName, DTypeFunction;

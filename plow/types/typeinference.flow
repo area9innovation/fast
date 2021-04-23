@@ -18,13 +18,13 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	// Resolve the types of natives
 	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
 		type = dtype2ttype(env, false, nativ.type);
-		unifyTType(env, d.pos, type, TTypeVar(nativ.tyvar));
+		unifyTType(env, d.pos, type, TTypeVar(nativ.eclass));
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
 	});
 
 	// Set the type of top levels, so mutual recursion has something to bite on
 	tenv = foldTree(d.globals, nenv, \id, global, acc -> {
-		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, TTypeVar(global.tyvar)))
+		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, TTypeVar(global.eclass)))
 	});
 
 	// Make a field map
@@ -163,7 +163,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 
 	// Instantiate the typars
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
-		setTree(acc, tp, env.mkTyvar())
+		setTree(acc, tp, env.mkEClass())
 	});
 	nenv = TTypeEnv(env with typars = typars);
 
@@ -180,6 +180,6 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	);
 
 	// println("Inference " + d.id + " is " + prettyTType(ftype));
-	unifyTType(env, d.pos, ftype, TTypeVar(d.tyvar));
+	unifyTType(env, d.pos, ftype, TTypeVar(d.eclass));
 	TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
 }

@@ -33,7 +33,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		unifyTType(env, d.pos, type, TTypeVar(tv));
 		type;
 	};
-	supertype = \types : [TType] -> makeTTypeSupertype(env.mkTyvar, types);
+	supertype = \types : [TType] -> makeTTypeSupertype(env.mkEClass, types);
 
 	switch (d) {
 		DVoid(pos): TTypeName("void", []);
@@ -92,7 +92,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DCall(fn, args, pos, tyvar): {
 			fntype1 = ttypeInferenceDExp(env, fn);
 			argtypes = map(args, \a -> supertype([ttypeInferenceDExp(env, a)]));
-			rettype = TTypeVar(env.mkTyvar());
+			rettype = TTypeVar(env.mkEClass());
 			fntype2 = TTypeFunction(argtypes, rettype);
 
 			unifyTType(env, pos, fntype1, fntype2);
@@ -117,7 +117,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				restype(tyvar, itype.first);
 			} : {
 				env.onError(pos, "Unknown struct " + structid);
-				TTypeVar(env.mkTyvar());
+				TTypeVar(env.mkEClass());
 			}
 		}
 		DLambda(args, body, pos, tyvar): {
@@ -159,7 +159,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 			fntype = if (fieldFnTypes == []) {
 				env.onError(pos, "Unknown field " + field);
-				TTypeVar(env.mkTyvar());
+				TTypeVar(env.mkEClass());
 			} else if (length(fieldFnTypes) == 1) {
 				fieldFnTypes[0]
 			} else TTypeOverload(TTypeVar(tyvar), buildSet(fieldFnTypes));
@@ -225,7 +225,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		// DWith(struct, value, fields, pos, tyvar): 
 		default: {
 			println("TODO: Infer the type of " + d.structname);
-			TTypeVar(env.mkTyvar());
+			TTypeVar(env.mkEClass());
 		}
 	}
 }

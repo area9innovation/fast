@@ -12,17 +12,16 @@ export {
 		eclassType : Tree<int, TType>,
 	);
 
-	resolveBType(env : BExpEnv, tyvar : int) -> BType;
+	resolveBType(env : BExpEnv, eclass : int) -> BType;
 }
 
-resolveBType(env : BExpEnv, tyvar : int) -> BType {
-	eclass = addEExp(env.egraph, TTypeVar(tyvar));
+resolveBType(env : BExpEnv, eclass : int) -> BType {
 	// println("a" + i2s(tv) + " is in " + i2s(eclass) );
 	mtype = lookupTree(env.eclassType, eclass);
 	mtype ?? {
 		ttype2btype(env, mtype)
 	} : {
-		println("TODO: Report type error for " + i2s(tyvar) + "!");
+		println("TODO: Report type error for " + i2s(eclass) + "!");
 		BTypeName("Error!", []);
 	}
 }
@@ -46,33 +45,33 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 		DStringInclude(path, pos): {
 			BString(getFileContent(path));
 		}
-		DVar(id, pos, tyvar): BVar(id, type(tyvar));
-		DLet(id, value, body, pos, tyvar): BLet(id, rec(value), rec(body), type(tyvar));
-		DIf(cond, then, else_, pos, tyvar): BIf(rec(cond), rec(then), rec(else_), type(tyvar));
-		DCall(fn, args, pos, tyvar): {
-			BCall(rec(fn), map(args, rec), type(tyvar))
+		DVar(id, pos, eclass): BVar(id, type(eclass));
+		DLet(id, value, body, pos, eclass): BLet(id, rec(value), rec(body), type(eclass));
+		DIf(cond, then, else_, pos, eclass): BIf(rec(cond), rec(then), rec(else_), type(eclass));
+		DCall(fn, args, pos, eclass): {
+			BCall(rec(fn), map(args, rec), type(eclass))
 		}
-		DConstruct(structid, args, pos, tyvar): {
-			BConstruct(structid, map(args, rec), type(tyvar))
+		DConstruct(structid, args, pos, eclass): {
+			BConstruct(structid, map(args, rec), type(eclass))
 		}
-		DLambda(args, body, pos, tyvar): {
-			BLambda(map(args, \a -> a.id), rec(body), type(tyvar));
+		DLambda(args, body, pos, eclass): {
+			BLambda(map(args, \a -> a.id), rec(body), type(eclass));
 		}
-		DRef(value, pos, tyvar): {
-			typ = type(tyvar);
+		DRef(value, pos, eclass): {
+			typ = type(eclass);
 			// The type of __ref is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
 			BCall(BVar("__ref", typ), [rec(value)], typ);
 		}
-		DField(value, field, pos, tyvar): BField(rec(value), field, type(tyvar));	
-		DSetMutable(lhs, field, value, pos, tyvar): todo();
-		DArray(exps, pos, tyvar): {
-			typ = type(tyvar);
+		DField(value, field, pos, eclass): BField(rec(value), field, type(eclass));	
+		DSetMutable(lhs, field, value, pos, eclass): todo();
+		DArray(exps, pos, eclass): {
+			typ = type(eclass);
 			// The type of __array is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
 			BCall(BVar("__array", typ), map(exps, rec), typ);
 		}
-		DSequence(exps, pos, tyvar): BSequence(map(exps, rec), type(tyvar));
-		DSwitch(value, stype, cases, defaultCase, pos, tyvar): {
-			swtype = type(value.tyvar);
+		DSequence(exps, pos, eclass): BSequence(map(exps, rec), type(eclass));
+		DSwitch(value, stype, cases, defaultCase, pos, eclass): {
+			swtype = type(value.eclass);
 			BSwitch(
 				BVar(value.id, swtype), swtype,
 				map(cases, \case : DCase -> {
@@ -81,24 +80,24 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 				defaultCase ?? {
 					Some(rec(defaultCase))
 				} : None(),
-				type(tyvar)
+				type(eclass)
 			);
 		}
 		DCast(value, target, pos): todo();
-		DDowncast(value, subtype, scope, pos, tyvar): {
+		DDowncast(value, subtype, scope, pos, eclass): {
 			// We probably do not need this in the backends. It is purely a type checking thing
 			rec(scope);
 		}
 		DTyped(value, subtype, pos): rec(value);
-		DWith(struct, value, fields, pos, tyvar): todo();
+		DWith(struct, value, fields, pos, eclass): todo();
 	}
 }
 
 ttype2btype(env : BExpEnv, type : TType) -> BType {
 	switch (type) {
 		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
-		TTypeVar(tyvar): {
-			BTypeName("ERROR TYVAR " + i2s(tyvar), []);
+		TTypeVar(eclass): {
+			BTypeName("ERROR TYVAR " + i2s(eclass), []);
 		}
 		TTypeFunction(args, returnType): {
 			BTypeFunction(map(args, \a -> ttype2btype(env, a)), ttype2btype(env, returnType));

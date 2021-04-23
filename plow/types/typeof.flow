@@ -47,13 +47,13 @@ dtype2ttype(env : TTypeEnv, instantiate : bool, d : DType) -> TType {
 					TTypeVar(mtyvar);
 				} : {
 	// 				println("Unresolved type par!");
-					TTypeVar(env.mkTyvar());
+					TTypeVar(env.mkEClass());
 				}
 			} else TTypeName(id, []);
 		}
 		DTypeName(id, typars, pos): {
 			if (id == "auto") {
-				TTypeVar(env.mkTyvar())
+				TTypeVar(env.mkEClass())
 			} else {
 				TTypeName(id, map(typars, \tv -> dtype2ttype(env, instantiate, tv)));
 			}

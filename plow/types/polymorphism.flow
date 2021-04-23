@@ -33,7 +33,7 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeVar>, t : T
 				mtype ?? {
 					mtype;
 				} : {
-					tv = TTypeVar(env.mkTyvar());
+					tv = TTypeVar(env.mkEClass());
 					typars := setTree(^typars, id, tv);
 					tv;
 				}
@@ -69,7 +69,7 @@ instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TT
 }
 
 instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]> {
-	typars = map(struct.typars, \tp -> TTypeVar(env.mkTyvar()));
+	typars = map(struct.typars, \tp -> TTypeVar(env.mkEClass()));
 
 	typarTree = foldi(struct.typars, makeTree(), \i, acc, tp -> {
 		setTree(acc, tp, typars[i].tyvar)
@@ -92,10 +92,10 @@ instantiateTTypeName(env : TTypeEnv, name : string) -> TType {
 		switch (munion) {
 			None(): {
 				typars = if (name == "array" || name == "ref") 1 else 0;
-				TTypeName(name, generate(0, typars, \__ -> TTypeVar(env.mkTyvar())));
+				TTypeName(name, generate(0, typars, \__ -> TTypeVar(env.mkEClass())));
 			}
 			Some(union): {
-				typars = map(union.typars, \tp -> TTypeVar(env.mkTyvar()));
+				typars = map(union.typars, \tp -> TTypeVar(env.mkEClass()));
 				TTypeName(name, typars);
 			}
 		}
