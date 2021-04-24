@@ -1,5 +1,5 @@
-import plow/types/extract;
-import plow/types/simplify;
+import plow/types/egraph/extract;
+import plow/types/egraph/simplify;
 
 export {
 	resolveEClasses(env : TTypeEnv) -> TTypeEnv;

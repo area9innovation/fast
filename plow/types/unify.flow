@@ -1,24 +1,17 @@
 import plow/types/pretty;
 import plow/types/typeenv;
 import plow/types/polymorphism;
+import plow/types/egraph/egraph;
 import ds/egraph_dot;
 
 export {
 	// Unify these two types into the same equivalence class
 	unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void;
-
-	// What is the eclass for this type? If none exist, make one
-	makeTTypeEClass(env : TTypeEnv, type : TType) -> int;
 }
 
 unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
-	lroot = makeTTypeEClass(env, left);
-	rroot = makeTTypeEClass(env, right);
-	root = unionEClass(env.egraph, lroot, rroot);
-
-	if (false) {
-		env.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root));
-	}
+	// OK, mark these types are unified
+	unifyTTypeEClass(env, pos, left, right);
 
 	// Do recursive unification
 	switch (left) {
@@ -52,21 +45,6 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 			unifyTSupertype(env, pos, left, right);
 		}
 	}
-}
-
-makeTTypeEClass(env : TTypeEnv, type : TType) -> int {
-	switch (type) {
-		TTypeEClass(eclass): eclass;
-		default: addTType2EGraph(env, type);
-	}
-}
-
-addTType2EGraph(env : TTypeEnv, e : TType) -> int {
-	split : Pair<TType, [TType]> = env.egraph.splitChildren(e);
-	enode = ENode(split.first, map(split.second, \child -> {
-		makeTTypeEClass(env, child)
-	}));
-	addENode(env.egraph, enode);
 }
 
 
@@ -190,7 +168,6 @@ subtypeTTypenames(env : TTypeEnv, pos : int, sub : TTypeName, super : TTypeName)
 		}
 	}
 }
-
 
 // Can these two types potentially match? Used to resolve overloads
 possibleTTypeMatch(env : TTypeEnv, left : TType, right : TType) -> bool {

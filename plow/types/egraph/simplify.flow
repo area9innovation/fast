@@ -1,5 +1,5 @@
 import plow/types/typeenv;
-import plow/types/extract;
+import plow/types/egraph/extract;
 import plow/types/unify;
 
 export {

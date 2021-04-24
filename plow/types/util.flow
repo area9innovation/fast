@@ -1,4 +1,5 @@
 import plow/types/type;
+import plow/types/egraph/egraph;
 import ds/egraph;
 
 export {
@@ -31,7 +32,7 @@ extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
 ttypeENode2string(egraph : EGraph<TType>, enode : ENode<TType>) -> string {
 	switch (enode.head) {
 		TTypeName(id, typars): id;
-		TTypeEClass(id): "e" + i2s(getEClassRoot(egraph, id));
+		TTypeEClass(id): "e" + i2s(rootTTypeEClass(egraph, id));
 		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
 		TTypeOverload(unique, overloads): "overload";
 		TTypeSupertype(unique, subtypes): "supertype_" + i2s(unique);

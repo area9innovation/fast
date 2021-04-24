@@ -2,7 +2,6 @@ import plow/dexp/dexp;
 import plow/dexp/pretty;
 import plow/types/typeenv;
 import plow/types/builtin;
-import plow/types/extract;
 import plow/bexp/bexp;
 
 export {
@@ -18,7 +17,7 @@ export {
 }
 
 resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
-	root = getEClassRoot(env.egraph, eclass);
+	root = rootTTypeEClass(env.egraph, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
 		if (unresolvedTType(mtype)) {

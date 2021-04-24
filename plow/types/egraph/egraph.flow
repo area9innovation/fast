@@ -1,0 +1,53 @@
+import plow/types/typeenv;
+import plow/types/pretty;
+
+// The idea with this file is to present the minimum interface
+// that is required to work with equivalence classes for the types
+export {
+	// Prepare an empty equivalence class
+	emptyTTypeClass(env : EGraph<TType>) -> int;
+
+	// Get the (or construct a) type equivalence class for this type
+	makeTTypeEClass(env : TTypeEnv, type : TType) -> int;
+
+	// Given this eclass, what is the root equivalence class?
+	rootTTypeEClass(egraph : EGraph<TType>, eclass : int) -> int;
+
+	// Join these two types into the same equivalence class
+	unifyTTypeEClass(env : TTypeEnv, pos : int, left : TType, right : TType) -> int;
+}
+
+emptyTTypeClass(env : EGraph<TType>) -> int {
+	makeEClass(env);
+}
+
+makeTTypeEClass(env : TTypeEnv, type : TType) -> int {
+	switch (type) {
+		TTypeEClass(eclass): eclass;
+		default: addTType2EGraph(env, type);
+	}
+}
+
+addTType2EGraph(env : TTypeEnv, e : TType) -> int {
+	split : Pair<TType, [TType]> = env.egraph.splitChildren(e);
+	enode = ENode(split.first, map(split.second, \child -> {
+		makeTTypeEClass(env, child)
+	}));
+	addENode(env.egraph, enode);
+}
+
+rootTTypeEClass(egraph : EGraph<TType>, eclass : int) -> int {
+	getEClassRoot(egraph, eclass)
+}
+
+unifyTTypeEClass(env : TTypeEnv, pos : int, left : TType, right : TType) -> int {
+	lroot = makeTTypeEClass(env, left);
+	rroot = makeTTypeEClass(env, right);
+	if (lroot != rroot) {
+		root = unionEClass(env.egraph, lroot, rroot);
+		if (false) {
+			env.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root));
+		}
+		root;
+	} else lroot;
+}
