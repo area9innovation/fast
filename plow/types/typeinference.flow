@@ -1,10 +1,9 @@
 import plow/dexp/types;
 import plow/types/typeinference_exp;
+import plow/types/resolve;
 import plow/types/typeof;
-import plow/types/extract;
 import plow/types/polymorphism;
 import plow/types/util;
-import plow/types/simplify;
 
 import ds/egraph_dot;
 import ds/egraph_extract;
@@ -69,106 +68,11 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		} : {acc}
 	});
 
-	canonicalizeEGraph(genv.egraph);
-
-	if (false) {
-		dot = egraph2dot(env.egraph, \n -> ttypeENode2string(env.egraph, n));
-		setFileContent("egraph-pre.dot", dot);
-		{}
-	}
-	unifyEClasses(genv, 2, 3);
-}
-
-// Structurally unify eclasses
-unifyEClasses(env : TTypeEnv, iterations : int, extractions : int) -> TTypeEnv {
-	if (false) {
-		println("Unify eclasses " + i2s(iterations));
-		dumpEClasses(env);
-	}
-	unify : ref [ENodesUnify] = ref [];
-	iterEGraph(env.egraph, \root, nodes : Set<ENode<TType>> -> {
-		unify := concat(^unify, unifyENodes(env, root, nodes));
-	});
-	update = ref false;
-	if (^unify != []) {
-		// Apply all updates to the graph
-		iter(^unify, \eunify : ENodesUnify -> {
-			update := applyENodesUnify(env, eunify) || ^update;
-		});
-		canonicalizeEGraph(env.egraph);
-	}
-
-	if (!^update || iterations <= 0) {
-		extractEClassTType(env, extractions);
-	} else {
-		// Repeat
-		unifyEClasses(env, iterations - 1, extractions);
-	}
-}
-
-// OK, based on the egraph we have, extract the "cheapest" types
-extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
-	// println("Cost based extraction:");
-	types = extractEClassTypes(env);
-
-	update = ref false;
-	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
-		if (containsKeyTree(acc, eclass)) {
-			acc;
-		} else {
-			nclass = makeTTypeEClass(env, type);
-			if (nclass != eclass) {
-				// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
-				unionEClass(env.egraph, nclass, eclass);
-				update := true;
-			}
-			if (!unresolvedTType(type) || iterations == 0) {
-				// println("Resolved type " + prettyTType(type) + " to " + i2s(eclass));
-				setTree(acc, nclass, type);
-			} else acc
-		}
-	});
-
-	tenv = TTypeEnv(env with etypes = etypes);
-
-	canonicalizeEGraph(tenv.egraph);
-	if (iterations > 0 && ^update) {
-		unifyEClasses(tenv, 2, iterations - 1);
-	} else {
-		if (true) {
-			println("Final Classes at " + i2s(iterations));
-			dumpEClasses(tenv);
-		}
-		if (true) {
-			dot = egraph2dot(tenv.egraph, \n -> ttypeENode2string(tenv.egraph, n));
-			setFileContent("egraph.dot", dot);
-			{}
-		}
-		tenv;
-	}
-}
-
-dumpEClasses(env : TTypeEnv) -> void {
-	iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
-		root = getEClassRoot(env.egraph, i);
-		if (isEmptySet(^value)) {
-			// println("Class e" + i2s(root) + " from e" + i2s(i));
-		} else {
-			println("Class e" + i2s(root) + " : "
-				+ rpad(prettyTType(lookupTreeDef(env.etypes, i, TTypeName("Unresolved", []))), " ", 50) + " from "
-				+ superglue(set2array(^value), \e : ENode<TType>-> {
-					ttypeENode2string(env.egraph, e) + "(" + superglue(e.args, \ec -> {
-						eroot = getEClassRoot(env.egraph, ec);
-						i2s(eroot)
-					}, ", ") + ")"
-				}, ", ")
-			);
-		}
-	});
+	resolveEClasses(genv);
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
-	println("Inference of global " + d.id);
+	// println("Inference of global " + d.id);
 
 	// Instantiate the typars
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
