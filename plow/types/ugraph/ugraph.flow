@@ -49,15 +49,21 @@ emptyTTypeClass(tg : TypeGraph) -> int {
 
 makeTTypeEClass(tg : TypeGraph, type : TType) -> int {
 	switch (type) {
-		TTypeEClass(eclass): eclass;
+		TTypeEClass(eclass): findUnionMapRoot(tg.umap, eclass);
 		default: {
 			typenode = TTypeNode([type]);
 			mid = lookupTree(tg.memo, typenode);
 			mid ?? {
-				mid
+				root = findUnionMapRoot(tg.umap, mid);
+				if (root != mid) {
+					tg.memo ::= setTree(tg.memo, typenode, root);
+				}
+				root
 			} : {
+				// OK, go look for it
 				eclass = emptyTTypeClass(tg);
 				setUnionMapValue(tg.umap, eclass, typenode);
+				tg.memo ::= setTree(tg.memo, typenode, eclass);
 				eclass;
 			}
 		}
@@ -74,7 +80,7 @@ unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int 
 	if (lroot != rroot) {
 		root = unionUnionMap(tg.umap, lroot, rroot);
 		if (false) {
-			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root));
+			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root) + ")");
 		}
 		root;
 	} else lroot;

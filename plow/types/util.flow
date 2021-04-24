@@ -7,7 +7,6 @@ export {
 
 	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
 
-
 	unresolvedTType(t : TType) -> bool;
 	containsTTypeEClass(t : TType) -> bool;
 }

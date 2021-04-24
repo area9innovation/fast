@@ -45,7 +45,6 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 	}
 }
 
-
 unifyTTypeNames(env : TTypeEnv, pos : int, left : TTypeName, right : TTypeName) {
 	// TODO: This is correct if one is a union with exactly the other type in it
 	// otherwise, it is a problem

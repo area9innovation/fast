@@ -220,15 +220,21 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void {
 	resolver = ref None();
 	\pos, error -> {
-		res = onlyOnce(resolver, \ -> {
-			text = getFileContent(file);
-			makeLineResolver(text);
-		});
-		linecol = findLine(res, pos); // maxi
-		onError(
-			file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
-			+ "\n" + linecol.line
-			+ "\n" + lpad("^", " ", linecol.lineIndex - 1)
-		);
+		if (pos == -1 || pos == 0) {
+			onError(
+				file + ":" + error
+			);
+		} else {
+			res = onlyOnce(resolver, \ -> {
+				text = getFileContent(file);
+				makeLineResolver(text);
+			});
+			linecol = findLine(res, pos); // maxi
+			onError(
+				file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
+				+ "\n" + linecol.line
+				+ "\n" + lpad("^", " ", linecol.lineIndex - 1)
+			);
+		}
 	}
 }

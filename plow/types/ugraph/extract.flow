@@ -1,0 +1,85 @@
+import plow/types/ugraph/ugraph;
+import ds/arrayutils;
+
+export {
+	extractTTypes(tgraph : TypeGraph, types : Tree<int, TType>) -> Tree<int, TType>;
+}
+
+ExtractEnv(
+	tgraph : TypeGraph,
+	types : ref Tree<int, TType>,
+	visiting : ref Set<int>,
+);
+
+extractTTypes(tgraph : TypeGraph, types : Tree<int, TType>) -> Tree<int, TType> {
+	env = ExtractEnv(tgraph, ref types, ref makeSet());
+	roots = getUnionMapRoots(env.tgraph.umap);
+	iterSet(roots, \root -> {
+		extractTypeNode(env, root);
+		{}
+	});
+	^(env.types)
+}
+
+extractTypeNode(env : ExtractEnv, eclass : int) -> TType {
+	root = rootTTypeEClass(env.tgraph, eclass);
+	mtype = lookupTree(^(env.types), root);
+	mtype ?? {
+		mtype
+	} : {
+		if (containsSet(^(env.visiting), root)) {
+			TTypeEClass(root)
+		} else {
+			env.visiting := insertSet(^(env.visiting), root);
+			typenode = getUnionMapValue(env.tgraph.umap, root);
+
+			best = fold2(typenode.types, 0, TTypeEClass(eclass), \ben, best, type : TType -> {
+				benefit = benefitTTypeNode(env, type);
+				if (benefit.first > ben) benefit
+				else Pair(ben, best)
+			});
+			type = best.second;
+			env.types := setTree(^(env.types), root, type);
+			env.visiting := removeSet(^(env.visiting), root);
+
+			type;
+		}
+	}
+}
+
+benefitTTypeNode(env : ExtractEnv, t : TType) -> Pair<int, TType> {
+	rec = \tt -> benefitTTypeNode(env, tt);
+	children : ([TType]) -> Pair<int, [TType]> = \tts -> {
+		ts = map(tts, rec);
+		Pair(
+			fold(ts, 0, \acc, p -> acc + p.first), 
+			map(ts, \tp -> tp.second)
+		);
+	}
+
+	switch (t) {
+		TTypeName(id, typars): {
+			ch = children(typars);
+			Pair(if (id == "flow") 5 else 10 + ch.first, TTypeName(id, ch.second));
+		}
+		TTypeEClass(eclass): {
+			ttype = extractTypeNode(env, eclass);
+			if (ttype == t) Pair(0, t)
+			else benefitTTypeNode(env, ttype);
+		}
+		TTypeFunction(args, returnType): {
+			ch = children(args);
+			rr = rec(returnType);
+			Pair(
+				5 + ch.first + rr.first,
+				TTypeFunction(ch.second, rr.second)
+			);
+		}
+		TTypeOverload(unique, overloads): {
+			Pair(1, t);
+		}
+		TTypeSupertype(unique, subtypes): {
+			Pair(1, t);
+		}
+	}
+}

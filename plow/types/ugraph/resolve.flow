@@ -1,27 +1,81 @@
 import plow/types/typeenv;
+import plow/types/supertype;
+import plow/types/unify;
 import plow/types/ugraph/ugraph;
+import plow/types/ugraph/extract;
 
 export {
 	resolveEClasses(env : TTypeEnv) -> TTypeEnv;
 }
 
 resolveEClasses(env : TTypeEnv) -> TTypeEnv {
-	dumpEClasses(env);
-	env;
+	doResolveEClasses(env, 5);
 }
 
+doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
+	update = ref false;
+
+	// Pull out types
+	types = extractTTypes(env.tgraph, env.etypes);
+	// Simplify them as much as possibe
+	stypes = mapTree(types, \t -> simplifyType(env, t));
+	// And then unify these with the group
+	unifyEClasses(env, stypes);
+
+	// Then pull out the result
+	ftypes = extractTTypes(env.tgraph, env.etypes);
+	restypes = foldTree(ftypes, env.etypes, \eclass, type, acc -> {
+		if (iteration == 1 && unresolvedTType(type)) acc
+		else {
+			// We have a resolved type!
+			update := true;
+			setTree(acc, eclass, type)
+		}
+	});
+
+	fenv = TTypeEnv(env with etypes = restypes);
+	if (!(^update) || iteration <= 0) {
+		dumpEClasses(fenv);
+		fenv;
+	} else {
+		doResolveEClasses(env, iteration - 1);
+	}
+}
+
+simplifyType(env : TTypeEnv, t : TType) -> TType {
+	rec = \tt -> simplifyType(env, tt);
+	switch (t) {
+		TTypeName(id, typars): TTypeName(id, map(typars, rec));
+		TTypeEClass(eclass): TTypeEClass(rootTTypeEClass(env.tgraph, eclass));
+		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
+		TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));
+		TTypeSupertype(unique, subtypes): resolveTSupertype(env, t);
+	}
+}
 
 dumpEClasses(env : TTypeEnv) -> void {
 	iterUnionMap(env.tgraph.umap, \i, value : TTypeNode -> {
 		if (i < ^(env.tgraph.nextEClass)) {
+			type = lookupTreeDef(env.etypes, i, TTypeEClass(i));
 			println("Class e" + i2s(i) + " : "
+				+ rpad(prettyTType(type), " ", 40) + " from "
 				+ ttypeNode2string(value)
 			);
 		}
 	});
 }
 
-
 ttypeNode2string(t : TTypeNode) -> string {
 	superglue(t.types, prettyTType, ", ")
+}
+
+unifyEClasses(env : TTypeEnv, types : Tree<int, TType>) -> void {
+	traverseInOrder(types, \eclass, type -> {
+		root = rootTTypeEClass(env.tgraph, eclass);
+		typenode = getUnionMapValue(env.tgraph.umap, root);
+		iter(typenode.types, \tt -> {
+//			println(prettyTType(tt) + " vs " + prettyTType(type));
+			unifyTType(env, -1, type, tt)
+		});
+	});
 }
