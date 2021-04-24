@@ -48,7 +48,7 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 
 		etype = switch (dtype) {
 			TTypeEClass(eclass): {
-				root = rootTTypeEClass(env.egraph, eclass);
+				root = rootTTypeEClass(env.tgraph, eclass);
 				mtype = lookupTree(env.etypes, root);
 				mtype ?? ( rpad(prettyTType(mtype), " ", 30) + "= e" + i2s(eclass)) : "";
 			}

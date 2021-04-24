@@ -76,7 +76,7 @@ simplifySupertypes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [EN
 	if (isEmptySet(allSupers)) {
 		[]
 	} else {
-		newRoots = mapSet(allSupers, \a -> getEClassRoot(env.egraph, a));
+		newRoots = mapSet(allSupers, \a -> getEClassRoot(env.tgraph.egraph, a));
 		newNode : ENode<TType> = ENode(existingSupers[0].head, set2array(newRoots));
 		// println("New supertype for " + i2s(root));
 
@@ -87,7 +87,7 @@ simplifySupertypes(env : TTypeEnv, root : int, nodes : Set<ENode<TType>>) -> [EN
 }
 
 extractSupertypes(env : TTypeEnv, acc : Set<int>, eclass : int) -> Set<int> {
-	nodes = getEClassNodes(env.egraph, eclass);
+	nodes = getEClassNodes(env.tgraph.egraph, eclass);
 	foldSet(nodes, insertSet(acc, eclass), \acc2, node -> {
 		switch (node.head) {
 			TTypeSupertype(__, args): fold(node.args, acc2, \acc3, a -> {
@@ -120,7 +120,7 @@ applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 		EClassMerge(leftClass, rightClass): {
 			if (leftClass == rightClass) false
 			else {
-				unionEClass(env.egraph, leftClass, rightClass);
+				unionEClass(env.tgraph.egraph, leftClass, rightClass);
 				true;
 			}
 		}
@@ -129,8 +129,8 @@ applyENodesUnify(env : TTypeEnv, e : ENodesUnify) -> bool {
 			switch (node.head) {
 				TTypeEClass(eclass): false;
 				default: {
-					nroot = addENode(env.egraph, node);
-					join = unionEClass(env.egraph, root, nroot);
+					nroot = addENode(env.tgraph.egraph, node);
+					join = unionEClass(env.tgraph.egraph, root, nroot);
 					true;
 				}
 			}

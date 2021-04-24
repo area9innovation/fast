@@ -5,8 +5,6 @@ import ds/egraph;
 export {
 	makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType]) -> TType;
 
-	ttypeENode2string(egraph : EGraph<TType>, enode : ENode<TType>) -> string;
-
 	replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType;
 
 	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
@@ -26,16 +24,6 @@ extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
 	switch (t) {
 		TTypeSupertype(__, supers): foldSet(supers, acc, extractTSupers);
 		default: insertSet(acc, t);
-	}
-}
-
-ttypeENode2string(egraph : EGraph<TType>, enode : ENode<TType>) -> string {
-	switch (enode.head) {
-		TTypeName(id, typars): id;
-		TTypeEClass(id): "e" + i2s(rootTTypeEClass(egraph, id));
-		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
-		TTypeOverload(unique, overloads): "overload";
-		TTypeSupertype(unique, subtypes): "supertype_" + i2s(unique);
 	}
 }
 

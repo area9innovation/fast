@@ -11,7 +11,7 @@ export {
 
 unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 	// OK, mark these types are unified
-	unifyTTypeEClass(env, pos, left, right);
+	unifyTTypeEClass(env.tgraph, pos, left, right);
 
 	// Do recursive unification
 	switch (left) {

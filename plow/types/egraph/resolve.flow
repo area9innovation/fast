@@ -6,10 +6,10 @@ export {
 }
 
 resolveEClasses(env : TTypeEnv) -> TTypeEnv {
-	canonicalizeEGraph(env.egraph);
+	canonicalizeEGraph(env.tgraph.egraph);
 	
 	if (false) {
-		dot = egraph2dot(env.egraph, \n -> ttypeENode2string(env.egraph, n));
+		dot = egraph2dot(env.tgraph.egraph, \n -> ttypeENode2string(env.tgraph.egraph, n));
 		setFileContent("egraph-pre.dot", dot);
 		{}
 	}
@@ -24,7 +24,7 @@ unifyEClasses(env : TTypeEnv, iterations : int, extractions : int) -> TTypeEnv {
 		dumpEClasses(env);
 	}
 	unify : ref [ENodesUnify] = ref [];
-	iterEGraph(env.egraph, \root, nodes : Set<ENode<TType>> -> {
+	iterEGraph(env.tgraph.egraph, \root, nodes : Set<ENode<TType>> -> {
 		unify := concat(^unify, unifyENodes(env, root, nodes));
 	});
 	update = ref false;
@@ -33,7 +33,7 @@ unifyEClasses(env : TTypeEnv, iterations : int, extractions : int) -> TTypeEnv {
 		iter(^unify, \eunify : ENodesUnify -> {
 			update := applyENodesUnify(env, eunify) || ^update;
 		});
-		canonicalizeEGraph(env.egraph);
+		canonicalizeEGraph(env.tgraph.egraph);
 	}
 
 	if (!^update || iterations <= 0) {
@@ -54,10 +54,10 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 		if (containsKeyTree(acc, eclass)) {
 			acc;
 		} else {
-			nclass = makeTTypeEClass(env, type);
+			nclass = makeTTypeEClass(env.tgraph, type);
 			if (nclass != eclass) {
 				// println("Added new type " + prettyTType(type) + " to " + i2s(eclass));
-				unionEClass(env.egraph, nclass, eclass);
+				unionEClass(env.tgraph.egraph, nclass, eclass);
 				update := true;
 			}
 			if (!unresolvedTType(type) || iterations == 0) {
@@ -69,7 +69,7 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 
 	tenv = TTypeEnv(env with etypes = etypes);
 
-	canonicalizeEGraph(tenv.egraph);
+	canonicalizeEGraph(tenv.tgraph.egraph);
 	if (iterations > 0 && ^update) {
 		unifyEClasses(tenv, 2, iterations - 1);
 	} else {
@@ -78,7 +78,7 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 			dumpEClasses(tenv);
 		}
 		if (true) {
-			dot = egraph2dot(tenv.egraph, \n -> ttypeENode2string(tenv.egraph, n));
+			dot = egraph2dot(tenv.tgraph.egraph, \n -> ttypeENode2string(tenv.tgraph.egraph, n));
 			setFileContent("egraph.dot", dot);
 			{}
 		}
@@ -87,20 +87,31 @@ extractEClassTType(env : TTypeEnv, iterations : int) -> TTypeEnv {
 }
 
 dumpEClasses(env : TTypeEnv) -> void {
-	iteri(env.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
-		root = getEClassRoot(env.egraph, i);
+	iteri(env.tgraph.egraph.eclass.values, \i, value : ref Set<ENode<TType>> -> {
+		root = getEClassRoot(env.tgraph.egraph, i);
 		if (isEmptySet(^value)) {
 			// println("Class e" + i2s(root) + " from e" + i2s(i));
 		} else {
 			println("Class e" + i2s(root) + " : "
 				+ rpad(prettyTType(lookupTreeDef(env.etypes, i, TTypeName("Unresolved", []))), " ", 50) + " from "
 				+ superglue(set2array(^value), \e : ENode<TType>-> {
-					ttypeENode2string(env.egraph, e) + "(" + superglue(e.args, \ec -> {
-						eroot = getEClassRoot(env.egraph, ec);
+					ttypeENode2string(env.tgraph.egraph, e) + "(" + superglue(e.args, \ec -> {
+						eroot = getEClassRoot(env.tgraph.egraph, ec);
 						i2s(eroot)
 					}, ", ") + ")"
 				}, ", ")
 			);
 		}
 	});
+}
+
+
+ttypeENode2string(egraph : EGraph<TType>, enode : ENode<TType>) -> string {
+	switch (enode.head) {
+		TTypeName(id, typars): id;
+		TTypeEClass(id): "e" + i2s(getEClassRoot(egraph, id));
+		TTypeFunction(args, returnType): "fn/" + i2s(length(enode.args) - 1);
+		TTypeOverload(unique, overloads): "overload";
+		TTypeSupertype(unique, subtypes): "supertype_" + i2s(unique);
+	}
 }

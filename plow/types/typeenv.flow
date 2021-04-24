@@ -1,7 +1,7 @@
 import ds/tree;
 import plow/types/type;
 import plow/types/split;
-import ds/egraph;
+import plow/types/egraph/egraph;
 import plow/dexp/dexp;
 
 export {
@@ -37,20 +37,20 @@ export {
 		localTypes : Tree<string, TType>,
 
 		// The egraph with the type equivalent classes
-		egraph : EGraph<TType>,
+		tgraph : TypeGraph,
 
 		// When we start to extract equivalence classes
 		etypes : Tree<int, TType>,
 	);
 
-	makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv;
+	makeTTypeEnv(tgraph : TypeGraph) -> TTypeEnv;
 }
 
-makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv {
+makeTTypeEnv(tgraph : TypeGraph) -> TTypeEnv {
 	unique = ref 0;
 	TTypeEnv(
 		makeTree(), \ -> {
-			makeEClass(egraph)
+			emptyTTypeClass(tgraph)
 		}, 
 		\ -> {
 			u = ^unique;
@@ -79,6 +79,6 @@ makeTTypeEnv(egraph : EGraph<TType>) -> TTypeEnv {
 			[]
 		},
 		makeTree(), makeTree(),
-		egraph, makeTree()
+		tgraph, makeTree()
 	);
 }

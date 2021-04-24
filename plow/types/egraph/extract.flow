@@ -15,13 +15,13 @@ export {
 }
 
 extractEClassTypes(env : TTypeEnv) -> Tree<int, TType> {
-	egraph = env.egraph;
+	egraph = env.tgraph.egraph;
 	extract = extractEGraph(egraph, calculateTTypeBenefit);
 	extractTTypes(ExtractEnv(env, extract, ref makeTree()));
 }
 
 extractEClasses(env : TTypeEnv, eclasses : Set<int>) -> Set<TType> {
-	extract = extractEGraph(env.egraph, calculateTTypeBenefit);
+	extract = extractEGraph(env.tgraph.egraph, calculateTTypeBenefit);
 	eenv = ExtractEnv(env, extract, ref makeTree());
 	mapSet(eclasses, \eclass -> {
 		extractTType(eenv, eclass);
@@ -29,7 +29,7 @@ extractEClasses(env : TTypeEnv, eclasses : Set<int>) -> Set<TType> {
 }
 
 extractENodes(env : TTypeEnv, eclass : int, enodes : Set<ENode<TType>>) -> Set<TType> {
-	extract = extractEGraph(env.egraph, calculateTTypeBenefit);
+	extract = extractEGraph(env.tgraph.egraph, calculateTTypeBenefit);
 	eenv = ExtractEnv(env, extract, ref makeTree());
 	mapSet(enodes, \enode -> {
 		extractENode(eenv, eclass, enode)
@@ -79,7 +79,7 @@ extractENode(env : ExtractEnv, eclass : int, enode : ENode<TType>) -> TType {
 
 	switch (enode.head : TType) {
 		TTypeEClass(id): {
-			TTypeEClass(getEClassRoot(env.env.egraph, id))
+			TTypeEClass(getEClassRoot(env.env.tgraph.egraph, id))
 		}
 		TTypeName(id, __): {
 			typars = extractChildren();

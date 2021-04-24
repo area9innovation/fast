@@ -1,5 +1,5 @@
 import plow/dexp/dexp;
-import ds/egraph;
+import plow/types/egraph/egraph;
 import plow/types/type;
 import plow/types/split;
 
@@ -14,7 +14,7 @@ export {
 		// For unique ids
 		nextId : ref int,
 		// Where we will build up our eclasses
-		egraph : EGraph<TType>,
+		tgraph : TypeGraph,
 	);
 
 	makeDDesugar(onError : (int, string) -> void, nextId : ref int, 
@@ -28,6 +28,6 @@ makeDDesugar(onError : (int, string) -> void, nextId : ref int,
 	DDesugar(resolveStructName, resolveUnionName, 
 		onError, 
 		nextId,
-		makeEGraph(splitTType)
+		makeTypeGraph(onError)
 	);
 }

@@ -1,52 +1,71 @@
-import plow/types/typeenv;
 import plow/types/pretty;
+import plow/types/split;
+import ds/egraph;
 
 // The idea with this file is to present the minimum interface
 // that is required to work with equivalence classes for the types
 export {
+	makeTypeGraph(onError : (int, string) -> void) -> TypeGraph;
+
 	// Prepare an empty equivalence class
-	emptyTTypeClass(env : EGraph<TType>) -> int;
+	emptyTTypeClass(tg : TypeGraph) -> int;
 
 	// Get the (or construct a) type equivalence class for this type
-	makeTTypeEClass(env : TTypeEnv, type : TType) -> int;
+	makeTTypeEClass(tg : TypeGraph, type : TType) -> int;
 
 	// Given this eclass, what is the root equivalence class?
-	rootTTypeEClass(egraph : EGraph<TType>, eclass : int) -> int;
+	rootTTypeEClass(tg : TypeGraph, eclass : int) -> int;
 
 	// Join these two types into the same equivalence class
-	unifyTTypeEClass(env : TTypeEnv, pos : int, left : TType, right : TType) -> int;
+	unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int;
+
+	// After setting up all the relations, calls resolveEClasses from resolve.flow
+	// which will populate the etypes in the TTypeEnv
+
+	TypeGraph(
+		egraph : EGraph<TType>,
+		onError : (int, string) -> void,
+	);
 }
 
-emptyTTypeClass(env : EGraph<TType>) -> int {
-	makeEClass(env);
+
+makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
+	TypeGraph(
+		makeEGraph(splitTType),
+		onError
+	)
 }
 
-makeTTypeEClass(env : TTypeEnv, type : TType) -> int {
+emptyTTypeClass(tg : TypeGraph) -> int {
+	makeEClass(tg.egraph);
+}
+
+makeTTypeEClass(tg : TypeGraph, type : TType) -> int {
 	switch (type) {
 		TTypeEClass(eclass): eclass;
-		default: addTType2EGraph(env, type);
+		default: addTType2EGraph(tg, type);
 	}
 }
 
-addTType2EGraph(env : TTypeEnv, e : TType) -> int {
-	split : Pair<TType, [TType]> = env.egraph.splitChildren(e);
+addTType2EGraph(tg : TypeGraph, e : TType) -> int {
+	split : Pair<TType, [TType]> = tg.egraph.splitChildren(e);
 	enode = ENode(split.first, map(split.second, \child -> {
-		makeTTypeEClass(env, child)
+		makeTTypeEClass(tg, child)
 	}));
-	addENode(env.egraph, enode);
+	addENode(tg.egraph, enode);
 }
 
-rootTTypeEClass(egraph : EGraph<TType>, eclass : int) -> int {
-	getEClassRoot(egraph, eclass)
+rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
+	getEClassRoot(tg.egraph, eclass)
 }
 
-unifyTTypeEClass(env : TTypeEnv, pos : int, left : TType, right : TType) -> int {
-	lroot = makeTTypeEClass(env, left);
-	rroot = makeTTypeEClass(env, right);
+unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int {
+	lroot = makeTTypeEClass(tg, left);
+	rroot = makeTTypeEClass(tg, right);
 	if (lroot != rroot) {
-		root = unionEClass(env.egraph, lroot, rroot);
+		root = unionEClass(tg.egraph, lroot, rroot);
 		if (false) {
-			env.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root));
+			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root));
 		}
 		root;
 	} else lroot;

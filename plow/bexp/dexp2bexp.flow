@@ -9,7 +9,7 @@ export {
 
 	BExpEnv(
 		onError : (int, string) -> void,
-		egraph : EGraph<TType>,
+		tgraph : TypeGraph,
 		eclassType : Tree<int, TType>,
 	);
 
@@ -17,7 +17,7 @@ export {
 }
 
 resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
-	root = rootTTypeEClass(env.egraph, eclass);
+	root = rootTTypeEClass(env.tgraph, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
 		if (unresolvedTType(mtype)) {
