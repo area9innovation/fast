@@ -1,0 +1,88 @@
+import plow/types/pretty;
+import ds/union_find_map;
+
+export {
+	makeTypeGraph(onError : (int, string) -> void) -> TypeGraph;
+
+	// Prepare an empty equivalence class
+	emptyTTypeClass(tg : TypeGraph) -> int;
+
+	// Get the (or construct a) type equivalence class for this type
+	makeTTypeEClass(tg : TypeGraph, type : TType) -> int;
+
+	// Given this eclass, what is the root equivalence class?
+	rootTTypeEClass(tg : TypeGraph, eclass : int) -> int;
+
+	// Join these two types into the same equivalence class
+	unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int;
+
+	// After setting up all the relations, calls resolveEClasses from resolve.flow
+	// which will populate the etypes in the TTypeEnv
+
+	TypeGraph(
+		umap : UnionFindMap<TTypeNode>,
+		// What eclass does this node belong to?
+		mutable memo : Tree<TTypeNode, int>,
+		nextEClass : ref int, 
+		onError : (int, string) -> void,
+	);
+
+	TTypeNode(
+		types : [TType]
+	);
+}
+
+makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
+	TypeGraph(
+		makeUnionFindMap(TTypeNode([]), mergeTTypeNodes),
+		makeTree(),
+		ref 0,
+		onError
+	)
+}
+
+emptyTTypeClass(tg : TypeGraph) -> int {
+	ec = ^(tg.nextEClass);
+	tg.nextEClass := ec + 1;
+	ec;
+}
+
+makeTTypeEClass(tg : TypeGraph, type : TType) -> int {
+	switch (type) {
+		TTypeEClass(eclass): eclass;
+		default: {
+			typenode = TTypeNode([type]);
+			mid = lookupTree(tg.memo, typenode);
+			mid ?? {
+				mid
+			} : {
+				eclass = emptyTTypeClass(tg);
+				setUnionMapValue(tg.umap, eclass, typenode);
+				eclass;
+			}
+		}
+	}
+}
+
+rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
+	findUnionMapRoot(tg.umap, eclass)
+}
+
+unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int {
+	lroot = makeTTypeEClass(tg, left);
+	rroot = makeTTypeEClass(tg, right);
+	if (lroot != rroot) {
+		root = unionUnionMap(tg.umap, lroot, rroot);
+		if (false) {
+			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root));
+		}
+		root;
+	} else lroot;
+}
+
+
+mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
+	TTypeNode(
+		sort(concat(left.types, right.types))
+	)
+}

@@ -1,8 +1,6 @@
 import plow/types/pretty;
 import plow/types/typeenv;
 import plow/types/polymorphism;
-import plow/types/egraph/egraph;
-import ds/egraph_dot;
 
 export {
 	// Unify these two types into the same equivalence class

@@ -1,0 +1,27 @@
+import plow/types/typeenv;
+import plow/types/ugraph/ugraph;
+
+export {
+	resolveEClasses(env : TTypeEnv) -> TTypeEnv;
+}
+
+resolveEClasses(env : TTypeEnv) -> TTypeEnv {
+	dumpEClasses(env);
+	env;
+}
+
+
+dumpEClasses(env : TTypeEnv) -> void {
+	iterUnionMap(env.tgraph.umap, \i, value : TTypeNode -> {
+		if (i < ^(env.tgraph.nextEClass)) {
+			println("Class e" + i2s(i) + " : "
+				+ ttypeNode2string(value)
+			);
+		}
+	});
+}
+
+
+ttypeNode2string(t : TTypeNode) -> string {
+	superglue(t.types, prettyTType, ", ")
+}

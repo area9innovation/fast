@@ -1,6 +1,4 @@
 import plow/types/type;
-import plow/types/egraph/egraph;
-import ds/egraph;
 
 export {
 	makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType]) -> TType;

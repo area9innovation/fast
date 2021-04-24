@@ -1,5 +1,5 @@
 import plow/dexp/dexp;
-import plow/types/egraph/egraph;
+import plow/types/ugraph/ugraph;
 import plow/types/type;
 import plow/types/split;
 

@@ -1,5 +1,6 @@
 import plow/types/egraph/extract;
 import plow/types/egraph/simplify;
+import ds/egraph_dot;
 
 export {
 	resolveEClasses(env : TTypeEnv) -> TTypeEnv;

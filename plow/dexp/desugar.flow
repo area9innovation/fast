@@ -8,8 +8,6 @@ import plow/dexp/unions;
 import plow/pexp/pexp;
 import plow/pexp/values;
 
-import plow/types/egraph/egraph;
-
 import ds/set;
 import ds/arrayutils;
 

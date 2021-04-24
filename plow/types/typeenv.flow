@@ -1,7 +1,7 @@
 import ds/tree;
 import plow/types/type;
 import plow/types/split;
-import plow/types/egraph/egraph;
+import plow/types/ugraph/ugraph;
 import plow/dexp/dexp;
 
 export {
