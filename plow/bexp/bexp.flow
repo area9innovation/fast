@@ -10,19 +10,19 @@ export {
 		BString(v : string);
 
 	BExp ::= BValue, 
-		BVar, BLet, BIf, BConstruct, BField, BCall, BLambda, BSequence, BSwitch;
+		BVar, BLet, BIf, BCall, BLambda, BSequence, BConstruct, BField, BSetMutable, BSwitch;
 
 		BVar(id : string, type : BType);
 		BLet(id : string, value : BExp, body : BExp, type : BType);
 		BIf(cond : BExp, then : BExp, else_ : BExp, type : BType);
 		BSequence(exps : [BExp], type : BType);
 
-		BConstruct(struct : string, args : [BExp], type : BType);
-		BField(value : BExp, field : string, type : BType);
-
 		BCall(fn : BExp, args : [BExp], type : BType);
 		BLambda(args : [string], body : BExp, type : BType);
 
+		BConstruct(struct : string, args : [BExp], type : BType);
+		BField(value : BExp, field : string, type : BType);
+		BSetMutable(left : BExp, field : string, value : BExp, type : BType);
 		BSwitch(value : BVar, switchType : BType, cases : [BCase], defaultCase : Maybe<BExp>, type : BType);
 			BCase(id : string, body : BExp);
 

@@ -9,10 +9,10 @@ export {
 }
 
 resolveEClasses(env : TTypeEnv) -> TTypeEnv {
-	dumpEClasses(env);
-	println("\nNow about to resolve\n");
+	// dumpEClasses(env);
+	// println("\nNow about to resolve\n");
 
-	doResolveEClasses(env, 5);
+	doResolveEClasses(env, 1);
 }
 
 doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
@@ -26,7 +26,7 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	// OK, so now, we have nice types
 
 	// And then unify these with the group
-	unifyEClasses(env, stypes);
+	// unifyEClasses(env, stypes);
 
 	// Then pull out the result
 	ftypes = extractTTypes(env.tgraph, makeTree());
@@ -42,7 +42,7 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 
 	fenv = TTypeEnv(env with etypes = restypes);
 	if (!(^update) || iteration <= 0) {
-		dumpEClasses(fenv);
+		// dumpEClasses(fenv);
 		fenv;
 	} else {
 		doResolveEClasses(fenv, iteration - 1);

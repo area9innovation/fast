@@ -25,11 +25,13 @@ main() {
 
 	t = timestamp();
 
-	if (!isDirectory(file)) {
-		b = compilePlow(cache, file);
+	thefile = getUrlParameterDef("file", file);
+
+	if (!isDirectory(thefile)) {
+		b = compilePlow(cache, thefile);
 		{}
 	} else {
-		files = filter(readDirectoryRecursively(file), \f -> endsWith(f, ".flow"));
+		files = filter(readDirectoryRecursively(thefile), \f -> endsWith(f, ".flow"));
 
 		iter(files, \fil -> {
 			// println(fil);

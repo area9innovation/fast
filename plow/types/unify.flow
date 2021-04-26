@@ -145,6 +145,7 @@ subtypeTTypenames(env : TTypeEnv, pos : int, sub : TTypeName, super : TTypeName)
 		} else {
 			error();
 		}
+	} else if (sub.id == "flow" || super.id == "flow") {
 	} else {
 		supers = env.resolveSupertypes(sub.id);
 		if (contains(supers, super.id)) {

@@ -110,7 +110,7 @@ makePlowCache(
 			containsSet(module.exported.exportedTypes, s)
 		})
 	}, \upath, n, error -> {
-		println("TODO: What about the position of this field?");
+		println("TODO: What about the position of this field? " + toString(n));
 		makeOnError(upath, onError)(0, error)
 	}, ref makeTree(), ref makeSet()
 	);
@@ -121,7 +121,7 @@ makePlowCache(
 	}, \module, n -> {
 		true;
 	}, \upath, nat, error -> {
-		println("TODO: What about the position of this field?");
+		println("TODO: What about the position of this field? " + toString(nat));
 		makeOnError(upath, onError)(0, error)
 	}, ref makeTree(), ref makeSet()
 	);
@@ -203,7 +203,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		setCachedBModule(cache.modules, flowpath, bmodule);
 
-		if (true) {
+		if (false) {
 			prettyDModule(tenv, dmod);
 		}
 		if (false) {

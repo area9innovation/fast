@@ -104,6 +104,16 @@ prettyBExp(b : BExp) -> string {
 					"type", prettyBType(type),
 			]);
 		}
+		BSetMutable(left, field, value, type): {
+			blueprint("
+					%left%.%field% ::= %value% /* %type% */",
+				[
+					"left", prettyBExp(left),
+					"field", field,
+					"value", prettyBExp(value),
+					"type", prettyBType(type),
+			]);
+		}
 		BCall(fn, args, type): {
 			blueprint("
 					%fn%(

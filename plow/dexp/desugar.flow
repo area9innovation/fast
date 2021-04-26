@@ -21,12 +21,11 @@ Differences to PExp:
 - Introduce downcast in switches
 - Extract let-bindings from cases
 - Extract structs and unions
+- Expand |> to a normal call
 TODO:
 - Expand ?? to switch
 - Fix with
 - Collect string includes
-- Should we have an enum with builtins?
-- Extract top-level functions from globals
 */
 
 export {
@@ -300,7 +299,15 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PDouble(v, pos): DDouble(v, pos);
 		PString(v, pos): DString(v, pos);
 		PVar(var, pos): DVar(var, pos, emptyTTypeClass(dd.tgraph));
-		PCallOp(op, args, pos): DCall(DVar(op, pos, emptyTTypeClass(dd.tgraph)), map(args, rec), pos, emptyTTypeClass(dd.tgraph));
+		PCallOp(op, args, pos): {
+			if (op == "|>") {
+				// OK, this is special
+				pexp2dexp(dd, PCall(args[1], [args[0]], pos))
+			} else {
+				rargs = map(args, rec);
+				DCall(DVar(op, pos, emptyTTypeClass(dd.tgraph)), rargs, pos, emptyTTypeClass(dd.tgraph));
+			}
+		}
 		PStringInclude(path, pos): DStringInclude(path, pos);
 		PLet(var, value, body, pos): DLet(var, rec(value), rec(body), pos, emptyTTypeClass(dd.tgraph));
 		PIf(cond, then, else_, pos): DIf(rec(cond), rec(then), rec(else_), pos, emptyTTypeClass(dd.tgraph));
@@ -311,7 +318,9 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 					mst = dd.resolveStructName(id);
 					mst ?? {
 						DConstruct(mst.id, map(args, rec), pos, emptyTTypeClass(dd.tgraph));
-					} : DCall(rec(fn), map(args, rec), pos, emptyTTypeClass(dd.tgraph));
+					} : {
+						DCall(rec(fn), map(args, rec), pos, emptyTTypeClass(dd.tgraph));
+					}
 				}
 				default: DCall(rec(fn), map(args, rec), pos, emptyTTypeClass(dd.tgraph));
 			}
@@ -320,7 +329,13 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 			DArgType(a.id, ptype2dtype(dd, a.type), a.pos)
 		}), rec(body), pos, emptyTTypeClass(dd.tgraph));
 		PRef(value, pos): DRef(rec(value), pos, emptyTTypeClass(dd.tgraph));
-		PField(value, field, pos): DField(rec(value), field, pos, emptyTTypeClass(dd.tgraph));
+		PField(value, field, pos): {
+			if (field == "structname") {
+				pexp2dexp(dd, PCallOp("__structname", [value], pos));
+			} else {
+				DField(rec(value), field, pos, emptyTTypeClass(dd.tgraph));
+			}
+		}
 		PSetMutable(lhs, field, value, pos): DSetMutable(rec(lhs), field, rec(value), pos, emptyTTypeClass(dd.tgraph));
 		PArray(exps, pos): DArray(map(exps, rec), pos, emptyTTypeClass(dd.tgraph));
 		PSequence(exps, pos): {

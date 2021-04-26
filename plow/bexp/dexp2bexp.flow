@@ -20,7 +20,7 @@ resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 	root = rootTTypeEClass(env.tgraph, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
-		if (unresolvedTType(mtype)) {
+		if (false && unresolvedTType(mtype)) {
 			env.onError(pos, "Partially unresolved type " + prettyTType(mtype));
 		}
 		ttype2btype(env, mtype)
@@ -69,7 +69,9 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 			BCall(BVar("__ref", typ), [rec(value)], typ);
 		}
 		DField(value, field, pos, eclass): BField(rec(value), field, type(eclass));	
-		DSetMutable(lhs, field, value, pos, eclass): todo();
+		DSetMutable(lhs, field, value, pos, eclass): {
+			BSetMutable(rec(lhs), field, rec(value), type(eclass))
+		}
 		DArray(exps, pos, eclass): {
 			typ = type(eclass);
 			// The type of __array is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
@@ -89,7 +91,10 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 				type(eclass)
 			);
 		}
-		DCast(value, target, pos): todo();
+		DCast(value, target, pos): {
+			// We probably do not need this in the backends. It is purely a type checking thing
+			rec(value);
+		}
 		DDowncast(oldid, newid, subtype, scope, pos, eclass): {
 			// We probably do not need this in the backends. It is purely a type checking thing
 			rec(scope);

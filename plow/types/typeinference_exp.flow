@@ -135,6 +135,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		DField(value, field, pos, eclass): {
 			// OK, this is an overload of all structs with a field
 			tvalue = ttypeInferenceDExp(env, value);
+
 			fieldStructs : [DStruct] = env.resolveField(field);
 
 			fieldFnTypes = filtermap(fieldStructs, \struct : DStruct -> {
@@ -166,7 +167,40 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			unifyTType(env, "field", pos, calltype, fntype);
 			rtype;
 		}
-		// DSetMutable(lhs, field, value, pos, eclass): 
+		DSetMutable(left, field, value, pos, eclass): {
+			ltype = ttypeInferenceDExp(env, left);
+			valtype = ttypeInferenceDExp(env, value);
+
+			fieldStructs : [DStruct] = env.resolveField(field);
+
+			fieldFnTypes = filtermap(fieldStructs, \struct : DStruct -> {
+				stypenameFields = instantiateTTypeNameForStruct(env, struct);
+				stypename = stypenameFields.first;
+				fields = stypenameFields.second;
+
+				mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
+				fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
+					// OK, the typars are wrong here, since we should use the type
+					// of the field
+					ft.second
+				});
+				fieldType ?? {
+					Some(TTypeFunction([stypename], fieldType));
+				} : None();
+			});
+
+			fntype = if (fieldFnTypes == []) {
+				env.onError(pos, "Unknown field " + field);
+				TTypeEClass(env.mkEClass());
+			} else if (length(fieldFnTypes) == 1) {
+				fieldFnTypes[0]
+			} else TTypeOverload(TTypeEClass(eclass), sort(fieldFnTypes));
+
+			calltype = TTypeFunction([ltype], supertype([valtype]));
+
+			unifyTType(env, "field", pos, calltype, fntype);
+			restype("setmutable", eclass, voidTType)
+		}
 		DArray(exps, pos, eclass): {
 			vtypes = map(exps, \e -> {
 				ttypeInferenceDExp(env, e);
