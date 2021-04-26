@@ -51,7 +51,7 @@ makeTTypeEClass(tg : TypeGraph, type : TType) -> int {
 	switch (type) {
 		TTypeEClass(eclass): findUnionMapRoot(tg.umap, eclass);
 		default: {
-			typenode = TTypeNode([type]);
+			typenode = canonicalTypeNode(tg, TTypeNode([type]));
 			mid = lookupTree(tg.memo, typenode);
 			mid ?? {
 				root = findUnionMapRoot(tg.umap, mid);
@@ -70,6 +70,24 @@ makeTTypeEClass(tg : TypeGraph, type : TType) -> int {
 	}
 }
 
+canonicalTypeNode(tg : TypeGraph, tn : TTypeNode) -> TTypeNode {
+	TTypeNode(
+		map(tn.types, \t -> canonicalTType(tg, t))
+	)
+}
+
+canonicalTType(tg : TypeGraph, t : TType) -> TType {
+	rec = \tt -> canonicalTType(tg, tt);
+	switch (t) {
+		TTypeName(id, typars): TTypeName(id, map(typars, rec));
+		TTypeEClass(eclass): TTypeEClass(rootTTypeEClass(tg, eclass));
+		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
+		TTypeOverload(unique, overloads): TTypeOverload(unique, sort(map(overloads, rec)));
+		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sort(map(subtypes, rec)));
+
+	}
+}
+
 rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
 	findUnionMapRoot(tg.umap, eclass)
 }
@@ -83,9 +101,13 @@ unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int 
 			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root) + ")");
 		}
 		root;
-	} else lroot;
+	} else {
+		if (false) {
+			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + ")");
+		}
+		lroot;
+	}
 }
-
 
 mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
 	TTypeNode(
