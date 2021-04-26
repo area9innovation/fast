@@ -90,7 +90,7 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 			);
 		}
 		DCast(value, target, pos): todo();
-		DDowncast(value, subtype, scope, pos, eclass): {
+		DDowncast(oldid, newid, subtype, scope, pos, eclass): {
 			// We probably do not need this in the backends. It is purely a type checking thing
 			rec(scope);
 		}

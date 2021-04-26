@@ -4,10 +4,11 @@ import plow/types/polymorphism;
 
 export {
 	// Unify these two types into the same equivalence class
-	unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void;
+	unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void;
 }
 
-unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
+unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
+	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
 	// OK, mark these types are unified
 	unifyTTypeEClass(env.tgraph, pos, left, right);
 
@@ -19,7 +20,7 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 					if (lid == rid) {
 						unifyTTypes(env, pos, ltypars, rtypars);
 					} else {
-						unifyTTypeNames(env, pos, left, right);
+						unifyTTypeNames(env, reason, pos, left, right);
 					}
 				}
 				default: {}
@@ -29,7 +30,7 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 			switch (right) {
 				TTypeFunction(rargs, rreturnType): {
 					unifyTTypes(env, pos, largs, rargs);
-					unifyTType(env, pos, lreturnType, rreturnType);
+					unifyTType(env, "fn return", pos, lreturnType, rreturnType);
 				}
 				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
 				default: {}
@@ -45,10 +46,10 @@ unifyTType(env : TTypeEnv, pos : int, left : TType, right : TType) -> void {
 	}
 }
 
-unifyTTypeNames(env : TTypeEnv, pos : int, left : TTypeName, right : TTypeName) {
+unifyTTypeNames(env : TTypeEnv, reason : string, pos : int, left : TTypeName, right : TTypeName) {
 	// TODO: This is correct if one is a union with exactly the other type in it
 	// otherwise, it is a problem
-	env.onError(pos, left.id + " and " + right.id + " are not compatible (TODO: Check if one is a single-struct union)");
+	env.onError(pos, left.id + " and " + right.id + " are not compatible (TODO: Check if one is a single-struct union) " + reason);
 }
 
 unifyTTypeOverload(env : TTypeEnv, pos : int, overload : TTypeOverload, type : TType) -> void {
@@ -61,7 +62,7 @@ unifyTTypeOverload(env : TTypeEnv, pos : int, overload : TTypeOverload, type : T
 		if (n == 1) {
 			// println("Resolved overload");
 			winner = good[0];
-			unifyTType(env, pos, winner, type);
+			unifyTType(env, "overload", pos, winner, type);
 		} else {
 			// At least the type overload is smaller
 			// We could probably unify this into the set, but hey, it is not required
@@ -78,7 +79,7 @@ unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType)
 unifyTTypes(env : TTypeEnv, pos : int, left : [TType], right : [TType]) -> void {
 	if (length(left) == length(right)) {
 		iteri(left, \i, larg -> {
-			unifyTType(env, pos, larg, right[i])
+			unifyTType(env, "types #" + i2s(i), pos, larg, right[i])
 		});
 	}
 }
@@ -154,7 +155,7 @@ subtypeTTypenames(env : TTypeEnv, pos : int, sub : TTypeName, super : TTypeName)
 					None(): error();
 					Some(struct): {
 						// OK, we unify the instantiated struct with the subtype
-						unifyTType(env, pos, sub, struct);
+						unifyTType(env, "sub against super-instance", pos, sub, struct);
 					}
 				}
 			} : {

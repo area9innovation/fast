@@ -8,6 +8,7 @@ import text/blueprint;
 export {
 	prettyDModule(env : TTypeEnv, d : DModule) -> void;
 	prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void;
+	summarizeDExp(env : TTypeEnv, d : DExp) -> string;
 }
 
 prettyDModule(env : TTypeEnv, d : DModule) -> void {
@@ -141,8 +142,8 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			pr("construct " + structid);
 			iter(args, rec);
 		}
-		DDowncast(var, subtype, scope, pos, eclass): {
-			pr("downcast " + var);
+		DDowncast(oldid, newid, subtype, scope, pos, eclass): {
+			pr("downcast " + oldid + " to " + newid);
 			type(subtype);
 			rec(scope);
 		}
@@ -163,4 +164,31 @@ prettyDStruct(input : string, s : DStruct) -> string {
 		(if (sa.ismutable) "mutable " else "") 
 		+ sa.id + " : " + prettyDType(input, sa.type)
 	}, ", ") + ")";
+}
+
+summarizeDExp(env : TTypeEnv, d : DExp) -> string {
+	switch (d) {
+		DVoid(pos): "{}";
+		DBool(v, pos): b2s(v);
+		DInt(v, pos): i2s(v);
+		DDouble(v, pos): d2s(v);
+		DString(v, pos): "string";
+		DStringInclude(path, pos): "string include";
+		DVar(id, pos, eclass): "var " + id;
+		DLet(id, value, body, pos, eclass): "let " + id;
+		DIf(cond, then, else_, pos, eclass): "if";
+		DCall(fn, args, pos, eclass): "call " + summarizeDExp(env, fn);
+		DConstruct(structid, args, pos, eclass): "construct " + structid;
+		DLambda(args, body, pos, eclass): "lambda";
+		DRef(value, pos, eclass): "ref";
+		DField(value, field, pos, eclass): "field " + field;
+		DSetMutable(lhs, field, value, pos, eclass): "set mutable " + field;
+		DArray(exps, pos, eclass): "array";
+		DSequence(exps, pos, eclass): "seq";
+		DSwitch(value, type, cases, defaultCase, pos, eclass): "switch";
+		DCast(value, target, pos): "cast";
+		DDowncast(oldid, newid, subtype, scope, pos, eclass): "downcast " + oldid + " to " + newid;
+		DTyped(value, subtype, pos): "typed";
+		DWith(struct, value, fields, pos, eclass): "with";
+	}
 }

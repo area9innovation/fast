@@ -9,6 +9,10 @@ export {
 }
 
 resolveEClasses(env : TTypeEnv) -> TTypeEnv {
+
+	dumpEClasses(env);
+	println("\nNow about to resolve");
+
 	doResolveEClasses(env, 5);
 }
 
@@ -25,7 +29,7 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	// Then pull out the result
 	ftypes = extractTTypes(env.tgraph, env.etypes);
 	restypes = foldTree(ftypes, env.etypes, \eclass, type, acc -> {
-		if (iteration == 1 && unresolvedTType(type)) acc
+		if (unresolvedTType(type)) acc
 		else {
 			// We have a resolved type!
 			update := true;
@@ -75,7 +79,7 @@ unifyEClasses(env : TTypeEnv, types : Tree<int, TType>) -> void {
 		typenode = getUnionMapValue(env.tgraph.umap, root);
 		iter(typenode.types, \tt -> {
 //			println(prettyTType(tt) + " vs " + prettyTType(type));
-			unifyTType(env, -1, type, tt)
+			unifyTType(env, "eclass " + i2s(eclass) + " resolve to " + prettyTType(type), -1, type, tt)
 		});
 	});
 }

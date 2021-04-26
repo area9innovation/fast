@@ -17,7 +17,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	// Resolve the types of natives
 	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
 		type = dtype2ttype(env, false, nativ.type);
-		unifyTType(env, d.pos, type, TTypeEClass(nativ.eclass));
+		unifyTType(env, "native", d.pos, type, TTypeEClass(nativ.eclass));
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
 	});
 
@@ -86,13 +86,13 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	ftype = replaceTTypeEClasss(
 		foldTree(typars, makeTree(), \tp, tv, acc -> {
 			typar = TTypeName(tp, []);
-			unifyTType(env, d.pos, typar, TTypeEClass(tv));
+			unifyTType(env, "global", d.pos, typar, TTypeEClass(tv));
 			setTree(acc, tv, TTypeName(tp, []))
 		}),
 		type
 	);
 
 	// println("Inference " + d.id + " is " + prettyTType(ftype));
-	unifyTType(env, d.pos, ftype, TTypeEClass(d.eclass));
+	unifyTType(env, "global 2", d.pos, ftype, TTypeEClass(d.eclass));
 	TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
 }

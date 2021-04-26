@@ -32,7 +32,7 @@ dexpType(env : TTypeEnv, e : DExp) -> TType {
 		DSequence(exps, pos, eclass): TTypeEClass(eclass);
 		DSwitch(value, type, cases, defaultCase, pos, eclass): TTypeEClass(eclass);
 		DCast(value, target, pos): dtype2ttype(env, true, target);
-		DDowncast(value, subtype, scope, pos, eclass): TTypeEClass(eclass);
+		DDowncast(oldid, newid, subtype, scope, pos, eclass): TTypeEClass(eclass);
 		DTyped(value, subtype, pos): dtype2ttype(env, true, subtype);
 		DWith(struct, value, fields, pos, eclass): TTypeEClass(eclass);
 	}

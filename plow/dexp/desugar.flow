@@ -465,7 +465,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 							// Add a downcast
 							typars = map(struct.typars, \__ -> DTypeName("auto", [], c.pos));
 							stype = DTypeName(c.id, typars, c.pos);
-							DDowncast(switchvar.id, stype, body1, c.pos, emptyTTypeClass(dd.tgraph));
+							desugarDowncast(dd, DDowncast(switchvar.id, "", stype, body1, c.pos, emptyTTypeClass(dd.tgraph)));
 						} else body1;
 					} else {
 						dd.onError(c.pos, c.id + " expects " + i2s(length(struct.structArgs)) + " args, got " + i2s(length(c.args)));
@@ -538,3 +538,72 @@ getDTypePar(d : DType) -> DTypePar {
 		default: DTypePar("", -1);
 	}
 }
+
+desugarDowncast(dd : DDesugar, d : DDowncast) -> DDowncast {
+	newid = d.id + makeTempDName(dd);
+
+	renamed = renameDVar(d.id, newid, d.scope);
+	DDowncast(
+		d with
+		newid = newid,
+		scope = DLet(newid, DVar(d.id, d.pos, emptyTTypeClass(dd.tgraph)), renamed, d.pos, emptyTTypeClass(dd.tgraph))
+	);
+}
+
+renameDVar(old : string, new : string, d : DExp) -> DExp {
+	rec = \ee -> renameDVar(old, new, ee);
+	switch (d) {
+		DValue(): d;
+		DStringInclude(path, pos): d;
+		DVar(id, pos, eclass): if (id == old) DVar(new, pos, eclass) else d;
+		DLet(id, value, body, pos, eclass): {
+			if (id == old) {
+				// Shadowing.
+				DLet(id, rec(value), body, pos, eclass)
+			} else {
+				DLet(id, rec(value), rec(body), pos, eclass)
+			}
+		}
+		DLambda(args, body, pos, eclass): {
+			if (exists(args, \a -> a.id == old)) {
+				// Shadowing
+				d;
+			} else {
+				DLambda(args, rec(body), pos, eclass)
+			}
+		}
+		DIf(cond, then, else_, pos, eclass): DIf(rec(cond), rec(then), rec(else_), pos, eclass);
+		DCall(fn, args, pos, eclass): DCall(rec(fn), map(args, rec), pos, eclass);
+		DConstruct(structid, args, pos, eclass): DConstruct(structid, map(args, rec), pos, eclass);
+		DRef(value, pos, eclass): DRef(rec(value), pos, eclass);
+		DField(value, field, pos, eclass): DField(rec(value), field, pos, eclass);
+		DSetMutable(lhs, field, value, pos, eclass): DSetMutable(rec(lhs), field, rec(value), pos, eclass);
+		DArray(exps, pos, eclass): DArray(map(exps, rec), pos, eclass);
+		DSequence(exps, pos, eclass): DSequence(map(exps, rec), pos, eclass);
+		DSwitch(value, type, cases, defaultCase, pos, eclass): {
+			rcases = map(cases, \c : DCase -> {
+				DCase(c with body = rec(c.body))
+			});
+			dcase = defaultCase ?? Some(rec(defaultCase)) : None();
+			if (value.id == old) {
+				DSwitch(DVar(value with id = new), type, rcases, dcase, pos, eclass);
+			} else {
+				DSwitch(value, type, rcases, dcase, pos, eclass);
+			}
+		}
+		DCast(value, target, pos): DCast(rec(value), target, pos);
+		DDowncast(oldid, newid, subtype, scope, pos, eclass): {
+			if (oldid == old) {
+				DDowncast(new, newid, subtype, rec(scope), pos, eclass);
+			} else {
+				DDowncast(oldid, newid, subtype, rec(scope), pos, eclass);
+			}
+		}
+		DTyped(value, subtype, pos): DTyped(rec(value), subtype, pos);
+		DWith(struct, value, fields, pos, eclass): DWith(struct, rec(value), map(fields, \f : DFieldAssign -> {
+			DFieldAssign(f with value = rec(f.value))
+		}), pos, eclass);
+	}
+}
+
+//DDowncast(id : string, subtype : DType, scope : DExp, pos : int, eclass : int);
