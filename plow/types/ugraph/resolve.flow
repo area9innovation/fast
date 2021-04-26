@@ -9,9 +9,8 @@ export {
 }
 
 resolveEClasses(env : TTypeEnv) -> TTypeEnv {
-
 	dumpEClasses(env);
-	println("\nNow about to resolve");
+	println("\nNow about to resolve\n");
 
 	doResolveEClasses(env, 5);
 }
@@ -27,9 +26,10 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	unifyEClasses(env, stypes);
 
 	// Then pull out the result
-	ftypes = extractTTypes(env.tgraph, env.etypes);
+	ftypes = extractTTypes(env.tgraph, makeTree());
 	restypes = foldTree(ftypes, env.etypes, \eclass, type, acc -> {
-		if (unresolvedTType(type)) acc
+		// println(i2s(eclass) + " is " + prettyTType(type));
+		if (iteration != 0 && unresolvedTType(type)) acc
 		else {
 			// We have a resolved type!
 			update := true;
@@ -58,14 +58,14 @@ simplifyType(env : TTypeEnv, t : TType) -> TType {
 }
 
 dumpEClasses(env : TTypeEnv) -> void {
-	iterUnionMap(env.tgraph.umap, \i, value : TTypeNode -> {
-		if (i < ^(env.tgraph.nextEClass)) {
-			type = lookupTreeDef(env.etypes, i, TTypeEClass(i));
-			println("Class e" + i2s(i) + " : "
-				+ rpad(prettyTType(type), " ", 40) + " from "
-				+ ttypeNode2string(value)
-			);
-		}
+	roots = getEClassRoots(env.tgraph);
+	iterSet(roots, \root : int -> {
+		node = getUnionMapValue(env.tgraph.umap, root);
+		type = lookupTreeDef(env.etypes, root, TTypeEClass(root));
+		println("Class e" + i2s(root) + " : "
+			+ rpad(prettyTType(type), " ", 40) + " from "
+			+ ttypeNode2string(node)
+		);
 	});
 }
 

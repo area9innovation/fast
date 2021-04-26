@@ -13,7 +13,10 @@ ExtractEnv(
 
 extractTTypes(tgraph : TypeGraph, types : Tree<int, TType>) -> Tree<int, TType> {
 	env = ExtractEnv(tgraph, ref types, ref makeSet());
-	roots = getUnionMapRoots(env.tgraph.umap);
+	roots = getEClassRoots(tgraph);
+
+	println("roots " + toString(set2array(roots)));
+
 	iterSet(roots, \root -> {
 		extractTypeNode(env, root);
 		{}
@@ -25,6 +28,7 @@ extractTypeNode(env : ExtractEnv, eclass : int) -> TType {
 	root = rootTTypeEClass(env.tgraph, eclass);
 	mtype = lookupTree(^(env.types), root);
 	mtype ?? {
+
 		mtype
 	} : {
 		if (containsSet(^(env.visiting), root)) {
@@ -33,7 +37,7 @@ extractTypeNode(env : ExtractEnv, eclass : int) -> TType {
 			env.visiting := insertSet(^(env.visiting), root);
 			typenode = getUnionMapValue(env.tgraph.umap, root);
 
-			best = fold2(typenode.types, 0, TTypeEClass(eclass), \ben, best, type : TType -> {
+			best = fold2(typenode.types, 0, TTypeEClass(root), \ben, best, type : TType -> {
 				benefit = benefitTTypeNode(env, type);
 				if (benefit.first > ben) benefit
 				else Pair(ben, best)
@@ -76,10 +80,16 @@ benefitTTypeNode(env : ExtractEnv, t : TType) -> Pair<int, TType> {
 			);
 		}
 		TTypeOverload(unique, overloads): {
-			Pair(1, t);
+			ch = children(overloads);
+			Pair(1, 
+				TTypeOverload(unique, sort(ch.second))
+			);
 		}
 		TTypeSupertype(unique, subtypes): {
-			Pair(1, t);
+			ch = children(subtypes);
+			Pair(1, 
+				TTypeSupertype(unique, sort(ch.second))
+			);
 		}
 	}
 }

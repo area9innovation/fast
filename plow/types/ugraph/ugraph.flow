@@ -10,6 +10,11 @@ export {
 	// Get the (or construct a) type equivalence class for this type
 	makeTTypeEClass(tg : TypeGraph, type : TType) -> int;
 
+	// What is the current set of roots?
+	getEClassRoots(tg : TypeGraph) -> Set<int>;
+
+	canonicalTType(tg : TypeGraph, t : TType) -> TType;
+
 	// Given this eclass, what is the root equivalence class?
 	rootTTypeEClass(tg : TypeGraph, eclass : int) -> int;
 
@@ -68,6 +73,13 @@ makeTTypeEClass(tg : TypeGraph, type : TType) -> int {
 			}
 		}
 	}
+}
+
+getEClassRoots(tg : TypeGraph) -> Set<int> {
+	roots = getUnionMapRoots(tg.umap);
+	filterSet(roots, \r -> {
+		r < ^(tg.nextEClass)
+	})
 }
 
 canonicalTypeNode(tg : TypeGraph, tn : TTypeNode) -> TTypeNode {
