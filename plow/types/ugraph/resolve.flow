@@ -18,10 +18,13 @@ resolveEClasses(env : TTypeEnv) -> TTypeEnv {
 doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	update = ref false;
 
-	// Pull out types
+	// Pull out the best types we have
 	types = extractTTypes(env.tgraph, env.etypes);
 	// Simplify them as much as possibe
 	stypes = mapTree(types, \t -> simplifyType(env, t));
+
+	// OK, so now, we have nice types
+
 	// And then unify these with the group
 	unifyEClasses(env, stypes);
 
@@ -52,7 +55,7 @@ simplifyType(env : TTypeEnv, t : TType) -> TType {
 		TTypeName(id, typars): TTypeName(id, map(typars, rec));
 		TTypeEClass(eclass): TTypeEClass(rootTTypeEClass(env.tgraph, eclass));
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
-		TTypeOverload(unique, overloads): TTypeOverload(unique, sort(map(overloads, rec)));
+		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
 		TTypeSupertype(unique, subtypes): resolveTSupertype(env, t);
 	}
 }

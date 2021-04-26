@@ -30,8 +30,8 @@ replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType {
 		TTypeEClass(id): lookupTreeDef(eclasss, id, type);
 		TTypeName(id, typars): TTypeName(id, map(typars, rec));
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
-		TTypeOverload(unique, overloads): TTypeOverload(unique, sort(map(overloads, rec)));
-		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sort(map(subtypes, rec)));
+		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
+		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
 	}
 }
 
@@ -45,8 +45,8 @@ replaceTType(types : Tree<TType, TType>, type : TType) -> TType {
 			TTypeEClass(id): type;
 			TTypeName(id, typars): TTypeName(id, map(typars, rec));
 			TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
-			TTypeOverload(unique, overloads): TTypeOverload(unique, sort(map(overloads, rec)));
-			TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sort(map(subtypes, rec)));
+			TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
+			TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
 		}
 	}
 }

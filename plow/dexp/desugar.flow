@@ -85,7 +85,7 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	structs0 = fold(toplevels, makeTree(), \acc, tl -> extractDStruct(dd0, acc, tl));
 	unions0 = fold(toplevels, makeTree(), \acc, tl -> extractDUnion(dd0, acc, tl));
 
-	// Set up an environment now we know the arities of all names
+	// Set up an environment now we know the initial arities of all names
 	dd1 = DDesugar(dd with 
 		resolveStructName = \name -> {
 			mst = lookupTree(structs0, name);
@@ -98,8 +98,10 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	);
 
 	// Extract structs & unions for real, checking arities
-	structs = fold(toplevels, makeTree(), \acc, tl -> extractDStruct(dd1, acc, tl));
+	structs2 = fold(toplevels, makeTree(), \acc, tl -> extractDStruct(dd1, acc, tl));
 	unions = fold(toplevels, makeTree(), \acc, tl -> extractDUnion(dd1, acc, tl));
+	// Promite any structs that have implicit type parameters from occuring in a union
+	structs = adjustImplicitStructArity(dd, unions, structs2);
 
 	// Make sure our lookup knows about local structs and unions
 	dd2 = DDesugar(dd with 
@@ -252,11 +254,37 @@ extractDUnion(dd : DDesugar, acc : Tree<string, DUnion>, tl : PTopLevel) -> Tree
 			dunion = DUnion(dtp.id, map(dtp.typars, getDTypePar), map(types, \t -> ptypename2dtypename(dd, t)), pos);
 			if (containsKeyTree(acc, dtp.id)) {
 				dd.onError(pos, "Duplicate union def " + dtp.id);
-			};	
+			};
 			setTree(acc, typename.id, dunion);
 		}
 		default: acc;
 	}
+}
+
+adjustImplicitStructArity(dd : DDesugar, unions : Tree<string, DUnion>, structs : Tree<string, DStruct>) -> Tree<string, DStruct> {
+	foldTree(unions, structs, \un, union, acc -> {
+		arity = length(union.typars);
+		fold(union.types, acc, \acc2, tn : DTypeName -> {
+			nameArity = typenameArity(dd, tn.id);
+			uArity = length(tn.typars);
+			if (nameArity > 0 && nameArity != uArity) {
+				dd.onError(union.pos, "Expected " + i2s(nameArity) + " type args for " + tn.id + ", got " + i2s(uArity));
+			}
+
+			if (nameArity != arity && uArity == 0 && arity > 0) {
+				// OK, implicit polymorphism
+				mstruct = lookupTree(acc2, tn.id);
+				mstruct ?? {
+					newStruct = DStruct(mstruct with typars = generate(0, arity, \i -> strLeft("??????????", i + 1)));
+					// println("Promoting " + tn.id + " to have " + i2s(arity) + " typars like " + un + " " + toString(newStruct));
+					setTree(acc2, tn.id, newStruct)
+				} : {
+					dd.onError(union.pos, "Can not promote " + tn.id + " to have " + i2s(arity) + " typars as the union " + un + " has");
+					acc2;
+				}
+			} else acc2;
+		});
+	})
 }
 
 pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
@@ -360,17 +388,7 @@ ptype2dtype(dd : DDesugar, p : PType) -> DType {
 }
 
 ptypename2dtypename(dd : DDesugar, p : PTypeName) -> DTypeName {
-	mstruct = dd.resolveStructName(p.id);
-	ntypars = mstruct ?? length(mstruct.typars) : {
-		munion = dd.resolveUnionName(p.id);
-		switch (munion) {
-			None(): {
-				if (p.id == "array" || p.id == "ref") 1
-				else 0
-			}
-			Some(un): length(un.typars);
-		}
-	};
+	ntypars = typenameArity(dd, p.id);
 	n = length(p.typars);
 	typars0 = map(p.typars, \tp -> ptype2dtype(dd, tp));
 	typars = if (n == 0 || n != ntypars) {
@@ -380,6 +398,20 @@ ptypename2dtypename(dd : DDesugar, p : PTypeName) -> DTypeName {
 		concat(typars0, generate(n, ntypars, \__ -> DTypeName("auto", [], p.pos)))
 	} else typars0;
 	DTypeName(p.id, typars, p.pos);
+}
+
+typenameArity(dd : DDesugar, id : string) -> int {
+	mstruct = dd.resolveStructName(id);
+	mstruct ?? length(mstruct.typars) : {
+		munion = dd.resolveUnionName(id);
+		switch (munion) {
+			None(): {
+				if (id == "array" || id == "ref") 1
+				else 0
+			}
+			Some(un): length(un.typars);
+		}
+	};
 }
 
 pstructArg2dstructArg(dd : DDesugar, s : PStructArg) -> DStructArg {

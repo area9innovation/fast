@@ -1,0 +1,24 @@
+import plow/types/type;
+import algorithms;
+
+export {
+	TTypeNode(
+		types : [TType]
+	);
+
+	makeTTypeNode(type : TType) -> TTypeNode;
+
+	mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode;
+}
+
+makeTTypeNode(type : TType) -> TTypeNode {
+	TTypeNode([type]);
+}
+
+
+mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
+	TTypeNode(
+		sortUnique(concat(left.types, right.types))
+	)
+}
+
