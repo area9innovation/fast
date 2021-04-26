@@ -52,11 +52,11 @@ unifyTTypeNames(env : TTypeEnv, pos : int, left : TTypeName, right : TTypeName) 
 }
 
 unifyTTypeOverload(env : TTypeEnv, pos : int, overload : TTypeOverload, type : TType) -> void {
-	good = filter(set2array(overload.overloads), \ol -> {
+	good = filter(overload.overloads, \ol -> {
 		possibleTTypeMatch(env, ol, type)
 	});
 	n = length(good);
-	if (n < sizeSet(overload.overloads)) {
+	if (n < length(overload.overloads)) {
 		// OK, we have new information
 		if (n == 1) {
 			// println("Resolved overload");
@@ -70,7 +70,7 @@ unifyTTypeOverload(env : TTypeEnv, pos : int, overload : TTypeOverload, type : T
 }
 
 unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType) -> void {
-	iterSet(super.subtypes, \st -> {
+	iter(super.subtypes, \st -> {
 		subtypeUnifyTType(env, pos, st, type);
 	})
 }
@@ -120,12 +120,12 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 			}
 		}
 		TTypeOverload(unique, overloads): {
-			iterSet(overloads, \sb -> {
+			iter(overloads, \sb -> {
 				subtypeUnifyTType(env, pos, sb, super)
 			})
 		}
 		TTypeSupertype(unique, subtypes): {
-			iterSet(subtypes, \sb -> {
+			iter(subtypes, \sb -> {
 				subtypeUnifyTType(env, pos, sb, super)
 			})
 		}
@@ -198,9 +198,9 @@ possibleTTypeMatch(env : TTypeEnv, left : TType, right : TType) -> bool {
 					TTypeSupertype(unique, subtypes): possibleTTypeMatch(env, right, left);
 				}
 			}
-			TTypeOverload(unique, overloads): existsSet(overloads, \ol -> possibleTTypeMatch(env, ol, right));
+			TTypeOverload(unique, overloads): exists(overloads, \ol -> possibleTTypeMatch(env, ol, right));
 			TTypeSupertype(__, lsubtypes): {
-				forall(set2array(lsubtypes), \st -> {
+				forall(lsubtypes, \st -> {
 					possibleSuperTType(env, st, right)
 				})
 			}

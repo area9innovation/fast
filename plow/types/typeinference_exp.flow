@@ -158,7 +158,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				TTypeEClass(env.mkEClass());
 			} else if (length(fieldFnTypes) == 1) {
 				fieldFnTypes[0]
-			} else TTypeOverload(TTypeEClass(eclass), buildSet(fieldFnTypes));
+			} else TTypeOverload(TTypeEClass(eclass), sort(fieldFnTypes));
 
 			rtype = TTypeEClass(eclass);
 			calltype = TTypeFunction([tvalue], rtype);

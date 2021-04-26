@@ -10,7 +10,7 @@ prettyTType(t : TType) -> string {
 		TTypeEClass(id): "e" + i2s(id);
 		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, prettyTType, ", ") + ">");
 		TTypeFunction(args, returnType): "(" + superglue(args, prettyTType, ", ") + ") -> " + prettyTType(returnType);
-		TTypeOverload(typar, overloads): "overloads{" + superglue(set2array(overloads), prettyTType, ", ") + "}";
-		TTypeSupertype(unique, subtypes): "supertype" + i2s(unique) + "{" + superglue(set2array(subtypes), prettyTType, ", ") + "}";
+		TTypeOverload(typar, overloads): "overloads{" + superglue(overloads, prettyTType, ", ") + "}";
+		TTypeSupertype(unique, subtypes): "supertype" + i2s(unique) + "{" + superglue(subtypes, prettyTType, ", ") + "}";
 	}
 }

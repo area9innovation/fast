@@ -44,10 +44,10 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeEClass>, t 
 		TTypeEClass(id): t;
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(typar, overloads): {
-			TTypeOverload(rec(typar), mapSet(overloads, rec));
+			TTypeOverload(rec(typar), sort(map(overloads, rec)));
 		}
 		TTypeSupertype(unique, subtypes): {
-			TTypeSupertype(unique, mapSet(subtypes, rec));
+			TTypeSupertype(unique, sort(map(subtypes, rec)));
 		}
 	}
 }

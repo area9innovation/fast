@@ -38,7 +38,7 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 		dumpEClasses(fenv);
 		fenv;
 	} else {
-		doResolveEClasses(env, iteration - 1);
+		doResolveEClasses(fenv, iteration - 1);
 	}
 }
 
@@ -48,7 +48,7 @@ simplifyType(env : TTypeEnv, t : TType) -> TType {
 		TTypeName(id, typars): TTypeName(id, map(typars, rec));
 		TTypeEClass(eclass): TTypeEClass(rootTTypeEClass(env.tgraph, eclass));
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
-		TTypeOverload(unique, overloads): TTypeOverload(unique, mapSet(overloads, rec));
+		TTypeOverload(unique, overloads): TTypeOverload(unique, sort(map(overloads, rec)));
 		TTypeSupertype(unique, subtypes): resolveTSupertype(env, t);
 	}
 }

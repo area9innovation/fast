@@ -19,14 +19,14 @@ splitTType(t : TType) -> Pair<TType, [TType]> {
 		}
 		TTypeOverload(typar, overloads): {
 			Pair(
-				TTypeOverload(typar, makeSet()),
-				set2array(overloads)
+				TTypeOverload(typar, []),
+				overloads
 			)
 		}
 		TTypeSupertype(unique, subtypes): {
 			Pair(
-				TTypeSupertype(unique, makeSet()),
-				set2array(subtypes)
+				TTypeSupertype(unique, []),
+				subtypes
 			)
 		}
 	}

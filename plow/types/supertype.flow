@@ -8,7 +8,7 @@ export {
 }
 
 resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
-	namedsupers = foldSet(super.subtypes, makeSet(), \acc, st -> {
+	namedsupers = fold(super.subtypes, makeSet(), \acc, st -> {
 		switch (st) {
 			TTypeName(id, typars): {
 				supers0 = env.resolveSupertypes(id);
