@@ -3,23 +3,29 @@ import plow/types/util;
 import plow/types/polymorphism;
 
 export {
-	// This attempts to resolve a set of subtypes
+	// This attempts to resolve a set of subtypes to a specific type
+	// If it succeeds, the typars of the final type are type vars
+	// that have to be unified against the underlying types
 	resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType;
 }
 
 resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
-	namedsupers = foldi(super.subtypes, makeSet(), \i, acc, st -> {
+	named : [TTypeName] = filtermap(super.subtypes, \st -> {
 		switch (st) {
-			TTypeName(id, typars): {
-				supers0 = env.resolveSupertypes(id);
-				supers = if (supers0 == []) [id] else supers0;
-				supset = buildSet(supers);
-				if (i == 0) supset
-				else intersectSets(supset, acc)
-			}
-			default: acc;
+			TTypeName(id, typars): Some(st);
+			default: None();
 		}
 	});
+	namedsupers = foldi(named, makeSet(), \i, acc, st -> {
+		id = st.id;
+		supers0 = env.resolveSupertypes(id);
+		supers = if (supers0 == []) [id] else supers0;
+		supset = buildSet(supers);
+		if (i == 0) supset
+		else intersectSets(supset, acc)
+	});
+
+	// println(set2array(namedsupers);
 
 	if (sizeSet(namedsupers) == 1) {
 		// OK, we found the name we should use

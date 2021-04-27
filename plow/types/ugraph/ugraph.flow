@@ -34,7 +34,7 @@ export {
 
 makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
 	TypeGraph(
-		makeUnionFindMap(TTypeNode([]), mergeTTypeNodes),
+		makeUnionFindMap(defaultTTypeNode(), mergeTTypeNodes),
 		makeTree(),
 		ref 0,
 		onError
@@ -79,7 +79,10 @@ getEClassRoots(tg : TypeGraph) -> Set<int> {
 
 canonicalTypeNode(tg : TypeGraph, tn : TTypeNode) -> TTypeNode {
 	TTypeNode(
-		map(tn.types, \t -> canonicalTType(tg, t))
+		sortUnique(map(tn.best, \t -> canonicalTType(tg, t))),
+		tn.overload,
+		tn.supertypeUnique,
+		sortUnique(map(tn.supertypes, \t -> canonicalTType(tg, t))),
 	)
 }
 

@@ -3,22 +3,55 @@ import algorithms;
 
 export {
 	TTypeNode(
-		types : [TType]
+		best : [TType],
+		overload : Maybe<TTypeOverload>,
+		supertypeUnique : int,
+		supertypes : [TType],
 	);
+
+	defaultTTypeNode() -> TTypeNode;
 
 	makeTTypeNode(type : TType) -> TTypeNode;
 
 	mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode;
 }
 
-makeTTypeNode(type : TType) -> TTypeNode {
-	TTypeNode([type]);
+defaultTTypeNode() -> TTypeNode {
+	TTypeNode([], None(), -1, []);
 }
 
+makeTTypeNode(type : TType) -> TTypeNode {
+	switch (type) {
+		TTypeName(id, typars): TTypeNode([type], None(), -1, []);
+		TTypeEClass(eclass): TTypeNode([type], None(), -1, []);
+		TTypeFunction(args, returnType): TTypeNode([type], None(), -1, []);
+		TTypeOverload(unique, overloads): TTypeNode([], Some(type), -1, []);
+		TTypeSupertype(unique, subtypes): TTypeNode([], None(), unique, subtypes);
+	}
+}
 
 mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
-	TTypeNode(
-		sortUnique(concat(left.types, right.types))
-	)
-}
+	best = sortUnique(concat(left.best, right.best));
+	
+	overload = switch (left.overload) {
+		None(): right.overload;
+		Some(loverload): {
+			switch (right.overload) {
+				None(): left.overload;
+				Some(roverload): {
+					Some(TTypeOverload(loverload.unique, sortUnique(concat(loverload.overloads, roverload.overloads))));
+				}
+			}
+		}
+	};
+	supertypes = filter(sortUnique(concat(left.supertypes, right.supertypes)), \tt -> {
+		!contains(best, tt)
+	});
 
+	TTypeNode(
+		best,
+		overload,
+		max(left.supertypeUnique, right.supertypeUnique),
+		supertypes
+	);
+}

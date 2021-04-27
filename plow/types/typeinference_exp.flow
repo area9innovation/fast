@@ -243,18 +243,19 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			unifyTType(env, "cast", pos, supertype([tvalue]), ttarget);
 			ttarget;
 		}
-		DDowncast(oldid, newid, subtype, scope, pos, eclass): {
+		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
 			tsubtype = dtype2ttype(env, true, subtype);
 
-			nenv = TTypeEnv(env with localTypes = setTree(env.localTypes, oldid, tsubtype));
+			nenv = TTypeEnv(env with 
+				localTypes = setTree(setTree(env.localTypes, oldid, tsubtype),
+					newid, tsubtype)
+			);
 
 			dtype = ttypeInferenceDExp(nenv, scope);
 
-			etype = lookupTree(env.localTypes, oldid);
-			etype ?? {
-				// Relate the subtype with the supertype
-				unifyTType(env, "downcast super", pos, supertype([etype, tsubtype]), etype);
-			} : {}
+			// Relate the subtype with the supertype
+			etype = TTypeEClass(supereclass);
+			unifyTType(env, "downcast super", pos, supertype([etype, tsubtype]), etype);
 
 			restype("downcast", eclass, dtype);
 		}

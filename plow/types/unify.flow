@@ -23,7 +23,16 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 						unifyTTypeNames(env, reason, pos, left, right);
 					}
 				}
-				default: {}
+				TTypeEClass(eclass): {}
+				TTypeFunction(args, returnType): {
+					env.onError(pos, lid + " is not a function");
+				}
+				TTypeOverload(unique, overloads): {
+					unifyTTypeOverload(env, pos, right, left);
+				}
+				TTypeSupertype(unique, subtypes): {
+					unifyTSupertype(env, pos, right, left);
+				}
 			}
 		}
 		TTypeFunction(largs, lreturnType): {
@@ -33,7 +42,11 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 					unifyTType(env, "fn return", pos, lreturnType, rreturnType);
 				}
 				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
-				default: {}
+				TTypeName(id, typars): {
+					env.onError(pos, id + " is not a function");
+				}
+				TTypeEClass(eclass): {}
+				TTypeSupertype(unique, subtypes): unifyTSupertype(env, pos, right, left);
 			}
 		}
 		TTypeEClass(lid): {}
@@ -70,18 +83,38 @@ unifyTTypeOverload(env : TTypeEnv, pos : int, overload : TTypeOverload, type : T
 	}
 }
 
-unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType) -> void {
-	iter(super.subtypes, \st -> {
-		subtypeUnifyTType(env, pos, st, type);
-	})
-}
-
 unifyTTypes(env : TTypeEnv, pos : int, left : [TType], right : [TType]) -> void {
 	if (length(left) == length(right)) {
 		iteri(left, \i, larg -> {
 			unifyTType(env, "types #" + i2s(i), pos, larg, right[i])
 		});
 	}
+}
+
+unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType) -> void {
+	iter(super.subtypes, \st -> {
+		subtypeUnifyTType(env, pos, st, type);
+	});
+	// OK, another thing we can do is to unify identical supertype typepars:
+	
+	// unify(super(Maybe<t1>, Maybe<t2>), type)
+	// -> unify(super(t1, t2), type)
+
+	named : Tree<string, [TTypeName]> = fold(super.subtypes, makeTree(), \acc, st -> {
+		switch (st) {
+			TTypeName(id, tps): treePushToArrayValue(acc, id, st);
+			default: acc;
+		}
+	});
+	traverseInOrder(named, \name, tns : [TTypeName] -> {
+		if (length(tns) > 1) {
+			representative = tns[0];
+			iteri(representative.typars, \i, __ -> {
+				newSuper = TTypeSupertype(env.mkUnique(), map(tns, \tn -> tn.typars[i]));
+				unifyTType(env, "intrasupers " + name, pos, newSuper, type)
+			})
+		}
+	});
 }
 
 // Check that st is a sutype of type, and if so, unify any typars
