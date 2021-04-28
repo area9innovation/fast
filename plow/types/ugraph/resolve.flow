@@ -161,12 +161,12 @@ simplifyTTypesuper(env : TTypeEnv, node : TTypeNode) -> TTypeNode {
 			mtype = hasTypeNodeThisName(node, supername);
 			mtype ?? {
 				// We found the type already
-				makeTTypeNode(mtype);
+				makeTTypeNode(mtype, node.positions);
 			} : {
 				// OK, the type does not exist. We have to construct it
 				println("Made new type name");
 				ntype = instantiateTTypeName(env, supername);
-				makeTTypeNode(ntype);
+				makeTTypeNode(ntype, node.positions);
 			}
 		} else node;
 	} else node;
@@ -181,7 +181,7 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 	// Unify among the best types
 	iteri(new.best, \i, b1 -> {
 		iter(old.best, \b2 -> {
-			unifyTType(env, "eclass " + i2s(eclass) + " simplify", -1, b1, b2)
+			unifyTType(env, "eclass " + i2s(eclass) + " simplify", elementAt(new.positions, 0, -1), b1, b2)
 		})
 	});
 
@@ -190,7 +190,7 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 		None(): {}
 		Some(overload): {
 			iter(new.best, \b -> {
-				unifyTType(env, "eclass " + i2s(eclass) + " overload", -1, b, overload);
+				unifyTType(env, "eclass " + i2s(eclass) + " overload", elementAt(new.positions, 0, -1), b, overload);
 			});
 		}
 	}
@@ -199,10 +199,10 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 	if (new.supertypeUnique != -1 && new.supertypes != []) {
 		supertype = TTypeSupertype(new.supertypeUnique, new.supertypes);
 		iter(new.best, \b -> {
-			unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
+			unifyTType(env, "eclass " + i2s(eclass) + " supers", elementAt(new.positions, 0, -1), b, supertype);
 		});
 		iter(old.best, \b -> {
-			unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
+			unifyTType(env, "eclass " + i2s(eclass) + " supers", elementAt(new.positions, 0, -1), b, supertype);
 		});
 	}
 }

@@ -44,11 +44,11 @@ emptyTTypeClass(tg : TypeGraph) -> int {
 	ec;
 }
 
-makeTTypeEClass(tg : TypeGraph, type : TType) -> int {
+makeTTypeEClass(tg : TypeGraph, type : TType, pos : int) -> int {
 	switch (type) {
 		TTypeEClass(eclass): findUnionMapRoot(tg.umap, eclass);
 		default: {
-			typenode = canonicalTypeNode(tg, makeTTypeNode(type));
+			typenode = canonicalTypeNode(tg, makeTTypeNode(type, [pos]));
 			mid = lookupTree(tg.memo, typenode);
 			mid ?? {
 				root = findUnionMapRoot(tg.umap, mid);
@@ -80,6 +80,8 @@ canonicalTypeNode(tg : TypeGraph, tn : TTypeNode) -> TTypeNode {
 		tn.overload,
 		tn.supertypeUnique,
 		sortUnique(map(tn.supertypes, \t -> canonicalTType(tg, t))),
+		// TODO: Should we have the empty array here?
+		tn.positions
 	)
 }
 
@@ -99,8 +101,8 @@ rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
 }
 
 unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int {
-	lroot = makeTTypeEClass(tg, left);
-	rroot = makeTTypeEClass(tg, right);
+	lroot = makeTTypeEClass(tg, left, pos);
+	rroot = makeTTypeEClass(tg, right, pos);
 	if (lroot != rroot) {
 		root = unionUnionMap(tg.umap, lroot, rroot);
 		if (false) {
