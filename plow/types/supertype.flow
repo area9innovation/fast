@@ -3,13 +3,11 @@ import plow/types/util;
 import plow/types/polymorphism;
 
 export {
-	// This attempts to resolve a set of subtypes to a specific type
-	// If it succeeds, the typars of the final type are type vars
-	// that have to be unified against the underlying types
-	resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType;
+	// This finds out what supertypes could resolve a set of subtypes to a specific type
+	resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string];
 }
 
-resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
+resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string] {
 	named : [TTypeName] = filtermap(super.subtypes, \st -> {
 		switch (st) {
 			TTypeName(id, typars): Some(st);
@@ -27,13 +25,5 @@ resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> TType {
 
 	// println(set2array(namedsupers);
 
-	if (sizeSet(namedsupers) == 1) {
-		// OK, we found the name we should use
-		name = set2array(namedsupers)[0];
-		type = instantiateTTypeName(env, name);
-		// println(name + " becomes " + prettyTType(type));
-		type
-	} else {
-		super;
-	}
+	set2array(namedsupers)
 }

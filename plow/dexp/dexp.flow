@@ -76,8 +76,8 @@ export {
 		DSwitch(value : DVar, type : DType, cases : [DCase], defaultCase : Maybe<DExp>, pos : int, eclass : int);
 			DCase(id : string, body : DExp, pos : int);
 		DCast(value : DExp, target : DType, pos : int);
-		// This does a downcast from a supertype to a subtype - a la let-binding of newid = downcast(id) : subtype; scope
-		DDowncast(id : string, newid : string, subtype : DType, scope : DExp, pos : int, eclass : int);
+		// This does a downcast from a supertype to a subtype - a la let-binding of newid : subtype = downcast(id); scope
+		DDowncast(id : string, newid : string, subtype : DType, supertype : int, scope : DExp, pos : int, eclass : int);
 		DTyped(value : DExp, subtype : DType, pos : int);
 
 		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int, eclass : int);

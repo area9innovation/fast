@@ -8,9 +8,6 @@ export {
 	// Prepare an empty equivalence class
 	emptyTTypeClass(tg : TypeGraph) -> int;
 
-	// Get the (or construct a) type equivalence class for this type
-	makeTTypeEClass(tg : TypeGraph, type : TType) -> int;
-
 	// What is the current set of roots?
 	getEClassRoots(tg : TypeGraph) -> Set<int>;
 

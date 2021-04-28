@@ -97,9 +97,8 @@ unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType)
 	});
 	// OK, another thing we can do is to unify identical supertype typepars:
 	
-	// unify(super(Maybe<t1>, Maybe<t2>), type)
-	// -> unify(super(t1, t2), type)
-
+	// unify(super(Maybe<t1>, Maybe<t2>), type<t1>)
+	// -> unify(super(Maybe<super(t1, t2)>), type)
 	named : Tree<string, [TTypeName]> = fold(super.subtypes, makeTree(), \acc, st -> {
 		switch (st) {
 			TTypeName(id, tps): treePushToArrayValue(acc, id, st);
@@ -109,10 +108,11 @@ unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType)
 	traverseInOrder(named, \name, tns : [TTypeName] -> {
 		if (length(tns) > 1) {
 			representative = tns[0];
-			iteri(representative.typars, \i, __ -> {
-				newSuper = TTypeSupertype(env.mkUnique(), map(tns, \tn -> tn.typars[i]));
-				unifyTType(env, "intrasupers " + name, pos, newSuper, type)
-			})
+			typars = mapi(representative.typars, \i, __ -> {
+				TTypeSupertype(env.mkUnique(), map(tns, \tn -> tn.typars[i]));
+			});
+			stype = TTypeSupertype(super.unique, typars);
+			unifyTType(env, "intrasupers " + name, pos, stype, type)
 		}
 	});
 }

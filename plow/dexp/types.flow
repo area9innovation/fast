@@ -37,7 +37,7 @@ foldDTypesInDExp(e : DExp, acc : ?, fn : (?, DType) -> ?) -> ? {
 				foldDTypesInDExp(defaultCase, acc1, fn)
 			} : acc1;
 		}
-		DDowncast(oldid, newid, subtype, scope, pos, tyvar): {
+		DDowncast(oldid, newid, subtype, supertype, scope, pos, tyvar): {
 			nacc = fn(acc, subtype);
 			foldDTypesInDExp(scope, nacc, fn)
 		}

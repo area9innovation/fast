@@ -512,7 +512,8 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 							// Add a downcast
 							typars = map(struct.typars, \__ -> DTypeName("auto", [], c.pos));
 							stype = DTypeName(c.id, typars, c.pos);
-							desugarDowncast(dd, DDowncast(switchvar.id, "", stype, body1, c.pos, emptyTTypeClass(dd.tgraph)));
+							desugarDowncast(dd, DDowncast(switchvar.id, "", stype, switchvar.eclass,
+								body1, c.pos, emptyTTypeClass(dd.tgraph)));
 						} else body1;
 					} else {
 						dd.onError(c.pos, c.id + " expects " + i2s(length(struct.structArgs)) + " args, got " + i2s(length(c.args)));
@@ -592,8 +593,7 @@ desugarDowncast(dd : DDesugar, d : DDowncast) -> DDowncast {
 	renamed = renameDVar(d.id, newid, d.scope);
 	DDowncast(
 		d with
-		newid = newid,
-		scope = DLet(newid, DVar(d.id, d.pos, emptyTTypeClass(dd.tgraph)), renamed, d.pos, emptyTTypeClass(dd.tgraph))
+		newid = newid, scope = renamed
 	);
 }
 
@@ -639,11 +639,11 @@ renameDVar(old : string, new : string, d : DExp) -> DExp {
 			}
 		}
 		DCast(value, target, pos): DCast(rec(value), target, pos);
-		DDowncast(oldid, newid, subtype, scope, pos, eclass): {
+		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): {
 			if (oldid == old) {
-				DDowncast(new, newid, subtype, rec(scope), pos, eclass);
+				DDowncast(new, newid, subtype, supertype, rec(scope), pos, eclass);
 			} else {
-				DDowncast(oldid, newid, subtype, rec(scope), pos, eclass);
+				DDowncast(oldid, newid, subtype, supertype, rec(scope), pos, eclass);
 			}
 		}
 		DTyped(value, subtype, pos): DTyped(rec(value), subtype, pos);

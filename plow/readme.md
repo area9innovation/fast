@@ -55,3 +55,18 @@ $body
 flow-exp: $l + $r
 =>
 js-exp: $l(100) + $r(99)
+
+# C++ backend
+
+There is a C GC library here:
+
+Automatic:
+https://github.com/mkirchner/gc
+https://github.com/orangeduck/tgc
+
+Requires implementing "mark", but that should be simple.
+https://github.com/doublec/gc
+
+Advanced, performant, but complicated:
+https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/platform/heap/BlinkGCAPIReference.md
+

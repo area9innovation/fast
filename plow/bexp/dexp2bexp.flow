@@ -95,9 +95,12 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 			// We probably do not need this in the backends. It is purely a type checking thing
 			rec(value);
 		}
-		DDowncast(oldid, newid, subtype, scope, pos, eclass): {
-			// We probably do not need this in the backends. It is purely a type checking thing
-			rec(scope);
+		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): {
+			BLet(
+				newid, BVar(oldid, type(supertype)),
+				rec(scope),
+				type(eclass)
+			);
 		}
 		DTyped(value, subtype, pos): rec(value);
 		DWith(struct, value, fields, pos, eclass): todo();

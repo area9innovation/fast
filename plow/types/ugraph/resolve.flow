@@ -43,21 +43,25 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 
 dumpEClasses(env : TTypeEnv) -> void {
 	roots = getEClassRoots(env.tgraph);
+
 	iterSet(roots, \root : int -> {
 		node = getUnionMapValue(env.tgraph.umap, root);
 		type = lookupTreeDef(env.etypes, root, TTypeEClass(root));
 		println("Class e" + i2s(root) + " : "
 			+ rpad(prettyTType(type), " ", 40) + " from "
-			+ ttypeNode2string(node)
+			+ ttypeNode2string(env, node)
 		);
 	});
 }
 
-ttypeNode2string(t : TTypeNode) -> string {
+ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
 	tp = \tt, ts -> {
 		if (ts == []) ""
 		else {
-			(if (tt != "") tt + ":" else "") + "{ " +  superglue(ts, prettyTType, "; ") + " } "
+			(if (tt != "") tt + ":" else "") + "{ " +  superglue(ts, \ttt -> {
+				st = canonicalTTypeEClass(env.tgraph, ttt);
+				prettyTType(st)
+			}, "; ") + " } "
 		}
 	}
 	tp("", t.best) 
@@ -68,14 +72,15 @@ ttypeNode2string(t : TTypeNode) -> string {
 	+ tp("Supertypes", t.supertypes)
 }
 
-simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> TTypeNode {
+simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {
 	env = senv.env;
 	node = getUnionMapValue(env.tgraph.umap, eclass);
 
 	if (containsSet(^(senv.visiting), eclass) || containsKeyTree(^(senv.etypes), eclass)) {
-		node
+
 	} else {
 		senv.visiting := insertSet(^(senv.visiting), eclass);
+		// println("Starting to simplifying " + i2s(eclass));
 
 		// Simplify the best nodes, if we can
 		bests = sortUnique(map(node.best, \t -> {
@@ -92,31 +97,31 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> TTypeNode {
 		}));
 		supertype = TTypeSupertype(node.supertypeUnique, supers);
 
-		if (length(bests) > 0) {
-			// Unify among the best types
-			iteri(bests, \i, b1 -> {
-				iter(tailFrom(bests, i + 1), \b2 -> {
-					unifyTType(env, "eclass " + i2s(eclass) + " simplify", -1, b1, b2)
-				})
-			});
-			// Unify against the supertype
-			if (supertype.unique != -1) {
-				iter(bests, \b -> {
-					unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
+		if (false) {
+			if (length(bests) > 0) {
+				// Unify among the best types
+				iteri(bests, \i, b1 -> {
+					iter(tailFrom(bests, i + 1), \b2 -> {
+						unifyTType(env, "eclass " + i2s(eclass) + " simplify", -1, b1, b2)
+					})
 				});
+				// Unify against the supertype
+				if (supertype.unique != -1) {
+					iter(bests, \b -> {
+						unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
+					});
+				}
 			}
 		}
+
 		bnode = TTypeNode(node with best = bests, supertypes = supers);
-
-	// 	println(i2s(eclass) + ": " + toString(bnode));
-
-		// TODO: Identical supertype typnames can be realted:
-		// super(Maybe<t1>, Maybe<t2>)
-		// -> unify(super(t1, t2), t1)
 
 		// See if we can resolve the supertype
 		stype = if (supertype.unique != -1) {
-			resolveTSupertype(env, supertype) 
+			potsupers = resolveTSupertype(env, supertype);
+			println(potsupers);
+			// type = instantiateTTypeName(env, potsupers[0]);
+			supertype;
 		} else supertype;
 
 		snode = switch (stype) {
@@ -126,7 +131,8 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> TTypeNode {
 			default: {
 				// OK, we have a winner.
 				// Make sure to unify this one against each type
-				unifyTType(env, "eclass " + i2s(eclass) + " super resolved", -1, stype, supertype);
+				// println("Resolved " + i2s(eclass) + " supertype to " + prettyTType(stype));
+				// unifyTType(env, "eclass " + i2s(eclass) + " super resolved", -1, stype, supertype);
 				// And promote this to be the winner
 
 				sbests = sortUnique(map(arrayPush(bnode.best, stype), \t -> {
@@ -139,22 +145,24 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> TTypeNode {
 		// TODO: If we have a supertype
 
 		if (snode != node) {
-			println("Simplified " + i2s(eclass) + " " + ttypeNode2string(node) + " to " + ttypeNode2string(snode));
-			senv.update := true;
-			setUnionMapValue(env.tgraph.umap, eclass, snode);
-
 			mtype = resolvedTTypeNode(snode);
-			mtype ?? {
+			fnode = mtype ?? {
 				if (!unresolvedTType(mtype)) {
 					println("Resolved " + i2s(eclass) + " to " + prettyTType(mtype));
 					senv.etypes := setTree(^(senv.etypes), eclass, mtype);
-				}
-			} : {}
+					TTypeNode([mtype], None(), bnode.supertypeUnique, []);
+				} else snode;
+			} : {
+				snode;
+			}
+
+			setUnionMapValue(env.tgraph.umap, eclass, fnode);
+
+			println("Simplified " + i2s(eclass) + " " + ttypeNode2string(env, node) + " to " + ttypeNode2string(env, fnode));
+			senv.update := true;
 		}
 
 		senv.visiting := removeSet(^(senv.visiting), eclass);
-
-		snode;
 	}
 }
 
@@ -165,14 +173,24 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 		TTypeEClass(eclass): {
 			root = rootTTypeEClass(senv.env.tgraph, eclass);
 			// OK, simplify this recursively
-			classnode = simplifyTTypeNode(senv, root);
+			simplifyTTypeNode(senv, root);
 
 			// Then check if we have a solution
-			lookupTreeDef(^(senv.etypes), root, TTypeEClass(root));
+			mtype = lookupTree(^(senv.etypes), root);
+			mtype ?? {
+				if (simplifyType(senv, mtype) != mtype) {
+					println("Not canonical type in the environment");
+				}
+				mtype;
+			} : {
+				TTypeEClass(root);
+			}
 		}
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
-		TTypeSupertype(unique, subtypes): resolveTSupertype(senv.env, t);
+		TTypeSupertype(unique, subtypes): {
+			TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
+		}
 	}
 }
 
@@ -182,4 +200,16 @@ resolvedTTypeNode(node : TTypeNode) -> Maybe<TType> {
 		if (unresolvedTType(t)) None()
 		else Some(t);
 	} else None();
+}
+
+
+canonicalTTypeEClass(tg : TypeGraph, t : TType) -> TType {
+	rec = \tt -> canonicalTTypeEClass(tg, tt);
+	switch (t) {
+		TTypeName(id, typars): TTypeName(id, map(typars, rec));
+		TTypeEClass(eclass): TTypeEClass(rootTTypeEClass(tg, eclass));
+		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
+		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
+		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
+	}
 }
