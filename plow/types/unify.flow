@@ -43,7 +43,7 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 				}
 				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
 				TTypeName(id, typars): {
-					env.onError(pos, id + " is not a function");
+					env.onError(pos, id + " is not a function " + prettyTType(left));
 				}
 				TTypeEClass(eclass): {}
 				TTypeSupertype(unique, subtypes): unifyTSupertype(env, pos, right, left);
@@ -139,16 +139,17 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 		TTypeEClass(id): {
 			switch (super) {
 				TTypeName(superid, __): {
-					// TODO: If super does not have any subtypes, we know
-					// the eclass is this type
-					println("TODO: Check if " + prettyTType(super) + " has any sub types");
 				}
 				TTypeEClass(__): {}
 				TTypeFunction(args, returnType): {
 					env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
 				}
-				TTypeOverload(unique, overloads): error();
-				TTypeSupertype(unique, subtypes): error();
+				TTypeOverload(unique, overloads): {
+				//	env.onError(pos, "TODO: Check if any overloads are structural here");
+				}
+				TTypeSupertype(unique, subtypes): {
+				//	env.onError(pos, "TODO: Check if any supertypes are structural here");
+				}
 			}
 		}
 		TTypeFunction(largs, lreturnType): {
