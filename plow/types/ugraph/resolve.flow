@@ -46,10 +46,17 @@ dumpEClasses(env : TTypeEnv) -> void {
 
 	iterSet(roots, \root : int -> {
 		node = getUnionMapValue(env.tgraph.umap, root);
+		childClasses = foldRange(0, ^(env.tgraph.nextEClass), [], \acc, ec -> {
+			r = findUnionMapRoot(env.tgraph.umap, ec);
+			if (r == root) {
+				arrayPush(acc, ec)
+			} else acc;
+		});
 		type = lookupTreeDef(env.etypes, root, TTypeEClass(root));
 		println("Class e" + i2s(root) + " : "
 			+ rpad(prettyTType(type), " ", 40) + " from "
 			+ ttypeNode2string(env, node)
+			+ " covers " + toString(childClasses)
 		);
 	});
 }

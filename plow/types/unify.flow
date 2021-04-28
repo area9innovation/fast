@@ -49,7 +49,15 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 				TTypeSupertype(unique, subtypes): unifyTSupertype(env, pos, right, left);
 			}
 		}
-		TTypeEClass(lid): {}
+		TTypeEClass(lid): {
+			switch (right) {
+				TTypeEClass(__): {}
+				TTypeName(id, typars): {}
+				TTypeFunction(args, returnType): {}
+				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
+				TTypeSupertype(unique, subtypes): unifyTSupertype(env, pos, right, left);
+			}
+		}
 		TTypeOverload(lunique, loverloads): {
 			unifyTTypeOverload(env, pos, left, right);
 		}
