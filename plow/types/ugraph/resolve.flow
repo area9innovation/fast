@@ -56,7 +56,7 @@ dumpEClasses(env : TTypeEnv) -> void {
 		println("Class e" + i2s(root) + " : "
 			+ rpad(prettyTType(type), " ", 40) + " from "
 			+ ttypeNode2string(env, node)
-			+ " covers " + toString(childClasses)
+			+ " covers " + superglue(childClasses, \ec -> "e" + i2s(ec), ", ")
 		);
 	});
 }
@@ -184,13 +184,21 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 			unifyTType(env, "eclass " + i2s(eclass) + " simplify", -1, b1, b2)
 		})
 	});
-	// Unify against the overloads
 	
+	// Unify against the overloads
+	switch (new.overload) {
+		None(): {}
+		Some(overload): {
+			iter(new.best, \b -> {
+				unifyTType(env, "eclass " + i2s(eclass) + " overload", -1, b, overload);
+			});
+		}
+	}
+
 	// Unify against the supertype
 	if (new.supertypeUnique != -1 && new.supertypes != []) {
 		supertype = TTypeSupertype(new.supertypeUnique, new.supertypes);
 		iter(new.best, \b -> {
-//			println(prettyTType(b) + " against " + prettyTType(supertype));
 			unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
 		});
 		iter(old.best, \b -> {
