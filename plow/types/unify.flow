@@ -132,10 +132,25 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				TTypeSupertype(__, supers): {
 					// This is probably true
 				}
-				default: error();
+				TTypeFunction(args, returnType): error();
+				TTypeOverload(unique, overloads): error();
 			}
 		}
-		TTypeEClass(id): {}
+		TTypeEClass(id): {
+			switch (super) {
+				TTypeName(superid, __): {
+					// TODO: If super does not have any subtypes, we know
+					// the eclass is this type
+					println("TODO: Check if " + prettyTType(super) + " has any sub types");
+				}
+				TTypeEClass(__): {}
+				TTypeFunction(args, returnType): {
+					env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+				}
+				TTypeOverload(unique, overloads): error();
+				TTypeSupertype(unique, subtypes): error();
+			}
+		}
 		TTypeFunction(largs, lreturnType): {
 			switch (super) {
 				TTypeFunction(rargs, rreturnType): {

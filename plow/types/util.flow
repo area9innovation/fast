@@ -8,6 +8,7 @@ export {
 
 	replaceTType(types : Tree<TType, TType>, type : TType) -> TType;
 
+	getTTypeName(t : TType) -> string;
 	unresolvedTType(t : TType) -> bool;
 	containsTTypeEClass(t : TType) -> bool;
 }
@@ -51,6 +52,12 @@ replaceTType(types : Tree<TType, TType>, type : TType) -> TType {
 	}
 }
 
+getTTypeName(t : TType) -> string {
+	switch (t) {
+		TTypeName(n, __): n;
+		default: "";
+	}
+}
 
 unresolvedTType(t : TType) -> bool {
 	switch (t) {

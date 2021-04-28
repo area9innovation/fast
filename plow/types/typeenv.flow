@@ -30,6 +30,9 @@ export {
 		// Find the supertypes of this type
 		resolveSupertypes : (string) -> [string],
 
+		// Find the subtypes of this type
+		resolveSubtypes : (string) -> [string],
+
 		// The types of module-level ids. These need instantiation
 		moduleTypes : Tree<string, TType>,
 
@@ -76,6 +79,10 @@ makeTTypeEnv(tgraph : TypeGraph) -> TTypeEnv {
 		},
 		\tn -> {
 			println("TODO: Find supertypes of " + tn);
+			[]
+		},
+		\tn -> {
+			println("TODO: Find subtypes of " + tn);
 			[]
 		},
 		makeTree(), makeTree(),
