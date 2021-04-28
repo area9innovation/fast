@@ -34,7 +34,7 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	nenv = TTypeEnv(env with etypes = ^(senv.etypes));
 
 	if (!^(senv.update) || iteration <= 0) {
-		dumpEClasses(nenv);
+		// dumpEClasses(nenv);
 		nenv;
 	} else {
 		doResolveEClasses(nenv, iteration - 1);
@@ -184,7 +184,7 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 			unifyTType(env, "eclass " + i2s(eclass) + " simplify", -1, b1, b2)
 		})
 	});
-	
+
 	// Unify against the overloads
 	switch (new.overload) {
 		None(): {}
