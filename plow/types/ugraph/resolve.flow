@@ -20,7 +20,7 @@ SimplifyEnv(
 );
 
 doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
-	if (true) {
+	if (false) {
 		println("\nIteration " + i2s(iteration));
 		dumpEClasses(env);
 	}
@@ -95,18 +95,17 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {
 		// OK, simplify a final time after unification
 		fnode : TTypeNode = basicSimplifyTypenode(senv, eclass, snode);
 
-		if (fnode != node) {
-			mtype = resolvedTTypeNode(fnode);
-			mtype ?? {
-				if (!unresolvedTType(mtype)) {
-					println("Resolved " + i2s(eclass) + " to " + prettyTType(mtype));
-					senv.etypes := setTree(^(senv.etypes), eclass, mtype);
-				}
-			} : {}
+		mtype = resolvedTTypeNode(fnode);
+		mtype ?? {
+			// println("Resolved " + i2s(eclass) + " to " + prettyTType(mtype));
+			senv.etypes := setTree(^(senv.etypes), eclass, mtype);
+			senv.update := true;
+		} : {}
 
+		if (fnode != node) {
 			setUnionMapValue(env.tgraph.umap, eclass, fnode);
 
-			println("Simplified " + i2s(eclass) + " " + ttypeNode2string(env, node) + " to " + ttypeNode2string(env, fnode));
+			// println("Simplified " + i2s(eclass) + " " + ttypeNode2string(env, node) + " to " + ttypeNode2string(env, fnode));
 			senv.update := true;
 		}
 
@@ -245,11 +244,15 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 }
 
 resolvedTTypeNode(node : TTypeNode) -> Maybe<TType> {
-	if (length(node.best) == 1) {
-		t = node.best[0];
-		if (unresolvedTType(t)) None()
-		else Some(t);
-	} else None();
+	resolved = filter(node.best, \tt -> !unresolvedTType(tt));
+	if (resolved != []) {
+		if (length(resolved) > 1) {
+			println("More than one best type: " + superglue(resolved, prettyTType, ","));
+		}
+		Some(resolved[0]);
+	} else {
+		None();
+	}
 }
 
 canonicalTTypeEClass(tg : TypeGraph, t : TType) -> TType {

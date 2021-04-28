@@ -205,8 +205,9 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			vtypes = map(exps, \e -> {
 				ttypeInferenceDExp(env, e);
 			});
-			type = if (false && vtypes == []) {
-				TTypeName("array", [TTypeName("flow", [])]);
+			type = if (vtypes == []) {
+				// OK, set up a type var for this thing
+				TTypeName("array", [TTypeEClass(env.mkEClass())]);
 			} else {
 				TTypeName("array", [supertype(vtypes)]);
 			}

@@ -138,6 +138,8 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				}
 				TTypeSupertype(__, supers): {
 					// This is probably true
+					// TODO: We know subid and the supers are related by a common
+					// supertype
 				}
 				TTypeFunction(args, returnType): error();
 				TTypeOverload(unique, overloads): error();
@@ -189,7 +191,12 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				TTypeEClass(id): {
 					env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
 				}
-				default: error();
+				TTypeName(id, typars): error();
+				TTypeOverload(unique, overloads): error();
+				TTypeSupertype(unique, subtypes): {
+					// TODO: We know subid and the supers are related by a common
+					// supertype
+				}
 			}
 		}
 		TTypeOverload(unique, overloads): {
