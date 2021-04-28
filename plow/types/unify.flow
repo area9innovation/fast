@@ -119,6 +119,7 @@ unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType)
 
 // Check that st is a sutype of type, and if so, unify any typars
 subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void {
+	// println("Sub type " + prettyTType(sub) + " vs " + prettyTType(super));
 	error = \ -> {
 		env.onError(pos, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
 	};
@@ -128,7 +129,13 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				TTypeName(superid, supertypars): {
 					subtypeTTypenames(env, pos, sub, super);
 				}
-				TTypeEClass(id): {}
+				TTypeEClass(id): {
+					supers = env.resolveSupertypes(subid);
+					if (supers == []) {
+						// OK, there are no supers, so this has to be it
+						unifyTType(env, "unique super", pos, sub, super);
+					}
+				}
 				TTypeSupertype(__, supers): {
 					// This is probably true
 				}
@@ -145,10 +152,24 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 					env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
 				}
 				TTypeOverload(unique, overloads): {
-				//	env.onError(pos, "TODO: Check if any overloads are structural here");
+					iter(overloads, \s -> {
+						switch (s) {
+							TTypeFunction(__, __): {
+								env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+							}
+							default: {}
+						}
+					});
 				}
 				TTypeSupertype(unique, subtypes): {
-				//	env.onError(pos, "TODO: Check if any supertypes are structural here");
+					iter(subtypes, \s -> {
+						switch (s) {
+							TTypeFunction(__, __): {
+								env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+							}
+							default: {}
+						}
+					});
 				}
 			}
 		}
@@ -165,7 +186,9 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 						error();
 					}
 				}
-				TTypeEClass(id): {}
+				TTypeEClass(id): {
+					env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+				}
 				default: error();
 			}
 		}

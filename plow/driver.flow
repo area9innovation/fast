@@ -39,6 +39,7 @@ PlowCache(
 	unionLookup : BLookupFromImport<DUnion>,
 	fieldLookup : BLookupFromImport<[string]>,
 	superTypeLookup : BLookupFromImport<[string]>,
+	subTypeLookup : BLookupFromImport<[string]>,
 	globalLookup : BLookupFromImport<BGlobal>,
 	nativeLookup : BLookupFromImport<BNative>,
 	// What is the next id
@@ -126,9 +127,20 @@ makePlowCache(
 	}, ref makeTree(), ref makeSet()
 	);
 
+	subTypeLookup = BLookupFromImport(\module, n -> {
+		subs = makeDSubtypes(module.unions);
+		Some(getTreeArrayValue(subs, n));
+	}, \module, n -> {
+		true;
+	}, \upath, nat, error -> {
+		println("TODO: What about the position of this field? " + toString(nat));
+		makeOnError(upath, onError)(0, error)
+	}, ref makeTree(), ref makeSet()
+	);
+
 	PlowCache(
 		onError, includes, makeBModules(), 
-		structLookup, unionLookup, fieldLookup, superTypeLookup,
+		structLookup, unionLookup, fieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
 		ref 0
 	);
@@ -192,6 +204,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			},
 			resolveSupertypes = \id -> {
 				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
+			},
+			resolveSubtypes = \id -> {
+				lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
 			},
 			resolveStructName = dd.resolveStructName,
 			resolveUnionName = dd.resolveUnionName

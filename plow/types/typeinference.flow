@@ -29,6 +29,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	// Make a field map
 	fields = makeDFieldMap(d.structs);
 	supers = makeDSupers(d.unions);
+	subs = makeDSubtypes(d.unions);
 
 	// Make sure we can find local structs
 	senv = TTypeEnv(tenv with
@@ -56,6 +57,12 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			concat(
 				getTreeArrayValue(supers, name),
 				tenv.resolveSupertypes(name)
+			);
+		},
+		resolveSubtypes = \name -> {
+			concat(
+				getTreeArrayValue(subs, name),
+				tenv.resolveSubtypes(name)
 			);
 		}
 	);

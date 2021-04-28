@@ -181,13 +181,16 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 	// Unify against the overloads
 	
 	// Unify against the supertype
-	supertype = TTypeSupertype(new.supertypeUnique, new.supertypes);
-	iter(new.best, \b -> {
-		unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
-	});
-	iter(old.best, \b -> {
-		unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
-	});
+	if (new.supertypeUnique != -1 && new.supertypes != []) {
+		supertype = TTypeSupertype(new.supertypeUnique, new.supertypes);
+		iter(new.best, \b -> {
+//			println(prettyTType(b) + " against " + prettyTType(supertype));
+			unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
+		});
+		iter(old.best, \b -> {
+			unifyTType(env, "eclass " + i2s(eclass) + " supers", -1, b, supertype);
+		});
+	}
 }
 
 simplifyType(senv : SimplifyEnv, t : TType) -> TType {
@@ -213,7 +216,30 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
 		TTypeSupertype(unique, subtypes): {
-			TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
+			subs = sortUnique(map(subtypes, rec));
+			// Is there a type without a super type here?
+			mtop = filter(subs, \s -> {
+				tn = getTTypeName(s);
+				if (tn != "") {
+					supers = senv.env.resolveSupertypes(tn);
+					supers == []
+				} else false;
+			});
+
+			if (mtop != []) {
+				// OK, are any of these fully resolved?
+				resolved = filter(mtop, \m -> !unresolvedTType(m));
+				if (resolved != []) {
+					if (length(resolved) > 1) {
+						senv.env.onError(-1, "This is not a unique super type: " + superglue(resolved, prettyTType, ", "))
+					}
+					resolved[0]
+				} else {
+					TTypeSupertype(unique, mtop);
+				}
+			} else {
+				TTypeSupertype(unique, subs);
+			}
 		}
 	}
 }
@@ -225,7 +251,6 @@ resolvedTTypeNode(node : TTypeNode) -> Maybe<TType> {
 		else Some(t);
 	} else None();
 }
-
 
 canonicalTTypeEClass(tg : TypeGraph, t : TType) -> TType {
 	rec = \tt -> canonicalTTypeEClass(tg, tt);
