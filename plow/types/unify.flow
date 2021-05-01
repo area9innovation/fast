@@ -10,7 +10,7 @@ export {
 unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
 	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
 	// OK, mark these types are unified
-	unifyTTypeEClass(env.tgraph, pos, left, right);
+	unifyTTypeEClass(env.tgraph, reason, pos, left, right);
 
 	// Do recursive unification
 	switch (left) {
@@ -30,7 +30,7 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 				TTypeOverload(unique, overloads): {
 					unifyTTypeOverload(env, pos, right, left);
 				}
-				TTypeSupertype(unique, subtypes): {
+				TTypeSupertype(unique, subtypes, maxed): {
 					unifyTSupertype(env, pos, right, left);
 				}
 			}
@@ -45,8 +45,10 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 				TTypeName(id, typars): {
 					env.onError(pos, id + " is not a function " + prettyTType(left));
 				}
-				TTypeEClass(eclass): {}
-				TTypeSupertype(unique, subtypes): unifyTSupertype(env, pos, right, left);
+				TTypeEClass(eclass): {
+					// We know eclass is a function, which is recorded in the environment
+				}
+				TTypeSupertype(unique, subtypes, maxed): unifyTSupertype(env, pos, right, left);
 			}
 		}
 		TTypeEClass(lid): {
@@ -55,13 +57,13 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 				TTypeName(id, typars): {}
 				TTypeFunction(args, returnType): {}
 				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
-				TTypeSupertype(unique, subtypes): unifyTSupertype(env, pos, right, left);
+				TTypeSupertype(unique, subtypes, maxed): unifyTSupertype(env, pos, right, left);
 			}
 		}
 		TTypeOverload(lunique, loverloads): {
 			unifyTTypeOverload(env, pos, left, right);
 		}
-		TTypeSupertype(unique, subtypes): {
+		TTypeSupertype(unique, subtypes, maxed): {
 			unifyTSupertype(env, pos, left, right);
 		}
 	}
@@ -117,9 +119,9 @@ unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType)
 		if (length(tns) > 1) {
 			representative = tns[0];
 			typars = mapi(representative.typars, \i, __ -> {
-				TTypeSupertype(env.mkUnique(), map(tns, \tn -> tn.typars[i]));
+				TTypeSupertype(env.mkUnique(), map(tns, \tn -> tn.typars[i]), super.maxed);
 			});
-			stype = TTypeSupertype(super.unique, typars);
+			stype = TTypeSupertype(super.unique, typars, super.maxed);
 			unifyTType(env, "intrasupers " + name, pos, stype, type)
 		}
 	});
@@ -144,7 +146,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 						unifyTType(env, "unique super", pos, sub, super);
 					}
 				}
-				TTypeSupertype(__, supers): {
+				TTypeSupertype(__, supers, maxed): {
 					// This is probably true
 					// TODO: We know subid and the supers are related by a common
 					// supertype
@@ -156,6 +158,11 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 		TTypeEClass(id): {
 			switch (super) {
 				TTypeName(superid, __): {
+					subs = env.resolveSubtypes(superid);
+					if (subs == []) {
+						// OK, there are no subs, so this has to be it
+						unifyTType(env, "unique sub", pos, sub, super);
+					}
 				}
 				TTypeEClass(__): {}
 				TTypeFunction(args, returnType): {
@@ -171,7 +178,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 						}
 					});
 				}
-				TTypeSupertype(unique, subtypes): {
+				TTypeSupertype(unique, subtypes, maxed): {
 					iter(subtypes, \s -> {
 						switch (s) {
 							TTypeFunction(__, __): {
@@ -201,7 +208,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				}
 				TTypeName(id, typars): error();
 				TTypeOverload(unique, overloads): error();
-				TTypeSupertype(unique, subtypes): {
+				TTypeSupertype(unique, subtypes, maxed): {
 					// TODO: We know subid and the supers are related by a common
 					// supertype
 				}
@@ -212,7 +219,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				subtypeUnifyTType(env, pos, sb, super)
 			})
 		}
-		TTypeSupertype(unique, subtypes): {
+		TTypeSupertype(unique, subtypes, maxed): {
 			iter(subtypes, \sb -> {
 				subtypeUnifyTType(env, pos, sb, super)
 			})
@@ -271,7 +278,7 @@ possibleTTypeMatch(env : TTypeEnv, left : TType, right : TType) -> bool {
 					}
 					TTypeFunction(args, returnType): false;
 					TTypeOverload(unique, overloads): possibleTTypeMatch(env, right, left);
-					TTypeSupertype(unique, subtypes): possibleTTypeMatch(env, right, left);
+					TTypeSupertype(unique, subtypes, maxed): possibleTTypeMatch(env, right, left);
 				}
 			}
 			TTypeFunction(largs, lrt): {
@@ -284,11 +291,11 @@ possibleTTypeMatch(env : TTypeEnv, left : TType, right : TType) -> bool {
 						&& possibleTTypeMatch(env, lrt, rrt)
 					}
 					TTypeOverload(unique, overloads): possibleTTypeMatch(env, right, left);
-					TTypeSupertype(unique, subtypes): possibleTTypeMatch(env, right, left);
+					TTypeSupertype(unique, subtypes, maxed): possibleTTypeMatch(env, right, left);
 				}
 			}
 			TTypeOverload(unique, overloads): exists(overloads, \ol -> possibleTTypeMatch(env, ol, right));
-			TTypeSupertype(__, lsubtypes): {
+			TTypeSupertype(__, lsubtypes, maxed): {
 				forall(lsubtypes, \st -> {
 					possibleSuperTType(env, st, right)
 				})

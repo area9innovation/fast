@@ -15,7 +15,7 @@ export {
 	rootTTypeEClass(tg : TypeGraph, eclass : int) -> int;
 
 	// Join these two types into the same equivalence class
-	unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int;
+	unifyTTypeEClass(tg : TypeGraph, reason : string, pos : int, left : TType, right : TType) -> int;
 
 	// After setting up all the relations, calls resolveEClasses from resolve.flow
 	// which will populate the etypes in the TTypeEnv
@@ -77,11 +77,10 @@ getEClassRoots(tg : TypeGraph) -> Set<int> {
 canonicalTypeNode(tg : TypeGraph, tn : TTypeNode) -> TTypeNode {
 	TTypeNode(
 		sortUnique(map(tn.best, \t -> canonicalTType(tg, t))),
-		tn.overload,
-		tn.supertypeUnique,
-		sortUnique(map(tn.supertypes, \t -> canonicalTType(tg, t))),
+		maybeMap(tn.overload, \ol -> TTypeOverload(ol.unique, sortUnique(map(ol.overloads, \tt -> canonicalTType(tg, tt))))),
+		maybeMap(tn.supertype, \st -> TTypeSupertype(st.unique, sortUnique(map(st.subtypes, \tt -> canonicalTType(tg, tt))), st.maxed)),
 		// TODO: Should we have the empty array here?
-		tn.positions
+		tn.positions,
 	)
 }
 
@@ -92,7 +91,7 @@ canonicalTType(tg : TypeGraph, t : TType) -> TType {
 		TTypeEClass(eclass): TTypeEClass(rootTTypeEClass(tg, eclass));
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
-		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
+		TTypeSupertype(unique, subtypes, maxed): TTypeSupertype(unique, sortUnique(map(subtypes, rec)), maxed);
 	}
 }
 
@@ -100,13 +99,13 @@ rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
 	findUnionMapRoot(tg.umap, eclass)
 }
 
-unifyTTypeEClass(tg : TypeGraph, pos : int, left : TType, right : TType) -> int {
+unifyTTypeEClass(tg : TypeGraph, reason : string, pos : int, left : TType, right : TType) -> int {
 	lroot = makeTTypeEClass(tg, left, pos);
 	rroot = makeTTypeEClass(tg, right, pos);
 	if (lroot != rroot) {
 		root = unionUnionMap(tg.umap, lroot, rroot);
 		if (false) {
-			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root) + ")");
+			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root) + ") " + reason);
 		}
 		root;
 	} else {

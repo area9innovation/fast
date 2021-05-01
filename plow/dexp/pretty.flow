@@ -143,8 +143,11 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			iter(args, rec);
 		}
 		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): {
-			pr("downcast " + oldid + " to " + newid);
-			type(subtype);
+			superroot = rootTTypeEClass(env.tgraph, supertype);
+			mtype = lookupTree(env.etypes, superroot);
+			super = mtype ?? prettyTType(mtype) : "e" + i2s(superroot);
+
+			pr("downcast " + oldid + ": " + super + " to " + newid + " : " + prettyDType(input, subtype));
 			rec(scope);
 		}
 	}

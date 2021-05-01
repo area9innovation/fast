@@ -5,8 +5,7 @@ export {
 	TTypeNode(
 		best : [TType],
 		overload : Maybe<TTypeOverload>,
-		supertypeUnique : int,
-		supertypes : [TType],
+		supertype : Maybe<TTypeSupertype>,
 		positions : [int],
 	);
 
@@ -18,16 +17,16 @@ export {
 }
 
 defaultTTypeNode() -> TTypeNode {
-	TTypeNode([], None(), -1, [], []);
+	TTypeNode([], None(), None(), []);
 }
 
 makeTTypeNode(type : TType, positions : [int]) -> TTypeNode {
 	switch (type) {
-		TTypeName(id, typars): TTypeNode([type], None(), -1, [], positions);
-		TTypeEClass(eclass): TTypeNode([type], None(), -1, [], positions);
-		TTypeFunction(args, returnType): TTypeNode([type], None(), -1, [], positions);
-		TTypeOverload(unique, overloads): TTypeNode([], Some(type), -1, [], positions);
-		TTypeSupertype(unique, subtypes): TTypeNode([], None(), unique, subtypes, positions);
+		TTypeName(id, typars): TTypeNode([type], None(), None(), positions);
+		TTypeEClass(eclass): TTypeNode([type], None(), None(), positions);
+		TTypeFunction(args, returnType): TTypeNode([type], None(), None(), positions);
+		TTypeOverload(unique, overloads): TTypeNode([], Some(type), None(), positions);
+		TTypeSupertype(unique, subtypes, maxed): TTypeNode([], None(), Some(type), positions);
 	}
 }
 
@@ -45,15 +44,27 @@ mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
 			}
 		}
 	};
-	supertypes = filter(sortUnique(concat(left.supertypes, right.supertypes)), \tt -> {
+
+	supertype = switch (left.supertype) {
+		None(): right.supertype;
+		Some(lsupertype): {
+			switch (right.supertype) {
+				None(): left.supertype;
+				Some(rsupertype): {
+					st = sortUnique(concat(lsupertype.subtypes, rsupertype.subtypes));
+					Some(TTypeSupertype(lsupertype.unique, st, lsupertype.maxed || rsupertype.maxed));
+				}
+			}
+		}
+	}
+/*	supertypes = filter(, \tt -> {
 		!contains(best, tt)
-	});
+	});*/
 
 	TTypeNode(
 		best,
 		overload,
-		max(left.supertypeUnique, right.supertypeUnique),
-		supertypes,
+		supertype,
 		uniq(concat(left.positions, right.positions))
 	);
 }

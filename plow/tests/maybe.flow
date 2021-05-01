@@ -3,7 +3,7 @@ Maybe<?> ::= None, Some<?>;
 
 None();
 Some(value : ?);
-/*
+
 either(m : Maybe<?>, def : ?) -> ? {
 	switch (m) {
 		None(): {
@@ -16,7 +16,7 @@ either(m : Maybe<?>, def : ?) -> ? {
 		}
 	}
 }
-*/
+
 maybeBind(m : Maybe<?>, f: (?)->Maybe<??>) -> Maybe<??> {
 	switch (m : Maybe) {
 		None(): None();

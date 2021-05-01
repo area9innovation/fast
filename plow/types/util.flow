@@ -2,7 +2,7 @@ import plow/types/type;
 import algorithms;
 
 export {
-	makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType]) -> TType;
+	makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType], maxed : bool) -> TType;
 
 	replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType;
 
@@ -13,14 +13,14 @@ export {
 	containsTTypeEClass(t : TType) -> bool;
 }
 
-makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType]) -> TType {
+makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType], maxed : bool) -> TType {
 	ss2 = fold(subtypes, makeSet(), extractTSupers);
-	TTypeSupertype(mkUnique(), set2array(ss2));
+	TTypeSupertype(mkUnique(), set2array(ss2), maxed);
 }
 
 extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
 	switch (t) {
-		TTypeSupertype(__, supers): fold(supers, acc, extractTSupers);
+		TTypeSupertype(__, supers, maxed): fold(supers, acc, extractTSupers);
 		default: insertSet(acc, t);
 	}
 }
@@ -32,7 +32,7 @@ replaceTTypeEClasss(eclasss : Tree<int, TType>, type : TType) -> TType {
 		TTypeName(id, typars): TTypeName(id, map(typars, rec));
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
-		TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
+		TTypeSupertype(unique, subtypes, maxed): TTypeSupertype(unique, sortUnique(map(subtypes, rec)), maxed);
 	}
 }
 
@@ -47,7 +47,7 @@ replaceTType(types : Tree<TType, TType>, type : TType) -> TType {
 			TTypeName(id, typars): TTypeName(id, map(typars, rec));
 			TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
 			TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
-			TTypeSupertype(unique, subtypes): TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
+			TTypeSupertype(unique, subtypes, maxed): TTypeSupertype(unique, sortUnique(map(subtypes, rec)), maxed);
 		}
 	}
 }
@@ -65,7 +65,7 @@ unresolvedTType(t : TType) -> bool {
 		TTypeEClass(eclass): true;
 		TTypeFunction(args, returnType): exists(args, unresolvedTType) || unresolvedTType(returnType);
 		TTypeOverload(unique, overloads): true;
-		TTypeSupertype(unique, subtypes): true;
+		TTypeSupertype(unique, subtypes, maxed): true;
 	}
 }
 
@@ -75,6 +75,6 @@ containsTTypeEClass(t : TType) -> bool {
 		TTypeEClass(eclass): true;
 		TTypeFunction(args, returnType): exists(args, containsTTypeEClass) || containsTTypeEClass(returnType);
 		TTypeOverload(unique, overloads): exists(overloads, containsTTypeEClass);
-		TTypeSupertype(unique, subtypes): exists(subtypes, containsTTypeEClass);
+		TTypeSupertype(unique, subtypes, maxed): exists(subtypes, containsTTypeEClass);
 	}
 }

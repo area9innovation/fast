@@ -7,6 +7,7 @@ export {
 	resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string];
 }
 
+// TODO: We could build a graph of common ancestors instead of this
 resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string] {
 	named : [TTypeName] = filtermap(super.subtypes, \st -> {
 		switch (st) {
@@ -17,13 +18,10 @@ resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string] {
 	namedsupers = foldi(named, makeSet(), \i, acc, st -> {
 		id = st.id;
 		supers0 = env.resolveSupertypes(id);
-		supers = if (supers0 == []) [id] else supers0;
+		supers = arrayPush(supers0, id);
 		supset = buildSet(supers);
 		if (i == 0) supset
 		else intersectSets(supset, acc)
 	});
-
-	// println(set2array(namedsupers);
-
 	set2array(namedsupers)
 }

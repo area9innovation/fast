@@ -23,9 +23,9 @@ splitTType(t : TType) -> Pair<TType, [TType]> {
 				overloads
 			)
 		}
-		TTypeSupertype(unique, subtypes): {
+		TTypeSupertype(unique, subtypes, maxed): {
 			Pair(
-				TTypeSupertype(unique, []),
+				TTypeSupertype(unique, [], maxed),
 				subtypes
 			)
 		}

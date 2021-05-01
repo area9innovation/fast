@@ -46,8 +46,8 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeEClass>, t 
 		TTypeOverload(typar, overloads): {
 			TTypeOverload(rec(typar), sortUnique(map(overloads, rec)));
 		}
-		TTypeSupertype(unique, subtypes): {
-			TTypeSupertype(unique, sortUnique(map(subtypes, rec)));
+		TTypeSupertype(unique, subtypes, maxed): {
+			TTypeSupertype(unique, sortUnique(map(subtypes, rec)), maxed);
 		}
 	}
 }
