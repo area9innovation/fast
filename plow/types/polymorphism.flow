@@ -56,11 +56,20 @@ instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TT
 	stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == struct);
 	stype ?? {
 		if (length(unionInstance.typars) == length(union.typars)) {
-			typars : Tree<TType, TType> = foldi(unionInstance.typars, makeTree(), \i, acc : Tree<TType, TType>, typar : TType -> {
+			typars : Tree<TType, TType> = foldi(unionInstance.typars, makeTree(), 
+				\i, acc : Tree<TType, TType>, typar : TType -> {
 				name : string = union.typars[i].id;
 				setTree(acc, TTypeName(name, []), typar);
 			});
-			Some(replaceTType(typars, dtype2ttype(env, false, stype)));
+			// Consider
+			// Maybe<?> ::= None, Some<?>
+			// If we are in the None, case, notice we have one too little typars
+			sdtype = if (length(stype.typars) == 0) {
+				// So we implicitly extend it when there are none
+				DTypeName(stype with typars = union.typars)
+			} else stype;
+			sstype = dtype2ttype(env, false, sdtype);
+			Some(replaceTType(typars, sstype));
 		} else {
 			env.onError(-1, "Expected #" + i2s(length(union.typars)) + " typars, got " + prettyTType(unionInstance));
 			None();

@@ -153,7 +153,8 @@ basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTy
 					default: true;
 				}
 			}));
-			Some(
+			if (supers == []) None()
+			else Some(
 				TTypeSupertype(
 					supertype with subtypes = supers
 				)
@@ -201,10 +202,22 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 	iteri(new.best, \i, b1 -> {
 		iter(old.best, \b2 -> {
 			unifyTType(env, "eclass " + i2s(eclass) + " simplify", elementAt(new.positions, 0, -1), b1, b2)
-		})
+		});
+		switch (old.overload) {
+			None(): {}
+			Some(ov): {
+				unifyTType(env, "eclass " + i2s(eclass) + " overload 1", elementAt(new.positions, 0, -1), b1, ov);
+			}
+		}
+		switch (old.supertype) {
+			None(): {}
+			Some(st): {
+				unifyTType(env, "eclass " + i2s(eclass) + " super 1", elementAt(new.positions, 0, -1), b1, st);
+			}
+		}
 	});
 
-	// Unify against the overloads
+	// Unify best against the overloads
 	switch (new.overload) {
 		None(): {}
 		Some(overload): {
@@ -214,14 +227,11 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 		}
 	}
 
-	// Unify against the supertype
+	// Unify best against the supertype
 	switch (new.supertype) {
 		None(): {}
 		Some(supertype): {
 			iter(new.best, \b -> {
-				unifyTType(env, "eclass " + i2s(eclass) + " supers", elementAt(new.positions, 0, -1), b, supertype);
-			});
-			iter(old.best, \b -> {
 				unifyTType(env, "eclass " + i2s(eclass) + " supers", elementAt(new.positions, 0, -1), b, supertype);
 			});
 		}

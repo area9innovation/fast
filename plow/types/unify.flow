@@ -121,7 +121,9 @@ unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType)
 			typars = mapi(representative.typars, \i, __ -> {
 				TTypeSupertype(env.mkUnique(), map(tns, \tn -> tn.typars[i]), super.maxed);
 			});
-			stype = TTypeSupertype(super.unique, typars, super.maxed);
+			stype = TTypeSupertype(super with subtypes = [
+				TTypeName(representative with typars = typars)
+			]);
 			unifyTType(env, "intrasupers " + name, pos, stype, type)
 		}
 	});
@@ -245,6 +247,7 @@ subtypeTTypenames(env : TTypeEnv, pos : int, sub : TTypeName, super : TTypeName)
 		if (contains(supers, super.id)) {
 			munion = env.resolveUnionName(super.id);
 			munion ?? {
+				// println("We have a subtype " + toString(sub) + " against a super " + super.id);
 				mstruct = instantiateTTypeNameFromUnion(env, munion, super, sub.id);
 				switch (mstruct) {
 					None(): error();

@@ -68,7 +68,7 @@ export {
 		DArray(exps : [DExp], pos : int, eclass : int);
 		DSequence(exps : [DExp], pos : int, eclass : int);
 		DCall(fn : DExp, args : [DExp], pos : int, eclass : int);
-		// Struct constructo
+		// Struct constructor
 		DConstruct(structid : string, args : [DExp], pos : int, eclass : int);
 		DLambda(args : [DArgType], body : DExp, pos : int, eclass : int);
 			DArgType(id : string, type : DType, pos : int);
