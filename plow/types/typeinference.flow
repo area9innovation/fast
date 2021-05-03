@@ -13,6 +13,7 @@ export {
 ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	// Resolve the types of natives
 	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
+		// The module types have to be with ? in the types
 		type = dtype2ttype(env, false, nativ.type);
 		unifyTType(env, "native", d.pos, type, TTypeEClass(nativ.eclass));
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
@@ -20,7 +21,26 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	// Set the type of top levels, so mutual recursion has something to bite on
 	tenv = foldTree(d.globals, nenv, \id, global, acc -> {
-		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, TTypeEClass(global.eclass)))
+		// We need to set up a declared type here so polymorphism will work. 
+		// We need ? in the moduleTypes.
+		type = switch (global.value) {
+			DLambda(args, body, pos, eclass): {
+				switch (body) {
+					DTyped(value, dtype, __): {
+						// If there is a declared type, use that
+						dtype2ttype(env, false, dtype);
+					}
+					default:TTypeEClass(global.eclass);
+				}
+			}
+			DTyped(value, dtype, __): {
+				// If there is a declared type, use that
+				dtype2ttype(env, false, dtype);
+			}
+			default: TTypeEClass(global.eclass)
+		};
+		// println(id + ": " + prettyTType(type));
+		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, type))
 	});
 
 	// Make a field map
@@ -76,7 +96,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
-	// println("Inference of global " + d.id);
+	//println("Inference of global " + d.id);
 
 	// Instantiate the typars
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
@@ -98,5 +118,15 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 
 	// println("Inference " + d.id + " is " + prettyTType(ftype));
 	unifyTType(env, "global 2", d.pos, ftype, TTypeEClass(d.eclass));
-	TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
+	
+	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
+	switch (etype) {
+		TTypeEClass(__): {
+			// OK, it was not a real class.
+			// Let us at least define what we have
+			// println("Refined type for " + d.id);
+			TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
+		}
+		default: env;
+	}
 }

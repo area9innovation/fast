@@ -20,7 +20,7 @@ SimplifyEnv(
 );
 
 doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
-	if (true) {
+	if (false) {
 		println("\nIteration " + i2s(iteration));
 		dumpEClasses(env);
 	}
@@ -34,8 +34,10 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	nenv = TTypeEnv(env with etypes = ^(senv.etypes));
 
 	if (!^(senv.update) || iteration <= 0) {
-		println("\nCompleted");
-		dumpEClasses(nenv);
+		if (false) {
+			println("\nCompleted");
+			dumpEClasses(nenv);
+		}
 
 		nenv;
 	} else {
@@ -83,6 +85,7 @@ ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
 		Some(st): tp("Supertypes " + i2s(st.unique), st.subtypes)
 	}
 	+ tp("Originals", set2array(t.originals))
+	+ "  " + strGlue(t.reasons, ", ")
 }
 
 simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {

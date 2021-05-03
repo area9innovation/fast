@@ -87,6 +87,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 		}
 		DCall(fn, args, pos, eclass): {
 			fntype1 = ttypeInferenceDExp(env, fn);
+			// println(summarizeDExp(env, fn) + " : " + prettyTType(fntype1));
 			argtypes = map(args, \a -> supertype([ttypeInferenceDExp(env, a)], false));
 			rettype = TTypeEClass(env.mkEClass());
 			fntype2 = TTypeFunction(argtypes, rettype);
