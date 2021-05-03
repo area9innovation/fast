@@ -215,13 +215,14 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				}
 				TTypeEClass(__): {}
 				TTypeFunction(args, returnType): {
-					env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+					subfn = copyTTypeFunction(env, super);
+					unifyTType(env, "stub fn", pos, subfn, super)
 				}
 				TTypeOverload(unique, overloads): {
 					iter(overloads, \s -> {
 						switch (s) {
 							TTypeFunction(__, __): {
-								env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+								env.onError(pos, "TODO: We know 1 " + i2s(id) + " should be a function");
 							}
 							default: {}
 						}
@@ -231,7 +232,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 					iter(subtypes, \s -> {
 						switch (s) {
 							TTypeFunction(__, __): {
-								env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+								env.onError(pos, "TODO: We know 2 " + i2s(id) + " should be a function");
 							}
 							default: {}
 						}
@@ -253,7 +254,8 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 					}
 				}
 				TTypeEClass(id): {
-					env.onError(pos, "TODO: We know " + i2s(id) + " should be a function");
+					superfn = copyTTypeFunction(env, sub);
+					unifyTType(env, "stub fn", pos, sub, superfn)
 				}
 				TTypeName(id, typars): error();
 				TTypeOverload(unique, overloads): error();
@@ -377,4 +379,11 @@ possibleSuperTType(env : TTypeEnv, subtype : TType, supertype : TType) -> bool {
 			false;
 		}
 	}
+}
+
+copyTTypeFunction(env : TTypeEnv, t : TTypeFunction) -> TTypeFunction {
+	TTypeFunction(
+		map(t.args, \__ -> TTypeEClass(env.mkEClass())),
+		TTypeEClass(env.mkEClass())
+	);
 }
