@@ -20,12 +20,14 @@ resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 	root = rootTTypeEClass(env.tgraph, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
-		if (false && unresolvedTType(mtype)) {
-			env.onError(pos, "Partially unresolved type " + prettyTType(mtype));
+		if (unresolvedTType(mtype)) {
+			env.onError(pos, "Add type parameter. Implicit polymorphism in " + prettyTType(mtype));
 		}
 		ttype2btype(env, mtype)
 	} : {
-		env.onError(pos, "Unresolved type equivalence class " + i2s(root));
+		node = getUnionMapValue(env.tgraph.umap, root);
+		// These are already reported
+		env.onError(pos, "Add type annotation. Unresolved type (equivalence class " + i2s(root) + ". " + strGlue(node.reasons, ", ") + ")");
 		BTypeName("Error!", []);
 	}
 }
@@ -111,8 +113,8 @@ ttype2btype(env : BExpEnv, type : TType) -> BType {
 	switch (type) {
 		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
 		TTypeEClass(eclass): {
-			println("ERROR: Tyvar");
-			BTypeName("ERROR TYVAR " + i2s(eclass), []);
+			// println("ERROR: Tyvar");
+			BTypeName("ERROR", []);
 		}
 		TTypeFunction(args, returnType): {
 			BTypeFunction(map(args, \a -> ttype2btype(env, a)), ttype2btype(env, returnType));

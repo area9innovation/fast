@@ -38,8 +38,7 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 			println("\nCompleted");
 			dumpEClasses(nenv);
 		}
-
-		nenv;
+		finalResolvePhase(nenv);
 	} else {
 		doResolveEClasses(nenv, iteration - 1);
 	}
@@ -355,4 +354,23 @@ addOriginals(orig : TTypeNode, n : TTypeNode) -> TTypeNode {
 	origs6 = fold(n.best, origs5, \acc, b -> removeSet(acc, b));
 
 	TTypeNode(n with originals =  origs6)
+}
+
+
+finalResolvePhase(env : TTypeEnv) -> TTypeEnv {
+	roots = getEClassRoots(env.tgraph);
+	foldSet(roots, env, \acc, root -> {
+		if (!containsKeyTree(acc.etypes, root)) {
+			node = getUnionMapValue(acc.tgraph.umap, root);
+			if (length(node.best) >= 1) {
+				// TODO: We could attempt to generalize any type vars here
+				TTypeEnv(acc with etypes = setTree(acc.etypes, root, node.best[0]))
+			} else if (node.positions == []) {
+				acc
+			} else {
+				acc.onError(elementAt(node.positions, 0, -1), "Could not resolve " + ttypeNode2string(acc, node));
+				acc;
+			}
+		} else acc;
+	});
 }

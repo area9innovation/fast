@@ -28,7 +28,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 				// If there is a declared type, use that
 				dtype2ttype(env, false, dtype);
 			}
-			default: TTypeEClass(global.eclass)
+			default: {
+				TTypeEClass(global.eclass)
+			}
 		};
 		// println(id + ": " + prettyTType(type));
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, type))
@@ -111,6 +113,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	unifyTType(env, "global 2", d.pos, ftype, TTypeEClass(d.eclass));
 	
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
+
 	switch (etype) {
 		TTypeEClass(__): {
 			// OK, it was not a real class.
@@ -118,6 +121,10 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 			// println("Refined type for " + d.id);
 			TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
 		}
-		default: env;
+		default: {
+		//	println(prettyTType(ftype) + " vs " + prettyTType(etype));
+			unifyTType(env, "global 3", d.pos, ftype, etype);
+			env;
+		}
 	}
 }

@@ -205,10 +205,11 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			Pair("fndef_typed", \id, type, body -> {
 				fntype = getPTypeFunction(type);
 				argtypes : [PArgType] = fntype.args;
-
 				PGlobal(getPString(id), 
-					PLambda(argtypes,
-						PTyped(body, fntype.returnType, getPPos(id)), getPPos(id)
+					PTyped(
+						PLambda(argtypes, body, getPPos(id)),
+						fntype,
+						getPPos(id)
 					), getPPos(id)
 				)
 			}),
