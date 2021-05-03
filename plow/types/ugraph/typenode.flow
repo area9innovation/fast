@@ -6,27 +6,28 @@ export {
 		best : [TType],
 		overload : Maybe<TTypeOverload>,
 		supertype : Maybe<TTypeSupertype>,
+		reasons : [string],
 		positions : [int],
 	);
 
 	defaultTTypeNode() -> TTypeNode;
 
-	makeTTypeNode(type : TType, positions : [int]) -> TTypeNode;
+	makeTTypeNode(type : TType, reasons : [string], positions : [int]) -> TTypeNode;
 
 	mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode;
 }
 
 defaultTTypeNode() -> TTypeNode {
-	TTypeNode([], None(), None(), []);
+	TTypeNode([], None(), None(), [], []);
 }
 
-makeTTypeNode(type : TType, positions : [int]) -> TTypeNode {
+makeTTypeNode(type : TType, reasons : [string], positions : [int]) -> TTypeNode {
 	switch (type) {
-		TTypeName(id, typars): TTypeNode([type], None(), None(), positions);
-		TTypeEClass(eclass): TTypeNode([type], None(), None(), positions);
-		TTypeFunction(args, returnType): TTypeNode([type], None(), None(), positions);
-		TTypeOverload(unique, overloads): TTypeNode([], Some(type), None(), positions);
-		TTypeSupertype(unique, subtypes, maxed): TTypeNode([], None(), Some(type), positions);
+		TTypeName(id, typars): TTypeNode([type], None(), None(), reasons, positions);
+		TTypeEClass(eclass): TTypeNode([type], None(), None(), reasons, positions);
+		TTypeFunction(args, returnType): TTypeNode([type], None(), None(), reasons, positions);
+		TTypeOverload(unique, overloads): TTypeNode([], Some(type), None(), reasons, positions);
+		TTypeSupertype(unique, subtypes, maxed): TTypeNode([], None(), Some(type), reasons, positions);
 	}
 }
 
@@ -65,6 +66,7 @@ mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
 		best,
 		overload,
 		supertype,
+		concat(left.reasons, right.reasons),
 		uniq(concat(left.positions, right.positions))
 	);
 }

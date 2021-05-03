@@ -5,9 +5,6 @@ import plow/types/typeof;
 import plow/types/polymorphism;
 import plow/types/util;
 
-import ds/egraph_dot;
-import ds/egraph_extract;
-
 export {
 	// Given a module, figure out what the types are
 	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;

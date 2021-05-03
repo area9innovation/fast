@@ -20,7 +20,7 @@ SimplifyEnv(
 );
 
 doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
-	if (false) {
+	if (true) {
 		println("\nIteration " + i2s(iteration));
 		dumpEClasses(env);
 	}
@@ -34,7 +34,8 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	nenv = TTypeEnv(env with etypes = ^(senv.etypes));
 
 	if (!^(senv.update) || iteration <= 0) {
-		// dumpEClasses(nenv);
+		dumpEClasses(nenv);
+
 		nenv;
 	} else {
 		doResolveEClasses(nenv, iteration - 1);
@@ -176,12 +177,13 @@ simplifyTTypesuper(env : TTypeEnv, node : TTypeNode) -> TTypeNode {
 				mtype = hasTypeNodeThisName(node, supername);
 				mtype ?? {
 					// We found the type already
-					makeTTypeNode(mtype, node.positions);
+					makeTTypeNode(mtype, node.reasons, node.positions);
 				} : {
 					// OK, the type does not exist. We have to construct it
-					println("Made new type name");
 					ntype = instantiateTTypeName(env, supername);
-					makeTTypeNode(ntype, node.positions);
+					// println("Made new type name");
+					// println(ntype);
+					makeTTypeNode(ntype, node.reasons, node.positions);
 				}
 			} else node;
 		}
