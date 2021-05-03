@@ -1,6 +1,5 @@
 import plow/types/pretty;
-import plow/types/ugraph/typenode;
-import ds/union_find_map;
+import plow/types/ugraph/type;
 
 export {
 	makeTypeGraph(onError : (int, string) -> void) -> TypeGraph;
@@ -14,19 +13,13 @@ export {
 	// Given this eclass, what is the root equivalence class?
 	rootTTypeEClass(tg : TypeGraph, eclass : int) -> int;
 
-	// Join these two types into the same equivalence class
-	unifyTTypeEClass(tg : TypeGraph, reason : string, pos : int, left : TType, right : TType) -> int;
+	// Is there an equivalence class for this type? -1 is not
+	findEClass(tg : TypeGraph, type : TType) -> int;
+
+	unifyTypeToEClass(tg : TypeGraph, eclass : int, type : TType, reasons : [string], pos : [int]) -> void;
 
 	// After setting up all the relations, calls resolveEClasses from resolve.flow
 	// which will populate the etypes in the TTypeEnv
-
-	TypeGraph(
-		umap : UnionFindMap<TTypeNode>,
-		// What eclass does this node belong to?
-		mutable memo : Tree<TTypeNode, int>,
-		nextEClass : ref int, 
-		onError : (int, string) -> void,
-	);
 }
 
 makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
@@ -44,29 +37,6 @@ emptyTTypeClass(tg : TypeGraph) -> int {
 	ec;
 }
 
-makeTTypeEClass(tg : TypeGraph, type : TType, reason : string, pos : int) -> int {
-	switch (type) {
-		TTypeEClass(eclass): findUnionMapRoot(tg.umap, eclass);
-		default: {
-			typenode = canonicalTypeNode(tg, makeTTypeNode(type, [reason], [pos]));
-			mid = lookupTree(tg.memo, typenode);
-			mid ?? {
-				root = findUnionMapRoot(tg.umap, mid);
-				if (root != mid) {
-					tg.memo ::= setTree(tg.memo, typenode, root);
-				}
-				root
-			} : {
-				// OK, go look for it
-				eclass = emptyTTypeClass(tg);
-				setUnionMapValue(tg.umap, eclass, typenode);
-				tg.memo ::= setTree(tg.memo, typenode, eclass);
-				eclass;
-			}
-		}
-	}
-}
-
 getEClassRoots(tg : TypeGraph) -> Set<int> {
 	roots = getUnionMapRoots(tg.umap);
 	filterSet(roots, \r -> {
@@ -74,44 +44,138 @@ getEClassRoots(tg : TypeGraph) -> Set<int> {
 	})
 }
 
-canonicalTypeNode(tg : TypeGraph, tn : TTypeNode) -> TTypeNode {
-	TTypeNode(
-		sortUnique(map(tn.best, \t -> canonicalTType(tg, t))),
-		maybeMap(tn.overload, \ol -> TTypeOverload(ol.unique, sortUnique(map(ol.overloads, \tt -> canonicalTType(tg, tt))))),
-		maybeMap(tn.supertype, \st -> TTypeSupertype(st.unique, sortUnique(map(st.subtypes, \tt -> canonicalTType(tg, tt))), st.maxed)),
-		[],
-		[],
-	)
-}
-
-canonicalTType(tg : TypeGraph, t : TType) -> TType {
-	rec = \tt -> canonicalTType(tg, tt);
-	switch (t) {
-		TTypeName(id, typars): TTypeName(id, map(typars, rec));
-		TTypeEClass(eclass): TTypeEClass(rootTTypeEClass(tg, eclass));
-		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
-		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
-		TTypeSupertype(unique, subtypes, maxed): TTypeSupertype(unique, sortUnique(map(subtypes, rec)), maxed);
-	}
-}
-
 rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
 	findUnionMapRoot(tg.umap, eclass)
 }
 
-unifyTTypeEClass(tg : TypeGraph, reason : string, pos : int, left : TType, right : TType) -> int {
-	lroot = makeTTypeEClass(tg, left, reason, pos);
-	rroot = makeTTypeEClass(tg, right, reason, pos);
-	if (lroot != rroot) {
-		root = unionUnionMap(tg.umap, lroot, rroot);
-		if (false) {
-			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + " and " + i2s(rroot) + " into eclass " + i2s(root) + ") " + reason);
+findEClass(tg : TypeGraph, type : TType) -> int {
+	switch (type) {
+		TTypeEClass(eclass): eclass;
+		default: {
+			findUnionMap(tg.umap, \i, val : TTypeNode -> {
+				c = containsNodeTType(tg, val, type);
+				println(i2s(i) + " has " + prettyTType(type) + " is " + b2s(c));
+				c;
+			}, -1)
 		}
-		root;
+	}
+}
+
+// Does this eclass contain this type?
+containsEClassTType(tg : TypeGraph, eclass : int, type : TType) -> bool {
+	node = getUnionMapValue(tg.umap, eclass);
+	containsNodeTType(tg, node, type)
+}
+
+// Does this type node contain this type?
+containsNodeTType(tg : TypeGraph, node : TTypeNode, type : TType) -> bool {
+	switch (type) {
+		TTypeName(id, typars): {
+			containsNodeTTypes(tg, 0, node.best, type);
+		}
+		TTypeEClass(eclass): {
+			println("Not supposed to happen");
+			false;
+		}
+		TTypeFunction(args, returnType): {
+			containsNodeTTypes(tg, 0, node.best, type);
+		}
+		TTypeOverload(unique, overloads): {
+			switch (node.overload) {
+				None(): false;
+				Some(no): no.unique == unique;
+			}
+		}
+		TTypeSupertype(unique, subtypes, maxed): {
+			switch (node.supertype) {
+				None(): false;
+				Some(st): {
+					st.unique == unique;
+				}
+			}
+		}
+	}
+}
+
+containsNodeTTypes(tg : TypeGraph, i : int, types : [TType], type : TType) -> bool {
+	if (i < length(types)) {
+		type1 = types[i];
+		if (isSameTType(tg, type1, type)) {
+			true
+		} else {
+			containsNodeTTypes(tg, i + 1, types, type)
+		}
 	} else {
-		if (false) {
-			tg.onError(pos, "Unify " + prettyTType(left) + " and " + prettyTType(right) + " (class " + i2s(lroot) + ")");
+		false;
+	}
+}
+
+isSameTType(tg : TypeGraph, left : TType, right : TType) -> bool {
+	switch (left) {
+		TTypeName(lid, ltypars): {
+			switch (right) {
+				TTypeName(rid, rtypars): lid == rid && areSameTTypes(tg, ltypars, rtypars);
+				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				default: false;
+			}
 		}
-		lroot;
+		TTypeEClass(lclass): {
+			switch (right) {
+				TTypeEClass(rclass): {
+					lroot = rootTTypeEClass(tg, lclass);
+					rroot = rootTTypeEClass(tg, rclass);
+					lroot == rroot;
+				}
+				default: {
+					containsEClassTType(tg, lclass, right);
+				}
+			}
+		}
+		TTypeFunction(largs, lreturnType): {
+			switch (right) {
+				TTypeFunction(rargs, rreturnType): {
+					areSameTTypes(tg, largs, rargs)
+					&& isSameTType(tg, lreturnType, rreturnType);
+				}
+				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				default: false;
+			}
+		}
+		TTypeOverload(lunique, loverloads): {
+			switch (right) {
+				TTypeOverload(runique, roverloads): {
+					lunique == runique;
+				}
+				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				default: false;
+			}
+		}
+		TTypeSupertype(lunique, lsubtypes, lmaxed): {
+			switch (right) {
+				TTypeSupertype(runique, rsubtypes, rmaxed): {
+					lunique == runique;
+				}
+				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				default: false;
+			}
+		}
+	}
+}
+
+areSameTTypes(tg : TypeGraph, left : [TType], right : [TType]) -> bool {
+	length(left) == length(right)
+	&& forall(mapi(left, \i, l -> isSameTType(tg, l, right[i])), idfn)
+}
+
+unifyTypeToEClass(tg : TypeGraph, eclass : int, type : TType, reasons : [string], pos : [int]) -> void {
+	typeclass = findEClass(tg, type);
+	if (typeclass == -1) {
+		node1 = getUnionMapValue(tg.umap, eclass);
+		node2 = makeTTypeNode(type, reasons, pos);
+		node = mergeTTypeNodes(node1, node2);
+		setUnionMapValue(tg.umap, eclass, node);
+	} else {
+		unionUnionMap(tg.umap, eclass, typeclass);
+		{}
 	}
 }

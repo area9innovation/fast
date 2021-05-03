@@ -34,6 +34,7 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	nenv = TTypeEnv(env with etypes = ^(senv.etypes));
 
 	if (!^(senv.update) || iteration <= 0) {
+		println("\nCompleted");
 		dumpEClasses(nenv);
 
 		nenv;
@@ -79,17 +80,17 @@ ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
 	}
 	+ switch (t.supertype) {
 		None(): "";
-		Some(st): tp("Supertypes", st.subtypes)
+		Some(st): tp("Supertypes " + i2s(st.unique), st.subtypes)
 	}
 }
 
 simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {
 	env = senv.env;
-	node = getUnionMapValue(env.tgraph.umap, eclass);
-
 	if (containsSet(^(senv.visiting), eclass) || containsKeyTree(^(senv.etypes), eclass)) {
-
+		// Nothing to be done
 	} else {
+		node = getUnionMapValue(env.tgraph.umap, eclass);
+
 		senv.visiting := insertSet(^(senv.visiting), eclass);
 
 		// println("Starting to simplifying " + i2s(eclass));

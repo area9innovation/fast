@@ -9,9 +9,6 @@ export {
 
 unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
 	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
-	// OK, mark these types are unified
-	unifyTTypeEClass(env.tgraph, reason, pos, left, right);
-
 	// Do recursive unification
 	switch (left) {
 		TTypeName(lid, ltypars): {
@@ -23,15 +20,17 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 						unifyTTypeNames(env, reason, pos, left, right);
 					}
 				}
-				TTypeEClass(eclass): {}
+				TTypeEClass(eclass): {
+					unifyTypeToEClass(env.tgraph, eclass, left, [reason], [pos]);
+				}
 				TTypeFunction(args, returnType): {
 					env.onError(pos, lid + " is not a function");
 				}
 				TTypeOverload(unique, overloads): {
-					unifyTTypeOverload(env, pos, right, left);
+					unifyTTypeOverload(env, reason, pos, right, left);
 				}
 				TTypeSupertype(unique, subtypes, maxed): {
-					unifyTSupertype(env, pos, right, left);
+					unifyTSupertype(env, reason, pos, right, left);
 				}
 			}
 		}
@@ -41,30 +40,43 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 					unifyTTypes(env, pos, largs, rargs);
 					unifyTType(env, "fn return", pos, lreturnType, rreturnType);
 				}
-				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
+				TTypeOverload(__, __): unifyTTypeOverload(env, reason, pos, right, left);
 				TTypeName(id, typars): {
 					env.onError(pos, id + " is not a function " + prettyTType(left));
 				}
 				TTypeEClass(eclass): {
 					// We know eclass is a function, which is recorded in the environment
+					unifyTypeToEClass(env.tgraph, eclass, left, [reason], [pos]);
 				}
-				TTypeSupertype(unique, subtypes, maxed): unifyTSupertype(env, pos, right, left);
+				TTypeSupertype(unique, subtypes, maxed): unifyTSupertype(env, reason, pos, right, left);
 			}
 		}
 		TTypeEClass(lid): {
 			switch (right) {
-				TTypeEClass(__): {}
-				TTypeName(id, typars): {}
-				TTypeFunction(args, returnType): {}
-				TTypeOverload(__, __): unifyTTypeOverload(env, pos, right, left);
-				TTypeSupertype(unique, subtypes, maxed): unifyTSupertype(env, pos, right, left);
+				TTypeEClass(rid): {
+					// OK, merge eclasses
+					unionUnionMap(env.tgraph.umap, lid, rid);
+					{}
+				}
+				TTypeName(id, typars): {
+					unifyTypeToEClass(env.tgraph, lid, right, [reason], [pos]);
+				}
+				TTypeFunction(args, returnType): {
+					unifyTypeToEClass(env.tgraph, lid, right, [reason], [pos]);
+				}
+				TTypeOverload(__, __): {
+					unifyTTypeOverload(env, reason, pos, right, left);
+				}
+				TTypeSupertype(unique, subtypes, maxed): {
+					unifyTSupertype(env, reason, pos, right, left);
+				}
 			}
 		}
 		TTypeOverload(lunique, loverloads): {
-			unifyTTypeOverload(env, pos, left, right);
+			unifyTTypeOverload(env, reason, pos, left, right);
 		}
 		TTypeSupertype(unique, subtypes, maxed): {
-			unifyTSupertype(env, pos, left, right);
+			unifyTSupertype(env, reason, pos, left, right);
 		}
 	}
 }
@@ -75,20 +87,27 @@ unifyTTypeNames(env : TTypeEnv, reason : string, pos : int, left : TTypeName, ri
 	env.onError(pos, left.id + " and " + right.id + " are not compatible (TODO: Check if one is a single-struct union) " + reason);
 }
 
-unifyTTypeOverload(env : TTypeEnv, pos : int, overload : TTypeOverload, type : TType) -> void {
+unifyTTypeOverload(env : TTypeEnv, reason : string, pos : int, overload : TTypeOverload, type : TType) -> void {
 	good = filter(overload.overloads, \ol -> {
 		possibleTTypeMatch(env, ol, type)
 	});
 	n = length(good);
-	if (n < length(overload.overloads)) {
-		// OK, we have new information
-		if (n == 1) {
-			// println("Resolved overload");
-			winner = good[0];
-			unifyTType(env, "overload", pos, winner, type);
-		} else {
-			// At least the type overload is smaller
-			// We could probably unify this into the set, but hey, it is not required
+	if (n == 1) {
+		// println("Resolved overload");
+		winner = good[0];
+		unifyTType(env, "overload", pos, winner, type);
+	} else {
+		eoverload = TTypeOverload(overload with overloads = good);
+		switch (type) {
+			TTypeName(id, typars): env.onError(pos, id + " can not be overloaded");
+			TTypeEClass(eclass): unifyTypeToEClass(env.tgraph, eclass, eoverload, [reason], [pos]);
+			TTypeFunction(args, returnType): {
+				println("TODO");
+			}
+			TTypeOverload(unique, overloads): {
+				println("TODO");
+			}
+			TTypeSupertype(unique, subtypes, maxed): env.onError(pos, "Supertype can not be overloaded");
 		}
 	}
 }
@@ -101,7 +120,7 @@ unifyTTypes(env : TTypeEnv, pos : int, left : [TType], right : [TType]) -> void 
 	}
 }
 
-unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType) -> void {
+unifyTSupertype(env : TTypeEnv, reason : string, pos : int, super : TTypeSupertype, type : TType) -> void {
 	iter(super.subtypes, \st -> {
 		subtypeUnifyTType(env, pos, st, type);
 	});
@@ -127,9 +146,36 @@ unifyTSupertype(env : TTypeEnv, pos : int, super : TTypeSupertype, type : TType)
 			unifyTType(env, "intrasupers " + name, pos, stype, type)
 		}
 	});
+
+	switch (type) {
+		TTypeEClass(eclass): unifyTypeToEClass(env.tgraph, eclass, super, [reason], [pos]);
+		TTypeName(id, typars): unifyTType2(env, reason, pos, super, type);
+		TTypeFunction(args, returnType): unifyTType2(env, reason, pos, super, type);
+		TTypeOverload(unique, overloads): env.onError(pos, "Supertype can not be overloaded");
+		TTypeSupertype(unique, subtypes, maxed): unifyTType2(env, reason, pos, super, type);
+	}
 }
 
-// Check that st is a sutype of type, and if so, unify any typars
+unifyTType2(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
+	nameclass = findEClass(env.tgraph, left);
+	if (nameclass != -1) {
+		unifyTypeToEClass(env.tgraph, nameclass, right, [reason], [pos]);
+	} else {
+		superclass = findEClass(env.tgraph, right);
+		if (superclass != -1) {
+			unifyTypeToEClass(env.tgraph, superclass, left, [reason], [pos]);
+		} else {
+			println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
+			newclass = emptyTTypeClass(env.tgraph);
+			node1 = makeTTypeNode(left, [reason], [pos]);
+			node2 = makeTTypeNode(right, [], []);
+			node = mergeTTypeNodes(node1, node2);
+			setUnionMapValue(env.tgraph.umap, newclass, node);
+		}
+	}	
+}
+
+// Check that st is a subtype of type, and if so, unify any typars
 subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void {
 	// println("Sub type " + prettyTType(sub) + " vs " + prettyTType(super));
 	error = \ -> {

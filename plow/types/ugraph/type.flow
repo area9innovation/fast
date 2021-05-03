@@ -1,0 +1,12 @@
+import ds/union_find_map;
+import plow/types/ugraph/typenode;
+
+export {
+	TypeGraph(
+		umap : UnionFindMap<TTypeNode>,
+		// What eclass does this node belong to?
+		mutable memo : Tree<TTypeNode, int>,
+		nextEClass : ref int, 
+		onError : (int, string) -> void,
+	);
+}
