@@ -24,15 +24,6 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		// We need to set up a declared type here so polymorphism will work. 
 		// We need ? in the moduleTypes.
 		type = switch (global.value) {
-			DLambda(args, body, pos, eclass): {
-				switch (body) {
-					DTyped(value, dtype, __): {
-						// If there is a declared type, use that
-						dtype2ttype(env, false, dtype);
-					}
-					default:TTypeEClass(global.eclass);
-				}
-			}
 			DTyped(value, dtype, __): {
 				// If there is a declared type, use that
 				dtype2ttype(env, false, dtype);

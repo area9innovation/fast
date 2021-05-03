@@ -102,10 +102,10 @@ unifyTTypeOverload(env : TTypeEnv, reason : string, pos : int, overload : TTypeO
 			TTypeName(id, typars): env.onError(pos, id + " can not be overloaded");
 			TTypeEClass(eclass): unifyTypeToEClass(env.tgraph, eclass, eoverload, [reason], [pos]);
 			TTypeFunction(args, returnType): {
-				println("TODO");
+				unifyTType2(env, reason, pos, eoverload, type);
 			}
 			TTypeOverload(unique, overloads): {
-				println("TODO");
+				println("TODO: Overload against overload");
 			}
 			TTypeSupertype(unique, subtypes, maxed): env.onError(pos, "Supertype can not be overloaded");
 		}
