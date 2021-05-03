@@ -82,6 +82,7 @@ ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
 		None(): "";
 		Some(st): tp("Supertypes " + i2s(st.unique), st.subtypes)
 	}
+	+ tp("Originals", set2array(t.originals))
 }
 
 simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {
@@ -99,13 +100,16 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {
 		bnode = basicSimplifyTypenode(senv, eclass, node);
 	
 		// See if we can resolve the supertype
-		snode = simplifyTTypesuper(env, bnode);
+		snode = simplifyTTypesuper(env, eclass, bnode);
+
+		// Make sure we remember all the original nodes
+		onode = addOriginals(node, snode);
 
 		// OK, then we should unify the entire thing again against the original
-		unifyTTypenodes(env, eclass, node, snode);
+		unifyTTypenodes(env, eclass, node, onode);
 
 		// OK, simplify a final time after unification
-		fnode : TTypeNode = basicSimplifyTypenode(senv, eclass, snode);
+		fnode : TTypeNode = if (true) basicSimplifyTypenode(senv, eclass, onode) else onode;
 
 		mtype = resolvedTTypeNode(fnode);
 		mtype ?? {
@@ -166,7 +170,7 @@ basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTy
 	TTypeNode(node with best = bests, overload = moverload, supertype = msuper);
 }
 
-simplifyTTypesuper(env : TTypeEnv, node : TTypeNode) -> TTypeNode {
+simplifyTTypesuper(env : TTypeEnv, eclass : int, node : TTypeNode) -> TTypeNode {
 	switch (node.supertype) {
 		None(): node;
 		Some(supertype): {
@@ -182,7 +186,7 @@ simplifyTTypesuper(env : TTypeEnv, node : TTypeNode) -> TTypeNode {
 				} : {
 					// OK, the type does not exist. We have to construct it
 					ntype = instantiateTTypeName(env, supername);
-					// println("Made new type name");
+					// println("Made new type name for eclass " + i2s(eclass) + " from " + prettyTType(supertype));
 					// println(ntype);
 					makeTTypeNode(ntype, node.reasons, node.positions);
 				}
@@ -200,7 +204,7 @@ hasTypeNodeThisName(node : TTypeNode, name : string) -> Maybe<TType> {
 }
 
 // Unify all the elements in these typenodes
-unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) -> void {
+unifyTTypenodes(env : TTypeEnv, eclass : int, old : TTypeNode, new : TTypeNode) -> void {
 	// Unify among the best types
 	iteri(new.best, \i, b1 -> {
 		iter(old.best, \b2 -> {
@@ -218,6 +222,9 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, new : TTypeNode, old : TTypeNode) 
 				unifyTType(env, "eclass " + i2s(eclass) + " super 1", elementAt(new.positions, 0, -1), b1, st);
 			}
 		}
+		iterSet(new.originals, \o -> {
+			unifyTType(env, "eclass " + i2s(eclass) + " origs", elementAt(new.positions, 0, -1), b1, o);
+		})
 	});
 
 	// Unify best against the overloads
@@ -262,32 +269,40 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 			}
 		}
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
-		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
+		TTypeOverload(unique, overloads): {
+			TTypeOverload(unique, sortUnique(map(overloads, rec)));
+		}
 		TTypeSupertype(unique, subtypes, maxed): {
-			subs = sortUnique(map(subtypes, rec));
-			// Is there a type without a super type here?
-			mtop = filter(subs, \s -> {
-				tn = getTTypeName(s);
-				if (tn != "") {
-					supers = senv.env.resolveSupertypes(tn);
-					supers == []
-				} else false;
-			});
-
-			if (mtop != []) {
-				// OK, are any of these fully resolved?
-				resolved = filter(mtop, \m -> !unresolvedTType(m));
-				if (resolved != []) {
-					if (length(resolved) > 1) {
-						// TODO: If maxed is given, we could maybe identify which it is
-						senv.env.onError(-1, "This is not a unique super type: " + superglue(resolved, prettyTType, ", "))
-					}
-					resolved[0]
-				} else {
-					TTypeSupertype(unique, mtop, maxed);
-				}
+			class = findEClass(senv.env.tgraph, t);
+			if (class != -1 && !containsSet(^(senv.visiting), class)) {
+				// OK, we have this supertype resolved elsewhere
+				simplifyType(senv, TTypeEClass(class));
 			} else {
-				TTypeSupertype(unique, subs, maxed);
+				subs = sortUnique(map(subtypes, rec));
+				// Is there a type without a super type here?
+				mtop = filter(subs, \s -> {
+					tn = getTTypeName(s);
+					if (tn != "") {
+						supers = senv.env.resolveSupertypes(tn);
+						supers == []
+					} else false;
+				});
+
+				if (mtop != []) {
+					// OK, are any of these fully resolved?
+					resolved = filter(mtop, \m -> !unresolvedTType(m));
+					if (resolved != []) {
+						if (length(resolved) > 1) {
+							// TODO: If maxed is given, we could maybe identify which it is
+							senv.env.onError(-1, "This is not a unique super type: " + superglue(resolved, prettyTType, ", "))
+						}
+						resolved[0]
+					} else {
+						TTypeSupertype(unique, mtop, maxed);
+					}
+				} else {
+					TTypeSupertype(unique, subs, maxed);
+				}
 			}
 		}
 	}
@@ -314,4 +329,27 @@ canonicalTTypeEClass(tg : TypeGraph, t : TType) -> TType {
 		TTypeOverload(unique, overloads): TTypeOverload(unique, sortUnique(map(overloads, rec)));
 		TTypeSupertype(unique, subtypes, maxed): TTypeSupertype(unique, sortUnique(map(subtypes, rec)), maxed);
 	}
+}
+
+addOriginals(orig : TTypeNode, n : TTypeNode) -> TTypeNode {
+	add = \acc, m -> {
+		switch (m) {
+			None(): acc;
+			Some(t): insertSet(acc, t);
+		}
+	};
+	origs1 = add(n.originals, orig.overload);
+	origs2 = add(origs1, orig.supertype);
+	origs3 = fold(orig.best, origs2, \acc, b -> insertSet(acc, b));
+	rem = \acc, m : Maybe<TType> -> {
+		switch (m) {
+			None(): acc;
+			Some(t): removeSet(acc, t)
+		}
+	}
+	origs4 = rem(origs3, n.overload);
+	origs5 = rem(origs4, n.supertype);
+	origs6 = fold(n.best, origs5, \acc, b -> removeSet(acc, b));
+
+	TTypeNode(n with originals =  origs6)
 }

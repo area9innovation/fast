@@ -36,7 +36,7 @@ makeTTypeNode(type : TType, reasons : [string], positions : [int]) -> TTypeNode 
 mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
 	best = sortUnique(concat(left.best, right.best));
 	
-	overload = switch (left.overload) {
+	overload : Maybe<TTypeOverload> = switch (left.overload) {
 		None(): right.overload;
 		Some(loverload): {
 			switch (right.overload) {
@@ -48,7 +48,7 @@ mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
 		}
 	};
 
-	supertype = switch (left.supertype) {
+	supertype : Maybe<TTypeSupertype> = switch (left.supertype) {
 		None(): right.supertype;
 		Some(lsupertype): {
 			switch (right.supertype) {
@@ -71,12 +71,20 @@ mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
 	origs2 = add(origs1, right.overload);
 	origs3 = add(origs2, left.supertype);
 	origs4 = add(origs3, right.supertype);
+	rem = \acc, m : Maybe<TType> -> {
+		switch (m) {
+			None(): acc;
+			Some(t): removeSet(acc, t)
+		}
+	}
+	origs5 = rem(origs4, overload);
+	origs6 = rem(origs5, supertype);
 
 	TTypeNode(
 		best,
 		overload,
 		supertype,
-		origs4,
+		origs6,
 		concat(left.reasons, right.reasons),
 		uniq(concat(left.positions, right.positions))
 	);

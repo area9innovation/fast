@@ -54,7 +54,7 @@ findEClass(tg : TypeGraph, type : TType) -> int {
 		default: {
 			findUnionMap(tg.umap, \i, val : TTypeNode -> {
 				c = containsNodeTType(tg, val, type);
-				println(i2s(i) + " has " + prettyTType(type) + " is " + b2s(c));
+				// println(i2s(i) + " has " + prettyTType(type) + " is " + b2s(c));
 				c;
 			}, -1)
 		}
@@ -69,7 +69,8 @@ containsEClassTType(tg : TypeGraph, eclass : int, type : TType) -> bool {
 
 // Does this type node contain this type?
 containsNodeTType(tg : TypeGraph, node : TTypeNode, type : TType) -> bool {
-	switch (type) {
+	containsSet(node.originals, type)
+	|| switch (type) {
 		TTypeName(id, typars): {
 			containsNodeTTypes(tg, 0, node.best, type);
 		}

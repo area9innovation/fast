@@ -165,7 +165,7 @@ unifyTType2(env : TTypeEnv, reason : string, pos : int, left : TType, right : TT
 		if (superclass != -1) {
 			unifyTypeToEClass(env.tgraph, superclass, left, [reason], [pos]);
 		} else {
-			println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
+			// println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
 			newclass = emptyTTypeClass(env.tgraph);
 			node1 = makeTTypeNode(left, [reason], [pos]);
 			node2 = makeTTypeNode(right, [], []);
@@ -209,6 +209,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 					subs = env.resolveSubtypes(superid);
 					if (subs == []) {
 						// OK, there are no subs, so this has to be it
+					//	println(prettyTType(sub) + " vs " + prettyTType(super) + " unique");
 						unifyTType(env, "unique sub", pos, sub, super);
 					}
 				}
@@ -282,7 +283,11 @@ subtypeTTypenames(env : TTypeEnv, pos : int, sub : TTypeName, super : TTypeName)
 	if (sub.id == super.id) {
 		if (length(sub.typars) == length(super.typars)) {
 			iteri(sub.typars, \i, larg -> {
-				subtypeUnifyTType(env, pos, larg, super.typars[i])
+				if (true) {
+					unifyTType(env, "typename", pos, larg, super.typars[i])
+				} else {
+					subtypeUnifyTType(env, pos, larg, super.typars[i])
+				}
 			});
 		} else {
 			error();
@@ -293,7 +298,7 @@ subtypeTTypenames(env : TTypeEnv, pos : int, sub : TTypeName, super : TTypeName)
 		if (contains(supers, super.id)) {
 			munion = env.resolveUnionName(super.id);
 			munion ?? {
-				// println("We have a subtype " + toString(sub) + " against a super " + super.id);
+			//	println("We have a subtype " + toString(sub) + " against a super " + super.id);
 				mstruct = instantiateTTypeNameFromUnion(env, munion, super, sub.id);
 				switch (mstruct) {
 					None(): error();
