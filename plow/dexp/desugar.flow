@@ -172,7 +172,7 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 
 				// If we have a type def, add it
 				dexp1 = mtypedef ?? {
-					DTyped(dexp, mtypedef, pos)
+					DTyped(dexp, mtypedef, pos, emptyTTypeClass(dd.tgraph))
 				} : dexp;
 
 				recursive = containsSet(extractDVars(makeSet(), dexp1), id);
@@ -367,7 +367,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 		PTyped(value, type, pos): {
 			dtype = ptype2dtype(dd, type);
 			// TODO: If this is dtype is auto, we do not need it
-			DTyped(rec(value), dtype, pos);
+			DTyped(rec(value), dtype, pos, emptyTTypeClass(dd.tgraph));
 		}
 		PWith(struct, value, fields, pos): desugarPWith(dd, pexp);
 		PMaybe(value, match, otherwise, pos): desugarPMaybe(dd, pexp);
@@ -646,7 +646,7 @@ renameDVar(old : string, new : DVar, d : DExp) -> DExp {
 				DDowncast(oldid, newid, subtype, supertype, rec(scope), pos, eclass);
 			}
 		}
-		DTyped(value, subtype, pos): DTyped(rec(value), subtype, pos);
+		DTyped(value, subtype, pos, eclass): DTyped(rec(value), subtype, pos, eclass);
 		DWith(struct, value, fields, pos, eclass): DWith(struct, rec(value), map(fields, \f : DFieldAssign -> {
 			DFieldAssign(f with value = rec(f.value))
 		}), pos, eclass);

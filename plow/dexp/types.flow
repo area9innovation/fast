@@ -25,13 +25,13 @@ extractDTyparsFromDExp(e : DExp) -> Set<string> {
 
 foldDTypesInDExp(e : DExp, acc : ?, fn : (?, DType) -> ?) -> ? {
 	switch (e) {
-		DLambda(args, body, __, tyvar): {
+		DLambda(args, body, __, eclass): {
 			nacc = fold(args, acc, \nacc, a -> {
 				fn(nacc, a.type)
 			});
 			foldDTypesInDExp(body, nacc, fn)
 		}
-		DSwitch(value, type, cases, defaultCase, pos, tyvar): {
+		DSwitch(value, type, cases, defaultCase, pos, eclass): {
 			acc0 = foldDTypesInDExp(value, fn(acc, type), fn);
 			acc1 = fold(cases, acc0, \cacc, case -> {
 				foldDTypesInDExp(case.body, cacc, fn)
@@ -40,14 +40,14 @@ foldDTypesInDExp(e : DExp, acc : ?, fn : (?, DType) -> ?) -> ? {
 				foldDTypesInDExp(defaultCase, acc1, fn)
 			} : acc1;
 		}
-		DDowncast(oldid, newid, subtype, supertype, scope, pos, tyvar): {
+		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): {
 			nacc = fn(acc, subtype);
 			foldDTypesInDExp(scope, nacc, fn)
 		}
 		DCast(value, target, pos): {
 			foldDTypesInDExp(value, fn(acc, target), fn);
 		}
-		DTyped(value, subtype, pos): {
+		DTyped(value, subtype, pos, eclass): {
 			foldDTypesInDExp(value, fn(acc, subtype), fn);
 		}
 		default: {

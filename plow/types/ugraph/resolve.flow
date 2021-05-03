@@ -28,16 +28,12 @@ doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
 	roots = getEClassRoots(env.tgraph);
 	senv = SimplifyEnv(env, ref env.etypes, ref makeSet(), ref false);
 	iterSet(roots, \root -> {
-		simplifyTTypeNode(senv, root);
+		simplifyTTypeNode(senv, root, false);
 		{}
 	});
 	nenv = TTypeEnv(env with etypes = ^(senv.etypes));
 
 	if (!^(senv.update) || iteration <= 0) {
-		if (false) {
-			println("\nCompleted");
-			dumpEClasses(nenv);
-		}
 		finalResolvePhase(nenv);
 	} else {
 		doResolveEClasses(nenv, iteration - 1);
@@ -87,7 +83,7 @@ ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
 	+ "  " + strGlue(t.reasons, ", ")
 }
 
-simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {
+simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 	env = senv.env;
 	if (containsSet(^(senv.visiting), eclass) || containsKeyTree(^(senv.etypes), eclass)) {
 		// Nothing to be done
@@ -102,7 +98,7 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int) -> void {
 		bnode = basicSimplifyTypenode(senv, eclass, node);
 	
 		// See if we can resolve the supertype
-		snode = simplifyTTypesuper(env, eclass, bnode);
+		snode = simplifyTTypesuper(env, eclass, bnode, last);
 
 		// Make sure we remember all the original nodes
 		onode = addOriginals(node, snode);
@@ -154,8 +150,11 @@ basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTy
 		None(): None();
 		Some(supertype): {
 			supers0 = map(supertype.subtypes, \st -> simplifyType(senv, st));
+			supers1 = fold(supers0, [], \acc, st -> {
+				concat(acc, getTTypeSupers(st))
+			});
 			// Supers pointing to ourselves are useless
-			supers = sortUnique(filter(supers0, \s -> {
+			supers = sortUnique(filter(supers1, \s -> {
 				switch (s) {
 					TTypeEClass(sr): rootTTypeEClass(senv.env.tgraph, sr) != eclass;
 					default: true;
@@ -172,12 +171,12 @@ basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTy
 	TTypeNode(node with best = bests, overload = moverload, supertype = msuper);
 }
 
-simplifyTTypesuper(env : TTypeEnv, eclass : int, node : TTypeNode) -> TTypeNode {
+simplifyTTypesuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool) -> TTypeNode {
 	switch (node.supertype) {
 		None(): node;
 		Some(supertype): {
-			potsupers = resolveTSupertype(env, supertype);
-
+			// If this supertype has names it, then take care of it
+			potsupers = resolveTSupertype(env, supertype, last);
 			if (length(potsupers) == 1) {
 				// OK, we have a unique super type
 				supername = potsupers[0];
@@ -192,7 +191,33 @@ simplifyTTypesuper(env : TTypeEnv, eclass : int, node : TTypeNode) -> TTypeNode 
 					// println(ntype);
 					makeTTypeNode(ntype, node.reasons, node.positions);
 				}
-			} else node;
+			} else {
+				// OK, the supertype could contain functions
+				fns : [TTypeFunction] = filtermap(supertype.subtypes, \st : TType -> {
+					switch (st) {
+						TTypeFunction(__, __): Some(st);
+						default: None();
+					}
+				});
+				if (fns != []) {
+					// super( (a) -> b) -->  (a) -> super(b)
+					best = map(fns, \fn -> {
+						TTypeFunction(fn.args, TTypeSupertype(env.mkUnique(), [fn.returnType], supertype.maxed));
+					});
+					TTypeNode(node with best = best);
+				} else {
+					supers = filtermap(supertype.subtypes, \st : TType -> {
+						switch (st) {
+							TTypeSupertype(__, __, __): Some(st);
+							default: None();
+						}
+					});
+					if (supers != []) {
+						println("TODO: Super inside super: " + prettyTType(supertype));
+					}
+					node;
+				}
+			}
 		}
 	}
 }
@@ -257,7 +282,7 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 		TTypeEClass(eclass): {
 			root = rootTTypeEClass(senv.env.tgraph, eclass);
 			// OK, simplify this recursively
-			simplifyTTypeNode(senv, root);
+			simplifyTTypeNode(senv, root, false);
 
 			// Then check if we have a solution
 			mtype = lookupTree(^(senv.etypes), root);
@@ -281,30 +306,7 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 				simplifyType(senv, TTypeEClass(class));
 			} else {
 				subs = sortUnique(map(subtypes, rec));
-				// Is there a type without a super type here?
-				mtop = filter(subs, \s -> {
-					tn = getTTypeName(s);
-					if (tn != "") {
-						supers = senv.env.resolveSupertypes(tn);
-						supers == []
-					} else false;
-				});
-
-				if (mtop != []) {
-					// OK, are any of these fully resolved?
-					resolved = filter(mtop, \m -> !unresolvedTType(m));
-					if (resolved != []) {
-						if (length(resolved) > 1) {
-							// TODO: If maxed is given, we could maybe identify which it is
-							senv.env.onError(-1, "This is not a unique super type: " + superglue(resolved, prettyTType, ", "))
-						}
-						resolved[0]
-					} else {
-						TTypeSupertype(unique, mtop, maxed);
-					}
-				} else {
-					TTypeSupertype(unique, subs, maxed);
-				}
+				TTypeSupertype(unique, subs, maxed);
 			}
 		}
 	}
@@ -356,8 +358,23 @@ addOriginals(orig : TTypeNode, n : TTypeNode) -> TTypeNode {
 	TTypeNode(n with originals =  origs6)
 }
 
+finalResolvePhase(oenv : TTypeEnv) -> TTypeEnv {
+	if (false) {
+		println("\nResolved");
+		dumpEClasses(oenv);
+	}
+	senv = SimplifyEnv(oenv, ref oenv.etypes, ref makeSet(), ref false);
+	// OK, do a final run with resolution
+	iterSet(getEClassRoots(oenv.tgraph), \root -> {
+		simplifyTTypeNode(senv, root, true);
+		{}
+	});
+	env = TTypeEnv(oenv with etypes = ^(senv.etypes));
 
-finalResolvePhase(env : TTypeEnv) -> TTypeEnv {
+	if (false) {
+		println("\nFinal");
+		dumpEClasses(env);
+	}
 	roots = getEClassRoots(env.tgraph);
 	foldSet(roots, env, \acc, root -> {
 		if (!containsKeyTree(acc.etypes, root)) {
@@ -365,12 +382,33 @@ finalResolvePhase(env : TTypeEnv) -> TTypeEnv {
 			if (length(node.best) >= 1) {
 				// TODO: We could attempt to generalize any type vars here
 				TTypeEnv(acc with etypes = setTree(acc.etypes, root, node.best[0]))
-			} else if (node.positions == []) {
-				acc
 			} else {
-				acc.onError(elementAt(node.positions, 0, -1), "Could not resolve " + ttypeNode2string(acc, node));
-				acc;
+				def = \ -> {
+					if (node.positions == []) {
+						acc
+					} else {
+						acc.onError(elementAt(node.positions, 0, -1), "Could not resolve " + ttypeNode2string(acc, node));
+						acc;
+					}
+				}
+				switch (node.supertype) {
+					None(): def();
+					Some(supertype): {
+						if (length(supertype.subtypes) == 1) {
+							type = supertype.subtypes[0];
+							TTypeEnv(acc with etypes = setTree(acc.etypes, root, type))
+						} else def();
+					}
+				}
+
 			}
 		} else acc;
 	});
+}
+
+getTTypeSupers(type : TType) -> [TType] {
+	switch (type) {
+		TTypeSupertype(__ , types, __): types;
+		default: [type];
+	}
 }

@@ -61,14 +61,14 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			};
 
 			type = instantiateTTypePar(env, utype);
+			// println(id + " : " + prettyTType(type));
 			restype("var " + id, eclass, type);
 		}
-		DTyped(value, type, pos): {
+		DTyped(value, type, pos, eclass): {
 			valtype = ttypeInferenceDExp(env, value);
 			ttype = dtype2ttype(env, true, type);
-
-			unifyTType(env, "typed", pos, supertype([valtype, ttype], true), ttype);
-			valtype;
+			unifyTType(env, "typed", pos, if (true) valtype else supertype([valtype], false), ttype);
+			restype("typed", eclass, ttype);
 		}
 		DLet(id, value, body, pos, eclass): {
 			tvalue = ttypeInferenceDExp(env, value);
@@ -91,7 +91,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			argtypes = map(args, \a -> supertype([ttypeInferenceDExp(env, a)], false));
 			rettype = TTypeEClass(env.mkEClass());
 			fntype2 = TTypeFunction(argtypes, rettype);
-
+			// println(prettyTType(fntype1) + " vs " + prettyTType(fntype2));
 			unifyTType(env, "call", pos, fntype1, fntype2);
 
 			restype("call-ret", eclass, rettype);
@@ -125,7 +125,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, argTypes[i]))
 			});
 			retType = ttypeInferenceDExp(nenv, body);
-			type = TTypeFunction(argTypes, retType);
+			type = TTypeFunction(argTypes, if (false) retType else supertype([retType], false));
 			restype("lambda", eclass, type);
 		}
 		DRef(value, pos, eclass): {
@@ -227,7 +227,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 			// Relate the type of the value with all structs mentioned
 			caseTypes = map(cases, \c -> instantiateTTypeName(env, c.id));
-			unifyTType(env, "switch res", pos, supertype(caseTypes, defaultCase == None()), supertype([tvalue], false));
+			unifyTType(env, "switch res", pos, supertype(caseTypes, defaultCase == None()), ttype);
 
 			// Find the resulting type of the bodies
 			caseBodyTypes = map(cases, \c -> ttypeInferenceDExp(env, c.body));
@@ -259,7 +259,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 			// Relate the subtype with the supertype
 			etype = TTypeEClass(supereclass);
-			unifyTType(env, "downcast super", pos, supertype([tsubtype], true), etype);
+			unifyTType(env, "downcast super", pos, supertype([tsubtype], false), etype);
 
 			restype("downcast", eclass, dtype);
 		}

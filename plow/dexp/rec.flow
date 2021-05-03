@@ -29,7 +29,7 @@ getDExpChildren(e : DExp) -> [DExp] {
 		}
 		DCast(value, target, pos): [value];
 		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): [scope];
-		DTyped(value, subtype, pos): [value];
+		DTyped(value, subtype, pos, eclass): [value];
 		DWith(struct, value, fields, pos, eclass): concat([value], map(fields, \f -> f.value));
 	}
 }
@@ -55,7 +55,7 @@ dexpApi = RecApi(
 			DSwitch(value, type, cases, defaultCase, pos, eclass): DSwitch(value, type, [], None(), pos, eclass);
 			DCast(value, target, pos): DCast(v, target, pos);
 			DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): DDowncast(oldid, newid, subtype, supertype, v, pos, eclass);
-			DTyped(value, subtype, pos): DTyped(v, subtype, pos);
+			DTyped(value, subtype, pos, eclass): DTyped(v, subtype, pos, eclass);
 			DWith(struct, value, fields, pos, eclass): DWith(struct, v, [], pos, eclass);
 		};
 		e

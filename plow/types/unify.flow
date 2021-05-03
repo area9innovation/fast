@@ -7,7 +7,13 @@ export {
 	unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void;
 }
 
+uniindent = ref "";
 unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
+	indent = ^uniindent;
+	if (false) {
+		println(indent + "Unify " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
+		uniindent :=indent + "  ";
+	}
 	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
 	// Do recursive unification
 	switch (left) {
@@ -79,6 +85,7 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 			unifyTSupertype(env, reason, pos, left, right);
 		}
 	}
+	uniindent := indent;
 }
 
 unifyTTypeNames(env : TTypeEnv, reason : string, pos : int, left : TTypeName, right : TTypeName) {
@@ -150,7 +157,9 @@ unifyTSupertype(env : TTypeEnv, reason : string, pos : int, super : TTypeSuperty
 	switch (type) {
 		TTypeEClass(eclass): unifyTypeToEClass(env.tgraph, eclass, super, [reason], [pos]);
 		TTypeName(id, typars): unifyTType2(env, reason, pos, super, type);
-		TTypeFunction(args, returnType): unifyTType2(env, reason, pos, super, type);
+		TTypeFunction(args, returnType): {
+			unifyTType2(env, reason, pos, super, type);
+		}
 		TTypeOverload(unique, overloads): env.onError(pos, "Supertype can not be overloaded");
 		TTypeSupertype(unique, subtypes, maxed): unifyTType2(env, reason, pos, super, type);
 	}
@@ -229,14 +238,18 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 					});
 				}
 				TTypeSupertype(unique, subtypes, maxed): {
-					iter(subtypes, \s -> {
-						switch (s) {
+					stubfn = fold(subtypes, sub, \acc, s -> {
+						if (acc != sub) acc
+						else switch (s) {
 							TTypeFunction(__, __): {
-								env.onError(pos, "TODO: We know 2 " + i2s(id) + " should be a function");
+								copyTTypeFunction(env, s);
 							}
-							default: {}
+							default: acc;
 						}
 					});
+					if (stubfn != sub) {
+						unifyTType(env, "stub fn", pos, stubfn, super)
+					}
 				}
 			}
 		}
@@ -260,8 +273,11 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 				TTypeName(id, typars): error();
 				TTypeOverload(unique, overloads): error();
 				TTypeSupertype(unique, subtypes, maxed): {
+					superfn = copyTTypeFunction(env, sub);
+					unifyTType(env, "stub super fn", pos, sub, superfn)
 					// TODO: We know subid and the supers are related by a common
 					// supertype
+					// println("TODO: Sub function against supertype " + prettyTType(sub) + " vs " + prettyTType(super));
 				}
 			}
 		}
@@ -271,6 +287,7 @@ subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void
 			})
 		}
 		TTypeSupertype(unique, subtypes, maxed): {
+			// unifyTSupertype(env, "sub", pos, sub, super);
 			iter(subtypes, \sb -> {
 				subtypeUnifyTType(env, pos, sb, super)
 			})

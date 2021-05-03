@@ -4,11 +4,11 @@ import plow/types/polymorphism;
 
 export {
 	// This finds out what supertypes could resolve a set of subtypes to a specific type
-	resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string];
+	resolveTSupertype(env : TTypeEnv, super : TTypeSupertype, last : bool) -> [string];
 }
 
 // TODO: We could build a graph of common ancestors instead of this
-resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string] {
+resolveTSupertype(env : TTypeEnv, super : TTypeSupertype, last : bool) -> [string] {
 	named : [TTypeName] = filtermap(super.subtypes, \st -> {
 		switch (st) {
 			TTypeName(id, typars): Some(st);
@@ -17,7 +17,7 @@ resolveTSupertype(env : TTypeEnv, super : TTypeSupertype) -> [string] {
 	});
 	namedsupers = foldi(named, makeSet(), \i, acc, st -> {
 		id = st.id;
-		supers0 = env.resolveSupertypes(id);
+		supers0 = if (last) [] else env.resolveSupertypes(id);
 		supers = arrayPush(supers0, id);
 		supset = buildSet(supers);
 		if (i == 0) supset

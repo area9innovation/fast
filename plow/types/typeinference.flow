@@ -16,6 +16,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		// The module types have to be with ? in the types
 		type = dtype2ttype(env, false, nativ.type);
 		unifyTType(env, "native", d.pos, type, TTypeEClass(nativ.eclass));
+
+		// println(nat + ": " + prettyTType(type));
+
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
 	});
 
@@ -24,7 +27,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		// We need to set up a declared type here so polymorphism will work. 
 		// We need ? in the moduleTypes.
 		type = switch (global.value) {
-			DTyped(value, dtype, __): {
+			DTyped(value, dtype, __, eclass): {
 				// If there is a declared type, use that
 				dtype2ttype(env, false, dtype);
 			}
@@ -84,6 +87,11 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			ttypeInferenceDGlobal(acc, mglobal)
 		} : {acc}
 	});
+
+	if (false) {
+		println("Before resolving");
+		prettyDModule(genv, d);
+	}
 
 	resolveEClasses(genv);
 }
