@@ -3,10 +3,14 @@ import plow/types/supertype;
 import plow/types/unify;
 
 export {
-	resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, supertype : TTypeSupertype) -> void;
+	// Try to resolve this supertype from the given node.
+	// If we make progress, return true.
+	// If "last" is true, then pick some type out of desperation
+	resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, 
+		last : bool, supertype : TTypeSupertype) -> bool;
 }
 
-resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, supertype : TTypeSupertype) -> void {
+resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, supertype : TTypeSupertype) -> bool {
 	// If this supertype has names it, then take care of it
 	potsupers = resolveTSupertype(env, supertype, last);
 	if (length(potsupers) == 1) {
@@ -16,12 +20,14 @@ resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, s
 		mtype ?? {
 			// We found the type already
 			unifyTypeToEClass(env, eclass, mtype, ["resolve supertype with existing"], []);
+			true;
 		} : {
 			// OK, the type does not exist. We have to construct it
 			ntype = instantiateTTypeName(env, supername);
 			// println("Made new type name for eclass " + i2s(eclass) + " from " + prettyTType(supertype));
 			// println(ntype);
 			unifyTypeToEClass(env, eclass, ntype, ["resolve supertype"], []);
+			true;
 		}
 	} else {
 		// OK, the supertype could contain functions
@@ -34,10 +40,27 @@ resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, s
 		if (fns != []) {
 			// super( (a) -> b) -->  (a) -> super(b)
 			iter(fns, \fn -> {
-				stubfn = TTypeFunction(fn.args, TTypeSupertype(supertype.unique, [fn.returnType], supertype.maxed));
+				stubfn = TTypeFunction(fn.args, TTypeSupertype(env.mkUnique(), [fn.returnType], supertype.maxed));
 				unifyTypeToEClass(env, eclass, stubfn, ["resolve supertype fn"], []);
 			});
+			true;
 		} else {
+			if (length(potsupers) > 1) {
+				println("TODO: Class " + i2s(eclass) + " could do be an overload " + prettyTType(supertype) + " amongst " + strGlue(potsupers, ", "));
+/*
+		munion = env.resolveUnionName(id);
+		munion ?? {
+			// OK, we can not decide, so set up an overload
+			overloads = filtermap(subs, \su -> {
+				instantiateTTypeNameFromUnion(env, munion, type, su);
+			});
+			overload = TTypeOverload(TTypeEClass(env.mkUnique()), overloads);
+			unifyTType(env, "overload sub", pos, overload, super);
+		} : {
+		}
+*/
+			}
+
 			supers = filtermap(supertype.subtypes, \st : TType -> {
 				switch (st) {
 					TTypeSupertype(__, __, __): Some(st);
@@ -47,6 +70,7 @@ resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, s
 			if (supers != []) {
 				println("TODO: Super inside super: " + prettyTType(supertype));
 			}
+			false;
 		}
 	}
 }

@@ -127,17 +127,21 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 				snode = basicSimplifyTypenode(senv, eclass, node);
 			
 				// See if we can resolve the supertype
-				simplifyTTypesuper(env, eclass, snode, last);
+				if (simplifyTTypesuper(env, eclass, snode, last)) {
+					senv.update := true;
+				}
 
 				// Make sure we remember all the original nodes
 				fnode = addOriginals(node, snode);
 
 				mtype = resolvedTTypeNode(fnode);
 				mtype ?? {
-					println("Resolved " + i2s(eclass) + " to " + prettyTType(mtype) 
-						+ " with\n  " + ttypeNode2string(env, fnode)
-						+ " from\n  " + ttypeNode2string(env, node)
-					);
+					if (false) {
+						println("Resolved " + i2s(eclass) + " to " + prettyTType(mtype) 
+							+ " with\n  " + ttypeNode2string(env, fnode)
+							+ " from\n  " + ttypeNode2string(env, node)
+						);
+					}
 					senv.etypes := setTree(^(senv.etypes), eclass, mtype);
 					// We know the resolved type is in the "best" field of the typenode
 					senv.update := true;
@@ -196,9 +200,9 @@ basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTy
 }
 
 // If we have a supertype, this will try to resolve it
-simplifyTTypesuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool) -> void {
+simplifyTTypesuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool) -> bool {
 	switch (node.supertype) {
-		None(): {}
+		None(): false;
 		Some(supertype): {
 			resolveTTypeSuper(env, eclass, node, last, supertype);
 		}

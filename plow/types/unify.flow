@@ -20,10 +20,6 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 		println(indent + "Unify " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
 		uniindent :=indent + "  ";
 	}
-	pr = \ -> {
-		println(indent + "Raw unify " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
-		// unifyTType2(env, reason, pos, left, right);
-	}
 	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
 	// Do recursive unification
 	switch (left) {
@@ -53,12 +49,10 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 		TTypeFunction(largs, lreturnType): {
 			switch (right) {
 				TTypeFunction(rargs, rreturnType): {
-					pr();
 					unifyTTypes(env, pos, largs, rargs);
 					unifyTType(env, "fn return", pos, lreturnType, rreturnType);
 				}
 				TTypeOverload(__, __): {
-					pr();
 					unifyTTypeOverload(env, reason, pos, right, left);
 				}
 				TTypeName(id, typars): {
@@ -69,7 +63,6 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 					unifyTypeToEClass(env, eclass, left, [reason], [pos]);
 				}
 				TTypeSupertype(unique, subtypes, maxed): {
-					pr();
 					unifyTSupertype(env, reason, pos, right, left);
 				}
 			}
@@ -123,7 +116,10 @@ unifyTTypeOverload(env : TTypeEnv, reason : string, pos : int, overload : TTypeO
 	} else {
 		eoverload = TTypeOverload(overload with overloads = good);
 		switch (type) {
-			TTypeName(id, typars): env.onError(pos, id + " can not be overloaded");
+			TTypeName(id, typars): {
+				println(prettyTType(overload));
+				env.onError(pos, id + " can not be overloaded");
+			}
 			TTypeEClass(eclass): unifyTypeToEClass(env, eclass, eoverload, [reason], [pos]);
 			TTypeFunction(args, returnType): {
 				unifyTType2(env, reason, pos, eoverload, type);
@@ -131,7 +127,9 @@ unifyTTypeOverload(env : TTypeEnv, reason : string, pos : int, overload : TTypeO
 			TTypeOverload(unique, overloads): {
 				println("TODO: Overload against overload");
 			}
-			TTypeSupertype(unique, subtypes, maxed): env.onError(pos, "Supertype can not be overloaded");
+			TTypeSupertype(unique, subtypes, maxed): {
+				unifyTType2(env, reason, pos, eoverload, type);
+			}
 		}
 	}
 }
@@ -145,6 +143,7 @@ unifyTTypes(env : TTypeEnv, pos : int, left : [TType], right : [TType]) -> void 
 }
 
 unifyTSupertype(env : TTypeEnv, reason : string, pos : int, super : TTypeSupertype, type : TType) -> void {
+	// println(^uniindent + "Super " + prettyTType(super) + "   vs   " + prettyTType(type) + ". " + reason);
 	iter(super.subtypes, \st -> {
 		subtypeUnifyTType(env, pos, st, type);
 	});
@@ -174,7 +173,37 @@ unifyTSupertype(env : TTypeEnv, reason : string, pos : int, super : TTypeSuperty
 
 	switch (type) {
 		TTypeEClass(eclass): unifyTypeToEClass(env, eclass, super, [reason], [pos]);
-		TTypeName(id, typars): unifyTType2(env, reason, pos, super, type);
+		TTypeName(id, typars): {
+			supertype : TTypeEClass = makeTTypeEClass(env.tgraph, [reason], [pos], super);
+			superclass = supertype.eclass;
+			if (superclass == -1) {
+				println("INVARIANT BROKEN: Each supertype should have a class: " + prettyTType(super));
+				printCallstack();
+			} else {
+				// List<?> vs supertype1{e25}
+				// In this case, we do a
+				// overload(List<?>, Cons<?>, EmptyList<?>) vs into the eclass with the supertype1{e25}
+				subs = env.resolveSubtypes(id);
+				munion = env.resolveUnionName(id);
+				munion ?? {
+					// OK, we can not decide, so set up an overload
+					overloads = arrayPush(filtermap(subs, \su -> {
+						instantiateTTypeNameFromUnion(env, munion, type, su);
+					}), type);
+					if (length(overloads) == 1) {
+						// println("Found a super");
+						unifyTypeToEClass(env, superclass, overloads[0], ["super resolved"], [pos]);
+					} else {
+						overload = TTypeOverload(TTypeEClass(env.mkUnique()), overloads);
+						// println("Adding overload to class " + i2s(superclass) + ": " + prettyTType(overload));
+						unifyTypeToEClass(env, superclass, overload, ["super overload"], [pos]);
+					}
+				} : {
+					// OK, not a supertype, so we can resolve immediately
+					unifyTypeToEClass(env, superclass, type, ["super unique"], [pos]);
+				}
+			}
+		}
 		TTypeFunction(args, returnType): {
 			unifyTType2(env, reason, pos, super, type);
 		}
@@ -201,7 +230,7 @@ unifyTType2(env : TTypeEnv, reason : string, pos : int, left : TType, right : TT
 
 // Check that st is a subtype of type, and if so, unify any typars
 subtypeUnifyTType(env : TTypeEnv, pos : int, sub : TType, super : TType) -> void {
-	// println("Sub type " + prettyTType(sub) + " vs " + prettyTType(super));
+	// println(^uniindent + "Sub type " + prettyTType(sub) + " vs " + prettyTType(super));
 	error = \ -> {
 		env.onError(pos, prettyTType(sub) + " is not a subtype of " + prettyTType(super));
 	};
@@ -463,7 +492,7 @@ clarifyEClass(env : TTypeEnv, eclass : int, merge : TTypeNode) -> void {
 		None(): {}
 		Some(overload): {
 			iter(merge.best, \b -> {
-				unifyTType2(env, "eclass " + i2s(eclass) + " clean overload", pos, b, overload);
+				unifyTType(env, "eclass " + i2s(eclass) + " clean overload", pos, b, overload);
 			});
 		}
 	}
@@ -473,15 +502,15 @@ clarifyEClass(env : TTypeEnv, eclass : int, merge : TTypeNode) -> void {
 		None(): {}
 		Some(supertype): {
 			iter(merge.best, \b -> {
-				unifyTType2(env, "eclass " + i2s(eclass) + " super clean", pos, b, supertype);
+				// println("Clean super " + i2s(eclass) + " " + prettyTType(b) + " vs " + prettyTType(supertype));
+				unifyTType(env, "eclass " + i2s(eclass) + " super clean", pos, b, supertype);
 			});
 		}
 	}
 
-/*	iterSet(merge.originals, \i -> {
+	iterSet(merge.originals, \i -> {
 		iter(merge.best, \b -> {
 			unifyTType2(env, "eclass " + i2s(eclass) + " clean original", pos, b, i);
 		})
 	})
-	*/
 }

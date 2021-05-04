@@ -46,7 +46,11 @@ mergeTTypeNodes(left : TTypeNode, right : TTypeNode) -> TTypeNode {
 			switch (right.overload) {
 				None(): left.overload;
 				Some(roverload): {
-					Some(TTypeOverload(loverload.unique, sortUnique(concat(loverload.overloads, roverload.overloads))));
+					Some(
+						TTypeOverload(loverload.unique, 
+							sortUnique(concat(loverload.overloads, roverload.overloads))
+						)
+					);
 				}
 			}
 		}
