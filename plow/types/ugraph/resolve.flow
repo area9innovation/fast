@@ -9,7 +9,7 @@ export {
 
 resolveEClasses(env : TTypeEnv) -> TTypeEnv {
 	// println("\nNow about to resolve\n");
-	doResolveEClasses(env, 10);
+	doResolveEClasses(env, false, 10);
 }
 
 SimplifyEnv(
@@ -19,24 +19,28 @@ SimplifyEnv(
 	update : ref bool,
 );
 
-doResolveEClasses(env : TTypeEnv, iteration : int) -> TTypeEnv {
-	if (false) {
-		println("\nIteration " + i2s(iteration));
+doResolveEClasses(env : TTypeEnv, last : bool, iteration : int) -> TTypeEnv {
+	if (true) {
+		println("\nIteration " + i2s(iteration) + (if (last) ". Decision time" else ""));
 		dumpEClasses(env);
 	}
 
 	roots = getEClassRoots(env.tgraph);
 	senv = SimplifyEnv(env, ref env.etypes, ref makeSet(), ref false);
 	iterSet(roots, \root -> {
-		simplifyTTypeNode(senv, root, false);
+		simplifyTTypeNode(senv, root, last);
 		{}
 	});
 	nenv = TTypeEnv(env with etypes = ^(senv.etypes));
 
 	if (!^(senv.update) || iteration <= 0) {
-		finalResolvePhase(nenv);
+		if (last) {
+			finalResolvePhase(nenv);
+		} else {
+			doResolveEClasses(nenv, true, 5);
+		}
 	} else {
-		doResolveEClasses(nenv, iteration - 1);
+		doResolveEClasses(nenv, last, iteration - 1);
 	}
 }
 
@@ -358,20 +362,8 @@ addOriginals(orig : TTypeNode, n : TTypeNode) -> TTypeNode {
 	TTypeNode(n with originals =  origs6)
 }
 
-finalResolvePhase(oenv : TTypeEnv) -> TTypeEnv {
-	if (false) {
-		println("\nResolved");
-		dumpEClasses(oenv);
-	}
-	senv = SimplifyEnv(oenv, ref oenv.etypes, ref makeSet(), ref false);
-	// OK, do a final run with resolution
-	iterSet(getEClassRoots(oenv.tgraph), \root -> {
-		simplifyTTypeNode(senv, root, true);
-		{}
-	});
-	env = TTypeEnv(oenv with etypes = ^(senv.etypes));
-
-	if (false) {
+finalResolvePhase(env : TTypeEnv) -> TTypeEnv {
+	if (true) {
 		println("\nFinal");
 		dumpEClasses(env);
 	}
