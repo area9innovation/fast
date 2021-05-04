@@ -16,6 +16,10 @@ export {
 	// Is there an equivalence class for this type? -1 is not
 	findEClass(tg : TypeGraph, type : TType) -> int;
 
+	// Find or make an eclass for this type
+	makeTTypeEClass(tg : TypeGraph, reasons: [string], pos : [int], type : TType) -> TTypeEClass;
+
+	// Unify this type to this eclass
 	unifyTypeToEClass(tg : TypeGraph, eclass : int, type : TType, reasons : [string], pos : [int]) -> void;
 
 	// After setting up all the relations, calls resolveEClasses from resolve.flow
@@ -53,7 +57,7 @@ findEClass(tg : TypeGraph, type : TType) -> int {
 		TTypeEClass(eclass): eclass;
 		default: {
 			findUnionMap(tg.umap, \i, val : TTypeNode -> {
-				c = containsNodeTType(tg, val, type);
+				c = containsNodeTType(tg, ref makeSet(), val, type);
 				// println(i2s(i) + " has " + prettyTType(type) + " is " + b2s(c));
 				c;
 			}, -1)
@@ -62,24 +66,28 @@ findEClass(tg : TypeGraph, type : TType) -> int {
 }
 
 // Does this eclass contain this type?
-containsEClassTType(tg : TypeGraph, eclass : int, type : TType) -> bool {
-	node = getUnionMapValue(tg.umap, eclass);
-	containsNodeTType(tg, node, type)
+containsEClassTType(tg : TypeGraph, visited : ref Set<int>, eclass : int, type : TType) -> bool {
+	if (containsSet(^visited, eclass)) false
+	else {
+		node = getUnionMapValue(tg.umap, eclass);
+		visited := insertSet(^visited, eclass);
+		containsNodeTType(tg, visited, node, type)
+	}
 }
 
 // Does this type node contain this type?
-containsNodeTType(tg : TypeGraph, node : TTypeNode, type : TType) -> bool {
+containsNodeTType(tg : TypeGraph, visited : ref Set<int>, node : TTypeNode, type : TType) -> bool {
 	containsSet(node.originals, type)
 	|| switch (type) {
 		TTypeName(id, typars): {
-			containsNodeTTypes(tg, 0, node.best, type);
+			containsNodeTTypes(tg, visited, 0, node.best, type);
 		}
 		TTypeEClass(eclass): {
 			println("Not supposed to happen");
 			false;
 		}
 		TTypeFunction(args, returnType): {
-			containsNodeTTypes(tg, 0, node.best, type);
+			containsNodeTTypes(tg, visited, 0, node.best, type);
 		}
 		TTypeOverload(unique, overloads): {
 			switch (node.overload) {
@@ -98,25 +106,25 @@ containsNodeTType(tg : TypeGraph, node : TTypeNode, type : TType) -> bool {
 	}
 }
 
-containsNodeTTypes(tg : TypeGraph, i : int, types : [TType], type : TType) -> bool {
+containsNodeTTypes(tg : TypeGraph, visited : ref Set<int>, i : int, types : [TType], type : TType) -> bool {
 	if (i < length(types)) {
 		type1 = types[i];
-		if (isSameTType(tg, type1, type)) {
+		if (isSameTType(tg, visited, type1, type)) {
 			true
 		} else {
-			containsNodeTTypes(tg, i + 1, types, type)
+			containsNodeTTypes(tg, visited, i + 1, types, type)
 		}
 	} else {
 		false;
 	}
 }
 
-isSameTType(tg : TypeGraph, left : TType, right : TType) -> bool {
+isSameTType(tg : TypeGraph, visited : ref Set<int>, left : TType, right : TType) -> bool {
 	switch (left) {
 		TTypeName(lid, ltypars): {
 			switch (right) {
-				TTypeName(rid, rtypars): lid == rid && areSameTTypes(tg, ltypars, rtypars);
-				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				TTypeName(rid, rtypars): lid == rid && areSameTTypes(tg, visited, ltypars, rtypars);
+				TTypeEClass(eclass): containsEClassTType(tg, visited, eclass, left);
 				default: false;
 			}
 		}
@@ -128,17 +136,17 @@ isSameTType(tg : TypeGraph, left : TType, right : TType) -> bool {
 					lroot == rroot;
 				}
 				default: {
-					containsEClassTType(tg, lclass, right);
+					containsEClassTType(tg, visited, lclass, right);
 				}
 			}
 		}
 		TTypeFunction(largs, lreturnType): {
 			switch (right) {
 				TTypeFunction(rargs, rreturnType): {
-					areSameTTypes(tg, largs, rargs)
-					&& isSameTType(tg, lreturnType, rreturnType);
+					areSameTTypes(tg, visited, largs, rargs)
+					&& isSameTType(tg, visited, lreturnType, rreturnType);
 				}
-				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				TTypeEClass(eclass): containsEClassTType(tg, visited, eclass, left);
 				default: false;
 			}
 		}
@@ -147,7 +155,7 @@ isSameTType(tg : TypeGraph, left : TType, right : TType) -> bool {
 				TTypeOverload(runique, roverloads): {
 					lunique == runique;
 				}
-				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				TTypeEClass(eclass): containsEClassTType(tg, visited, eclass, left);
 				default: false;
 			}
 		}
@@ -156,27 +164,59 @@ isSameTType(tg : TypeGraph, left : TType, right : TType) -> bool {
 				TTypeSupertype(runique, rsubtypes, rmaxed): {
 					lunique == runique;
 				}
-				TTypeEClass(eclass): containsEClassTType(tg, eclass, left);
+				TTypeEClass(eclass): containsEClassTType(tg, visited, eclass, left);
 				default: false;
 			}
 		}
 	}
 }
 
-areSameTTypes(tg : TypeGraph, left : [TType], right : [TType]) -> bool {
+areSameTTypes(tg : TypeGraph, visited : ref Set<int>, left : [TType], right : [TType]) -> bool {
 	length(left) == length(right)
-	&& forall(mapi(left, \i, l -> isSameTType(tg, l, right[i])), idfn)
+	&& forall(mapi(left, \i, l -> isSameTType(tg, visited, l, right[i])), idfn)
 }
 
 unifyTypeToEClass(tg : TypeGraph, eclass : int, type : TType, reasons : [string], pos : [int]) -> void {
 	typeclass = findEClass(tg, type);
 	if (typeclass == -1) {
-		node1 = getUnionMapValue(tg.umap, eclass);
-		node2 = makeTTypeNode(type, reasons, pos);
-		node = mergeTTypeNodes(node1, node2);
-		setUnionMapValue(tg.umap, eclass, node);
+		// Rewrite the type
+		etype = makeTTypeEClass(tg, reasons, pos, type);
+		unionUnionMap(tg.umap, eclass, etype.eclass);
+		{}
 	} else {
 		unionUnionMap(tg.umap, eclass, typeclass);
 		{}
 	}
+}
+
+// Rewrite a type to use as many eclasses as possible
+makeTTypeEClass(tg : TypeGraph, reasons: [string], pos : [int], type : TType) -> TTypeEClass {
+	typeclass = findEClass(tg, type);
+	if (typeclass == -1) {
+		rec = \tt -> makeTTypeEClass(tg, reasons, pos, tt);
+		set = \tt -> {
+			newclass = emptyTTypeClass(tg);
+			node = makeTTypeNode(tt, reasons, pos);
+			setUnionMapValue(tg.umap, newclass, node);
+			TTypeEClass(newclass);
+		}
+		switch (type) {
+			TTypeName(id, typars): {
+				set(TTypeName(id, map(typars, rec)));
+			}
+			TTypeEClass(eclass): {
+				root = rootTTypeEClass(tg, eclass);
+				TTypeEClass(root);
+			}
+			TTypeFunction(args, returnType): {
+				set(TTypeFunction(map(args, rec), rec(returnType)));
+			}
+			TTypeOverload(unique, overloads): {
+				set(type);
+			}
+			TTypeSupertype(unique, subtypes, maxed): {
+				set(type);
+			}
+		}
+	} else TTypeEClass(typeclass)
 }

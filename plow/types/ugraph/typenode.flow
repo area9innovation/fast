@@ -26,7 +26,11 @@ defaultTTypeNode() -> TTypeNode {
 makeTTypeNode(type : TType, reasons : [string], positions : [int]) -> TTypeNode {
 	switch (type) {
 		TTypeName(id, typars): TTypeNode([type], None(), None(), makeSet(), reasons, positions);
-		TTypeEClass(eclass): TTypeNode([type], None(), None(), makeSet(), reasons, positions);
+		TTypeEClass(eclass): {
+			println("NOT SUPPOSED TO HAPPEN");
+			printCallstack();
+			TTypeNode([type], None(), None(), makeSet(), reasons, positions);
+		}
 		TTypeFunction(args, returnType): TTypeNode([type], None(), None(), makeSet(), reasons, positions);
 		TTypeOverload(unique, overloads): TTypeNode([], Some(type), None(), makeSet(), reasons, positions);
 		TTypeSupertype(unique, subtypes, maxed): TTypeNode([], None(), Some(type), makeSet(), reasons, positions);

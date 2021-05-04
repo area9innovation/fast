@@ -188,11 +188,8 @@ unifyTType2(env : TTypeEnv, reason : string, pos : int, left : TType, right : TT
 			unifyTypeToEClass(env.tgraph, superclass, left, [reason], [pos]);
 		} else {
 			// println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
-			newclass = emptyTTypeClass(env.tgraph);
-			node1 = makeTTypeNode(left, [reason], [pos]);
-			node2 = makeTTypeNode(right, [], []);
-			node = mergeTTypeNodes(node1, node2);
-			setUnionMapValue(env.tgraph.umap, newclass, node);
+			ltype = makeTTypeEClass(env.tgraph, [reason], [pos], left);
+			unifyTypeToEClass(env.tgraph, ltype.eclass, right, [], []);
 		}
 	}	
 }

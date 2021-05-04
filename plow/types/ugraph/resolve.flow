@@ -3,13 +3,31 @@ import plow/types/supertype;
 import plow/types/unify;
 import plow/types/ugraph/ugraph;
 
+/*
+TODO:
+- For supertypes, expand to cover all suitable types for typenodes
+  and that way, try to resolve supertypes more usefully
+
+So the loop should be this:
+  - Simplify: Instantiate decided eclasses and substitute everywhere.
+    This by itself should not cause any new unifications to happen
+
+  - Overloads should filter candidates if we have any other info, and thus limit the field.
+    Does not cause new unification, unless the overload is resolved.
+	This happens when we unify the overload with bests.
+
+  - Supertypes: Expand to all possible supertypes. If unique, then resolve.
+
+  - Unify new information with other info.
+*/
+
 export {
 	resolveEClasses(env : TTypeEnv) -> TTypeEnv;
 }
 
 resolveEClasses(env : TTypeEnv) -> TTypeEnv {
 	// println("\nNow about to resolve\n");
-	doResolveEClasses(env, false, 1);
+	doResolveEClasses(env, false, 5);
 }
 
 SimplifyEnv(
@@ -108,10 +126,10 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 		onode = addOriginals(node, snode);
 
 		// OK, then we should unify the entire thing again against the original
-		unifyTTypenodes(env, eclass, node, onode);
+		// unifyTTypenodes(env, eclass, node, onode);
 
 		// OK, simplify a final time after unification
-		fnode : TTypeNode = if (true) basicSimplifyTypenode(senv, eclass, onode) else onode;
+		fnode : TTypeNode = if (false) basicSimplifyTypenode(senv, eclass, onode) else onode;
 
 		mtype = resolvedTTypeNode(fnode);
 		mtype ?? {
@@ -123,7 +141,7 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 		if (fnode != node) {
 			setUnionMapValue(env.tgraph.umap, eclass, fnode);
 
-			println("Simplified " + i2s(eclass) + "\n  " + ttypeNode2string(env, node) + " to\n  " + ttypeNode2string(env, fnode));
+			// println("Simplified " + i2s(eclass) + "\n  " + ttypeNode2string(env, node) + " to\n  " + ttypeNode2string(env, fnode));
 			senv.update := true;
 		}
 
@@ -284,6 +302,7 @@ unifyTTypenodes(env : TTypeEnv, eclass : int, old : TTypeNode, new : TTypeNode) 
 	} else {
 		iteri(new.best, \i, b1 -> {
 			iter(subrange(new.best, i + 1, length(new.best)), \b2 -> {
+				// println([b1, b2]);
 				unifyTType(env, "eclass " + i2s(eclass) + " bests", elementAt(new.positions, 0, -1), b1, b2);
 			})
 		});
