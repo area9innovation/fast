@@ -14,12 +14,16 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 		println(indent + "Unify " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
 		uniindent :=indent + "  ";
 	}
+	pr = \ -> {
+		println(indent + "Unify " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
+	}
 	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
 	// Do recursive unification
 	switch (left) {
 		TTypeName(lid, ltypars): {
 			switch (right) {
 				TTypeName(rid, rtypars): {
+					pr();
 					if (lid == rid) {
 						unifyTTypes(env, pos, ltypars, rtypars);
 					} else {
@@ -33,9 +37,11 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 					env.onError(pos, lid + " is not a function");
 				}
 				TTypeOverload(unique, overloads): {
+					pr();
 					unifyTTypeOverload(env, reason, pos, right, left);
 				}
 				TTypeSupertype(unique, subtypes, maxed): {
+					pr();
 					unifyTSupertype(env, reason, pos, right, left);
 				}
 			}
@@ -43,10 +49,14 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 		TTypeFunction(largs, lreturnType): {
 			switch (right) {
 				TTypeFunction(rargs, rreturnType): {
+					pr();
 					unifyTTypes(env, pos, largs, rargs);
 					unifyTType(env, "fn return", pos, lreturnType, rreturnType);
 				}
-				TTypeOverload(__, __): unifyTTypeOverload(env, reason, pos, right, left);
+				TTypeOverload(__, __): {
+					pr();
+					unifyTTypeOverload(env, reason, pos, right, left);
+				}
 				TTypeName(id, typars): {
 					env.onError(pos, id + " is not a function " + prettyTType(left));
 				}
@@ -54,7 +64,10 @@ unifyTType(env : TTypeEnv, reason : string, pos : int, left : TType, right : TTy
 					// We know eclass is a function, which is recorded in the environment
 					unifyTypeToEClass(env.tgraph, eclass, left, [reason], [pos]);
 				}
-				TTypeSupertype(unique, subtypes, maxed): unifyTSupertype(env, reason, pos, right, left);
+				TTypeSupertype(unique, subtypes, maxed): {
+					pr();
+					unifyTSupertype(env, reason, pos, right, left);
+				}
 			}
 		}
 		TTypeEClass(lid): {

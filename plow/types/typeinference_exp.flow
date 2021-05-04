@@ -31,7 +31,8 @@ ttypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 	restype = \reason, tv, type -> {
 		unifyTType(env, reason, d.pos, type, TTypeEClass(tv));
-		type;
+		// We return the class, so anything will unify against this
+		TTypeEClass(tv);
 	};
 	supertype = \types : [TType], maxed : bool -> makeTTypeSupertype(env.mkUnique, types, maxed);
 
@@ -243,6 +244,7 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 			ttarget = dtype2ttype(env, true, target);
 			// We allow casting a type to a supertype
 			unifyTType(env, "cast", pos, supertype([tvalue], true), ttarget);
+			// TODO: Add an eclass
 			ttarget;
 		}
 		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
@@ -263,10 +265,17 @@ doTTypeInferenceDExp(env : TTypeEnv, d : DExp) -> TType {
 
 			restype("downcast", eclass, dtype);
 		}
-		// DWith(struct, value, fields, pos, eclass): 
-		default: {
-			println("TODO: Infer the type of " + d.structname);
-			TTypeEClass(env.mkEClass());
+		DWith(struct, value, fields, pos, eclass): {
+			println("TODO: Infer the type of with");
+			vtype = ttypeInferenceDExp(env, value);
+			fieldTypes = map(fields, \f -> {
+				ttypeInferenceDExp(env, f.value);
+			});
+
+			// TODO: Check that struct has the named fields
+			// and that the types match
+			// Then make a typename struct type
+			TTypeEClass(eclass);
 		}
 	}
 }
