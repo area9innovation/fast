@@ -1,0 +1,60 @@
+import plow/types/typeenv;
+import plow/types/supertype;
+import plow/types/unify;
+
+export {
+	resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, supertype : TTypeSupertype) -> void;
+}
+
+resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, supertype : TTypeSupertype) -> void {
+	// If this supertype has names it, then take care of it
+	potsupers = resolveTSupertype(env, supertype, last);
+	if (length(potsupers) == 1) {
+		// OK, we have a unique super type
+		supername = potsupers[0];
+		mtype = hasTypeNodeThisName(node, supername);
+		mtype ?? {
+			// We found the type already
+			unifyTypeToEClass(env, eclass, mtype, ["resolve supertype with existing"], []);
+		} : {
+			// OK, the type does not exist. We have to construct it
+			ntype = instantiateTTypeName(env, supername);
+			// println("Made new type name for eclass " + i2s(eclass) + " from " + prettyTType(supertype));
+			// println(ntype);
+			unifyTypeToEClass(env, eclass, ntype, ["resolve supertype"], []);
+		}
+	} else {
+		// OK, the supertype could contain functions
+		fns : [TTypeFunction] = filtermap(supertype.subtypes, \st : TType -> {
+			switch (st) {
+				TTypeFunction(__, __): Some(st);
+				default: None();
+			}
+		});
+		if (fns != []) {
+			// super( (a) -> b) -->  (a) -> super(b)
+			iter(fns, \fn -> {
+				stubfn = TTypeFunction(fn.args, TTypeSupertype(supertype.unique, [fn.returnType], supertype.maxed));
+				unifyTypeToEClass(env, eclass, stubfn, ["resolve supertype fn"], []);
+			});
+		} else {
+			supers = filtermap(supertype.subtypes, \st : TType -> {
+				switch (st) {
+					TTypeSupertype(__, __, __): Some(st);
+					default: None();
+				}
+			});
+			if (supers != []) {
+				println("TODO: Super inside super: " + prettyTType(supertype));
+			}
+		}
+	}
+}
+
+hasTypeNodeThisName(node : TTypeNode, name : string) -> Maybe<TType> {
+	supers = switch (node.supertype) {
+		None(): [];
+		Some(st): st.subtypes;
+	}
+	find(concat(node.best, supers), \n -> getTTypeName(n) == name);
+}

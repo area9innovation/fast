@@ -19,9 +19,6 @@ export {
 	// Find or make an eclass for this type
 	makeTTypeEClass(tg : TypeGraph, reasons: [string], pos : [int], type : TType) -> TTypeEClass;
 
-	// Unify this type to this eclass
-	unifyTypeToEClass(tg : TypeGraph, eclass : int, type : TType, reasons : [string], pos : [int]) -> void;
-
 	// After setting up all the relations, calls resolveEClasses from resolve.flow
 	// which will populate the etypes in the TTypeEnv
 }
@@ -176,18 +173,6 @@ areSameTTypes(tg : TypeGraph, visited : ref Set<int>, left : [TType], right : [T
 	&& forall(mapi(left, \i, l -> isSameTType(tg, visited, l, right[i])), idfn)
 }
 
-unifyTypeToEClass(tg : TypeGraph, eclass : int, type : TType, reasons : [string], pos : [int]) -> void {
-	typeclass = findEClass(tg, type);
-	if (typeclass == -1) {
-		// Rewrite the type
-		etype = makeTTypeEClass(tg, reasons, pos, type);
-		unionUnionMap(tg.umap, eclass, etype.eclass);
-		{}
-	} else {
-		unionUnionMap(tg.umap, eclass, typeclass);
-		{}
-	}
-}
 
 // Rewrite a type to use as many eclasses as possible
 makeTTypeEClass(tg : TypeGraph, reasons: [string], pos : [int], type : TType) -> TTypeEClass {

@@ -42,6 +42,9 @@ export {
 		// The egraph with the type equivalent classes
 		tgraph : TypeGraph,
 
+		// When we are unifying, we keep the visited classes here
+		visited : ref Set<int>,
+
 		// When we start to extract equivalence classes
 		etypes : Tree<int, TType>,
 	);
@@ -86,6 +89,6 @@ makeTTypeEnv(tgraph : TypeGraph) -> TTypeEnv {
 			[]
 		},
 		makeTree(), makeTree(),
-		tgraph, makeTree()
+		tgraph, ref makeSet(), makeTree()
 	);
 }
