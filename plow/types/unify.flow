@@ -117,8 +117,11 @@ unifyTTypeOverload(env : TTypeEnv, reason : string, pos : int, overload : TTypeO
 		eoverload = TTypeOverload(overload with overloads = good);
 		switch (type) {
 			TTypeName(id, typars): {
-				println(prettyTType(overload));
-				env.onError(pos, id + " can not be overloaded");
+				if (n == 0) {
+					env.onError(pos, id + " can not be overloaded");
+				} else {
+					unifyTType2(env, reason, pos, eoverload, type);
+				}
 			}
 			TTypeEClass(eclass): unifyTypeToEClass(env, eclass, eoverload, [reason], [pos]);
 			TTypeFunction(args, returnType): {
@@ -161,7 +164,7 @@ unifyTSupertype(env : TTypeEnv, reason : string, pos : int, super : TTypeSuperty
 		if (length(tns) > 1) {
 			representative = tns[0];
 			typars = mapi(representative.typars, \i, __ -> {
-				println("Making a new supertype here");
+				// println("Making a new supertype here");
 				TTypeSupertype(env.mkUnique(), map(tns, \tn -> tn.typars[i]), super.maxed);
 			});
 			stype = TTypeSupertype(super with subtypes = [

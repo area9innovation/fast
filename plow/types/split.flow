@@ -1,4 +1,5 @@
 import plow/types/type;
+import ds/array;
 
 export {
 	splitTType(t : TType) -> Pair<TType, [TType]>;

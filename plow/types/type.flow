@@ -1,4 +1,3 @@
-import ds/set;
 export {
 	TType ::= TTypeName, TTypeEClass, TTypeFunction, TTypeOverload, TTypeSupertype;
 		TTypeEClass(eclass : int);

@@ -38,7 +38,7 @@ SimplifyEnv(
 );
 
 doResolveEClasses(env : TTypeEnv, last : bool, iteration : int) -> TTypeEnv {
-	if (true) {
+	if (false) {
 		println("\nIteration " + i2s(iteration) + (if (last) ". Decision time" else ""));
 		dumpEClasses(env);
 	}
