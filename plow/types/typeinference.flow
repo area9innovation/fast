@@ -18,7 +18,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
 		// The module types have to be with ? in the types
 		type = dtype2ttype(env, false, nativ.type);
-		unifyTType(env, "native", d.pos, type, TTypeEClass(nativ.eclass));
+		unifyTType(env, nat, "native", d.pos, type, TTypeEClass(nativ.eclass));
 
 		if (isTracingId(env.tracing, StageTypeInference(), 0, nat)) {
 			println(nat + ": " + prettyTType(type));
@@ -123,17 +123,18 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	ftype = replaceTTypeEClasss(
 		foldTree(typars, makeTree(), \tp, tv, acc -> {
 			typar = TTypeName(tp, []);
-			unifyTType(env, "global", d.pos, typar, TTypeEClass(tv));
+			unifyTType(env, d.id, "global", d.pos, typar, TTypeEClass(tv));
 			setTree(acc, tv, TTypeName(tp, []))
 		}),
 		type
 	);
 
+	unifyTType(env, d.id, "global 2", d.pos, ftype, TTypeEClass(d.eclass));
+
 	if (tracingId) {
-		println("Inference " + d.id + " is " + prettyTType(ftype));
+		println("Inference " + d.id + " ends with " + prettyTType(ftype) + "\n");
 	}
-	unifyTType(env, "global 2", d.pos, ftype, TTypeEClass(d.eclass));
-	
+
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
 
 	switch (etype) {
@@ -145,7 +146,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 		}
 		default: {
 		//	println(prettyTType(ftype) + " vs " + prettyTType(etype));
-			unifyTType(env, "global 3", d.pos, ftype, etype);
+			unifyTType(env, d.id, "global 3", d.pos, ftype, etype);
 			env;
 		}
 	}
