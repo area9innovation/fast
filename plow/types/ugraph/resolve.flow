@@ -298,7 +298,7 @@ addOriginals(orig : TTypeNode, n : TTypeNode) -> TTypeNode {
 }
 
 finalResolvePhase(env : TTypeEnv) -> TTypeEnv {
-	if (true) {
+	if (false) {
 		println("\nFinal");
 		dumpEClasses(env);
 	}

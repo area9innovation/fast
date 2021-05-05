@@ -46,19 +46,24 @@ resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, s
 			true;
 		} else {
 			if (length(potsupers) > 1) {
-				println("TODO: Class " + i2s(eclass) + " could do be an overload " + prettyTType(supertype) + " amongst " + strGlue(potsupers, ", "));
-/*
-		munion = env.resolveUnionName(id);
-		munion ?? {
-			// OK, we can not decide, so set up an overload
-			overloads = filtermap(subs, \su -> {
-				instantiateTTypeNameFromUnion(env, munion, type, su);
-			});
-			overload = TTypeOverload(TTypeEClass(env.mkUnique()), overloads);
-			unifyTType(env, "overload sub", pos, overload, super);
-		} : {
-		}
-*/
+				types = filtermap(potsupers, \pot -> {
+					mtype = hasTypeNodeThisName(node, pot);
+					mtype ?? {
+						Some(mtype)
+					} : {
+						// TODO: Instantiate a supertype from a struct
+						// so we avoid excessive typars
+						// instantiateTTypeName(env, pot);
+						None();
+					}
+				});
+				if (length(types) == length(potsupers)) {
+					overload = TTypeOverload(TTypeEClass(env.mkEClass()), types);
+					// println("We have an overload " + prettyTType(overload));
+					unifyTypeToEClass(env, eclass, overload, ["supertype overload"], []);
+				} else {
+
+				}
 			}
 
 			supers = filtermap(supertype.subtypes, \st : TType -> {
@@ -80,5 +85,9 @@ hasTypeNodeThisName(node : TTypeNode, name : string) -> Maybe<TType> {
 		None(): [];
 		Some(st): st.subtypes;
 	}
-	find(concat(node.best, supers), \n -> getTTypeName(n) == name);
+	overs = switch (node.overload) {
+		None(): [];
+		Some(ov): ov.overloads;
+	}
+	find(concat3(node.best, supers, overs), \n -> getTTypeName(n) == name);
 }

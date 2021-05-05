@@ -197,7 +197,7 @@ unifyTSupertype(env : TTypeEnv, reason : string, pos : int, super : TTypeSuperty
 						// println("Found a super");
 						unifyTypeToEClass(env, superclass, overloads[0], ["super resolved"], [pos]);
 					} else {
-						overload = TTypeOverload(TTypeEClass(env.mkUnique()), overloads);
+						overload = TTypeOverload(TTypeEClass(env.mkEClass()), overloads);
 						// println("Adding overload to class " + i2s(superclass) + ": " + prettyTType(overload));
 						unifyTypeToEClass(env, superclass, overload, ["super overload"], [pos]);
 					}
