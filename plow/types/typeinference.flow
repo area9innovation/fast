@@ -101,7 +101,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	}
 	prettyDModule(genv, modTracing, d);
 
-	resolveEClasses(genv);
+	resolveEClasses(genv, d.flowpath);
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
@@ -115,7 +115,9 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	});
 	nenv = TTypeEnv(env with typars = typars);
 
-	type = ttypeInferenceDExp(nenv, d.value);
+	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
+
+	type = ttypeInferenceDExp(nenv, d.id, d.value);
 
 	// Now, unify the typars and their corresponding eclasses, and abstract the final type again
 	ftype = replaceTTypeEClasss(
@@ -127,7 +129,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 		type
 	);
 
-	if (isTracingId(env.tracing, StageTypeInference(), 1, d.id)) {
+	if (tracingId) {
 		println("Inference " + d.id + " is " + prettyTType(ftype));
 	}
 	unifyTType(env, "global 2", d.pos, ftype, TTypeEClass(d.eclass));
