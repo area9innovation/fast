@@ -11,6 +11,9 @@ export {
 }
 
 ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
+	if (isTracingStage(env.tracing, StageTypeInference(), 1)) {
+		println("\nStage: Type inference of " + d.flowpath);
+	}
 	// Resolve the types of natives
 	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
 		// The module types have to be with ? in the types
@@ -92,17 +95,18 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		} : {acc}
 	});
 
-	if (isTracingId(env.tracing, StageTypeInference(), 2, d.flowpath)) {
-		println("Before resolving " + d.flowpath);
-		prettyDModule(genv, d);
+	modTracing = isTracingId(env.tracing, StageTypeInference(), 1, d.flowpath);
+	if (modTracing) {
+		println("\nBefore resolving " + d.flowpath);
 	}
+	prettyDModule(genv, modTracing, d);
 
 	resolveEClasses(genv);
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	if (isTracingId(env.tracing, StageTypeInference(), 1, d.id)) {
-		println("Inference of global " + d.id);
+		println("\nInference of global " + d.id);
 	}
 
 	// Instantiate the typars

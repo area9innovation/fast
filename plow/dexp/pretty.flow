@@ -6,35 +6,42 @@ import string;
 import text/blueprint;
 
 export {
-	prettyDModule(env : TTypeEnv, d : DModule) -> void;
+	prettyDModule(env : TTypeEnv, verbose : bool, d : DModule) -> void;
 	prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void;
 	summarizeDExp(env : TTypeEnv, d : DExp) -> string;
 }
 
-prettyDModule(env : TTypeEnv, d : DModule) -> void {
+prettyDModule(env : TTypeEnv, verbose : bool, d : DModule) -> void {
 	input = getFileContent(d.fullpath);
-	println(d.flowpath + " (" + d.fullpath + "):");
+	if (verbose) {
+		println(d.flowpath + " (" + d.fullpath + "):");
 
-	iter(d.imports, \i : DImport -> {
-		println("  import " + i.path);
-	});
-	iter(d.forbids, \f : DForbid -> {
-		println("  forbid " + f.path);
-	});
+		iter(d.imports, \i : DImport -> {
+			println("  import " + i.path);
+		});
+		iter(d.forbids, \f : DForbid -> {
+			println("  forbid " + f.path);
+		});
+	}
+
 	// TODO:
 	//	exported : DExport, 
 	traverseInOrder(d.structs, \sid, s : DStruct -> {
-		println("  struct " + prettyDStruct(input, s));
+		if (verbose || isTracingId(env.tracing, StageTypeInference(), 0, s.id)) {
+			println("  struct " + prettyDStruct(input, s));
+		}
 	});
 	//	unions : Tree<string, DUnion>,
 	//	typedefs : Tree<string, DTypeDef>,
 	//	natives : Tree<string, DNative>,
 	iter(d.order, \id -> {
-		mglobal = lookupTree(d.globals, id);
-		mglobal ?? {
-			println(" " + id + "<" + strGlue(mglobal.typars, ", ") + ">" + "=");
-			prettyDExp(env, input, "  ", mglobal.value);
-		} : {}
+		if (verbose || isTracingId(env.tracing, StageTypeInference(), 0, id)) {
+			mglobal = lookupTree(d.globals, id);
+			mglobal ?? {
+				println(" " + id + "<" + strGlue(mglobal.typars, ", ") + ">" + "=");
+				prettyDExp(env, input, "  ", mglobal.value);
+			} : {}
+		}
 	});
 }
 

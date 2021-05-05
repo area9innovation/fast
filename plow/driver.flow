@@ -12,6 +12,8 @@ import plow/bexp/dmodule2bmodule;
 import plow/bexp/pretty;
 import plow/bexp/btype2ttype;
 
+import plow/tracing;
+
 import fast/fast_path;
 
 export {
@@ -44,6 +46,8 @@ PlowCache(
 	nativeLookup : BLookupFromImport<BNative>,
 	// What is the next id
 	nextId : ref int,
+	// Tracing helper
+	tracing : Tracing
 );
 
 makePlowCache(
@@ -142,7 +146,7 @@ makePlowCache(
 		onError, includes, makeBModules(), 
 		structLookup, unionLookup, fieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
-		ref 0
+		ref 0, makeTracing()
 	);
 }
 
@@ -158,7 +162,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		code = getFileContent(path);
 
 		p = parsePExp(code, \e -> cache.onError(path + ":" + e));
-		println("Parsed " + file + " as " + path);
+		if (isTracingId(cache.tracing, StageParse(), 0, flowpath)) {
+			println("Parsed '" + file + "' as " + path);
+		}
 
 		// OK, parse all the dependent files
 		imports = getDImports(p);
@@ -218,10 +224,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		setCachedBModule(cache.modules, flowpath, bmodule);
 
-		if (true) {
-			prettyDModule(tenv, dmod);
-		}
-		if (false) {
+		prettyDModule(tenv, isTracingId(tenv.tracing, StageLower(), 0, flowpath), dmod);
+
+		if (isTracingId(tenv.tracing, StageLower(), 1, flowpath)) {
 			println(prettyBModule(bmodule));
 		}
 

@@ -15,6 +15,8 @@ export {
 
 	isTracingId(t : Tracing, stage : CompileStage, verbose : int, id : string) -> bool;
 
+	isTracingStage(t : Tracing, stage : CompileStage, verbose : int) -> bool;
+
 	// The different stages in the compiler
 	CompileStage ::= StageParse, StageTypeInference, StageTypeResolve, StageLower;
 		// Parse source code
@@ -31,7 +33,7 @@ export {
 makeTracing() -> Tracing {
 	ids = filter(strSplit(getUrlParameter("debug"), ","), neq(""));
 
-	stagestr = getUrlParameterDef("stages", "type,resolve");
+	stagestr = getUrlParameterDef("stages", "parse,type,resolve,lower");
 	stages = fold(strSplit(stagestr, ","), makeSet(), \acc, stage -> {
 		if (stage == "parse") insertSet(acc, StageParse())
 		else if (stage == "type") insertSet(acc, StageTypeInference())
@@ -50,4 +52,8 @@ makeTracing() -> Tracing {
 isTracingId(t : Tracing, stage : CompileStage, verbose : int, id : string) -> bool {
 	t.debugLevel >= verbose && containsSet(t.debugStages, stage) &&
 	(containsSet(t.debugIds, id) || containsSet(t.debugIds, "1"));
+}
+
+isTracingStage(t : Tracing, stage : CompileStage, verbose : int) -> bool {
+	t.debugLevel >= verbose && containsSet(t.debugStages, stage) && !isEmptySet(t.debugIds)
 }
