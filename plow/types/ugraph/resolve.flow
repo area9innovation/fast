@@ -22,30 +22,31 @@ So the loop should be this:
 */
 
 export {
-	resolveEClasses(env : TTypeEnv, flowpath : string) -> TTypeEnv;
+	resolveEClasses(env : TTypeEnv, flowpath : string,  verbose : bool) -> TTypeEnv;
 }
 
-resolveEClasses(env : TTypeEnv, flowpath : string) -> TTypeEnv {
-	doResolveEClasses(env, flowpath, false, 5);
+resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
+	doResolveEClasses(env, flowpath, verbose, false, 5);
 }
 
 SimplifyEnv(
 	env : TTypeEnv,
 	flowpath : string,
+	verbose : bool,
 	etypes : ref Tree<int, TType>,
 	visiting : ref Set<int>,
 	update : ref bool,
 );
 
-doResolveEClasses(env : TTypeEnv, flowpath : string, last : bool, iteration : int) -> TTypeEnv {
-	if (isTracingId(env.tracing, StageTypeResolve(), 2, flowpath)) {
+doResolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool, last : bool, iteration : int) -> TTypeEnv {
+	if (verbose || isTracingId(env.tracing, StageTypeResolve(), 2, flowpath)) {
 		println("\nResolve " + flowpath + ": Iteration " + i2s(iteration) + (if (last) ". Decision time" else ""));
 		dumpEClasses(env);
 	}
 	env.visited := makeSet();
 
 	roots = getEClassRoots(env.tgraph);
-	senv = SimplifyEnv(env, flowpath, ref env.etypes, ref makeSet(), ref false);
+	senv = SimplifyEnv(env, flowpath, verbose, ref env.etypes, ref makeSet(), ref false);
 	iterSet(roots, \root -> {
 		simplifyTTypeNode(senv, root, last);
 		{}
@@ -56,10 +57,10 @@ doResolveEClasses(env : TTypeEnv, flowpath : string, last : bool, iteration : in
 		if (last) {
 			finalResolvePhase(nenv, flowpath);
 		} else {
-			doResolveEClasses(nenv, flowpath, true, 5);
+			doResolveEClasses(nenv, flowpath, verbose, true, 5);
 		}
 	} else {
-		doResolveEClasses(nenv, flowpath, last, iteration - 1);
+		doResolveEClasses(nenv, flowpath, verbose, last, iteration - 1);
 	}
 }
 
@@ -75,11 +76,15 @@ dumpEClasses(env : TTypeEnv) -> void {
 			} else acc;
 		});
 		type = lookupTreeDef(env.etypes, root, TTypeEClass(root));
-		println("Class e" + i2s(root) + " : "
-			+ rpad(prettyTType(type), " ", 40) + " from "
-			+ ttypeNode2string(env, node)
-			+ " covers " + superglue(childClasses, \ec -> "e" + i2s(ec), ", ")
-		);
+		if (type == TTypeEClass(root) && node == defaultTTypeNode()) {
+
+		} else {
+			println("Class e" + i2s(root) + " : "
+				+ rpad(prettyTType(type), " ", 40) + " from "
+				+ ttypeNode2string(env, node)
+				+ " covers " + superglue(childClasses, \ec -> "e" + i2s(ec), ", ")
+			);
+		}
 	});
 }
 
@@ -136,7 +141,7 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 
 				mtype = resolvedTTypeNode(fnode);
 				mtype ?? {
-					if (isTracingId(senv.env.tracing, StageTypeResolve(), 1, senv.flowpath)) {
+					if (senv.verbose || isTracingId(senv.env.tracing, StageTypeResolve(), 1, senv.flowpath)) {
 						println("Resolved " + i2s(eclass) + " to " + prettyTType(mtype) 
 							+ " with\n  " + ttypeNode2string(env, fnode)
 							+ " from\n  " + ttypeNode2string(env, node)

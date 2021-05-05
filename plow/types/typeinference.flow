@@ -1,9 +1,12 @@
 import plow/dexp/types;
+import plow/dexp/vars;
 import plow/types/typeinference_exp;
 import plow/types/ugraph/resolve;
 import plow/types/typeof;
 import plow/types/polymorphism;
 import plow/types/util;
+import ds/simplegraph;
+import ds/arrayutils;
 
 export {
 	// Given a module, figure out what the types are
@@ -87,21 +90,62 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		}
 	);
 
-	// The handle all globals
-	genv = fold(d.order, senv, \acc, id -> {
-		mglobal = lookupTree(d.globals, id);
-		mglobal ?? {
-			ttypeInferenceDGlobal(acc, mglobal)
-		} : {acc}
+	order : [[string]] = buildDModuleDeps(d.globals, d.order);
+	order2 = if (true) [d.order] else order;
+	ttypeInferenceChunk(senv, d, order2);
+}
+
+ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv {
+	if (order == []) {
+		env
+	} else {
+		chunk = order[0];
+		cenv = env;
+		println(chunk);
+
+		// Now process this chunk
+		genv = fold(chunk, cenv, \acc, id -> {
+			mglobal = lookupTree(d.globals, id);
+			mglobal ?? {
+				ttypeInferenceDGlobal(acc, mglobal)
+			} : {acc}
+		});
+
+		verbose = fold(chunk, false, \acc, c -> {
+			acc || isTracingId(env.tracing, StageTypeResolve(), 1, c)
+		});
+		nenv = resolveEClasses(genv, d.flowpath, verbose);
+		ttypeInferenceChunk(nenv, d, tail(order));
+	}
+}
+
+// Build dependencies between all globals
+// and return them in order we can treat them (respecting connected components)
+buildDModuleDeps(globals : Tree<string, DGlobal>, order : [string]) -> [[string]] {
+	// Build a graph of dependencies
+	deps = foldTree(globals, makeSimpleGraph(), \id, global, acc : SimpleGraph<string, bool> -> {
+		vars = extractDVars(makeSet(), global.value);
+		foldSet(vars, acc, \acc2, var -> {
+			if (containsKeyTree(globals, var)) {
+				// OK, an internal name - add a bidirectional dependency
+				acc3 = addSimpleEdge(acc2, id, var, false, 1);
+				addSimpleEdge(acc3, var, id, false, 1)
+			} else acc2;
+		})
 	});
 
-	modTracing = isTracingId(env.tracing, StageTypeInference(), 1, d.flowpath);
-	if (modTracing) {
-		println("\nBefore resolving " + d.flowpath);
-	}
-	prettyDModule(genv, modTracing, d);
+	extractConnectedComponents(deps, [], order);
+}
 
-	resolveEClasses(genv, d.flowpath);
+extractConnectedComponents(deps : SimpleGraph<string, bool>, acc : [[string]], order : [string]) -> [[string]] {
+	if (order == []) acc
+	else {
+		first = order[0];
+		clusterSet = insertSet(reachableClosureFromSimpleNode(deps, first), first);
+		cluster = filter(order, \o -> containsSet(clusterSet, o));
+		// println("Starting from " + first + " finds " + strGlue(cluster, ", "));
+		extractConnectedComponents(deps, arrayPush(acc, cluster), subtractA(order, cluster));
+	}
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
@@ -113,7 +157,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
 		setTree(acc, tp, env.mkEClass())
 	});
-	nenv = TTypeEnv(env with typars = typars);
+	nenv = TTypeEnv(env with typars = typars, onError = \p, e -> env.onError(p, d.id + ": " + e));
 
 	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
 
