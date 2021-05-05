@@ -3,6 +3,7 @@ import plow/types/type;
 import plow/types/split;
 import plow/types/ugraph/ugraph;
 import plow/dexp/dexp;
+import plow/tracing;
 
 export {
 	TTypeEnv(
@@ -47,6 +48,9 @@ export {
 
 		// When we start to extract equivalence classes
 		etypes : Tree<int, TType>,
+
+		// For debugging
+		tracing : Tracing,
 	);
 
 	makeTTypeEnv(tgraph : TypeGraph) -> TTypeEnv;
@@ -89,6 +93,7 @@ makeTTypeEnv(tgraph : TypeGraph) -> TTypeEnv {
 			[]
 		},
 		makeTree(), makeTree(),
-		tgraph, ref makeSet(), makeTree()
+		tgraph, ref makeSet(), makeTree(),
+		makeTracing(),
 	);
 }

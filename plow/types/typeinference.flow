@@ -17,7 +17,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		type = dtype2ttype(env, false, nativ.type);
 		unifyTType(env, "native", d.pos, type, TTypeEClass(nativ.eclass));
 
-		// println(nat + ": " + prettyTType(type));
+		if (isTracingId(env.tracing, StageTypeInference(), 0, nat)) {
+			println(nat + ": " + prettyTType(type));
+		}
 
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
 	});
@@ -35,7 +37,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 				TTypeEClass(global.eclass)
 			}
 		};
-		// println(id + ": " + prettyTType(type));
+		if (isTracingId(env.tracing, StageTypeInference(), 0, id)) {
+			println(id + ": " + prettyTType(type));
+		}
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, type))
 	});
 
@@ -88,8 +92,8 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		} : {acc}
 	});
 
-	if (false) {
-		println("Before resolving");
+	if (isTracingId(env.tracing, StageTypeInference(), 2, d.flowpath)) {
+		println("Before resolving " + d.flowpath);
 		prettyDModule(genv, d);
 	}
 
@@ -97,7 +101,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 }
 
 ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
-	//println("Inference of global " + d.id);
+	if (isTracingId(env.tracing, StageTypeInference(), 1, d.id)) {
+		println("Inference of global " + d.id);
+	}
 
 	// Instantiate the typars
 	typars = fold(d.typars, makeTree(), \acc, tp -> {
@@ -117,7 +123,9 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 		type
 	);
 
-	// println("Inference " + d.id + " is " + prettyTType(ftype));
+	if (isTracingId(env.tracing, StageTypeInference(), 1, d.id)) {
+		println("Inference " + d.id + " is " + prettyTType(ftype));
+	}
 	unifyTType(env, "global 2", d.pos, ftype, TTypeEClass(d.eclass));
 	
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
