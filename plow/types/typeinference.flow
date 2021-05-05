@@ -91,7 +91,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	);
 
 	order : [[string]] = buildDModuleDeps(d.globals, d.order);
-	order2 = if (true) [d.order] else order;
+	order2 = if (false) [d.order] else order;
 	ttypeInferenceChunk(senv, d, order2);
 }
 

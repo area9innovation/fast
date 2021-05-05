@@ -132,7 +132,7 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 				snode = basicSimplifyTypenode(senv, eclass, node);
 			
 				// See if we can resolve the supertype
-				if (simplifyTTypesuper(env, eclass, snode, last)) {
+				if (simplifyTTypesuper(senv, eclass, snode, last)) {
 					senv.update := true;
 				}
 
@@ -205,11 +205,11 @@ basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTy
 }
 
 // If we have a supertype, this will try to resolve it
-simplifyTTypesuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool) -> bool {
+simplifyTTypesuper(senv : SimplifyEnv, eclass : int, node : TTypeNode, last : bool) -> bool {
 	switch (node.supertype) {
 		None(): false;
 		Some(supertype): {
-			resolveTTypeSuper(env, eclass, node, last, supertype);
+			resolveTTypeSuper(senv.env, senv.verbose, eclass, node, last, supertype);
 		}
 	}
 }

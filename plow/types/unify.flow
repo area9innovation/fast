@@ -197,7 +197,7 @@ unifyTSupertype(env : TTypeEnv, topid : string, reason : string, pos : int, supe
 						// println("Found a super");
 						unifyTypeToEClass(env, superclass, overloads[0], ["super resolved"], [pos]);
 					} else {
-						overload = TTypeOverload(TTypeEClass(env.mkEClass()), overloads);
+						overload = TTypeOverload(TTypeEClass(superclass), overloads);
 						// println("Adding overload to class " + i2s(superclass) + ": " + prettyTType(overload));
 						unifyTypeToEClass(env, superclass, overload, ["super overload"], [pos]);
 					}
@@ -467,7 +467,10 @@ unifyEClasses(env : TTypeEnv, class1 : int, class2 : int) -> void {
 	if (class1 != class2) {
 		// Merge the classes
 		eclass = unionUnionMap(env.tgraph.umap, class1, class2);
-		if (containsSet(^(env.visited), class1) || containsSet(^(env.visited), class2)) {
+		if (containsSet(^(env.visited), class1) 
+			|| containsSet(^(env.visited), class2) 
+			|| containsSet(^(env.visited), eclass)) {
+			// OK, stop for safety
 		} else {
 			merge : TTypeNode = getUnionMapValue(env.tgraph.umap, eclass);
 

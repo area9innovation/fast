@@ -6,11 +6,11 @@ export {
 	// Try to resolve this supertype from the given node.
 	// If we make progress, return true.
 	// If "last" is true, then pick some type out of desperation
-	resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, 
+	resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode, 
 		last : bool, supertype : TTypeSupertype) -> bool;
 }
 
-resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, supertype : TTypeSupertype) -> bool {
+resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode, last : bool, supertype : TTypeSupertype) -> bool {
 	// If this supertype has names it, then take care of it
 	potsupers = resolveTSupertype(env, supertype, last);
 	if (length(potsupers) == 1) {
@@ -19,13 +19,17 @@ resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, s
 		mtype = hasTypeNodeThisName(node, supername);
 		mtype ?? {
 			// We found the type already
+			if (verbose) {
+				println("Resolve supertype " + i2s(eclass) + " to existing " + prettyTType(mtype) + " from " + prettyTType(supertype));
+			}
 			unifyTypeToEClass(env, eclass, mtype, ["resolve supertype with existing"], []);
 			true;
 		} : {
 			// OK, the type does not exist. We have to construct it
 			ntype = instantiateTTypeName(env, supername);
-			// println("Made new type name for eclass " + i2s(eclass) + " from " + prettyTType(supertype));
-			// println(ntype);
+			if (verbose) {
+				println("Resolve supertype " + i2s(eclass) + " to " + prettyTType(ntype) + " from " + prettyTType(supertype));
+			}
 			unifyTypeToEClass(env, eclass, ntype, ["resolve supertype"], []);
 			true;
 		}
@@ -41,6 +45,9 @@ resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, s
 			// super( (a) -> b) -->  (a) -> super(b)
 			iter(fns, \fn -> {
 				stubfn = TTypeFunction(fn.args, TTypeSupertype(env.mkUnique(), [fn.returnType], supertype.maxed));
+				if (verbose) {
+					println("Resolve supertype " + i2s(eclass) + " to " + prettyTType(stubfn) + " from " + prettyTType(supertype));
+				}
 				unifyTypeToEClass(env, eclass, stubfn, ["resolve supertype fn"], []);
 			});
 			true;
@@ -58,8 +65,10 @@ resolveTTypeSuper(env : TTypeEnv, eclass : int, node : TTypeNode, last : bool, s
 					}
 				});
 				if (length(types) == length(potsupers)) {
-					overload = TTypeOverload(TTypeEClass(env.mkEClass()), types);
-					// println("We have an overload " + prettyTType(overload));
+					overload = TTypeOverload(eclass, types);
+					if (verbose) {
+						println("Resolve supertype " + i2s(eclass) + " to overload " + prettyTType(overload) + " from " + prettyTType(supertype));
+					}
 					unifyTypeToEClass(env, eclass, overload, ["supertype overload"], []);
 				} else {
 
