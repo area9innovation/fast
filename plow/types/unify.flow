@@ -476,8 +476,6 @@ unifyEClasses(env : TTypeEnv, class1 : int, class2 : int) -> void {
 
 			env.visited := insertSet(^(env.visited), class1);
 			env.visited := insertSet(^(env.visited), class2);
-
-			clarifyEClass(env, eclass, merge);
 		}
 	}
 }

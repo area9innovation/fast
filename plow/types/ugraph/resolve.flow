@@ -23,6 +23,8 @@ So the loop should be this:
 
 export {
 	resolveEClasses(env : TTypeEnv, flowpath : string,  verbose : bool) -> TTypeEnv;
+
+	cleanEClasses(env : TTypeEnv) -> void;
 }
 
 resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
@@ -131,18 +133,16 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 				// Simplify dependents and resolve
 				snode = basicSimplifyTypenode(senv, eclass, node);
 			
-				// See if we can resolve the overloads
-				if (simplifyTTypeOverload(senv, eclass, snode, last)) {
-					senv.update := true;
-				}	
-
-				// See if we can resolve the supertype
-				if (simplifyTTypesuper(senv, eclass, snode, last)) {
-					senv.update := true;
-				}
-
 				// Make sure we remember all the original nodes
 				fnode = addOriginals(node, snode);
+
+				// See if we can resolve the overloads
+				if (simplifyTTypeOverload(senv, eclass, fnode, last)) {
+					senv.update := true;
+				} else if (simplifyTTypesuper(senv, eclass, fnode, last)) {
+					// See if we can resolve the supertype
+					senv.update := true;
+				}
 
 				mtype = resolvedTTypeNode(fnode);
 				mtype ?? {
@@ -172,6 +172,7 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 }
 
 // Simplifies dependent types, as well as instantiates known types and resolves typeclasses
+// and inlines nested supertypes
 basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTypeNode {
 	// Simplify the best nodes, if we can. (Recursive)
 	bests = sortUnique(map(node.best, \t -> simplifyType(senv, t)));
@@ -194,6 +195,7 @@ basicSimplifyTypenode(senv : SimplifyEnv, eclass : int, node : TTypeNode) -> TTy
 		None(): None();
 		Some(supertype): {
 			supers0 = map(supertype.subtypes, \st -> simplifyType(senv, st));
+			// "Inline" all supers inside supers
 			supers1 : Set<TType> = fold(supers0, makeSet(), \acc, st -> {
 				addTTypeSupers(senv, acc, eclass, st)
 			});
@@ -229,7 +231,7 @@ simplifyTTypeOverload(senv : SimplifyEnv, eclass : int, node : TTypeNode, last :
 			n = length(good);
 			if (n == 1) {
 				winner = good[0];
-				println("Resolved overload in simplification to " + prettyTType(winner) + " from " + prettyTType(overload));
+				// println("Resolved overload in simplification to " + prettyTType(winner) + " from " + prettyTType(overload));
 				unifyTypeToEClass(senv.env, eclass, winner, ["resolve overload"], []);
 				true;
 			} else {
@@ -247,8 +249,6 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 		TTypeName(id, typars): TTypeName(id, map(typars, rec));
 		TTypeEClass(eclass): {
 			root = rootTTypeEClass(senv.env.tgraph, eclass);
-			// OK, simplify this recursively
-			simplifyTTypeNode(senv, root, false);
 
 			// Then check if we have a solution
 			mtype = lookupTree(^(senv.etypes), root);
@@ -258,6 +258,9 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 				}
 				mtype;
 			} : {
+				// OK, simplify this recursively
+				simplifyTTypeNode(senv, root, false);
+
 				TTypeEClass(root);
 			}
 		}
@@ -273,7 +276,9 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 				// OK, we have this supertype resolved elsewhere
 				simplifyType(senv, TTypeEClass(class));
 			} else {
-				println("NOT SUPPOSED TO HAPPEN 1");
+				// This supertype does not have a class?
+				// println(prettyTType(t) + " does not have an eclass:");
+				// dumpEClasses(senv.env);
 				subs = sortUnique(map(subtypes, rec));
 				TTypeSupertype(unique, subs, maxed);
 			}
@@ -324,7 +329,7 @@ addOriginals(orig : TTypeNode, n : TTypeNode) -> TTypeNode {
 	origs5 = rem(origs4, n.supertype);
 	origs6 = fold(n.best, origs5, \acc, b -> removeSet(acc, b));
 
-	TTypeNode(n with originals =  origs6)
+	TTypeNode(n with originals = origs6)
 }
 
 finalResolvePhase(env : TTypeEnv, flowpath : string) -> TTypeEnv {
@@ -363,6 +368,7 @@ finalResolvePhase(env : TTypeEnv, flowpath : string) -> TTypeEnv {
 	});
 }
 
+// Extract all super types to this type
 addTTypeSupers(senv : SimplifyEnv, acc : Set<TType>, eclass : int, type : TType) -> Set<TType> {
 	switch (type) {
 		TTypeSupertype(__ , types, __): fold(types, acc, insertSet);
@@ -382,4 +388,21 @@ addEClassSupers(senv : SimplifyEnv, acc : Set<TType>, eclass : int) -> Set<TType
 	node = getUnionMapValue(senv.env.tgraph.umap, eclass);
 	nacc = fold(node.best, acc, insertSet);
 	insertSet(nacc, TTypeEClass(eclass));
+}
+
+
+cleanEClasses(env : TTypeEnv) -> void {
+	roots = getEClassRoots(env.tgraph);
+	iterSet(roots, \root -> {
+		mtype = lookupTree(env.etypes, root);
+		mtype ?? {
+			if (!unresolvedTType(mtype)) {
+				// OK, clean up the type node to simplify it
+				node = getUnionMapValue(env.tgraph.umap, root);
+				cleanNode = TTypeNode([mtype], None(), None(), makeSet(), [], []);
+				println("Cleaning " + ttypeNode2string(env, node) + " to " + ttypeNode2string(env, cleanNode));
+				setUnionMapValue(env.tgraph.umap, root, cleanNode);
+			}
+		} : {}
+	});
 }

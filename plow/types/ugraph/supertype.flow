@@ -98,5 +98,10 @@ hasTypeNodeThisName(node : TTypeNode, name : string) -> Maybe<TType> {
 		None(): [];
 		Some(ov): ov.overloads;
 	}
-	find(concat3(node.best, supers, overs), \n -> getTTypeName(n) == name);
+	types = concat3(node.best, supers, overs);
+	fit = filter(types, \n -> getTTypeName(n) == name);
+	resolved = filter(fit, \t -> !unresolvedTType(t));
+	if (resolved != []) Some(resolved[0])
+	else if (fit == []) None()
+	else Some(fit[0])
 }

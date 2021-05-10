@@ -24,7 +24,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		unifyTType(env, nat, "native", d.pos, type, TTypeEClass(nativ.eclass));
 
 		if (isTracingId(env.tracing, StageTypeInference(), 0, nat)) {
-			println(nat + ": " + prettyTType(type));
+			println("native " + nat + ": " + prettyTType(type));
 		}
 
 		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
@@ -92,7 +92,11 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	order : [[string]] = buildDModuleDeps(d.globals, d.order);
 	order2 = if (false) [d.order] else order;
-	ttypeInferenceChunk(senv, d, order2);
+	if (order2 == []) {
+		resolveEClasses(env, d.flowpath, false);
+	} else {
+		ttypeInferenceChunk(senv, d, order2);
+	}
 }
 
 ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv {
@@ -101,7 +105,9 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 	} else {
 		chunk = order[0];
 		cenv = env;
-		println(chunk);
+
+		// println(chunk);
+		cleanEClasses(env);
 
 		// Now process this chunk
 		genv = fold(chunk, cenv, \acc, id -> {
