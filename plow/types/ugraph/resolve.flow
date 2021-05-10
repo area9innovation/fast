@@ -131,6 +131,11 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 				// Simplify dependents and resolve
 				snode = basicSimplifyTypenode(senv, eclass, node);
 			
+				// See if we can resolve the overloads
+				if (simplifyTTypeOverload(senv, eclass, snode, last)) {
+					senv.update := true;
+				}	
+
 				// See if we can resolve the supertype
 				if (simplifyTTypesuper(senv, eclass, snode, last)) {
 					senv.update := true;
@@ -214,6 +219,26 @@ simplifyTTypesuper(senv : SimplifyEnv, eclass : int, node : TTypeNode, last : bo
 	}
 }
 
+simplifyTTypeOverload(senv : SimplifyEnv, eclass : int, node : TTypeNode, last : bool) -> bool {
+	switch (node.overload) {
+		None(): false;
+		Some(overload): {
+			good = filter(overload.overloads, \ol -> {
+				possibleTTypeNodeMatch(senv.env, node, ol)
+			});
+			n = length(good);
+			if (n == 1) {
+				winner = good[0];
+				println("Resolved overload in simplification to " + prettyTType(winner) + " from " + prettyTType(overload));
+				unifyTypeToEClass(senv.env, eclass, winner, ["resolve overload"], []);
+				true;
+			} else {
+				false;
+			}
+		}
+	}
+}
+
 // Unify all the elements in these typenodes
 
 simplifyType(senv : SimplifyEnv, t : TType) -> TType {
@@ -248,7 +273,7 @@ simplifyType(senv : SimplifyEnv, t : TType) -> TType {
 				// OK, we have this supertype resolved elsewhere
 				simplifyType(senv, TTypeEClass(class));
 			} else {
-				println("NOT SUPPOSED TO HAPPEN");
+				println("NOT SUPPOSED TO HAPPEN 1");
 				subs = sortUnique(map(subtypes, rec));
 				TTypeSupertype(unique, subs, maxed);
 			}

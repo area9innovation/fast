@@ -27,7 +27,7 @@ makeTTypeNode(type : TType, reasons : [string], positions : [int]) -> TTypeNode 
 	switch (type) {
 		TTypeName(id, typars): TTypeNode([type], None(), None(), makeSet(), reasons, positions);
 		TTypeEClass(eclass): {
-			println("NOT SUPPOSED TO HAPPEN");
+			println("NOT SUPPOSED TO HAPPEN 2");
 			printCallstack();
 			TTypeNode([type], None(), None(), makeSet(), reasons, positions);
 		}

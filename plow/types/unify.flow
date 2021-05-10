@@ -11,6 +11,8 @@ export {
 
 	// Clean up this eclass
 	clarifyEClass(env : TTypeEnv, eclass : int, merge : TTypeNode) -> void;
+
+	possibleTTypeNodeMatch(env : TTypeEnv, node : TTypeNode, type : TType) -> bool;
 }
 
 uniindent = ref "";
@@ -368,6 +370,20 @@ subtypeTTypenames(env : TTypeEnv, topid : string, pos : int, sub : TTypeName, su
 			}
 		} else {
 			error();
+		}
+	}
+}
+
+possibleTTypeNodeMatch(env : TTypeEnv, node : TTypeNode, type : TType) -> bool {
+	exists(node.best, \t -> {
+		possibleTTypeMatch(env, t, type)
+	})
+	|| switch (node.supertype) {
+		None(): false;
+		Some(supertype): {
+			exists(supertype.subtypes, \t -> {
+				possibleSuperTType(env, t, type)
+			})
 		}
 	}
 }
