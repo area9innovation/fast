@@ -74,7 +74,6 @@ unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TT
 				TTypeEClass(rid): {
 					// OK, merge eclasses
 					unifyEClasses(env, lid, rid);
-					{}
 				}
 				TTypeName(id, typars): {
 					unifyTypeToEClass(env, lid, right, [reason], [pos]);
@@ -91,10 +90,24 @@ unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TT
 			}
 		}
 		TTypeOverload(lunique, loverloads): {
-			unifyTTypeOverload(env, topid, reason, pos, left, right);
+			switch (right) {
+				TTypeEClass(eclass): {
+					unifyTypeToEClass(env, eclass, left, [reason], [pos]);
+				}
+				default: {
+					unifyTTypeOverload(env, topid, reason, pos, left, right);
+				}
+			}
 		}
 		TTypeSupertype(unique, subtypes, maxed): {
-			unifyTSupertype(env, topid, reason, pos, left, right);
+			switch (right) {
+				TTypeEClass(eclass): {
+					unifyTypeToEClass(env, eclass, left, [reason], [pos]);
+				}
+				default: {
+					unifyTSupertype(env, topid, reason, pos, left, right);
+				}
+			}
 		}
 	}
 	uniindent := indent;
@@ -217,11 +230,6 @@ unifyTSupertype(env : TTypeEnv, topid : string, reason : string, pos : int, supe
 	}
 }
 
-unifyTType2(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
-	// println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
-	ltype = makeTTypeEClass(env.tgraph, [reason], [pos], left);
-	unifyTypeToEClass(env, ltype.eclass, right, [], []);
-}
 
 // Check that st is a subtype of type, and if so, unify any typars
 subtypeUnifyTType(env : TTypeEnv, topid : string, pos : int, sub : TType, super : TType) -> void {
@@ -458,25 +466,34 @@ copyTTypeFunction(env : TTypeEnv, t : TTypeFunction) -> TTypeFunction {
 	);
 }
 
+unifyTType2(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
+	// println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
+
+	leftclass = findEClass(env.tgraph, left);
+	rightclass = findEClass(env.tgraph, right);
+	if (leftclass != -1) {
+		unifyTypeToEClass(env, leftclass, right, [], []);
+	} else if (rightclass != -1) {
+		unifyTypeToEClass(env, leftclass, left, [], []);
+	} else {
+		ltype = makeTTypeEClass(env.tgraph, [reason], [pos], left);
+		unifyTypeToEClass(env, ltype.eclass, right, [], []);
+	}
+}
+
 unifyTypeToEClass(env : TTypeEnv, eclass : int, type : TType, reasons : [string], pos : [int]) -> void {
-	etype = makeTTypeEClass(env.tgraph, reasons, pos, type);
-	unifyEClasses(env, eclass, etype.eclass);
+	typeclass = findEClass(env.tgraph, type);
+	if (typeclass == -1) {
+		jclass = addTType2EClass(env.tgraph, reasons, pos, eclass, type);
+ 	} else {
+		unifyEClasses(env, eclass, typeclass);
+	}
 }
 
 unifyEClasses(env : TTypeEnv, class1 : int, class2 : int) -> void {
 	if (class1 != class2) {
 		// Merge the classes
 		eclass = unionUnionMap(env.tgraph.umap, class1, class2);
-		if (containsSet(^(env.visited), class1) 
-			|| containsSet(^(env.visited), class2) 
-			|| containsSet(^(env.visited), eclass)) {
-			// OK, stop for safety
-		} else {
-			merge : TTypeNode = getUnionMapValue(env.tgraph.umap, eclass);
-
-			env.visited := insertSet(^(env.visited), class1);
-			env.visited := insertSet(^(env.visited), class2);
-		}
 	}
 }
 
@@ -489,7 +506,7 @@ clarifyEClass(env : TTypeEnv, eclass : int, merge : TTypeNode) -> void {
 	iteri(merge.best, \i, b1 -> {
 		iter(subrange(merge.best, i + 1, length(merge.best)), \b2 -> {
 			// println([b1, b2]);
-			unifyTType(env, topid, "eclass " + i2s(eclass) + " clean", pos, b1, b2);
+			unifyTType(env, topid, "eclass e" + i2s(eclass) + " clean", pos, b1, b2);
 		})
 	});
 
@@ -498,7 +515,7 @@ clarifyEClass(env : TTypeEnv, eclass : int, merge : TTypeNode) -> void {
 		None(): {}
 		Some(overload): {
 			iter(merge.best, \b -> {
-				unifyTType(env, topid, "eclass " + i2s(eclass) + " clean overload", pos, b, overload);
+				unifyTType(env, topid, "eclass e" + i2s(eclass) + " clean overload", pos, b, overload);
 			});
 		}
 	}
@@ -509,14 +526,14 @@ clarifyEClass(env : TTypeEnv, eclass : int, merge : TTypeNode) -> void {
 		Some(supertype): {
 			iter(merge.best, \b -> {
 				// println("Clean super " + i2s(eclass) + " " + prettyTType(b) + " vs " + prettyTType(supertype));
-				unifyTType(env, topid, "eclass " + i2s(eclass) + " super clean", pos, b, supertype);
+				unifyTType(env, topid, "eclass e" + i2s(eclass) + " super clean", pos, b, supertype);
 			});
 		}
 	}
 
 	iterSet(merge.originals, \i -> {
 		iter(merge.best, \b -> {
-			unifyTType2(env, "eclass " + i2s(eclass) + " clean original", pos, b, i);
+			unifyTType2(env, "eclass e" + i2s(eclass) + " clean original", pos, b, i);
 		})
 	})
 }

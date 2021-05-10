@@ -20,7 +20,7 @@ resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode,
 		mtype ?? {
 			// We found the type already
 			if (verbose) {
-				println("Resolve supertype " + i2s(eclass) + " to existing " + prettyTType(mtype) + " from " + prettyTType(supertype));
+				println("Resolve supertype e" + i2s(eclass) + " to existing " + prettyTType(mtype) + " from " + prettyTType(supertype));
 			}
 			unifyTypeToEClass(env, eclass, mtype, ["resolve supertype with existing"], []);
 			true;
@@ -28,7 +28,7 @@ resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode,
 			// OK, the type does not exist. We have to construct it
 			ntype = instantiateTTypeName(env, supername);
 			if (verbose) {
-				println("Resolve supertype " + i2s(eclass) + " to " + prettyTType(ntype) + " from " + prettyTType(supertype));
+				println("Resolve supertype e" + i2s(eclass) + " to " + prettyTType(ntype) + " from " + prettyTType(supertype));
 			}
 			unifyTypeToEClass(env, eclass, ntype, ["resolve supertype"], []);
 			true;
@@ -46,7 +46,7 @@ resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode,
 			iter(fns, \fn -> {
 				stubfn = TTypeFunction(fn.args, TTypeSupertype(env.mkUnique(), [fn.returnType], supertype.maxed));
 				if (verbose) {
-					println("Resolve supertype " + i2s(eclass) + " to " + prettyTType(stubfn) + " from " + prettyTType(supertype));
+					println("Resolve supertype returns for e" + i2s(eclass) + " to " + prettyTType(stubfn) + " from " + prettyTType(supertype));
 				}
 				unifyTypeToEClass(env, eclass, stubfn, ["resolve supertype fn"], []);
 			});
@@ -67,7 +67,7 @@ resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode,
 				if (length(types) == length(potsupers)) {
 					overload = TTypeOverload(TTypeEClass(eclass), types);
 					if (verbose) {
-						println("Resolve supertype " + i2s(eclass) + " to overload " + prettyTType(overload) + " from " + prettyTType(supertype));
+						println("Resolve supertype e" + i2s(eclass) + " to overload " + prettyTType(overload) + " from " + prettyTType(supertype));
 					}
 					unifyTypeToEClass(env, eclass, overload, ["supertype overload"], []);
 				} else {

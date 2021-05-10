@@ -16,8 +16,11 @@ export {
 	// Is there an equivalence class for this type? -1 is not
 	findEClass(tg : TypeGraph, type : TType) -> int;
 
-	// Find or make an eclass for this type
+	// Find or make an eclass for this type. Ensures the class contains this type
 	makeTTypeEClass(tg : TypeGraph, reasons: [string], pos : [int], type : TType) -> TTypeEClass;
+
+	// Make sure this eclass contains this given type
+	addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, type : TType) -> TTypeEClass;
 
 	// After setting up all the relations, calls resolveEClasses from resolve.flow
 	// which will populate the etypes in the TTypeEnv
@@ -50,7 +53,9 @@ rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
 
 findEClass(tg : TypeGraph, type : TType) -> int {
 	switch (type) {
-		TTypeEClass(eclass): eclass;
+		TTypeEClass(eclass): {
+			findUnionMapRoot(tg.umap, eclass);
+		}
 		default: {
 			findUnionMap(tg.umap, \i, val : TTypeNode -> {
 				c = containsNodeTType(tg, ref makeSet(), val, type);
@@ -181,24 +186,32 @@ makeTTypeEClass(tg : TypeGraph, reasons: [string], pos : [int], type : TType) ->
 	} else {
 		typeclass;
 	}
+	addTType2EClass(tg, reasons, pos, class, type);
+}
+
+addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, type : TType) -> TTypeEClass {
 	rec = \tt -> makeTTypeEClass(tg, reasons, pos, tt);
 	set = \tt -> {
 		node = makeTTypeNode(tt, reasons, pos);
-		fnode = if (typeclass == -1) node
-		else {
-			enode = getUnionMapValue(tg.umap, class);
-			mergeTTypeNodes(enode, node)
-		};
-		setUnionMapValue(tg.umap, class, fnode);
-		TTypeEClass(class);
+		enode = getUnionMapValue(tg.umap, eclass);
+		fnode = mergeTTypeNodes(enode, node);
+		// println("Updated e" + i2s(eclass) + " to " + toString(fnode));
+		setUnionMapValue(tg.umap, eclass, fnode);
+		TTypeEClass(eclass);
 	}
 	switch (type) {
 		TTypeName(id, typars): {
 			set(TTypeName(id, map(typars, rec)));
 		}
-		TTypeEClass(eclass): {
-			root = rootTTypeEClass(tg, eclass);
-			TTypeEClass(root);
+		TTypeEClass(teclass): {
+			// OK, I guess we have to merge these nodes.
+			root = rootTTypeEClass(tg, teclass);
+			if (root != eclass) {
+				// Join these guys and give the new node
+				TTypeEClass(unionUnionMap(tg.umap, root, eclass));
+			} else {
+				TTypeEClass(root);
+			}
 		}
 		TTypeFunction(args, returnType): {
 			set(TTypeFunction(map(args, rec), rec(returnType)));

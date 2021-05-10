@@ -79,7 +79,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 		}
 		DIf(cond, then, else_, pos, eclass): {
 			tcond = ttypeInferenceDExp(env, topid, cond);
-			unifyTType(env, topid, "if cond", pos, tcond, TTypeName("bool", []));
+			unifyTType(env, topid, "if-cond", pos, tcond, TTypeName("bool", []));
 
 			tthen = ttypeInferenceDExp(env, topid, then);
 			telse = ttypeInferenceDExp(env, topid, else_);

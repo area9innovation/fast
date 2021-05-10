@@ -28,7 +28,7 @@ export {
 }
 
 resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
-	doResolveEClasses(env, flowpath, verbose, false, 5);
+	doResolveEClasses(env, flowpath, verbose, false, 10);
 }
 
 SimplifyEnv(
@@ -113,8 +113,9 @@ ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
 	+ "  " + strGlue(t.reasons, ", ")
 }
 
-simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
+simplifyTTypeNode(senv : SimplifyEnv, teclass : int, last : bool) -> void {
 	env = senv.env;
+	eclass = findUnionMapRoot(env.tgraph.umap, teclass);
 	if (containsSet(^(senv.visiting), eclass)) {
 		// Nothing to be done
 	} else {
@@ -128,13 +129,24 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 			None(): {
 				senv.visiting := insertSet(^(senv.visiting), eclass);
 
-				// println("Starting to simplifying " + i2s(eclass));
+				// println("Starting to simplifying " + i2s(eclass) + ": " + ttypeNode2string(env, node));
 
 				// Simplify dependents and resolve
 				snode = basicSimplifyTypenode(senv, eclass, node);
 			
 				// Make sure we remember all the original nodes
 				fnode = addOriginals(node, snode);
+
+				if (fnode != node) {
+					setUnionMapValue(env.tgraph.umap, eclass, fnode);
+
+					clarifyEClass(env, eclass, fnode);
+
+					if (false) {
+						println("Simplified e" + i2s(eclass) + "\n  " + ttypeNode2string(env, node) + " to\n  " + ttypeNode2string(env, fnode));
+					}
+					senv.update := true;
+				}
 
 				// See if we can resolve the overloads
 				if (simplifyTTypeOverload(senv, eclass, fnode, last)) {
@@ -147,25 +159,19 @@ simplifyTTypeNode(senv : SimplifyEnv, eclass : int, last : bool) -> void {
 				mtype = resolvedTTypeNode(fnode);
 				mtype ?? {
 					if (senv.verbose || isTracingId(senv.env.tracing, StageTypeResolve(), 1, senv.flowpath)) {
-						println("Resolved " + i2s(eclass) + " to " + prettyTType(mtype) 
+						line = "Resolved e" + i2s(eclass) + " to " + prettyTType(mtype);
+						output = if (isTracingId(senv.env.tracing, StageTypeResolve(), 2, senv.flowpath)) {
+							line
 							+ " with\n  " + ttypeNode2string(env, fnode)
 							+ " from\n  " + ttypeNode2string(env, node)
-						);
+						} else line;
+						println(output);
 					}
 					senv.etypes := setTree(^(senv.etypes), eclass, mtype);
 					// We know the resolved type is in the "best" field of the typenode
 					senv.update := true;
 				} : {}
 
-				if (fnode != node) {
-					setUnionMapValue(env.tgraph.umap, eclass, fnode);
-
-					clarifyEClass(env, eclass, fnode);
-
-					// println("Simplified " + i2s(eclass) + "\n  " + ttypeNode2string(env, node) + " to\n  " + ttypeNode2string(env, fnode));
-					senv.update := true;
-				}
-				senv.visiting := removeSet(^(senv.visiting), eclass);
 			}
 		}
 	}
