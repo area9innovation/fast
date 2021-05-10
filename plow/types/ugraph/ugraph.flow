@@ -176,31 +176,38 @@ areSameTTypes(tg : TypeGraph, visited : ref Set<int>, left : [TType], right : [T
 // Rewrite a type to use as many eclasses as possible
 makeTTypeEClass(tg : TypeGraph, reasons: [string], pos : [int], type : TType) -> TTypeEClass {
 	typeclass = findEClass(tg, type);
-	if (typeclass == -1) {
-		rec = \tt -> makeTTypeEClass(tg, reasons, pos, tt);
-		set = \tt -> {
-			newclass = emptyTTypeClass(tg);
-			node = makeTTypeNode(tt, reasons, pos);
-			setUnionMapValue(tg.umap, newclass, node);
-			TTypeEClass(newclass);
+	class = if (typeclass == -1) {
+		emptyTTypeClass(tg);
+	} else {
+		typeclass;
+	}
+	rec = \tt -> makeTTypeEClass(tg, reasons, pos, tt);
+	set = \tt -> {
+		node = makeTTypeNode(tt, reasons, pos);
+		fnode = if (typeclass == -1) node
+		else {
+			enode = getUnionMapValue(tg.umap, class);
+			mergeTTypeNodes(enode, node)
+		};
+		setUnionMapValue(tg.umap, class, fnode);
+		TTypeEClass(class);
+	}
+	switch (type) {
+		TTypeName(id, typars): {
+			set(TTypeName(id, map(typars, rec)));
 		}
-		switch (type) {
-			TTypeName(id, typars): {
-				set(TTypeName(id, map(typars, rec)));
-			}
-			TTypeEClass(eclass): {
-				root = rootTTypeEClass(tg, eclass);
-				TTypeEClass(root);
-			}
-			TTypeFunction(args, returnType): {
-				set(TTypeFunction(map(args, rec), rec(returnType)));
-			}
-			TTypeOverload(unique, overloads): {
-				set(type);
-			}
-			TTypeSupertype(unique, subtypes, maxed): {
-				set(type);
-			}
+		TTypeEClass(eclass): {
+			root = rootTTypeEClass(tg, eclass);
+			TTypeEClass(root);
 		}
-	} else TTypeEClass(typeclass)
+		TTypeFunction(args, returnType): {
+			set(TTypeFunction(map(args, rec), rec(returnType)));
+		}
+		TTypeOverload(unique, overloads): {
+			set(type);
+		}
+		TTypeSupertype(unique, subtypes, maxed): {
+			set(type);
+		}
+	}
 }

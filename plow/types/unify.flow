@@ -105,9 +105,9 @@ unifyTTypeNames(env : TTypeEnv, reason : string, pos : int, left : TTypeName, ri
 }
 
 unifyTTypeOverload(env : TTypeEnv, topid : string, reason : string, pos : int, overload : TTypeOverload, type : TType) -> void {
-	good = filter(overload.overloads, \ol -> {
+	good = if (true) filter(overload.overloads, \ol -> {
 		possibleTTypeMatch(env, ol, type)
-	});
+	}) else overload.overloads;
 	n = length(good);
 	if (n == 1) {
 		// println("Resolved overload");
@@ -216,19 +216,9 @@ unifyTSupertype(env : TTypeEnv, topid : string, reason : string, pos : int, supe
 }
 
 unifyTType2(env : TTypeEnv, reason : string, pos : int, left : TType, right : TType) -> void {
-	nameclass = findEClass(env.tgraph, left);
-	if (nameclass != -1) {
-		unifyTypeToEClass(env, nameclass, right, [reason], [pos]);
-	} else {
-		superclass = findEClass(env.tgraph, right);
-		if (superclass != -1) {
-			unifyTypeToEClass(env, superclass, left, [reason], [pos]);
-		} else {
-			// println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
-			ltype = makeTTypeEClass(env.tgraph, [reason], [pos], left);
-			unifyTypeToEClass(env, ltype.eclass, right, [], []);
-		}
-	}	
+	// println("We need a new class for these two " + prettyTType(left) + " and " + prettyTType(right));
+	ltype = makeTTypeEClass(env.tgraph, [reason], [pos], left);
+	unifyTypeToEClass(env, ltype.eclass, right, [], []);
 }
 
 // Check that st is a subtype of type, and if so, unify any typars
@@ -453,14 +443,8 @@ copyTTypeFunction(env : TTypeEnv, t : TTypeFunction) -> TTypeFunction {
 }
 
 unifyTypeToEClass(env : TTypeEnv, eclass : int, type : TType, reasons : [string], pos : [int]) -> void {
-	typeclass = findEClass(env.tgraph, type);
-	if (typeclass == -1) {
-		// Rewrite the type
-		etype = makeTTypeEClass(env.tgraph, reasons, pos, type);
-		unifyEClasses(env, eclass, etype.eclass);
-	} else {
-		unifyEClasses(env, eclass, typeclass);
-	}
+	etype = makeTTypeEClass(env.tgraph, reasons, pos, type);
+	unifyEClasses(env, eclass, etype.eclass);
 }
 
 unifyEClasses(env : TTypeEnv, class1 : int, class2 : int) -> void {

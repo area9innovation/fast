@@ -65,7 +65,7 @@ resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode,
 					}
 				});
 				if (length(types) == length(potsupers)) {
-					overload = TTypeOverload(eclass, types);
+					overload = TTypeOverload(TTypeEClass(eclass), types);
 					if (verbose) {
 						println("Resolve supertype " + i2s(eclass) + " to overload " + prettyTType(overload) + " from " + prettyTType(supertype));
 					}
