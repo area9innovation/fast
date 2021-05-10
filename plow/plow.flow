@@ -7,8 +7,8 @@ import fs/filesystem;
 import math/stringmath;
 
 main() {
-	file4 = "plow/tests/";
-	file = "plow/tests/type5.flow";
+	file = "plow/tests/";
+	file4 = "plow/tests/type5.flow";
 	file0  = "ds/list.flow";
 	file3  = "ds/array.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
@@ -37,6 +37,7 @@ main() {
 		iter(files, \fil -> {
 			// println(fil);
 			if (^errors < 1000) {
+				println("\n" + fil);
 				b = compilePlow(cache, fil);
 			}
 		});	

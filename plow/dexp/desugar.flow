@@ -194,7 +194,7 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		switch (tl) {
 			PNative(id, isIo, type, name, pos): {
 				dtype = ptype2dtype(dd2, type);
-				nativ = DNative(id, isIo, dtype, name, lookupTree(globals, name), emptyTTypeClass(dd.tgraph), pos);
+				nativ = DNative(id, isIo, dtype, name, containsKeyTree(globals, name), emptyTTypeClass(dd.tgraph), pos);
 				if (containsKeyTree(acc, id)) {
 					dd.onError(pos, "Duplicate native def " + id);
 				};

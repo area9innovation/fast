@@ -400,7 +400,7 @@ cleanEClasses(env : TTypeEnv) -> void {
 				// OK, clean up the type node to simplify it
 				node = getUnionMapValue(env.tgraph.umap, root);
 				cleanNode = TTypeNode([mtype], None(), None(), makeSet(), [], []);
-				println("Cleaning " + ttypeNode2string(env, node) + " to " + ttypeNode2string(env, cleanNode));
+			//	println("Cleaning " + ttypeNode2string(env, node) + " to " + ttypeNode2string(env, cleanNode));
 				setUnionMapValue(env.tgraph.umap, root, cleanNode);
 			}
 		} : {}

@@ -46,7 +46,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		if (isTracingId(env.tracing, StageTypeInference(), 0, id)) {
 			println(id + ": " + prettyTType(type));
 		}
-		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, type))
+		if (!containsKeyTree(acc.moduleTypes, id)) {
+			TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, id, type))
+		} else acc;
 	});
 
 	// Make a field map

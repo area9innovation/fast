@@ -7,6 +7,7 @@ export {
 }
 
 dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
+	globals = mapTree(d.globals, \gl -> dglobal2bglobal(env, gl));
 	BModule(
 		d.flowpath,
 		d.fullpath,
@@ -19,16 +20,14 @@ dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
 		mapTree(d.natives, \nat -> {
 			BNative(nat.id, nat.isIo, resolveBType(env, nat.pos, nat.eclass), nat.name, 
 				{
-					fb = nat.fallback;
-					fb ?? {
-						bg : BGlobal = dglobal2bglobal(env, fb);
-						Some(bg)
-					} : None()
+					if (nat.fallback) {
+						lookupTree(globals, nat.id);
+					} else None()
 				},
 				nat.pos
 			)
 		}),
-		mapTree(d.globals, \gl -> dglobal2bglobal(env, gl)),
+		globals,
 		d.order
 	)
 }
