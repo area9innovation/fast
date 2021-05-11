@@ -424,7 +424,6 @@ addEClassSupers(senv : SimplifyEnv, acc : Set<TType>, eclass : int) -> Set<TType
 	insertSet(nacc, TTypeEClass(eclass));
 }
 
-
 cleanEClasses(env : TTypeEnv) -> void {
 	roots = getEClassRoots(env.tgraph);
 	iterSet(roots, \root -> {

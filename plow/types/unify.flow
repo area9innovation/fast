@@ -192,34 +192,38 @@ unifyTSupertype(env : TTypeEnv, topid : string, reason : string, pos : int, supe
 	switch (type) {
 		TTypeEClass(eclass): unifyTypeToEClass(env, eclass, super, [reason], [pos]);
 		TTypeName(id, typars): {
-			supertype : TTypeEClass = makeTTypeEClass(env.tgraph, [reason], [pos], super);
-			superclass = supertype.eclass;
-			if (superclass == -1) {
-				println("INVARIANT BROKEN: Each supertype should have a class: " + prettyTType(super));
-				printCallstack();
-			} else {
-				// List<?> vs supertype1{e25}
-				// In this case, we do a
-				// overload(List<?>, Cons<?>, EmptyList<?>) vs into the eclass with the supertype1{e25}
-				subs = env.resolveSubtypes(id);
-				munion = env.resolveUnionName(id);
-				munion ?? {
-					// OK, we can not decide, so set up an overload
-					overloads = arrayPush(filtermap(subs, \su -> {
-						instantiateTTypeNameFromUnion(env, munion, type, su);
-					}), type);
-					if (length(overloads) == 1) {
-						// println("Found a super");
-						unifyTypeToEClass(env, superclass, overloads[0], ["super resolved"], [pos]);
-					} else {
-						overload = TTypeOverload(TTypeEClass(superclass), overloads);
-						// println("Adding overload to class " + i2s(superclass) + ": " + prettyTType(overload));
-						unifyTypeToEClass(env, superclass, overload, ["super overload"], [pos]);
-					}
-				} : {
-					// OK, not a supertype, so we can resolve immediately
-					unifyTypeToEClass(env, superclass, type, ["super unique"], [pos]);
+			// List<?> vs supertype1{e25}
+			eclass = findEClass(env.tgraph, type);
+			superclass = if (eclass == -1) {
+				// Have to make a new class
+				sclass = findEClass(env.tgraph, super);
+				if (sclass == -1) {
+					println("We do not have a class for " + prettyTType(type) + " nor " + prettyTType(super));
+					supertype : TTypeEClass = makeTTypeEClass(env.tgraph, [reason], [pos], super);
+					supertype.eclass;
+				} else sclass;
+			} else eclass;
+
+			// In this case, we do a
+			// overload(List<?>, Cons<?>, EmptyList<?>) vs into the eclass with the supertype1{e25}
+			subs = env.resolveSubtypes(id);
+			munion = env.resolveUnionName(id);
+			munion ?? {
+				// OK, we can not decide, so set up an overload
+				overloads = arrayPush(filtermap(subs, \su -> {
+					instantiateTTypeNameFromUnion(env, munion, type, su);
+				}), type);
+				if (length(overloads) == 1) {
+					// println("Found a super");
+					unifyTypeToEClass(env, superclass, overloads[0], ["super resolved"], [pos]);
+				} else {
+					overload = TTypeOverload(TTypeEClass(superclass), overloads);
+					// println("Adding overload to class " + i2s(superclass) + ": " + prettyTType(overload));
+					unifyTypeToEClass(env, superclass, overload, ["super overload"], [pos]);
 				}
+			} : {
+				// OK, not a supertype, so we can resolve immediately
+				unifyTypeToEClass(env, superclass, type, ["super unique"], [pos]);
 			}
 		}
 		TTypeFunction(args, returnType): {
