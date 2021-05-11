@@ -18,7 +18,7 @@ export {
 uniindent = ref "";
 unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TType, right : TType) -> void {
 	indent = ^uniindent;
-	if (isTracingId(env.tracing, StageTypeInference(), 1, topid)) {
+	if (isTracingId(env.tracing, StageTypeInference(), 2, topid)) {
 		println(indent + "Unify " + topid + ": " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
 		uniindent :=indent + "  ";
 	}
@@ -493,7 +493,7 @@ unifyTypeToEClass(env : TTypeEnv, eclass : int, type : TType, reasons : [string]
 unifyEClasses(env : TTypeEnv, class1 : int, class2 : int) -> void {
 	if (class1 != class2) {
 		// Merge the classes
-		eclass = unionUnionMap(env.tgraph.umap, class1, class2);
+		eclass = joinTTypeEClasses(env.tgraph, class1, class2);
 	}
 }
 

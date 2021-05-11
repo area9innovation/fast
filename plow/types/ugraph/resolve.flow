@@ -70,9 +70,9 @@ dumpEClasses(env : TTypeEnv) -> void {
 	roots = getEClassRoots(env.tgraph);
 
 	iterSet(roots, \root : int -> {
-		node = getUnionMapValue(env.tgraph.umap, root);
+		node = getEClassTypeNode(env.tgraph, root);
 		childClasses = foldRange(0, ^(env.tgraph.nextEClass), [], \acc, ec -> {
-			r = findUnionMapRoot(env.tgraph.umap, ec);
+			r = rootTTypeEClass(env.tgraph, ec);
 			if (r == root) {
 				arrayPush(acc, ec)
 			} else acc;
@@ -115,11 +115,11 @@ ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
 
 simplifyTTypeNode(senv : SimplifyEnv, teclass : int, last : bool) -> void {
 	env = senv.env;
-	eclass = findUnionMapRoot(env.tgraph.umap, teclass);
+	eclass = rootTTypeEClass(env.tgraph, teclass);
 	if (containsSet(^(senv.visiting), eclass)) {
 		// Nothing to be done
 	} else {
-		node = getUnionMapValue(env.tgraph.umap, eclass);
+		node = getEClassTypeNode(env.tgraph, eclass);
 		ctype = lookupTree(^(senv.etypes), eclass);
 		switch (ctype) {
 			Some(type): {
@@ -138,7 +138,7 @@ simplifyTTypeNode(senv : SimplifyEnv, teclass : int, last : bool) -> void {
 				fnode = addOriginals(node, snode);
 
 				if (fnode != node) {
-					setUnionMapValue(env.tgraph.umap, eclass, fnode);
+					setEClassTypeNode(env.tgraph, eclass, fnode);
 
 					clarifyEClass(env, eclass, fnode);
 
@@ -346,7 +346,7 @@ finalResolvePhase(env : TTypeEnv, flowpath : string) -> TTypeEnv {
 	roots = getEClassRoots(env.tgraph);
 	foldSet(roots, env, \acc, root -> {
 		if (!containsKeyTree(acc.etypes, root)) {
-			node = getUnionMapValue(acc.tgraph.umap, root);
+			node = getEClassTypeNode(acc.tgraph, root);
 			if (length(node.best) >= 1) {
 				// TODO: We could attempt to generalize any type vars here
 				TTypeEnv(acc with etypes = setTree(acc.etypes, root, node.best[0]))
@@ -391,7 +391,7 @@ addTTypeSupers(senv : SimplifyEnv, acc : Set<TType>, eclass : int, type : TType)
 
 // Add the potential supertypes of this eclass to the set of types
 addEClassSupers(senv : SimplifyEnv, acc : Set<TType>, eclass : int) -> Set<TType> {
-	node = getUnionMapValue(senv.env.tgraph.umap, eclass);
+	node = getEClassTypeNode(senv.env.tgraph, eclass);
 	nacc = fold(node.best, acc, insertSet);
 	insertSet(nacc, TTypeEClass(eclass));
 }
@@ -404,10 +404,10 @@ cleanEClasses(env : TTypeEnv) -> void {
 		mtype ?? {
 			if (!unresolvedTType(mtype)) {
 				// OK, clean up the type node to simplify it
-				node = getUnionMapValue(env.tgraph.umap, root);
+				node = getEClassTypeNode(env.tgraph, root);
 				cleanNode = TTypeNode([mtype], None(), None(), makeSet(), [], []);
 			//	println("Cleaning " + ttypeNode2string(env, node) + " to " + ttypeNode2string(env, cleanNode));
-				setUnionMapValue(env.tgraph.umap, root, cleanNode);
+				setEClassTypeNode(env.tgraph, root, cleanNode);
 			}
 		} : {}
 	});

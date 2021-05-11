@@ -25,7 +25,7 @@ resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 		}
 		ttype2btype(env, mtype)
 	} : {
-		node = getUnionMapValue(env.tgraph.umap, root);
+		node = getEClassTypeNode(env.tgraph, root);
 		// These are already reported
 		env.onError(pos, "Add type annotation. Unresolved type (equivalence class " + i2s(root) + ". " + strGlue(node.reasons, ", ") + ")");
 		BTypeName("Error!", []);

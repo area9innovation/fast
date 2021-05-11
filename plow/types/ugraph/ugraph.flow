@@ -2,16 +2,23 @@ import plow/types/pretty;
 import plow/types/ugraph/type;
 
 export {
+	// Construct a new graph of our types
 	makeTypeGraph(onError : (int, string) -> void) -> TypeGraph;
 
 	// Prepare an empty equivalence class
 	emptyTTypeClass(tg : TypeGraph) -> int;
 
-	// What is the current set of roots?
-	getEClassRoots(tg : TypeGraph) -> Set<int>;
+	// What type node do we have for this equivalence class?
+	getEClassTypeNode(tg : TypeGraph, eclass : int) -> TTypeNode;
+
+	// Set the type node for this eq. class
+	setEClassTypeNode(tg : TypeGraph, eclass : int, tn : TTypeNode) -> void;
 
 	// Given this eclass, what is the root equivalence class?
 	rootTTypeEClass(tg : TypeGraph, eclass : int) -> int;
+
+	// What is the current set of root equivalence classes?
+	getEClassRoots(tg : TypeGraph) -> Set<int>;
 
 	// Is there an equivalence class for this type? -1 is not
 	findEClass(tg : TypeGraph, type : TType) -> int;
@@ -22,8 +29,8 @@ export {
 	// Make sure this eclass contains this given type
 	addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, type : TType) -> TTypeEClass;
 
-	// After setting up all the relations, calls resolveEClasses from resolve.flow
-	// which will populate the etypes in the TTypeEnv
+	// Mark these as the same class
+	joinTTypeEClasses(tg : TypeGraph, class1 : int, class2 : int) -> int;
 }
 
 makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
@@ -38,6 +45,14 @@ emptyTTypeClass(tg : TypeGraph) -> int {
 	ec = ^(tg.nextEClass);
 	tg.nextEClass := ec + 1;
 	ec;
+}
+
+getEClassTypeNode(tg : TypeGraph, eclass : int) -> TTypeNode {
+	getUnionMapValue(tg.umap, eclass);
+}
+
+setEClassTypeNode(tg : TypeGraph, eclass : int, tn : TTypeNode) -> void {
+	setUnionMapValue(tg.umap, eclass, tn)
 }
 
 getEClassRoots(tg : TypeGraph) -> Set<int> {
@@ -223,4 +238,8 @@ addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, ty
 			set(type);
 		}
 	}
+}
+
+joinTTypeEClasses(tg : TypeGraph, class1 : int, class2 : int) -> int {
+	unionUnionMap(tg.umap, class1, class2)
 }
