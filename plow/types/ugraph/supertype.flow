@@ -41,7 +41,7 @@ resolveTTypeSuper(env : TTypeEnv, verbose: bool, eclass : int, node : TTypeNode,
 				default: None();
 			}
 		});
-		if (fns != []) {
+		if (false && fns != []) {
 			// super( (a) -> b) -->  (a) -> super(b)
 			iter(fns, \fn -> {
 				stubfn = TTypeFunction(fn.args, TTypeSupertype(env.mkUnique(), [fn.returnType], supertype.maxed));

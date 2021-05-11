@@ -42,7 +42,7 @@ SimplifyEnv(
 
 doResolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool, last : bool, iteration : int) -> TTypeEnv {
 	if (verbose || isTracingId(env.tracing, StageTypeResolve(), 2, flowpath)) {
-		println("\nResolve " + flowpath + ": Iteration " + i2s(iteration) + (if (last) ". Decision time" else ""));
+		println("\nResolve " + flowpath + ": Iteration " + i2s(iteration) + (if (last) ". Decision time" else "") + ". Max eclass: " + i2s(^(env.tgraph.nextEClass)));
 		println("Updated: " + superglue(set2array(^(env.tgraph.updated)), \e -> "e" + i2s(e), ", "));
 		dumpEClasses(env, i2s(iteration) + (if (last) "-last" else ""));
 	}

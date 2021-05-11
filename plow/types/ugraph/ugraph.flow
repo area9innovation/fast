@@ -123,7 +123,10 @@ containsNodeTType(tg : TypeGraph, visited : ref Set<int>, node : TTypeNode, type
 			switch (node.supertype) {
 				None(): false;
 				Some(st): {
-					st.unique == unique;
+					st.unique == unique
+					|| forall(subtypes, \ss -> {
+						containsNodeTTypes(tg, visited, 0, st.subtypes, ss)
+					});
 				}
 			}
 		}

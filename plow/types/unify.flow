@@ -169,7 +169,7 @@ unifyTSupertype(env : TTypeEnv, topid : string, reason : string, pos : int, supe
 	
 	// unify(super(Maybe<t1>, Maybe<t2>), type<t1>)
 	// -> unify(super(Maybe<super(t1, t2)>), type)
-	named : Tree<string, [TTypeName]> = fold(super.subtypes, makeTree(), \acc, st -> {
+/*	named : Tree<string, [TTypeName]> = fold(super.subtypes, makeTree(), \acc, st -> {
 		switch (st) {
 			TTypeName(id, tps): treePushToArrayValue(acc, id, st);
 			default: acc;
@@ -188,7 +188,7 @@ unifyTSupertype(env : TTypeEnv, topid : string, reason : string, pos : int, supe
 			unifyTType(env, topid, "intrasupers " + name, pos, stype, type)
 		}
 	});
-
+*/
 	switch (type) {
 		TTypeEClass(eclass): unifyTypeToEClass(env, eclass, super, [reason], [pos]);
 		TTypeName(id, typars): {
