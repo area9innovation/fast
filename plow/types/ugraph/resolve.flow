@@ -44,7 +44,7 @@ doResolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool, last : bool
 	if (verbose || isTracingId(env.tracing, StageTypeResolve(), 2, flowpath)) {
 		println("\nResolve " + flowpath + ": Iteration " + i2s(iteration) + (if (last) ". Decision time" else ""));
 		println("Updated: " + superglue(set2array(^(env.tgraph.updated)), \e -> "e" + i2s(e), ", "));
-		dumpEClasses(env);
+		dumpEClasses(env, i2s(iteration) + (if (last) "-last" else ""));
 	}
 	env.visited := makeSet();
 	env.tgraph.updated := makeSet();
@@ -68,28 +68,54 @@ doResolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool, last : bool
 	}
 }
 
-dumpEClasses(env : TTypeEnv) -> void {
+dumpEClasses(env : TTypeEnv, label : string) -> void {
+	normalizeTTypeDependencies(env.tgraph);
+
 	roots = getEClassRoots(env.tgraph);
+	graph = "digraph graphname {\n";
+	nodes = foldSet(roots, graph, \acc, root -> {
+		text = eclassString(env, root, false);
+		if (text != "") println(text);
 
-	iterSet(roots, \root : int -> {
-		node = getEClassTypeNode(env.tgraph, root);
-		childClasses = foldRange(0, ^(env.tgraph.nextEClass), [], \acc, ec -> {
-			r = rootTTypeEClass(env.tgraph, ec);
-			if (r == root) {
-				arrayPush(acc, ec)
-			} else acc;
-		});
-		type = lookupTreeDef(env.etypes, root, TTypeEClass(root));
-		if (type == TTypeEClass(root) && node == defaultTTypeNode()) {
-
-		} else {
-			println("Class e" + i2s(root) + " : "
-				+ rpad(prettyTType(type), " ", 40) + " from "
-				+ ttypeNode2string(env, node)
-				+ " covers " + superglue(childClasses, \ec -> "e" + i2s(ec), ", ")
-			);
-		}
+		node = eclassString(env, root, true);
+		acc + "e" + i2s(root) + " [label=" 
+		+ toString(node)
+		+ "];\n"
 	});
+	links = foldTree(^(env.tgraph.dependencies), nodes, \from : int, to : Set<int>, acc : string -> {
+		foldSet(to, acc, \acc2, t -> {
+			acc2 + "e" + i2s(from) + " -> e" + i2s(t) + ";\n"
+		});
+	});
+	dot = links + "}";
+	setFileContent("graph" + label + ".dot", dot);
+	{}
+}
+
+eclassString(env : TTypeEnv, root : int, verbose : bool) -> string {
+	node = getEClassTypeNode(env.tgraph, root);
+	childClasses = foldRange(0, ^(env.tgraph.nextEClass), [], \acc, ec -> {
+		r = rootTTypeEClass(env.tgraph, ec);
+		if (r == root) {
+			arrayPush(acc, ec)
+		} else acc;
+	});
+	type = lookupTreeDef(env.etypes, root, TTypeEClass(root));
+	if (!verbose && type == TTypeEClass(root) && node == defaultTTypeNode()) {
+		"";
+	} else {
+		if (verbose) {
+			"e" + i2s(root) + ": "
+			+ prettyTType(type) + " from\n"
+			+ strGlue(strWordWrap(ttypeNode2string(env, node), 80, [" "]), "\n")
+			+ "\ncovers " + superglue(childClasses, \ec -> "e" + i2s(ec), ", ")
+		} else {
+			"e" + i2s(root) + ": "
+			+ rpad(prettyTType(type), " ", 40) + " from "
+			+ ttypeNode2string(env, node)
+			+ " covers " + superglue(childClasses, \ec -> "e" + i2s(ec), ", ")
+		}
+	}	
 }
 
 ttypeNode2string(env : TTypeEnv, t : TTypeNode) -> string {
@@ -343,7 +369,7 @@ addOriginals(orig : TTypeNode, n : TTypeNode) -> TTypeNode {
 finalResolvePhase(env : TTypeEnv, flowpath : string) -> TTypeEnv {
 	if (isTracingId(env.tracing, StageTypeResolve(), 1, flowpath)) {
 		println("\nFinal " + flowpath);
-		dumpEClasses(env);
+		dumpEClasses(env, "-final");
 	}
 	roots = getEClassRoots(env.tgraph);
 	foldSet(roots, env, \acc, root -> {

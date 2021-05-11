@@ -13,6 +13,8 @@ export {
 		nextEClass : ref int, 
 		// What eclasses have been updated?
 		updated : ref Set<int>,
+		// Dependencies between eclasses: When key changes, the immediate children need an update
+		dependencies : ref Tree<int, Set<int>>,
 		// To help report errors, we have this friend
 		onError : (int, string) -> void,
 	);

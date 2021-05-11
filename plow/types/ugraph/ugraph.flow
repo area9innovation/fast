@@ -1,5 +1,6 @@
 import plow/types/pretty;
 import plow/types/ugraph/type;
+import ds/treeutils;
 
 export {
 	// Construct a new graph of our types
@@ -31,6 +32,9 @@ export {
 
 	// Mark these as the same class
 	joinTTypeEClasses(tg : TypeGraph, class1 : int, class2 : int) -> int;
+
+	// Normalize dependencies
+	normalizeTTypeDependencies(tg : TypeGraph) -> void;
 }
 
 makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
@@ -38,6 +42,7 @@ makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
 		makeUnionFindMap(defaultTTypeNode(), mergeTTypeNodes),
 		ref 0,
 		ref makeSet(),
+		ref makeTree(),
 		onError
 	)
 }
@@ -54,6 +59,7 @@ getEClassTypeNode(tg : TypeGraph, eclass : int) -> TTypeNode {
 
 setEClassTypeNode(tg : TypeGraph, eclass : int, tn : TTypeNode) -> void {
 	tg.updated := insertSet(^(tg.updated), eclass);
+	updateTTypeNodeDependencies(tg, eclass, tn);
 	setUnionMapValue(tg.umap, eclass, tn)
 }
 
@@ -213,8 +219,7 @@ addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, ty
 		enode = getUnionMapValue(tg.umap, eclass);
 		fnode = mergeTTypeNodes(enode, node);
 		// println("Updated e" + i2s(eclass) + " to " + toString(fnode));
-		tg.updated := insertSet(^(tg.updated), eclass);
-		setUnionMapValue(tg.umap, eclass, fnode);
+		setEClassTypeNode(tg, eclass, fnode);
 		TTypeEClass(eclass);
 	}
 	switch (type) {
@@ -248,5 +253,61 @@ addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, ty
 joinTTypeEClasses(tg : TypeGraph, class1 : int, class2 : int) -> int {
 	root = unionUnionMap(tg.umap, class1, class2);
 	tg.updated := insertSet(^(tg.updated), root);
+	// TODO: We could normalize the dep. graph, but does it matter?
 	root;
 }
+
+updateTTypeNodeDependencies(tg : TypeGraph, eclass : int, type : TTypeNode) -> void {
+	update = \tt -> {
+		updateTTypeDependencies(tg, eclass, tt)
+	};
+	iter(type.best, update);
+	switch (type.overload) {
+		None(): {}
+		Some(ov): update(ov);
+	}
+	switch (type.supertype) {
+		None(): {}
+		Some(st): update(st);
+	}
+}
+
+updateTTypeDependencies(tg : TypeGraph, eclass : int, type : TType) -> void {
+	rec = \tt -> {
+		childClass = switch (tt) {
+			TTypeEClass(tclass): rootTTypeEClass(tg, tclass);
+			default: findEClass(tg, tt);
+		}
+		if (childClass != -1) {
+			tg.dependencies := insertMultimap(^(tg.dependencies), eclass, childClass);
+		}
+	}
+	switch (type) {
+		TTypeName(id, typars): iter(typars, rec);
+		TTypeEClass(__): {}
+		TTypeFunction(args, returnType): {
+			iter(args, rec);
+			rec(returnType);
+		}
+		TTypeOverload(unique, overloads): {
+			iter(overloads, rec);
+		}
+		TTypeSupertype(unique, subtypes, maxed): {
+			iter(subtypes, rec);
+		}
+	}
+}
+
+normalizeTTypeDependencies(tg : TypeGraph) -> void {
+	roots = getEClassRoots(tg);
+	ndeps = foldTree(^(tg.dependencies), makeTree(), \eclass : int, deps1 : Set<int>, acc -> {
+		// OK, is there a new class for this one?
+		root = rootTTypeEClass(tg, eclass);
+		deps2 = lookupMultimap(acc, root);
+		deps3 = mergeSets(deps1, deps2);
+		deps4 = mapSet(deps3, \d -> rootTTypeEClass(tg, d));
+		setTree(acc, root, deps4);
+	});
+	tg.dependencies := ndeps;
+}
+
