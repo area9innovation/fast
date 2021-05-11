@@ -37,6 +37,7 @@ makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
 	TypeGraph(
 		makeUnionFindMap(defaultTTypeNode(), mergeTTypeNodes),
 		ref 0,
+		ref makeSet(),
 		onError
 	)
 }
@@ -52,6 +53,7 @@ getEClassTypeNode(tg : TypeGraph, eclass : int) -> TTypeNode {
 }
 
 setEClassTypeNode(tg : TypeGraph, eclass : int, tn : TTypeNode) -> void {
+	tg.updated := insertSet(^(tg.updated), eclass);
 	setUnionMapValue(tg.umap, eclass, tn)
 }
 
@@ -211,6 +213,7 @@ addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, ty
 		enode = getUnionMapValue(tg.umap, eclass);
 		fnode = mergeTTypeNodes(enode, node);
 		// println("Updated e" + i2s(eclass) + " to " + toString(fnode));
+		tg.updated := insertSet(^(tg.updated), eclass);
 		setUnionMapValue(tg.umap, eclass, fnode);
 		TTypeEClass(eclass);
 	}
@@ -223,7 +226,9 @@ addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, ty
 			root = rootTTypeEClass(tg, teclass);
 			if (root != eclass) {
 				// Join these guys and give the new node
-				TTypeEClass(unionUnionMap(tg.umap, root, eclass));
+				rclass = unionUnionMap(tg.umap, root, eclass);
+				tg.updated := insertSet(^(tg.updated), rclass);
+				TTypeEClass(rclass);
 			} else {
 				TTypeEClass(root);
 			}
@@ -241,5 +246,7 @@ addTType2EClass(tg : TypeGraph, reasons: [string], pos : [int], eclass : int, ty
 }
 
 joinTTypeEClasses(tg : TypeGraph, class1 : int, class2 : int) -> int {
-	unionUnionMap(tg.umap, class1, class2)
+	root = unionUnionMap(tg.umap, class1, class2);
+	tg.updated := insertSet(^(tg.updated), root);
+	root;
 }

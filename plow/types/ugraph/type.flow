@@ -7,8 +7,13 @@ export {
 	// This dep. graph should be used to propagate updates
 	// to the classes
 	TypeGraph(
+		// The union/find map of typenodes for each equivalence class
 		umap : UnionFindMap<TTypeNode>,
+		// What is the id of the next eclass?
 		nextEClass : ref int, 
+		// What eclasses have been updated?
+		updated : ref Set<int>,
+		// To help report errors, we have this friend
 		onError : (int, string) -> void,
 	);
 }

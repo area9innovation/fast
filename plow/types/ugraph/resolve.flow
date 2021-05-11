@@ -43,9 +43,11 @@ SimplifyEnv(
 doResolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool, last : bool, iteration : int) -> TTypeEnv {
 	if (verbose || isTracingId(env.tracing, StageTypeResolve(), 2, flowpath)) {
 		println("\nResolve " + flowpath + ": Iteration " + i2s(iteration) + (if (last) ". Decision time" else ""));
+		println("Updated: " + superglue(set2array(^(env.tgraph.updated)), \e -> "e" + i2s(e), ", "));
 		dumpEClasses(env);
 	}
 	env.visited := makeSet();
+	env.tgraph.updated := makeSet();
 
 	roots = getEClassRoots(env.tgraph);
 	senv = SimplifyEnv(env, flowpath, verbose, ref env.etypes, ref makeSet(), ref false);
