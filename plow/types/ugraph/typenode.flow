@@ -3,6 +3,8 @@ import algorithms;
 
 export {
 	TTypeNode(
+		// Here we keep the cost of this typenode, as well as the best one we have so far
+		// cost : TTypeCost,
 		best : [TType],
 		overload : Maybe<TTypeOverload>,
 		supertype : Maybe<TTypeSupertype>,
@@ -10,6 +12,15 @@ export {
 		originals : Set<TType>,
 		reasons : [string],
 		positions : [int],
+	);
+
+	TTypeCost(
+		// The best & cheapest type
+		type : TType,
+		// Approximately the number of different types possible
+		cost : int,
+		// How much has been resolved
+		benefit : int,
 	);
 
 	defaultTTypeNode() -> TTypeNode;

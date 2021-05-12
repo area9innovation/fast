@@ -2,9 +2,16 @@ import plow/types/typeenv;
 import plow/types/unify;
 import plow/types/ugraph/supertype;
 import plow/types/ugraph/ugraph;
+import plow/types/ugraph/cost;
 
 /*
 TODO:
+Do not instantiate resolved. 
+Get rid of history concept
+Filter nodes to non-free types (get rid of resolved)
+Keep cost for nodes along with best type
+Also track benefit so e1 is not preferred to Maybe<e2>
+
 - For supertypes, expand to cover all suitable types for typenodes
   and that way, try to resolve supertypes more usefully
 
@@ -93,6 +100,8 @@ dumpEClasses(env : TTypeEnv, label : string) -> void {
 }
 
 eclassString(env : TTypeEnv, root : int, verbose : bool) -> string {
+	cost = costTTypeEClass(env, ref makeSet(), root);
+
 	node = getEClassTypeNode(env.tgraph, root);
 	childClasses = foldRange(0, ^(env.tgraph.nextEClass), [], \acc, ec -> {
 		r = rootTTypeEClass(env.tgraph, ec);
@@ -106,7 +115,8 @@ eclassString(env : TTypeEnv, root : int, verbose : bool) -> string {
 	} else {
 		if (verbose) {
 			"e" + i2s(root) + ": "
-			+ prettyTType(type) + " from\n"
+			+ prettyTType(type) + "\n"
+			+ prettyTType(cost.type) + " benefit: " + i2s(cost.benefit) + ", cost: " + i2s(cost.cost) + "\n"
 			+ strGlue(strWordWrap(ttypeNode2string(env, node), 80, [" "]), "\n")
 			+ "\ncovers " + superglue(childClasses, \ec -> "e" + i2s(ec), ", ")
 		} else {

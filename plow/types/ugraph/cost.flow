@@ -1,0 +1,92 @@
+import plow/types/typeenv;
+import plow/types/supertype;
+
+export {
+	// Find the best type and cheapest for this class
+	costTTypeEClass(env : TTypeEnv, visited : ref Set<int>, eclass : int) -> TTypeCost;
+}
+
+costTTypeEClass(env : TTypeEnv, visited : ref Set<int>, eclass : int) -> TTypeCost {
+	base = TTypeCost(TTypeEClass(eclass), 1000, 0);
+	if (containsSet(^visited, eclass)) {
+		base;
+	} else {
+		node = getEClassTypeNode(env.tgraph, eclass);
+		visited := insertSet(^visited, eclass);
+		types = concat3(
+				node.best,
+				switch (node.overload) {
+					None(): [];
+					Some(ol): [ol];
+				},
+				switch (node.supertype) {
+					None(): [];
+					Some(st): [st];
+				}
+			);
+		costs = costTTypes(env, visited, types);
+
+		minCosts(base, costs);
+	}
+}
+
+costTType(env : TTypeEnv, visited : ref Set<int>, t : TType) -> TTypeCost {
+	switch (t) {
+		TTypeName(id, typars): {
+			costs = costTTypes(env, visited, typars);
+			bt = TTypeName(id, map(costs, \c -> c.type));
+			cost = TTypeCost(bt, 0, 1);
+			sumCosts(cost, costs);
+		}
+		TTypeEClass(eclass): {
+			costTTypeEClass(env, visited, eclass);
+		}
+		TTypeFunction(args, returnType): {
+			acosts = costTTypes(env, visited, args);
+			rcost = costTType(env, visited, returnType);
+			bt = TTypeFunction(map(acosts, \c -> c.type), rcost.type);
+			cost = TTypeCost(bt, rcost.cost, rcost.benefit + 1);
+			sumCosts(cost, acosts);
+		}
+		TTypeOverload(unique, overloads): {
+			costs = costTTypes(env, visited, overloads);
+			bt = TTypeOverload(unique, map(costs, \c -> c.type));
+
+			// TODO: Add the min cost+benefit
+
+			n = length(overloads);
+			TTypeCost(bt, n, if (n == 1) 1 else 0);
+		}
+		TTypeSupertype(unique, subtypes, maxed): {
+			costs = costTTypes(env, visited, subtypes);
+			bt = TTypeSupertype(unique, map(costs, \c -> c.type), maxed);
+
+			// TODO: Add the min cost+benefit?
+
+			// Figure out how many supertypes there are
+			supers = resolveTSupertype(env, t, false);
+			n = length(supers);
+			TTypeCost(bt, n, if (n == 1) 1 else 0);
+		}
+	}
+}
+
+costTTypes(env : TTypeEnv, visited : ref Set<int>, t : [TType]) -> [TTypeCost] {
+	map(t, \tt -> costTType(env, visited, tt));
+}
+
+sumCosts(acc : TTypeCost, costs : [TTypeCost]) -> TTypeCost {
+	fold(costs, acc, \acc2, cost -> {
+		TTypeCost(acc2.type, acc2.cost + cost.cost, acc2.benefit + cost.benefit)
+	})
+}
+
+minCosts(acc : TTypeCost, costs : [TTypeCost]) -> TTypeCost {
+	fold(costs, acc, \acc2, cost -> {
+		if (cost.benefit > acc2.benefit) {
+			cost
+		} else if (cost.benefit == acc2.benefit && cost.cost < acc2.cost) {
+			cost
+		} else acc2;
+	})
+}

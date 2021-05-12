@@ -7,8 +7,8 @@ import fs/filesystem;
 import math/stringmath;
 
 main() {
-	file = "plow/tests/";
-	file4 = "plow/tests/type5.flow";
+	file4 = "plow/tests/";
+	file = "plow/tests/type3.flow";
 	file0  = "ds/list.flow";
 	file3  = "ds/array.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";

@@ -313,4 +313,3 @@ normalizeTTypeDependencies(tg : TypeGraph) -> void {
 	});
 	tg.dependencies := ndeps;
 }
-
