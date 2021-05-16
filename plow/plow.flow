@@ -9,7 +9,7 @@ import math/stringmath;
 main() {
 	file4 = "plow/tests/";
 	file0 = "plow/tests/type3.flow";
-	file  = "plow/tests/field.flow";
+	file  = "plow/tests/list.flow";
 	file3  = "ds/array.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";

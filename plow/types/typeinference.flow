@@ -92,12 +92,17 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		}
 	);
 
+	// OK, send the resolver to the unification friend
+	tmenv = TTypeEnv(senv with
+		tgraph = setTypeGraphResolver(senv.tgraph, senv.resolveSupertypes)
+	);
+
 	order : [[string]] = buildDModuleDeps(d.globals, d.order);
 	order2 = if (false) [d.order] else order;
 	if (order2 == []) {
 		resolveEClasses(env, d.flowpath, false);
 	} else {
-		ttypeInferenceChunk(senv, d, order2);
+		ttypeInferenceChunk(tmenv, d, order2);
 	}
 }
 

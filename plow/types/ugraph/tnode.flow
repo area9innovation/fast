@@ -168,6 +168,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 				id = t.name;
 				supers0 = tmap.resolveSupertypes(id);
 				supers = arrayPush(supers0, id);
+
 				supset = buildSet(supers);
 				if (i == 0) supset
 				else intersectSets(supset, acc)

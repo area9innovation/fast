@@ -6,8 +6,12 @@ import ds/treeutils;
 export {
 	// Construct a new graph of our types
 	makeTypeGraph(
-		resolveSupertypes : (string) -> [string], 
 		onError : (int, string) -> void, nextEClass : ref int
+	) -> TypeGraph;
+
+	setTypeGraphResolver(
+		t : TypeGraph,
+		resolveSupertypes : (string) -> [string], 
 	) -> TypeGraph;
 
 	// Prepare an empty equivalence class
@@ -42,7 +46,6 @@ export {
 }
 
 makeTypeGraph(
-		resolveSupertypes : (string) -> [string], 
 		onError : (int, string) -> void, 
 		nextEClass : ref int
 	) -> TypeGraph {
@@ -51,10 +54,18 @@ makeTypeGraph(
 		nextEClass,
 		ref makeSet(),
 		ref makeTree(),
-		makeTMap(resolveSupertypes, onError, nextEClass),
+		makeTMap(\n -> {println("TODO: Updating the resolver"); []}, onError, nextEClass),
 		onError
 	)
 }
+
+setTypeGraphResolver(
+	t : TypeGraph,
+	resolveSupertypes : (string) -> [string], 
+) -> TypeGraph {
+	TypeGraph(t with tmap = TMap(t.tmap with resolveSupertypes = resolveSupertypes));
+}
+
 
 emptyTTypeClass(tg : TypeGraph) -> int {
 	ec = ^(tg.nextEClass);
