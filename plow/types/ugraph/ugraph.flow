@@ -5,7 +5,10 @@ import ds/treeutils;
 
 export {
 	// Construct a new graph of our types
-	makeTypeGraph(onError : (int, string) -> void, nextEClass : ref int) -> TypeGraph;
+	makeTypeGraph(
+		resolveSupertypes : (string) -> [string], 
+		onError : (int, string) -> void, nextEClass : ref int
+	) -> TypeGraph;
 
 	// Prepare an empty equivalence class
 	emptyTTypeClass(tg : TypeGraph) -> int;
@@ -39,6 +42,7 @@ export {
 }
 
 makeTypeGraph(
+		resolveSupertypes : (string) -> [string], 
 		onError : (int, string) -> void, 
 		nextEClass : ref int
 	) -> TypeGraph {
@@ -47,7 +51,7 @@ makeTypeGraph(
 		nextEClass,
 		ref makeSet(),
 		ref makeTree(),
-		makeTMap(\__ -> [], onError, nextEClass),
+		makeTMap(resolveSupertypes, onError, nextEClass),
 		onError
 	)
 }
@@ -76,7 +80,11 @@ getEClassRoots(tg : TypeGraph) -> Set<int> {
 }
 
 rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {
-	findUnionMapRoot(tg.umap, eclass)
+	if (true) {
+		findUnionMapRoot(tg.tmap.tmap, eclass)
+	} else {
+		findUnionMapRoot(tg.umap, eclass)
+	}
 }
 
 findEClass(tg : TypeGraph, type : TType) -> int {

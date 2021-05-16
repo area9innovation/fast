@@ -182,7 +182,10 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
-		tgraph = makeTypeGraph(dd.onError, dd.nextEClass);
+		resolveSupertypes = \id -> {
+			lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
+		};
+		tgraph = makeTypeGraph(resolveSupertypes, dd.onError, dd.nextEClass);
 
 		tenv1 = TTypeEnv(
 			makeTTypeEnv(tgraph) with
@@ -210,9 +213,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					})
 				} : []
 			},
-			resolveSupertypes = \id -> {
-				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
-			},
+			resolveSupertypes = resolveSupertypes,
 			resolveSubtypes = \id -> {
 				lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
 			},
