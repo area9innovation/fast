@@ -39,5 +39,9 @@ export {
 		// If the name is empty, it is a function. If name is empty, and typars empty, null
 		TNodeName(name : string, typars : [int]);
 		TNodeOverload(unique : Set<int>, overloads : [TNodeName]);
-		TNodeSupertype(uniques : Set<int>, subtypes : [TNodeName]);
+		TNodeSupertype(
+			uniques : Set<int>, 
+			subtypes : [TNodeName],
+//			unknownSubtypes : Set<int>,
+		);
 }

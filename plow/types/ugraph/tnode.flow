@@ -61,7 +61,7 @@ defaultTNode() -> TNode {
 unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
 	lclass = findOrMakeTNodeClass(tmap, left);
 	rclass = findOrMakeTNodeClass(tmap, right);
-	// println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+	println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
 	if (lclass != -1 && rclass != -1) {
 		// println("  Union e" + i2s(lclass) + " and e" + i2s(rclass));
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
@@ -124,7 +124,7 @@ isSameTNode(tmap : TMap, left : TNode, right : TNode) -> bool {
 				default: false;
 			}
 		}
-		TNodeSupertype(uniques, subtypes): {
+		TNodeSupertype(uniques, __): {
 			switch (right) {
 				TNodeSupertype(runiques, __): !isEmptySet(intersectSets(uniques, runiques));
 				default: false;
@@ -156,42 +156,52 @@ makeTNode(tmap : TMap, t : TType) -> TNode {
 			))
 		}
 		TTypeSupertype(unique, subtypes, maxed): {
-			supers = fold(subtypes, [], \acc, st -> extractSupers(tmap, acc, st));
-			super = TNodeSupertype(
-				makeSet1(unique), 
-				supers
-			);
+			emptySuper = TNodeSupertype(makeSet1(unique), []);
+			super = fold(subtypes, emptySuper, \acc, st -> extractSupers(tmap, acc, st));
 			simplifyTNode(tmap, super)
 		}
 	}
 }
 
-extractSupers(tmap : TMap, acc : [TNodeName], t : TType) -> [TNodeName] {
+extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 	todo = \ -> {
-		println("TODO: Figure out how to represent this as a named node: " + prettyTType(t));
+		println("TODO: Figure out how to represent this as a named node in a super: " + prettyTType(t));
+		acc;
+	}
+	addName = \n : TNodeName -> {
+		TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, n));
+	}
+	addEClass = \e : int -> {
+		println("TODO: Add e" + i2s(e) + " to " + prettyTNode(tmap, acc));
 		acc;
 	}
 	switch (t) {
-		TTypeSupertype(__, sub, __): fold(sub, acc, \acc2, st -> extractSupers(tmap, acc2, st));
+		TTypeSupertype(__, sub, __): {
+			fold(sub, acc, \acc2, st -> extractSupers(tmap, acc2, st));
+		}
 		TTypeEClass(eclass): {
 			node = getUnionMapValue(tmap.tmap, eclass);
 			switch (node) {
 				TNodeName(name, typars): {
 					if (isEmptyTNode(node)) {
-						todo();
+						addEClass(eclass);
 					} else {
-						arrayPush(acc, node);
+						addName(node);
 					}
 				}
 				TNodeOverload(unique, overloads): todo();
-				TNodeSupertype(uniques, subtypes): concat(acc, subtypes);
+				TNodeSupertype(uniques, subtypes): {
+					TNodeSupertype(acc with
+						subtypes = concat(acc.subtypes, subtypes)
+					);
+				}
 			}
 		}
 		TTypeName(__, __): {
-			arrayPush(acc, makeTNodeName(tmap, t));
+			addName(makeTNodeName(tmap, t));
 		}
 		TTypeFunction(args, returnType): {
-			arrayPush(acc, makeTNodeName(tmap, t));
+			addName(makeTNodeName(tmap, t));
 		}
 		TTypeOverload(unique, overloads): todo();
 	}
