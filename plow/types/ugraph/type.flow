@@ -3,31 +3,31 @@ import plow/dexp/dexp;
 
 export {
 	TypeGraph(
-		// What is the id of the next eclass?
-		nextEClass : ref int, 
-
-		// The union/find map of tnodes for each equivalence class
 		tmap : TMap,
-
-		// To help report errors, we have this friend
-		onError : (int, string) -> void,
 	);
 
 	TMap(
+		// The union/find map of tnodes for each equivalence class
 		tmap : UnionFindMap<TNode>,
+		// The helpers we need to do the unification
 		resolveUnionName : ref (string) -> Maybe<DUnion>,
 		resolveSupertypes : ref (string) -> [string],
+		// For error reporting
 		onError : (int, string) -> void,
+		// The next eclass
 		nextEClass : ref int,
 	);
 
+	// Our nodes in the type graph
 	TNode ::= TNodeName, TNodeOverload, TNodeSupertype;
 		// If the name is empty, it is a function. If name is empty, and typars empty, null
 		TNodeName(name : string, typars : [int]);
 		TNodeOverload(unique : Set<int>, overloads : [TNodeName]);
 		TNodeSupertype(
 			uniques : Set<int>, 
+			// When we know what the name is of a subtype, it goes here
 			subtypes : [TNodeName],
+			// When we do not know what the subtype is called, it goes here
 			unknownSubtypes : Set<int>,
 		);
 }

@@ -27,9 +27,7 @@ makeTypeGraph(
 		nextEClass : ref int
 	) -> TypeGraph {
 	TypeGraph(
-		nextEClass,
 		makeTMap(onError, nextEClass),
-		onError
 	)
 }
 

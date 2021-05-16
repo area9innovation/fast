@@ -2,20 +2,25 @@ import plow/types/ugraph/type;
 import plow/types/pretty;
 
 export {
+	// Set up the type unification map
 	makeTMap(
 		onError : (int, string) -> void, 
 		nextEClass : ref int
 	) -> TMap;
 
+	// Define the resolvers we need
 	setTMapResolvers(t : TMap, 
 		resolveUnionName : (string) -> Maybe<DUnion>,
 		resolveSupertypes : (string) -> [string], 
 	) -> TMap;
 
+	// Make a new type class
 	makeTNodeClass(tmap : TMap) -> int;
 
+	// Unify these two types
 	unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void;
 
+	// At the end, extract the types for each type class
 	resolveTNodes(tmap : TMap) -> Tree<int, TType>;
 }
 
@@ -382,7 +387,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					}
 				}
 				TNodeOverload(unique, overloads): {
-					todo();
+					mergeTNodes(tmap, right, left);
 				}
 				TNodeSupertype(unique, subtypes, __): {
 					unifyTNodeNameWithSuper(tmap, left, right);
@@ -405,15 +410,12 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					if (overloads == []) {
 						error();
 					} else if (length(overloads) == 1) {
-						// TODO: Unify the typars
 						winner = overloads[0];
 						mergeTNodes(tmap, winner, right);
-//(())						println("TODO: Unify typars for unique " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " for result " + prettyTNode(tmap, overloads[0]));
-//						overloads[0];
 					} else {
 						noverload = TNodeOverload(lunique, overloads);
-						println("TODO: Unify typars for " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, noverload));
-						left;
+						println("TODO: Unify typars for " + prettyTNode(tmap, right) + " and " + prettyTNode(tmap, noverload));
+						noverload;
 					}
 				}
 				TNodeOverload(unique, overloads): {
@@ -608,16 +610,36 @@ incompatibleTNodes(tmap : TMap, left : TNode, right : TNode) -> bool {
 				TNodeName(rname, rtypars): {
 					incompatibleTNodeNames(tmap, left, right)
 				}
-				default: todo();
+				default: incompatibleTNodes(tmap, right, left);
 			}
 		}
 		TNodeOverload(lunique, loverloads): {
 			todo();
 		}
-		TNodeSupertype(luniques, lsubtypes, __): {
-			todo();
+		TNodeSupertype(luniques, lsubtypes, usubs): {
+			if (existsSet(usubs, \s -> {
+				isEmptyEClass(tmap, s);
+			})) {
+				// OK, we have some unknown subtypes, so it can be anything
+				false
+			} else {
+				switch (right) {
+					TNodeName(rname, rtypars): {
+						println("TODO 2: Check if node " + prettyTNode(tmap, left) + " is compatible with node " + prettyTNode(tmap, right));
+						false;
+					}
+					default: {
+						todo();
+					}
+				}
+			}
 		}
 	}
+}
+
+isEmptyEClass(tmap : TMap, eclass : int) -> bool {
+	node = getUnionMapValue(tmap.tmap, eclass);
+	isEmptyTNode(node);
 }
 
 findTNode(tmap : TMap, type : TType) -> int {
