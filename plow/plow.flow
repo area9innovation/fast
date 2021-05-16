@@ -7,10 +7,10 @@ import fs/filesystem;
 import math/stringmath;
 
 main() {
-	file4 = "plow/tests/";
+	file3 = "plow/tests/";
 	file0 = "plow/tests/type3.flow";
-	file  = "plow/tests/maybe.flow";
-	file3  = "ds/array.flow";
+	file4  = "plow/tests/maybe.flow";
+	file  = "ds/array.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 	file5 = "mini/tests";

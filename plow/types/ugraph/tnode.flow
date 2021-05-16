@@ -61,7 +61,9 @@ defaultTNode() -> TNode {
 unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
 	lclass = findOrMakeTNodeClass(tmap, left);
 	rclass = findOrMakeTNodeClass(tmap, right);
-	println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+	// println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+	// println("  " + debugTNode(tmap, lclass));
+	// println("  " + debugTNode(tmap, rclass));
 	if (lclass != -1 && rclass != -1) {
 		// println("  Union e" + i2s(lclass) + " and e" + i2s(rclass));
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
@@ -91,14 +93,13 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 	if (sclass == -1) {
 		// OK, could not find it. We need a new class
 		nclass = makeTNodeClass(tmap);
-		// println("Made e" + i2s(nclass) + " for " + prettyTType(type) + " as " + prettyTNode(tmap, node));
+		// println("Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node));
 		setUnionMapValue(tmap.tmap, nclass, node);
 		nclass;
 	} else {
 		// println("Found it as an existing node");
 		sclass;
 	}
-
 }
 
 makeTNodeClass(tmap : TMap) -> int {
@@ -163,7 +164,7 @@ makeTNode(tmap : TMap, t : TType) -> TNode {
 		TTypeSupertype(unique, subtypes, maxed): {
 			emptySuper = TNodeSupertype(makeSet1(unique), [], makeSet());
 			super = fold(subtypes, emptySuper, \acc, st -> extractSupers(tmap, acc, st));
-			simplifyTNode(tmap, super)
+			simplifyTNode(tmap, super);
 		}
 	}
 }
@@ -212,102 +213,6 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 	}
 }
 
-simplifyTNode(tmap : TMap, node : TNode) -> TNode {
-	switch (node) {
-		TNodeName(name, typars): node;
-		TNodeOverload(unique, overloads): {
-			if (length(overloads) == 1) {
-				overloads[0];
-			} else {
-				// TODO: Doubt anything else is possible here?
-				node;
-			}
-		}
-		TNodeSupertype(uniques, subtypes, unknownSubtypes): {
-			if (!isEmptySet(unknownSubtypes)) {
-				resolved = foldSet(unknownSubtypes, Pair([], makeSet()), 
-						\acc : Pair<[TNodeName], Set<int>>, st : int -> {
-					unode = getUnionMapValue(tmap.tmap, st);
-					unknown = \ -> {
-						Pair(acc.first, insertSet(acc.second, st));
-					}
-					switch (unode) {
-						TNodeName(name, typars): {
-							if (isEmptyTNode(unode)) {
-								unknown();
-							} else {
-								Pair(arrayPush(acc.first, unode), acc.second)
-							}
-						}
-						default: unknown();
-					}
-				});
-				if (resolved.first != []) {
-					cleaned = TNodeSupertype(uniques, concat(subtypes, resolved.first), resolved.second);
-					println("Cleaned " + prettyTNode(tmap, cleaned));
-					simplifyTNode(tmap, cleaned);
-				} else {
-					node;
-				}
-			} else {
-				// OK, we can calculate potential super types here
-				// and reduce them to an overload or a given type
-				named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
-					id = t.name;
-					supers0 = ^(tmap.resolveSupertypes)(id);
-					supers = arrayPush(supers0, id);
-					supset = buildSet(supers);
-					if (i == 0) supset
-					else intersectSets(supset, acc)
-				});
-
-				nnamed = sizeSet(named);
-
-				// Here we have the names that are possible
-				if (nnamed == 1) {
-					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes);
-					unifyTNodeNameWithSuper(tmap, fnode, node);
-					fnode;
-				} else if (nnamed < length(subtypes)) {	// This condition is a bit arbitrary
-					// Make an overload out of the rest
-					overloads = map(set2array(named), \n -> {
-						instantiateTNodeName(tmap, n, subtypes)
-					});
-					overload = TNodeOverload(uniques, overloads);
-					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
-					overload;
-				} else {
-					if (length(subtypes) > 1) {
-						println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
-					}
-					node;
-				}
-			}
-
-		}
-	}
-}
-
-// We know we want a given name, and we have a set of candidates to pick from
-instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName]) -> TNodeName {
-	node = filter(nodes, \n -> n.name == name);	
-	if (length(node) > 0) {
-		node[0];
-	} else {
-		munion = ^(tmap.resolveUnionName)(name);
-		switch (munion) {
-			None(): {
-				typars = if (name == "array" || name == "ref") 1 else 0;
-				TNodeName(name, generate(0, typars, \__ -> makeTNodeClass(tmap)));
-			}
-			Some(union): {
-				typars = map(union.typars, \tp -> makeTNodeClass(tmap));
-				TNodeName(name, typars);
-			}
-		}
-	}
-}
-
 // Used for the args of overloads and supertypes
 makeTNodeName(tmap : TMap, t : TType) -> TNodeName {
 	error = \ -> {
@@ -344,6 +249,111 @@ makeTNodeName(tmap : TMap, t : TType) -> TNodeName {
 	}
 }
 
+// Given a node, simplify overload and supertypes as much as possible.
+// - If overloads are unique, pick the one it is
+// - If a supertype has unknown subtypes, see if
+//   any are known
+// - If a supertype has all subtypes known, find the potential
+//   supers
+
+simplifyTNode(tmap : TMap, node : TNode) -> TNode {
+	switch (node) {
+		TNodeName(name, typars): node;
+		TNodeOverload(unique, overloads): {
+			if (length(overloads) == 1) {
+				overloads[0];
+			} else {
+				// TODO: Doubt anything else is possible here?
+				node;
+			}
+		}
+		TNodeSupertype(uniques, subtypes, unknownSubtypes): {
+			if (!isEmptySet(unknownSubtypes)) {
+				resolved = foldSet(unknownSubtypes, Pair([], makeSet()), 
+						\acc : Pair<[TNodeName], Set<int>>, st : int -> {
+					unode = getUnionMapValue(tmap.tmap, st);
+					unknown = \ -> {
+						Pair(acc.first, insertSet(acc.second, st));
+					}
+					switch (unode) {
+						TNodeName(name, typars): {
+							if (isEmptyTNode(unode)) {
+								unknown();
+							} else {
+								Pair(arrayPush(acc.first, unode), acc.second)
+							}
+						}
+						default: unknown();
+					}
+				});
+				if (resolved.first != []) {
+					cleaned = TNodeSupertype(uniques, concat(subtypes, resolved.first), resolved.second);
+					// println("Cleaned unknown " + prettyTNode(tmap, cleaned));
+					simplifyTNode(tmap, cleaned);
+				} else {
+					node;
+				}
+			} else {
+				// OK, we can calculate potential super types here
+				// and reduce them to an overload or a given type
+				named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
+					id = t.name;
+					supers0 = ^(tmap.resolveSupertypes)(id);
+					supers = arrayPush(supers0, id);
+					supset = buildSet(supers);
+					if (i == 0) supset
+					else intersectSets(supset, acc)
+				});
+
+				nnamed = sizeSet(named);
+
+				// Here we have the names that are possible
+				if (nnamed == 1) {
+					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes);
+					unifyTNodeNameWithSuper(tmap, fnode, node);
+				} else if (nnamed < length(subtypes)) {	// This condition is a bit arbitrary
+					// Make an overload out of the rest
+					overloads = map(set2array(named), \n -> {
+						instantiateTNodeName(tmap, n, subtypes)
+					});
+					overload = TNodeOverload(uniques, overloads);
+					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
+					overload;
+				} else {
+					if (length(subtypes) > 1) {
+						println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
+					}
+					node;
+				}
+			}
+		}
+	}
+}
+
+// We know we want a given name, and we have a set of candidates to pick from
+instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName]) -> TNodeName {
+	node = filter(nodes, \n -> n.name == name);	
+	if (length(node) > 0) {
+		node[0];
+	} else {
+		munion = ^(tmap.resolveUnionName)(name);
+		switch (munion) {
+			None(): {
+				typars = if (name == "array" || name == "ref") 1 else 0;
+				TNodeName(name, generate(0, typars, \__ -> makeTNodeClass(tmap)));
+			}
+			Some(union): {
+				typars = map(union.typars, \tp -> makeTNodeClass(tmap));
+				TNodeName(name, typars);
+			}
+		}
+	}
+}
+
+//
+// The pure unification
+//
+
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 	todo = \ -> {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
@@ -374,7 +384,6 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				}
 				TNodeSupertype(unique, subtypes, __): {
 					unifyTNodeNameWithSuper(tmap, left, right);
-					left;
 				}
 			}
 		}
@@ -420,7 +429,6 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					// OK: Check that this name is a supertype
 					// of all subtypes
 					unifyTNodeNameWithSuper(tmap, right, left);
-					right;
 				}
 				TNodeOverload(runique, roverloads): {
 					todo();
@@ -437,7 +445,9 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 	}
 }
 
-unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> void {
+unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> TNode {
+	// println("Unifying " + prettyTNode(tmap, node) + " vs " + prettyTNode(tmap, super));
+
 	munion = ^(tmap.resolveUnionName)(node.name);
 	found = ref false;
 	iter(super.subtypes, \st -> {
@@ -472,31 +482,50 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 		}
 	});
 
-	eclass = findOrMakeTNode(tmap, node);
-
-	iterSet(super.unknownSubtypes, \st -> {
-		joinTNodes(tmap, eclass, st);
-		found := true;
-	});
+	if (!isEmptySet(super.unknownSubtypes)) {
+		eclass = findOrMakeTNode(tmap, node);
+		iterSet(super.unknownSubtypes, \st -> {
+			joinTNodes(tmap, eclass, st);
+			found := true;
+		});
+	}
 
 	if (!^found) {
 		println("ERROR: Join " + prettyTNode(tmap, node) + " impossible against " + prettyTNode(tmap, super));
 	}
+
+	node;
 }
 
+// OK, we have a union on the left hand side, and a subtype on the right hand side
+// We have to figure out how those typars relate to each other.
+// Thus, we have unionDef and the corresponding typename instantiation
 unifyTNodeNameAgainstStruct(tmap : TMap, unionNode : TNodeName, subNode : TNodeName, 
 		unionDef : DUnion, subDef : DTypeName) -> void {
+	// println("  Node " + prettyTNode(tmap, unionNode) + " vs " + prettyTNode(tmap, subNode));
 	if (length(unionNode.typars) == length(unionDef.typars)) {
 		// OK, map from the typar to the eclass it is bound to
 		typars : Tree<string, int> = foldi(unionDef.typars, makeTree(), \i, acc, tp : DTypePar -> {
 			setTree(acc, tp.id, unionNode.typars[i]);
 		});
-		subtypes = map(subDef.typars, \tp -> {
+
+		// Consider
+		// Maybe<?> ::= None, Some<?>
+		// If we are in the None, case, notice we have one too little typars
+		sdtype : DTypeName = if (length(subDef.typars) == 0) {
+			// So we implicitly extend it when there are none
+			DTypeName(subDef with typars = unionDef.typars)
+		} else subDef;
+
+		subtypes = map(sdtype.typars, \tp -> {
 			dtype2eclass(tmap, typars, tp)
 		});
+		// OK, instantiate the struct from the union typars
+		subInstantiated = TNodeName(subNode.name, subtypes);
+		// println("    " + prettyTNode(tmap, subInstantiated) + " vs " + prettyTNode(tmap, subNode));
 		iteri(subtypes, \i, tp -> {
 			if (tp != -1) {
-				joinTNodes(tmap, tp, unionNode.typars[i]);
+				joinTNodes(tmap, tp, subNode.typars[i]);
 				{}
 			} else {
 				println("ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
@@ -521,21 +550,17 @@ dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int {
 }
 
 joinTNodes(tmap : TMap, left : int, right : int) -> int {
-	lnode = getUnionMapValue(tmap.tmap, left);
-	rnode = getUnionMapValue(tmap.tmap, right);
-	
 	root = unionUnionMap(tmap.tmap, left, right);
 	
 	if (false) {
+		lnode = getUnionMapValue(tmap.tmap, left);
+		rnode = getUnionMapValue(tmap.tmap, right);
+		
 		println("  Joining e" + i2s(left) + " and e" + i2s(right) + " to e" + i2s(root) + ": " + debugTNode(tmap, root)
 			+ " from " + prettyTNode(tmap, lnode) + " and " + prettyTNode(tmap, rnode));
 	}
 
-	if (findUnionMapRoot(tmap.tmap, root) != root) {
-		println("ERROR: The root was changed under our feet!");
-	}
-
-	root;
+	findUnionMapRoot(tmap.tmap, root);
 }
 
 // Are these node names incompatible forever?
@@ -736,7 +761,7 @@ resolveTNodes(tmap : TMap) -> Tree<int, TType> {
 		node = getUnionMapValue(tmap.tmap, root);
 		if (!isEmptyTNode(node)) {
 			t = resolveTNodeClass(tmap, types, visited, root);
-			println("e" + i2s(root) + " = " + rpad(prettyTType(t), " ", 30) + "   from " + debugTNode(tmap, root));
+			// println("e" + i2s(root) + " = " + rpad(prettyTType(t), " ", 30) + "   from " + debugTNode(tmap, root));
 		}
 	});
 

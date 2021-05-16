@@ -113,7 +113,7 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		chunk = order[0];
 		cenv = env;
 
-		println(chunk);
+		// println(chunk);
 		cleanEClasses(env);
 
 		// Now process this chunk
@@ -183,7 +183,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 			// TODO: This is wrong, since it
 			// contaminates the entire tmap
 
-			println("// Review scope: Unify typars " + prettyTType(typar) + " and e" + i2s(tv));
+			// println("// Review scope: Unify typars " + prettyTType(typar) + " and e" + i2s(tv));
 			unifyTType(env, d.id, "global " + d.id, d.pos, typar, TTypeEClass(tv));
 
 			setTree(acc, tv, TTypeName(tp, []))
@@ -210,7 +210,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
 		//	println(prettyTType(ftype) + " vs " + prettyTType(etype));
 			
 			// TODO: This contaminates the TMap polymorphism
-			println("// Review scope: Unify typars " + prettyTType(ftype) + " and " + prettyTType(etype));
+			// println("// Review scope: Unify typars " + prettyTType(ftype) + " and " + prettyTType(etype));
 			unifyTType(env, d.id, "global " + d.id + " 3", d.pos, ftype, etype);
 			env;
 		}
