@@ -80,20 +80,25 @@ findOrMakeTNodeClass(tmap : TMap, type : TType) -> int {
 	} else {
 		// OK, make a node out of it
 		node = makeTNode(tmap, type);
-		// And see if we can find that node!
-		sclass = findUnionMap(tmap.tmap, \i, val : TNode -> isSameTNode(tmap, node, val), -1);
-
-		if (sclass == -1) {
-			// OK, could not find it. We need a new class
-			nclass = makeTNodeClass(tmap);
-			// println("Made e" + i2s(nclass) + " for " + prettyTType(type) + " as " + prettyTNode(tmap, node));
-			setUnionMapValue(tmap.tmap, nclass, node);
-			nclass;
-		} else {
-			// println("Found it as an existing node");
-			sclass;
-		}
+		findOrMakeTNode(tmap, node);
 	}
+}
+
+findOrMakeTNode(tmap : TMap, node : TNode) -> int {
+	// And see if we can find that node!
+	sclass = findUnionMap(tmap.tmap, \i, val : TNode -> isSameTNode(tmap, node, val), -1);
+
+	if (sclass == -1) {
+		// OK, could not find it. We need a new class
+		nclass = makeTNodeClass(tmap);
+		// println("Made e" + i2s(nclass) + " for " + prettyTType(type) + " as " + prettyTNode(tmap, node));
+		setUnionMapValue(tmap.tmap, nclass, node);
+		nclass;
+	} else {
+		// println("Found it as an existing node");
+		sclass;
+	}
+
 }
 
 makeTNodeClass(tmap : TMap) -> int {
@@ -467,8 +472,11 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 		}
 	});
 
+	eclass = findOrMakeTNode(tmap, node);
+
 	iterSet(super.unknownSubtypes, \st -> {
-		println("TODO: Unify " + prettyTNode(tmap, node) + " against unknown e" + i2s(st));
+		joinTNodes(tmap, eclass, st);
+		found := true;
 	});
 
 	if (!^found) {
@@ -727,7 +735,7 @@ resolveTNodes(tmap : TMap) -> Tree<int, TType> {
 	iterSet(roots, \root -> {
 		node = getUnionMapValue(tmap.tmap, root);
 		if (!isEmptyTNode(node)) {
-			t = resolveTNode(tmap, types, visited, root);
+			t = resolveTNodeClass(tmap, types, visited, root);
 			println("e" + i2s(root) + " = " + rpad(prettyTType(t), " ", 30) + "   from " + debugTNode(tmap, root));
 		}
 	});
@@ -735,7 +743,20 @@ resolveTNodes(tmap : TMap) -> Tree<int, TType> {
 	^types
 }
 
-resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, eclass : int) -> TType {
+resolveTNodeClass(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, eclass : int) -> TType {
+	mkClass = \ee -> {
+		lookupTreeDef(^acc, ee, TTypeEClass(ee))
+	}
+	if (containsSet(^visited, eclass)) {
+		mkClass(eclass)
+	} else {
+		visited := insertSet(^visited, eclass);
+		node = getUnionMapValue(tmap.tmap, eclass);
+		resolveTNode(tmap, acc, visited, eclass, node);
+	}
+}
+
+resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, eclass : int, node : TNode) {
 	mkClass = \ee -> {
 		lookupTreeDef(^acc, ee, TTypeEClass(ee))
 	}
@@ -743,35 +764,35 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 		acc := setTree(^acc, eclass, tt);
 		tt;
 	}
-	if (containsSet(^visited, eclass)) {
-		mkClass(eclass)
-	} else {
-		visited := insertSet(^visited, eclass);
-		node = getUnionMapValue(tmap.tmap, eclass);
-		switch (node) {
-			TNodeName(name, typars): {
-				if (name == "" && typars == []) {
-					mkClass(eclass)
-				} else if (name == "") {
-					args = subrange(typars, 0, length(typars) - 1);
-					rt = typars[length(typars) - 1];
-					set(TTypeFunction(
-						map(args, \a -> {
-							resolveTNode(tmap, acc, visited, a)
-						}),
-						resolveTNode(tmap, acc, visited, rt)
-					))
-				} else {
-					set(TTypeName(name, map(typars, \tp -> {
-						resolveTNode(tmap, acc, visited, tp)
-					})))
-				}
+
+	switch (node) {
+		TNodeName(name, typars): {
+			if (name == "" && typars == []) {
+				mkClass(eclass)
+			} else if (name == "") {
+				args = subrange(typars, 0, length(typars) - 1);
+				rt = typars[length(typars) - 1];
+				set(TTypeFunction(
+					map(args, \a -> {
+						resolveTNodeClass(tmap, acc, visited, a)
+					}),
+					resolveTNodeClass(tmap, acc, visited, rt)
+				))
+			} else {
+				set(TTypeName(name, map(typars, \tp -> {
+					resolveTNodeClass(tmap, acc, visited, tp)
+				})))
 			}
-			TNodeOverload(unique, overloads): {
-				println("TODO: Resolve overload: " + prettyTNode(tmap, node));
-				mkClass(eclass);
-			}
-			TNodeSupertype(unique, subtypes, __): {
+		}
+		TNodeOverload(unique, overloads): {
+			println("TODO: Resolve overload: " + prettyTNode(tmap, node));
+			mkClass(eclass);
+		}
+		TNodeSupertype(unique, subtypes, __): {
+			simpler = simplifyTNode(tmap, node);
+			if (simpler != node) {
+				resolveTNode(tmap, acc, visited, eclass, simpler);
+			} else {
 				println("TODO: Resolve supertype: " + prettyTNode(tmap, node));
 				mkClass(eclass);
 			}
