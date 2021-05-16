@@ -11,6 +11,7 @@ export {
 
 	setTypeGraphResolver(
 		t : TypeGraph,
+		resolveUnionName : (string) -> Maybe<DUnion>,
 		resolveSupertypes : (string) -> [string], 
 	) -> TypeGraph;
 
@@ -54,16 +55,17 @@ makeTypeGraph(
 		nextEClass,
 		ref makeSet(),
 		ref makeTree(),
-		makeTMap(\n -> {println("TODO: Updating the resolver"); []}, onError, nextEClass),
+		makeTMap(onError, nextEClass),
 		onError
 	)
 }
 
 setTypeGraphResolver(
 	t : TypeGraph,
+	resolveUnionName : (string) -> Maybe<DUnion>,
 	resolveSupertypes : (string) -> [string], 
 ) -> TypeGraph {
-	TypeGraph(t with tmap = TMap(t.tmap with resolveSupertypes = resolveSupertypes));
+	TypeGraph(t with tmap = setTMapResolvers(t.tmap, resolveUnionName, resolveSupertypes));
 }
 
 

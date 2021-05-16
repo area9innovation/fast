@@ -1,5 +1,6 @@
 import ds/union_find_map;
 import plow/types/ugraph/typenode;
+import plow/dexp/dexp;
 
 export {
 	// TODO: Add a dependency graph between equivalence
@@ -28,6 +29,7 @@ export {
 
 	TMap(
 		tmap : UnionFindMap<TNode>,
+		resolveUnionName : (string) -> Maybe<DUnion>,
 		resolveSupertypes : (string) -> [string],
 		onError : (int, string) -> void,
 		nextEClass : ref int,

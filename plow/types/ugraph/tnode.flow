@@ -3,18 +3,21 @@ import plow/types/pretty;
 
 export {
 	makeTMap(
-		resolveSupertypes : (string) -> [string], 
 		onError : (int, string) -> void, 
 		nextEClass : ref int
 	) -> TMap;
+
+	setTMapResolvers(t : TMap, 
+		resolveUnionName : (string) -> Maybe<DUnion>,
+		resolveSupertypes : (string) -> [string], 
+	) -> TMap;
+
 	unifyTNodes(tmap : TMap, left : TType, right : TType) -> void;
 
 	resolveTNodes(tmap : TMap) -> Tree<int, TType>;
 }
 
-makeTMap(
-		resolveSupertypes : (string) -> [string], 
-		onError : (int, string) -> void, nextEClass : ref int) -> TMap {
+makeTMap(onError : (int, string) -> void, nextEClass : ref int) -> TMap {
 	self = ref None();
 	tmap = TMap(
 		makeUnionFindMap(defaultTNode(), \l, r -> {
@@ -26,12 +29,29 @@ makeTMap(
 				Some(s): mergeTNodes(s, l, r);
 			}
 		}),
-		resolveSupertypes,
+		\__ -> {
+			println("TODO: The resolvers are not set");
+			None();
+		},
+		\__ -> {
+			println("TODO: The resolvers are not set");
+			[];
+		},
 		onError,
 		nextEClass,
 	);
 	self := Some(tmap);
 	tmap;
+}
+
+setTMapResolvers(t : TMap, 
+	resolveUnionName : (string) -> Maybe<DUnion>,
+	resolveSupertypes : (string) -> [string], 
+) -> TMap {
+	TMap(t with 
+		resolveUnionName = resolveUnionName,
+		resolveSupertypes = resolveSupertypes
+	);
 }
 
 defaultTNode() -> TNode {
@@ -42,7 +62,7 @@ defaultTNode() -> TNode {
 unifyTNodes(tmap : TMap, left : TType, right : TType) -> void {
 	lclass = findTNode(tmap, left);
 	rclass = findTNode(tmap, right);
-	// println("Unify " + prettyTType(left) + " and " + prettyTType(right) + " (e" + i2s(lclass) + " vs e" +i2s(rclass) + ")");
+	// println("Unify " + prettyTType(left) + " and " + prettyTType(right));
 	if (lclass != -1 && rclass != -1) {
 		// println("  Union e" + i2s(lclass) + " and e" + i2s(rclass));
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
@@ -159,31 +179,36 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 			}
 		}
 		TNodeSupertype(uniques, subtypes): {
-			// TODO: If these are multiple subtypes with the same
-			// name, unify their typars
-
 			// OK, we can calculate potential super types here
 			// and reduce them to an overload or a given type
 			named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
 				id = t.name;
 				supers0 = tmap.resolveSupertypes(id);
 				supers = arrayPush(supers0, id);
-
 				supset = buildSet(supers);
 				if (i == 0) supset
 				else intersectSets(supset, acc)
 			});
+
+			nnamed = sizeSet(named);
+
 			// Here we have the names that are possible
-			if (sizeSet(named) == 1) {
-				instantiateTNodeName(tmap, set2array(named)[0], subtypes)
-			} else {
-				// Make an overload out of the rest!
+			if (nnamed == 1) {
+				fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes);
+				unifyTNodeNameWithSuper(tmap, fnode, node);
+				fnode;
+			} else if (nnamed < length(subtypes)) {	// This condition is a bit arbitrary
+				// Make an overload out of the rest
 				overloads = map(set2array(named), \n -> {
-					println("TODO: Overload instantiate " + n + " from " + prettyTNode(tmap, node));
-					TNodeName(n, []);
+					instantiateTNodeName(tmap, n, subtypes)
 				});
 				overload = TNodeOverload(uniques, overloads);
 				println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
+				overload;
+			} else {
+				if (length(subtypes) > 1) {
+					println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
+				}
 				node;
 			}
 		}
@@ -192,14 +217,21 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 
 // We know we want a given name, and we have a set of candidates to pick from
 instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName]) -> TNodeName {
-	node = filter(nodes, \n -> {
-		n.name == name
-	});	
+	node = filter(nodes, \n -> n.name == name);	
 	if (length(node) > 0) {
 		node[0];
 	} else {
-		println("TODO: Overload instantiate " + name + " from " + toString(nodes));
-		TNodeName(name, []);
+		munion = tmap.resolveUnionName(name);
+		switch (munion) {
+			None(): {
+				typars = if (name == "array" || name == "ref") 1 else 0;
+				TNodeName(name, generate(0, typars, \__ -> makeTNodeClass(tmap)));
+			}
+			Some(union): {
+				typars = map(union.typars, \tp -> makeTNodeClass(tmap));
+				TNodeName(name, typars);
+			}
+		}
 	}
 }
 
@@ -251,8 +283,7 @@ findOrMakeTNodeClass(tmap : TMap, type : TType) -> int {
 
 		if (sclass == -1) {
 			// OK, could not find it. We need a new class
-			nclass = ^(tmap.nextEClass);
-			tmap.nextEClass := nclass + 1;
+			nclass = makeTNodeClass(tmap);
 			// println("Made e" + i2s(nclass) + " for " + prettyTType(type) + " as " + prettyTNode(tmap, node));
 			setUnionMapValue(tmap.tmap, nclass, node);
 			nclass;
@@ -261,6 +292,12 @@ findOrMakeTNodeClass(tmap : TMap, type : TType) -> int {
 			sclass;
 		}
 	}
+}
+
+makeTNodeClass(tmap : TMap) -> int {
+	nclass = ^(tmap.nextEClass);
+	tmap.nextEClass := nclass + 1;
+	nclass;
 }
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
@@ -292,7 +329,8 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					todo();
 				}
 				TNodeSupertype(unique, subtypes): {
-					todo();
+					unifyTNodeNameWithSuper(tmap, left, right);
+					left;
 				}
 			}
 		}
@@ -337,7 +375,8 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeName(name, typars): {
 					// OK: Check that this name is a supertype
 					// of all subtypes
-					todo();
+					unifyTNodeNameWithSuper(tmap, right, left);
+					right;
 				}
 				TNodeOverload(runique, roverloads): {
 					todo();
@@ -350,6 +389,82 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				}
 			}
 		}
+	}
+}
+
+unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> void {
+	munion = tmap.resolveUnionName(node.name);
+	found = ref false;
+	iter(super.subtypes, \st -> {
+		if (st.name == node.name) {
+			// OK, the same
+			if (length(st.typars) == length(node.typars)) {
+				found := true;
+				iteri(st.typars, \i, tp -> {
+					joinTNodes(tmap, tp, node.typars[i]);
+					{}
+				})
+			} else {
+				println("ERROR: Join typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, super));
+			}
+		} else {
+			// OK, we know that the node has to a supertype of st
+			switch (munion) {
+				None(): {
+					println("TODO: Join typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, st));
+				}
+				Some(union): {
+					stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == st.name);
+					stype ?? {
+						found := true;
+						// OK, we have the relation from the union to the struct in this union
+						unifyTNodeNameAgainstStruct(tmap, node, st, union, stype);
+					} : {
+						println("ERROR: Join typars of " + prettyTNode(tmap, node) + " impossible against " + prettyTNode(tmap, super));
+					}
+				}
+			}
+		}
+	});
+
+	if (!^found) {
+		println("ERROR: Join " + prettyTNode(tmap, node) + " impossible against " + prettyTNode(tmap, super));
+	}
+}
+
+unifyTNodeNameAgainstStruct(tmap : TMap, unionNode : TNodeName, subNode : TNodeName, 
+		unionDef : DUnion, subDef : DTypeName) -> void {
+	if (length(unionNode.typars) == length(unionDef.typars)) {
+		// OK, map from the typar to the eclass it is bound to
+		typars : Tree<string, int> = foldi(unionDef.typars, makeTree(), \i, acc, tp : DTypePar -> {
+			setTree(acc, tp.id, unionNode.typars[i]);
+		});
+		subtypes = map(subDef.typars, \tp -> {
+			dtype2eclass(tmap, typars, tp)
+		});
+		iteri(subtypes, \i, tp -> {
+			if (tp != -1) {
+				joinTNodes(tmap, tp, unionNode.typars[i]);
+				{}
+			} else {
+				println("ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
+			}
+		{}
+		});
+	} else {
+		println("ERROR: Expected typars for " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
+	}
+}
+
+dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int {
+	todo = \ -> {
+		println("TODO: Convert " + toString(d) + " to eclass");
+		-1;
+	}
+	switch (d) {
+		DTypePar(id, pos): lookupTreeDef(typars, id, -1);
+		DTypeName(id, ttypars, pos): todo();
+		DTypeFunction(args, returnType, pos): todo();
 	}
 }
 
