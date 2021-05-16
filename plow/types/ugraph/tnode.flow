@@ -15,25 +15,23 @@ export {
 makeTMap(
 		resolveSupertypes : (string) -> [string], 
 		onError : (int, string) -> void, nextEClass : ref int) -> TMap {
-	self = TMap(
+	self = ref None();
+	tmap = TMap(
 		makeUnionFindMap(defaultTNode(), \l, r -> {
-			if (isEmptyTNode(l)) r
-			else if (isEmptyTNode(r)) l
-			else {
-				println("Not supposed to happen " + toString([l, r]));
-				l
+			switch (^self) {
+				None(): {
+					println("NOT SUPPOSED TO HAPPEN");
+					l;
+				}
+				Some(s): mergeTNodes(s, l, r);
 			}
 		}),
 		resolveSupertypes,
 		onError,
 		nextEClass,
 	);
-	TMap(
-		self with tmap =
-			UnionFindMap(self.tmap with mergeFn = \l, r -> {
-				mergeTNodes(self, l, r);
-			})
-	);
+	self := Some(tmap);
+	tmap;
 }
 
 defaultTNode() -> TNode {
