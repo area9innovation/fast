@@ -26,7 +26,7 @@ resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 		ttype2btype(env, mtype)
 	} : {
 		// These are already reported
-		env.onError(pos, "Add type annotation. Unresolved type (equivalence class " + i2s(root) + ")");
+		env.onError(pos, "Add type annotation. Unresolved type (equivalence class e" + i2s(root) + ")");
 		BTypeName("Error!", []);
 	}
 }

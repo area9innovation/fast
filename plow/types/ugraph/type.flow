@@ -29,8 +29,8 @@ export {
 
 	TMap(
 		tmap : UnionFindMap<TNode>,
-		resolveUnionName : (string) -> Maybe<DUnion>,
-		resolveSupertypes : (string) -> [string],
+		resolveUnionName : ref (string) -> Maybe<DUnion>,
+		resolveSupertypes : ref (string) -> [string],
 		onError : (int, string) -> void,
 		nextEClass : ref int,
 	);

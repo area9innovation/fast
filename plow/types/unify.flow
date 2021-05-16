@@ -24,7 +24,7 @@ unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TT
 	}
 
 	if (true) {
-		unifyTNodes(env.tgraph.tmap, left, right);
+		unifyTNodes(env.tgraph.tmap, left, right, reason, pos);
 	} else {
 		// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
 		// Do recursive unification

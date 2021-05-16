@@ -16,7 +16,7 @@ either(m : Maybe<?>, def : ?) -> ? {
 		}
 	}
 }
-
+/*
 maybeBind(m : Maybe<?>, f: (?)->Maybe<??>) -> Maybe<??> {
 	switch (m : Maybe) {
 		None(): None();
@@ -41,3 +41,4 @@ maybeMap2(f : (?, ??) -> ???) -> (m1 : Maybe<?>, m2 : Maybe<??>) -> Maybe<???> {
 		)
 	}
 }
+*/

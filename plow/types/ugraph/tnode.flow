@@ -12,7 +12,7 @@ export {
 		resolveSupertypes : (string) -> [string], 
 	) -> TMap;
 
-	unifyTNodes(tmap : TMap, left : TType, right : TType) -> void;
+	unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void;
 
 	resolveTNodes(tmap : TMap) -> Tree<int, TType>;
 }
@@ -29,11 +29,11 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int) -> TMap {
 				Some(s): mergeTNodes(s, l, r);
 			}
 		}),
-		\__ -> {
+		ref \__ -> {
 			println("TODO: The resolvers are not set");
 			None();
 		},
-		\__ -> {
+		ref \__ -> {
 			println("TODO: The resolvers are not set");
 			[];
 		},
@@ -48,10 +48,9 @@ setTMapResolvers(t : TMap,
 	resolveUnionName : (string) -> Maybe<DUnion>,
 	resolveSupertypes : (string) -> [string], 
 ) -> TMap {
-	TMap(t with 
-		resolveUnionName = resolveUnionName,
-		resolveSupertypes = resolveSupertypes
-	);
+	t.resolveUnionName := resolveUnionName;
+	t.resolveSupertypes := resolveSupertypes;
+	t;
 }
 
 defaultTNode() -> TNode {
@@ -59,52 +58,76 @@ defaultTNode() -> TNode {
 }
 
 // These two types are unified
-unifyTNodes(tmap : TMap, left : TType, right : TType) -> void {
-	lclass = findTNode(tmap, left);
-	rclass = findTNode(tmap, right);
-	// println("Unify " + prettyTType(left) + " and " + prettyTType(right));
+unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
+	lclass = findOrMakeTNodeClass(tmap, left);
+	rclass = findOrMakeTNodeClass(tmap, right);
+	// println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
 	if (lclass != -1 && rclass != -1) {
 		// println("  Union e" + i2s(lclass) + " and e" + i2s(rclass));
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
+		
 		// println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
 		{}
-	} else if (lclass != -1) {
-		addTTypeToEClass(tmap, lclass, right);
-	} else if (rclass != -1) {
-		addTTypeToEClass(tmap, rclass, left);
 	} else {
-		lclass2 = findOrMakeTNodeClass(tmap, left);
-		addTTypeToEClass(tmap, lclass2, right);
+		println("Not supposed to happen: " + prettyTType(left) + " and " + prettyTType(right));
 	}
 }
 
-// We promise there is no node for this
-addTTypeToEClass(tmap : TMap, eclass : int, type : TType) -> void {
-	switch (type) {
-		TTypeEClass(nclass): {
-			println("  NOT SUPPOSED TO HAPPEN e" + i2s(eclass) + " and e" + i2s(nclass));
-			unionUnionMap(tmap.tmap, eclass, nclass);
-			{}
+findOrMakeTNodeClass(tmap : TMap, type : TType) -> int {
+	eclass = findTNode(tmap, type);
+	if (eclass != -1) {
+		eclass
+	} else {
+		// OK, make a node out of it
+		node = makeTNode(tmap, type);
+		// And see if we can find that node!
+		sclass = findUnionMap(tmap.tmap, \i, val : TNode -> isSameTNode(tmap, node, val), -1);
+
+		if (sclass == -1) {
+			// OK, could not find it. We need a new class
+			nclass = makeTNodeClass(tmap);
+			// println("Made e" + i2s(nclass) + " for " + prettyTType(type) + " as " + prettyTNode(tmap, node));
+			setUnionMapValue(tmap.tmap, nclass, node);
+			nclass;
+		} else {
+			// println("Found it as an existing node");
+			sclass;
 		}
-		default: {
-			tnode1 = getUnionMapValue(tmap.tmap, eclass);
-			if (isEmptyTNode(tnode1)) {
-				tnode2 = makeTNode(tmap, type);
-				// println("  Updating e" + i2s(eclass) + " to " + prettyTNode(tmap, tnode2));
-				setUnionMapValue(tmap.tmap, eclass, tnode2)
-			} else {
-				// TODO: We could do it without making a new node
-				// if we wanted to be a bit more clean
-				// println("Can we add " + prettyTType(type) + " to " + prettyTNode(tmap, tnode1));
-				tnode2 = makeTNode(tmap, type);
-				// println("  Updating merged e" + i2s(eclass) + " from " + prettyTNode(tmap, tnode1) + " and " + prettyTNode(tmap, tnode2));
-				nnode = mergeTNodes(tmap, tnode1, tnode2);
-				// println("  Updating merged e" + i2s(eclass) + " to " + prettyTNode(tmap, nnode));
-				root = findUnionMapRoot(tmap.tmap, eclass);
-				if (root != eclass) {
-					println("ERROR: The root changed!");
+	}
+}
+
+makeTNodeClass(tmap : TMap) -> int {
+	nclass = ^(tmap.nextEClass);
+	tmap.nextEClass := nclass + 1;
+	nclass;
+}
+
+isSameTNode(tmap : TMap, left : TNode, right : TNode) -> bool {
+	left == right
+	|| switch (left) {
+		TNodeName(lname, ltypars): {
+			switch (right) {
+				TNodeName(rname, rtypars): {
+					lname == rname 
+					&& length(ltypars) == length(rtypars)
+					&& forall(mapi(ltypars, \i, tp -> {
+						findUnionMapRoot(tmap.tmap, tp)
+						== findUnionMapRoot(tmap.tmap, rtypars[i])
+					}), idfn)
 				}
-				setUnionMapValue(tmap.tmap, eclass, nnode)
+				default: false;
+			}
+		}
+		TNodeOverload(uniques, overloads): {
+			switch (right) {
+				TNodeOverload(runiques, __): !isEmptySet(intersectSets(uniques, runiques));
+				default: false;
+			}
+		}
+		TNodeSupertype(uniques, subtypes): {
+			switch (right) {
+				TNodeSupertype(runiques, __): !isEmptySet(intersectSets(uniques, runiques));
+				default: false;
 			}
 		}
 	}
@@ -134,10 +157,11 @@ makeTNode(tmap : TMap, t : TType) -> TNode {
 		}
 		TTypeSupertype(unique, subtypes, maxed): {
 			supers = fold(subtypes, [], \acc, st -> extractSupers(tmap, acc, st));
-			simplifyTNode(tmap, TNodeSupertype(
+			super = TNodeSupertype(
 				makeSet1(unique), 
 				supers
-			))
+			);
+			simplifyTNode(tmap, super)
 		}
 	}
 }
@@ -152,7 +176,13 @@ extractSupers(tmap : TMap, acc : [TNodeName], t : TType) -> [TNodeName] {
 		TTypeEClass(eclass): {
 			node = getUnionMapValue(tmap.tmap, eclass);
 			switch (node) {
-				TNodeName(name, typars): arrayPush(acc, node);
+				TNodeName(name, typars): {
+					if (isEmptyTNode(node)) {
+						todo();
+					} else {
+						arrayPush(acc, node);
+					}
+				}
 				TNodeOverload(unique, overloads): todo();
 				TNodeSupertype(uniques, subtypes): concat(acc, subtypes);
 			}
@@ -183,7 +213,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 			// and reduce them to an overload or a given type
 			named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
 				id = t.name;
-				supers0 = tmap.resolveSupertypes(id);
+				supers0 = ^(tmap.resolveSupertypes)(id);
 				supers = arrayPush(supers0, id);
 				supset = buildSet(supers);
 				if (i == 0) supset
@@ -221,7 +251,7 @@ instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName]) -> TNodeNa
 	if (length(node) > 0) {
 		node[0];
 	} else {
-		munion = tmap.resolveUnionName(name);
+		munion = ^(tmap.resolveUnionName)(name);
 		switch (munion) {
 			None(): {
 				typars = if (name == "array" || name == "ref") 1 else 0;
@@ -269,35 +299,6 @@ makeTNodeName(tmap : TMap, t : TType) -> TNodeName {
 		TTypeOverload(unique, overloads): error();
 		TTypeSupertype(unique, subtypes, maxed): error();
 	}
-}
-
-findOrMakeTNodeClass(tmap : TMap, type : TType) -> int {
-	eclass = findTNode(tmap, type);
-	if (eclass != -1) {
-		eclass
-	} else {
-		// OK, make a node out of it
-		node = makeTNode(tmap, type);
-		// And see if we can find that node!
-		sclass = findUnionMap(tmap.tmap, \i, val : TNode -> node == val, -1);
-
-		if (sclass == -1) {
-			// OK, could not find it. We need a new class
-			nclass = makeTNodeClass(tmap);
-			// println("Made e" + i2s(nclass) + " for " + prettyTType(type) + " as " + prettyTNode(tmap, node));
-			setUnionMapValue(tmap.tmap, nclass, node);
-			nclass;
-		} else {
-			// println("Found it as an existing node");
-			sclass;
-		}
-	}
-}
-
-makeTNodeClass(tmap : TMap) -> int {
-	nclass = ^(tmap.nextEClass);
-	tmap.nextEClass := nclass + 1;
-	nclass;
 }
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
@@ -393,7 +394,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 }
 
 unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> void {
-	munion = tmap.resolveUnionName(node.name);
+	munion = ^(tmap.resolveUnionName)(node.name);
 	found = ref false;
 	iter(super.subtypes, \st -> {
 		if (st.name == node.name) {
@@ -550,7 +551,7 @@ findTNode(tmap : TMap, type : TType) -> int {
 			findUnionMap(tmap.tmap, \i, val : TNode -> {
 				c = isTTypeInTNode(tmap, type, i, val);
 				if (false && c) {
-					println("e" + i2s(i) + " has " + prettyTType(type));
+					println("  e" + i2s(i) + " has " + prettyTType(type));
 				}
 				c;
 			}, -1);
