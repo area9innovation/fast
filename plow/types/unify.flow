@@ -23,92 +23,94 @@ unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TT
 		uniindent :=indent + "  ";
 	}
 
-	unifyTNodes(env.tgraph.tmap, left, right);
-
-	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
-	// Do recursive unification
-	switch (left) {
-		TTypeName(lid, ltypars): {
-			switch (right) {
-				TTypeName(rid, rtypars): {
-					if (lid == rid) {
-						unifyTTypes(env, topid, pos, ltypars, rtypars);
-					} else {
-						unifyTTypeNames(env, reason, pos, left, right);
+	if (true) {
+		unifyTNodes(env.tgraph.tmap, left, right);
+	} else {
+		// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
+		// Do recursive unification
+		switch (left) {
+			TTypeName(lid, ltypars): {
+				switch (right) {
+					TTypeName(rid, rtypars): {
+						if (lid == rid) {
+							unifyTTypes(env, topid, pos, ltypars, rtypars);
+						} else {
+							unifyTTypeNames(env, reason, pos, left, right);
+						}
+					}
+					TTypeEClass(eclass): {
+						unifyTypeToEClass(env, eclass, left, [reason], [pos]);
+					}
+					TTypeFunction(args, returnType): {
+						env.onError(pos, lid + " is not a function");
+					}
+					TTypeOverload(unique, overloads): {
+						unifyTTypeOverload(env, topid, reason, pos, right, left);
+					}
+					TTypeSupertype(unique, subtypes, maxed): {
+						unifyTSupertype(env, topid, reason, pos, right, left);
 					}
 				}
-				TTypeEClass(eclass): {
-					unifyTypeToEClass(env, eclass, left, [reason], [pos]);
-				}
-				TTypeFunction(args, returnType): {
-					env.onError(pos, lid + " is not a function");
-				}
-				TTypeOverload(unique, overloads): {
-					unifyTTypeOverload(env, topid, reason, pos, right, left);
-				}
-				TTypeSupertype(unique, subtypes, maxed): {
-					unifyTSupertype(env, topid, reason, pos, right, left);
+			}
+			TTypeFunction(largs, lreturnType): {
+				switch (right) {
+					TTypeFunction(rargs, rreturnType): {
+						unifyTTypes(env, topid, pos, largs, rargs);
+						unifyTType(env, topid, "fn return", pos, lreturnType, rreturnType);
+					}
+					TTypeOverload(__, __): {
+						unifyTTypeOverload(env, topid, reason, pos, right, left);
+					}
+					TTypeName(id, typars): {
+						env.onError(pos, id + " is not a function " + prettyTType(left));
+					}
+					TTypeEClass(eclass): {
+						// We know eclass is a function, which is recorded in the environment
+						unifyTypeToEClass(env, eclass, left, [reason], [pos]);
+					}
+					TTypeSupertype(unique, subtypes, maxed): {
+						unifyTSupertype(env, topid, reason, pos, right, left);
+					}
 				}
 			}
-		}
-		TTypeFunction(largs, lreturnType): {
-			switch (right) {
-				TTypeFunction(rargs, rreturnType): {
-					unifyTTypes(env, topid, pos, largs, rargs);
-					unifyTType(env, topid, "fn return", pos, lreturnType, rreturnType);
-				}
-				TTypeOverload(__, __): {
-					unifyTTypeOverload(env, topid, reason, pos, right, left);
-				}
-				TTypeName(id, typars): {
-					env.onError(pos, id + " is not a function " + prettyTType(left));
-				}
-				TTypeEClass(eclass): {
-					// We know eclass is a function, which is recorded in the environment
-					unifyTypeToEClass(env, eclass, left, [reason], [pos]);
-				}
-				TTypeSupertype(unique, subtypes, maxed): {
-					unifyTSupertype(env, topid, reason, pos, right, left);
-				}
-			}
-		}
-		TTypeEClass(lid): {
-			switch (right) {
-				TTypeEClass(rid): {
-					// OK, merge eclasses
-					unifyEClasses(env, lid, rid);
-				}
-				TTypeName(id, typars): {
-					unifyTypeToEClass(env, lid, right, [reason], [pos]);
-				}
-				TTypeFunction(args, returnType): {
-					unifyTypeToEClass(env, lid, right, [reason], [pos]);
-				}
-				TTypeOverload(__, __): {
-					unifyTTypeOverload(env, topid, reason, pos, right, left);
-				}
-				TTypeSupertype(unique, subtypes, maxed): {
-					unifyTSupertype(env, topid, reason, pos, right, left);
+			TTypeEClass(lid): {
+				switch (right) {
+					TTypeEClass(rid): {
+						// OK, merge eclasses
+						unifyEClasses(env, lid, rid);
+					}
+					TTypeName(id, typars): {
+						unifyTypeToEClass(env, lid, right, [reason], [pos]);
+					}
+					TTypeFunction(args, returnType): {
+						unifyTypeToEClass(env, lid, right, [reason], [pos]);
+					}
+					TTypeOverload(__, __): {
+						unifyTTypeOverload(env, topid, reason, pos, right, left);
+					}
+					TTypeSupertype(unique, subtypes, maxed): {
+						unifyTSupertype(env, topid, reason, pos, right, left);
+					}
 				}
 			}
-		}
-		TTypeOverload(lunique, loverloads): {
-			switch (right) {
-				TTypeEClass(eclass): {
-					unifyTypeToEClass(env, eclass, left, [reason], [pos]);
-				}
-				default: {
-					unifyTTypeOverload(env, topid, reason, pos, left, right);
+			TTypeOverload(lunique, loverloads): {
+				switch (right) {
+					TTypeEClass(eclass): {
+						unifyTypeToEClass(env, eclass, left, [reason], [pos]);
+					}
+					default: {
+						unifyTTypeOverload(env, topid, reason, pos, left, right);
+					}
 				}
 			}
-		}
-		TTypeSupertype(unique, subtypes, maxed): {
-			switch (right) {
-				TTypeEClass(eclass): {
-					unifyTypeToEClass(env, eclass, left, [reason], [pos]);
-				}
-				default: {
-					unifyTSupertype(env, topid, reason, pos, left, right);
+			TTypeSupertype(unique, subtypes, maxed): {
+				switch (right) {
+					TTypeEClass(eclass): {
+						unifyTypeToEClass(env, eclass, left, [reason], [pos]);
+					}
+					default: {
+						unifyTSupertype(env, topid, reason, pos, left, right);
+					}
 				}
 			}
 		}
