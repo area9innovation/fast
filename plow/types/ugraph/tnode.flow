@@ -124,9 +124,9 @@ isSameTNode(tmap : TMap, left : TNode, right : TNode) -> bool {
 				default: false;
 			}
 		}
-		TNodeSupertype(uniques, __): {
+		TNodeSupertype(uniques, __, __): {
 			switch (right) {
-				TNodeSupertype(runiques, __): !isEmptySet(intersectSets(uniques, runiques));
+				TNodeSupertype(runiques, __, __): !isEmptySet(intersectSets(uniques, runiques));
 				default: false;
 			}
 		}
@@ -156,7 +156,7 @@ makeTNode(tmap : TMap, t : TType) -> TNode {
 			))
 		}
 		TTypeSupertype(unique, subtypes, maxed): {
-			emptySuper = TNodeSupertype(makeSet1(unique), []);
+			emptySuper = TNodeSupertype(makeSet1(unique), [], makeSet());
 			super = fold(subtypes, emptySuper, \acc, st -> extractSupers(tmap, acc, st));
 			simplifyTNode(tmap, super)
 		}
@@ -172,8 +172,7 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 		TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, n));
 	}
 	addEClass = \e : int -> {
-		println("TODO: Add e" + i2s(e) + " to " + prettyTNode(tmap, acc));
-		acc;
+		TNodeSupertype(acc with unknownSubtypes = insertSet(acc.unknownSubtypes, e));
 	}
 	switch (t) {
 		TTypeSupertype(__, sub, __): {
@@ -190,9 +189,10 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 					}
 				}
 				TNodeOverload(unique, overloads): todo();
-				TNodeSupertype(uniques, subtypes): {
+				TNodeSupertype(uniques, subtypes, usub): {
 					TNodeSupertype(acc with
-						subtypes = concat(acc.subtypes, subtypes)
+						subtypes = concat(acc.subtypes, subtypes),
+						unknownSubtypes = mergeSets(acc.unknownSubtypes, usub)
 					);
 				}
 			}
@@ -218,39 +218,67 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 				node;
 			}
 		}
-		TNodeSupertype(uniques, subtypes): {
-			// OK, we can calculate potential super types here
-			// and reduce them to an overload or a given type
-			named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
-				id = t.name;
-				supers0 = ^(tmap.resolveSupertypes)(id);
-				supers = arrayPush(supers0, id);
-				supset = buildSet(supers);
-				if (i == 0) supset
-				else intersectSets(supset, acc)
-			});
-
-			nnamed = sizeSet(named);
-
-			// Here we have the names that are possible
-			if (nnamed == 1) {
-				fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes);
-				unifyTNodeNameWithSuper(tmap, fnode, node);
-				fnode;
-			} else if (nnamed < length(subtypes)) {	// This condition is a bit arbitrary
-				// Make an overload out of the rest
-				overloads = map(set2array(named), \n -> {
-					instantiateTNodeName(tmap, n, subtypes)
+		TNodeSupertype(uniques, subtypes, unknownSubtypes): {
+			if (!isEmptySet(unknownSubtypes)) {
+				resolved = foldSet(unknownSubtypes, Pair([], makeSet()), 
+						\acc : Pair<[TNodeName], Set<int>>, st : int -> {
+					unode = getUnionMapValue(tmap.tmap, st);
+					unknown = \ -> {
+						Pair(acc.first, insertSet(acc.second, st));
+					}
+					switch (unode) {
+						TNodeName(name, typars): {
+							if (isEmptyTNode(unode)) {
+								unknown();
+							} else {
+								Pair(arrayPush(acc.first, unode), acc.second)
+							}
+						}
+						default: unknown();
+					}
 				});
-				overload = TNodeOverload(uniques, overloads);
-				println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
-				overload;
-			} else {
-				if (length(subtypes) > 1) {
-					println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
+				if (resolved.first != []) {
+					cleaned = TNodeSupertype(uniques, concat(subtypes, resolved.first), resolved.second);
+					println("Cleaned " + prettyTNode(tmap, cleaned));
+					simplifyTNode(tmap, cleaned);
+				} else {
+					node;
 				}
-				node;
+			} else {
+				// OK, we can calculate potential super types here
+				// and reduce them to an overload or a given type
+				named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
+					id = t.name;
+					supers0 = ^(tmap.resolveSupertypes)(id);
+					supers = arrayPush(supers0, id);
+					supset = buildSet(supers);
+					if (i == 0) supset
+					else intersectSets(supset, acc)
+				});
+
+				nnamed = sizeSet(named);
+
+				// Here we have the names that are possible
+				if (nnamed == 1) {
+					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes);
+					unifyTNodeNameWithSuper(tmap, fnode, node);
+					fnode;
+				} else if (nnamed < length(subtypes)) {	// This condition is a bit arbitrary
+					// Make an overload out of the rest
+					overloads = map(set2array(named), \n -> {
+						instantiateTNodeName(tmap, n, subtypes)
+					});
+					overload = TNodeOverload(uniques, overloads);
+					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
+					overload;
+				} else {
+					if (length(subtypes) > 1) {
+						println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
+					}
+					node;
+				}
 			}
+
 		}
 	}
 }
@@ -339,7 +367,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeOverload(unique, overloads): {
 					todo();
 				}
-				TNodeSupertype(unique, subtypes): {
+				TNodeSupertype(unique, subtypes, __): {
 					unifyTNodeNameWithSuper(tmap, left, right);
 					left;
 				}
@@ -376,12 +404,12 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					println("TODO: Find the intersection between " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 					left;
 				}
-				TNodeSupertype(uniques, subtypes): {
+				TNodeSupertype(uniques, subtypes, usub): {
 					todo();
 				}
 			}
 		}
-		TNodeSupertype(lunique, lsubtypes): {
+		TNodeSupertype(lunique, lsubtypes, lusub): {
 			switch (right) {
 				TNodeName(name, typars): {
 					// OK: Check that this name is a supertype
@@ -392,10 +420,11 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeOverload(runique, roverloads): {
 					todo();
 				}
-				TNodeSupertype(runique, rsubtypes): {
+				TNodeSupertype(runique, rsubtypes, rusub): {
 					simplifyTNode(tmap, TNodeSupertype(
 						mergeSets(lunique, runique), 
-						concat(lsubtypes, rsubtypes)
+						concat(lsubtypes, rsubtypes),
+						mergeSets(lusub, rusub)
 					));
 				}
 			}
@@ -436,6 +465,10 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 				}
 			}
 		}
+	});
+
+	iterSet(super.unknownSubtypes, \st -> {
+		println("TODO: Unify " + prettyTNode(tmap, node) + " against unknown e" + i2s(st));
 	});
 
 	if (!^found) {
@@ -546,7 +579,7 @@ incompatibleTNodes(tmap : TMap, left : TNode, right : TNode) -> bool {
 		TNodeOverload(lunique, loverloads): {
 			todo();
 		}
-		TNodeSupertype(luniques, lsubtypes): {
+		TNodeSupertype(luniques, lsubtypes, __): {
 			todo();
 		}
 	}
@@ -606,7 +639,7 @@ isTTypeInTNode(tmap : TMap, t : TType, nclass : int, n : TNode) -> bool {
 				default: false;
 			}
 		}
-		TNodeSupertype(uniques, subtypes): {
+		TNodeSupertype(uniques, subtypes, __): {
 			switch (t) {
 				TTypeSupertype(uid, __, maxed): containsSet(uniques, uid);
 				TTypeEClass(eclass): isSameEClass(eclass);
@@ -646,10 +679,14 @@ prettyTNode(tmap : TMap, t : TNode) -> string {
 			+ superglue(overloads, \o -> prettyTNode(tmap, o), ", ")
 			+ "}";
 		}
-		TNodeSupertype(uniques, subtypes): {
+		TNodeSupertype(uniques, subtypes, usub): {
 			"super" + superglue(set2array(uniques), i2s, "_") + "{"
 			+ superglue(subtypes, \o -> prettyTNode(tmap, o), ", ")
-			+ "}";
+			+ (if (isEmptySet(usub)) "" else 
+				superglue(set2array(usub), \st -> "e" + i2s(st), ", ")
+			)
+			+ "}"
+			;
 		}
 	}
 }
@@ -734,7 +771,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 				println("TODO: Resolve overload: " + prettyTNode(tmap, node));
 				mkClass(eclass);
 			}
-			TNodeSupertype(unique, subtypes): {
+			TNodeSupertype(unique, subtypes, __): {
 				println("TODO: Resolve supertype: " + prettyTNode(tmap, node));
 				mkClass(eclass);
 			}

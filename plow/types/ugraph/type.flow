@@ -42,6 +42,6 @@ export {
 		TNodeSupertype(
 			uniques : Set<int>, 
 			subtypes : [TNodeName],
-//			unknownSubtypes : Set<int>,
+			unknownSubtypes : Set<int>,
 		);
 }
