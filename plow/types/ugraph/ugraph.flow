@@ -5,7 +5,7 @@ import ds/treeutils;
 
 export {
 	// Construct a new graph of our types
-	makeTypeGraph(onError : (int, string) -> void) -> TypeGraph;
+	makeTypeGraph(onError : (int, string) -> void, nextEClass : ref int) -> TypeGraph;
 
 	// Prepare an empty equivalence class
 	emptyTTypeClass(tg : TypeGraph) -> int;
@@ -38,14 +38,16 @@ export {
 	normalizeTTypeDependencies(tg : TypeGraph) -> void;
 }
 
-makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
-	cnt = ref 0;
+makeTypeGraph(
+		onError : (int, string) -> void, 
+		nextEClass : ref int
+	) -> TypeGraph {
 	TypeGraph(
 		makeUnionFindMap(defaultTTypeNode(), mergeTTypeNodes),
-		cnt,
+		nextEClass,
 		ref makeSet(),
 		ref makeTree(),
-		makeTMap(onError, cnt),
+		makeTMap(\__ -> [], onError, nextEClass),
 		onError
 	)
 }

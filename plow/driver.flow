@@ -182,8 +182,10 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
+		tgraph = makeTypeGraph(dd.onError, dd.nextEClass);
+
 		tenv1 = TTypeEnv(
-			makeTTypeEnv(dd.tgraph) with
+			makeTTypeEnv(tgraph) with
 			onError = dd.onError,
 			resolveId = \pos, id -> {
 				mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
@@ -194,7 +196,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					switch (mbnat) {
 						None(): {
 							dd.onError(pos, "Unknown id " + id);
-							TTypeEClass(emptyTTypeClass(dd.tgraph));
+							TTypeEClass(emptyTTypeClass(tgraph));
 						}
 						Some(bnat): btype2ttype(bnat.type);
 					}

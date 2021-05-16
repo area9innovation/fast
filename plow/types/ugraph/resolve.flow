@@ -37,7 +37,8 @@ export {
 resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
 	if (true) {
 		dumpTMap(env.tgraph.tmap);
-		env;
+		types = resolveTNodes(env.tgraph.tmap);
+		TTypeEnv(env with etypes = types);
 	} else {
 		doResolveEClasses(env, flowpath, verbose, false, 10);
 	}

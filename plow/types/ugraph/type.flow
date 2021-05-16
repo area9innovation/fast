@@ -28,6 +28,7 @@ export {
 
 	TMap(
 		tmap : UnionFindMap<TNode>,
+		resolveSupertypes : (string) -> [string],
 		onError : (int, string) -> void,
 		nextEClass : ref int,
 	);
@@ -35,6 +36,6 @@ export {
 	TNode ::= TNodeName, TNodeOverload, TNodeSupertype;
 		// If the name is empty, it is a function. If name is empty, and typars empty, null
 		TNodeName(name : string, typars : [int]);
-		TNodeOverload(unique : int, overloads : [TNodeName]);
-		TNodeSupertype(unique : int, subtypes : [TNodeName]);
+		TNodeOverload(unique : Set<int>, overloads : [TNodeName]);
+		TNodeSupertype(uniques : Set<int>, subtypes : [TNodeName]);
 }
