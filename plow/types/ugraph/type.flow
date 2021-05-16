@@ -1,24 +1,10 @@
 import ds/union_find_map;
-import plow/types/ugraph/typenode;
 import plow/dexp/dexp;
 
 export {
-	// TODO: Add a dependency graph between equivalence
-	// classes. If a loop forms, the nodes should collapse
-	// This dep. graph should be used to propagate updates
-	// to the classes
 	TypeGraph(
-		// The union/find map of typenodes for each equivalence class
-		umap : UnionFindMap<TTypeNode>,
 		// What is the id of the next eclass?
 		nextEClass : ref int, 
-		// What eclasses have been updated?
-		updated : ref Set<int>,
-		// Dependencies between eclasses: When key changes, the immediate 
-		// children need an update
-		dependencies : ref Tree<int, Set<int>>,
-
-		// The new system:
 
 		// The union/find map of tnodes for each equivalence class
 		tmap : TMap,

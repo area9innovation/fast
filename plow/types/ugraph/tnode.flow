@@ -12,6 +12,8 @@ export {
 		resolveSupertypes : (string) -> [string], 
 	) -> TMap;
 
+	makeTNodeClass(tmap : TMap) -> int;
+
 	unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void;
 
 	resolveTNodes(tmap : TMap) -> Tree<int, TType>;
