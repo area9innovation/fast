@@ -13,9 +13,28 @@ export {
 		nextEClass : ref int, 
 		// What eclasses have been updated?
 		updated : ref Set<int>,
-		// Dependencies between eclasses: When key changes, the immediate children need an update
+		// Dependencies between eclasses: When key changes, the immediate 
+		// children need an update
 		dependencies : ref Tree<int, Set<int>>,
+
+		// The new system:
+
+		// The union/find map of tnodes for each equivalence class
+		tmap : TMap,
+
 		// To help report errors, we have this friend
 		onError : (int, string) -> void,
 	);
+
+	TMap(
+		tmap : UnionFindMap<TNode>,
+		onError : (int, string) -> void,
+		nextEClass : ref int,
+	);
+
+	TNode ::= TNodeName, TNodeOverload, TNodeSupertype;
+		// If the name is empty, it is a function. If name is empty, and typars empty, null
+		TNodeName(name : string, typars : [int]);
+		TNodeOverload(unique : int, overloads : [TNodeName]);
+		TNodeSupertype(unique : int, subtypes : [TNodeName]);
 }

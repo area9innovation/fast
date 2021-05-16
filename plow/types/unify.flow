@@ -22,6 +22,9 @@ unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TT
 		println(indent + "Unify " + topid + ": " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
 		uniindent :=indent + "  ";
 	}
+
+	unifyTNodes(env.tgraph.tmap, left, right);
+
 	// env.onError(pos, reason + " unify " + prettyTType(left) + " vs " + prettyTType(right));
 	// Do recursive unification
 	switch (left) {

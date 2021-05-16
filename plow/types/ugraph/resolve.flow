@@ -35,7 +35,12 @@ export {
 }
 
 resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
-	doResolveEClasses(env, flowpath, verbose, false, 10);
+	if (true) {
+		dumpTMap(env.tgraph.tmap);
+		env;
+	} else {
+		doResolveEClasses(env, flowpath, verbose, false, 10);
+	}
 }
 
 SimplifyEnv(

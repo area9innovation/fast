@@ -1,5 +1,6 @@
 import plow/types/pretty;
 import plow/types/ugraph/type;
+import plow/types/ugraph/tnode;
 import ds/treeutils;
 
 export {
@@ -38,11 +39,13 @@ export {
 }
 
 makeTypeGraph(onError : (int, string) -> void) -> TypeGraph {
+	cnt = ref 0;
 	TypeGraph(
 		makeUnionFindMap(defaultTTypeNode(), mergeTTypeNodes),
-		ref 0,
+		cnt,
 		ref makeSet(),
 		ref makeTree(),
+		makeTMap(onError, cnt),
 		onError
 	)
 }
