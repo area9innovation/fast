@@ -68,8 +68,17 @@ setTMapResolvers(t : TMap,
 	resolveSupertypes : (string) -> [string], 
 ) -> TMap {
 	t.resolveUnionName := resolveUnionName;
-	t.resolveSupertypes := resolveSupertypes;
+	t.resolveSupertypes := \type -> {
+		transitiveResolveSuperType(resolveSupertypes, type)
+	};
 	t;
+}
+
+transitiveResolveSuperType(basic : (string) -> [string], name : string) -> [string] {
+	supers = basic(name);
+	fold(supers, supers, \acc, base -> {
+		concat(acc, transitiveResolveSuperType(basic, base))
+	})
 }
 
 defaultTNode() -> TNode {
@@ -321,6 +330,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 				named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
 					id = t.name;
 					supers0 = ^(tmap.resolveSupertypes)(id);
+					println(id + " gives " + toString(supers0));
 					supers = arrayPush(supers0, id);
 					supset = buildSet(supers);
 					if (i == 0) supset

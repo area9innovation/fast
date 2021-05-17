@@ -27,7 +27,7 @@ export {
 		// Find the definition of this union
 		resolveUnionName : (string) -> Maybe<DUnion>,
 
-		// Find the supertypes of this type
+		// Find the supertypes of this type. Not transitive
 		resolveSupertypes : (string) -> [string],
 
 		// Find the subtypes of this type
