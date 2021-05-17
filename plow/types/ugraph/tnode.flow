@@ -8,6 +8,7 @@ TODO:
 - isSameStructType
 - (downcast in filtermap)
 - .field in unions: type11
+- behaviour: .structname
 */
 
 export {
@@ -325,15 +326,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 			} else {
 				// OK, we can calculate potential super types here
 				// and reduce them to an overload or a given type
-				named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
-					id = t.name;
-					supers0 = ^(tmap.resolveSupertypes)(id);
-					supers = arrayPush(supers0, id);
-					supset = buildSet(supers);
-					if (i == 0) supset
-					else intersectSets(supset, acc)
-				});
-
+				named = getPossibleTSupers(tmap, node);
 				nnamed = sizeSet(named);
 
 				// Here we have the names that are possible
@@ -377,6 +370,17 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 			}
 		}
 	}
+}
+
+getPossibleTSupers(tmap : TMap, super : TNodeSupertype) -> Set<string> {
+	foldi(super.subtypes, makeSet(), \i, acc, t : TNodeName -> {
+		id = t.name;
+		supers0 = ^(tmap.resolveSupertypes)(id);
+		supers = arrayPush(supers0, id);
+		supset = buildSet(supers);
+		if (i == 0) supset
+		else intersectSets(supset, acc)
+	});
 }
 
 // We know we want a given name, and we have a set of candidates to pick from
@@ -778,8 +782,13 @@ incompatibleTNodes(tmap : TMap, left : TNode, right : TNode) -> bool {
 			} else {
 				switch (right) {
 					TNodeName(rname, rtypars, rpos): {
-						println("TODO 2: Check if node " + prettyTNode(tmap, left) + " is compatible with node " + prettyTNode(tmap, right));
-						false;
+						supers = getPossibleTSupers(tmap, left);
+						if (containsSet(supers, rname)) {
+							false;
+						} else {
+							println("TODO 2: Check if node " + prettyTNode(tmap, left) + " is compatible with node " + prettyTNode(tmap, right));
+							false;
+						}
 					}
 					default: {
 						todo();

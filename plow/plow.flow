@@ -11,7 +11,7 @@ main() {
 	file6 = "plow/tests/";
 	file3 = "plow/tests/type11.flow";
 	file4  = "plow/tests/maybe.flow";
-	file  = "ds/treeutils.flow";
+	file  = "behaviour.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 	file5 = "mini/tests";
