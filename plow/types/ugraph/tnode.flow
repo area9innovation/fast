@@ -1,6 +1,8 @@
 import plow/types/ugraph/type;
 import plow/types/pretty;
 
+// TODO: Review positions. They are wrong when
+// reporting a problem in array.flow filtermap.
 export {
 	// Set up the type unification map
 	makeTMap(
@@ -319,7 +321,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 				if (nnamed == 1) {
 					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
 					unifyTNodeNameWithSuper(tmap, fnode, node);
-				} else if (nnamed < length(subtypes)) {	// This condition is a bit arbitrary
+				} else if (nnamed != 0 && nnamed < length(subtypes)) {	// This condition is a bit arbitrary
 					// Make an overload out of the rest
 					overloads = map(set2array(named), \n -> {
 						instantiateTNodeName(tmap, n, subtypes, pos)
@@ -378,9 +380,13 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 			switch (right) {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
-						error(pos)
+						// TODO: As a special case, if one of these
+						// is a singleton union with the other element,
+						// it is ok
+						error(max(pos, rpos));
+						left;
 					} else if (length(ltypars) != length(rtypars)) {
-						error(pos);
+						error(max(pos, rpos));
 					} else {
 						simplifyTNode(tmap, TNodeName(lname, mapi(ltypars, \i, lt -> {
 							joinTNodes(tmap, lt, rtypars[i]);
@@ -395,7 +401,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				}
 			}
 		}
-		TNodeOverload(lunique, loverloads, __): {
+		TNodeOverload(lunique, loverloads, lpos): {
 			switch (right) {
 				TNodeName(name, typars, pos): {
 					// OK: Find which of the overloads potentially match this one
@@ -409,7 +415,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 						}
 					});
 					if (overloads == []) {
-						error(pos);
+						error(max(lpos, pos));
 					} else if (length(overloads) == 1) {
 						winner = overloads[0];
 						mergeTNodes(tmap, winner, right);
@@ -447,7 +453,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 						mergeSets(lunique, runique), 
 						concat(lsubtypes, rsubtypes),
 						mergeSets(lusub, rusub),
-						pos
+						max(pos, lpos)
 					));
 				}
 			}
