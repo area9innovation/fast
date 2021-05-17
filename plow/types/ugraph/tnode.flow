@@ -7,8 +7,6 @@ TODO:
 - ? vs ?? in flowstructs
 - isSameStructType
 - (downcast in filtermap)
-- Handle unions with sub-unions:
-  C:/fast/plow/pexp/values.flow:26:13: ERROR: Unknown subtype PExp from super1{PBool}
 
 */
 
@@ -574,12 +572,49 @@ unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) ->
 					unifyTNodeNameAgainstSubtype(tmap, node, subtype, union, stype);
 					true;
 				} : {
-					// TODO. Let us check each of the subtypes and see if they have our guy as a
-					// subtype!
-					tmap.onError(node.pos, "ERROR: Unknown subtype " + prettyTNode(tmap, node) + " from " + prettyTNode(tmap, subtype));
-					false;
+					msubunion : Maybe<DTypeName> = find(union.types, \tn -> {
+						subs = collectSubtypes(tmap, makeSet(), tn.id);
+						containsSet(subs, subtype.name)
+					});
+					switch (msubunion) {
+						None(): {
+							tmap.onError(node.pos, "ERROR: Unknown subtype " + prettyTNode(tmap, node) + " from " + prettyTNode(tmap, subtype));
+							false;
+						}
+						Some(subunion): {
+							// OK, this is a stepping stone: We know this subunion contains our subtype
+							misub = instantiateTNodeNameAgainstSubtype(tmap, node, subtype, 
+								union, subunion);
+							switch (misub) {
+								None(): {
+									tmap.onError(node.pos, "ERROR: Unknown subtype " + prettyTNode(tmap, node) + " from " + prettyTNode(tmap, subtype));
+									false;
+								}
+								Some(isub): {
+									// OK, inch closer
+									unifyTNodeNameWithSubtype(tmap, isub, subtype)
+								}
+							}
+						}
+					}
 				}
 			}
+		}
+	}
+}
+
+// We have PExp and the expansion [PValue, PCall];
+// We need to find PBool.
+collectSubtypes(tmap : TMap, acc : Set<string>, typename : string) -> Set<string> {
+	nacc = insertSet(acc, typename);
+	munion = ^(tmap.resolveUnionName)(typename);
+	switch (munion) {
+		None(): nacc;
+		Some(un): {
+			fold(un.types, nacc, \acc2, tn -> {
+				if (containsSet(acc2, tn.id)) acc2
+				else collectSubtypes(tmap, acc2, tn.id)
+			})
 		}
 	}
 }
