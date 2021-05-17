@@ -3,10 +3,13 @@ import plow/types/ugraph/type;
 import plow/types/ugraph/tnode;
 import ds/treeutils;
 
+// TODO: Unless we start to collect something here,
+// we can just use the TMap directly.
 export {
 	// Construct a new graph of our types
 	makeTypeGraph(
-		onError : (int, string) -> void, nextEClass : ref int
+		onError : (int, string) -> void, 
+		nextEClass : ref int
 	) -> TypeGraph;
 
 	setTypeGraphResolver(
