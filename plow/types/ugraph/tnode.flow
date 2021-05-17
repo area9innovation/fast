@@ -3,7 +3,7 @@ import plow/types/pretty;
 
 /*
 TODO:
-- Review positions. They are wrong when  reporting a problem in array.flow filtermap.
+- Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - flow vs other types (dynamic.flow)
 - ? vs ?? in flowstructs
 - downcast in filtermap
@@ -12,11 +12,7 @@ TODO:
 - toString and println does not work: 
 	C:/flow9/lib/runtime.flow:455:16: Could not resolve supertype: super100{e484}
 		println(annotation + toString(val));
-
-ds/tree.flow:
-Identical subtypes can be simplified:
-TODO: Check if we can unify intra-supers super96{TreeNode<super67_91{e119},super68_92{e120}>, TreeNode<super67_91{e119},super68_92{e120}>}
-
+*/
 
 export {
 	// Set up the type unification map
@@ -345,12 +341,17 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
 					overload;
 				} else {
-					if (length(subtypes) > 1 && exists(subtypes, \st -> {
+					// Remove duplicates
+					uni = fold(subtypes, [], \acc, st -> {
+						if (exists(acc, \tt -> isSameTNode(tmap, st, tt))) acc
+						else arrayPush(acc, st);
+					});
+					if (length(uni) > 1 && exists(uni, \st -> {
 						st.typars != []
 					})) {
 						println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
 					}
-					node;
+					TNodeSupertype(uniques, uni, unknownSubtypes, pos);
 				}
 			}
 		}
@@ -392,6 +393,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 	}
 	if (isEmptyTNode(left)) simplifyTNode(tmap, right)
 	else if (isEmptyTNode(right)) simplifyTNode(tmap, left)
+	else if (isSameTNode(tmap, left, right)) left
 	else switch (left) {
 		TNodeName(lname, ltypars, pos): {
 			switch (right) {
@@ -877,7 +879,9 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 			if (simpler != node) {
 				resolveTNode(tmap, acc, visited, eclass, simpler);
 			} else if (subtypes != []) {
-				println("TODO: Picking random supertype: " + prettyTNode(tmap, node));
+				if (length(subtypes) != 1) {
+					println("TODO: Picking random supertype: " + prettyTNode(tmap, node));
+				}
 				resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
 			} else {
 				tmap.onError(pos, "Could not resolve supertype: " + prettyTNode(tmap, node));
