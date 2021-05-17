@@ -1,8 +1,23 @@
 import plow/types/ugraph/type;
 import plow/types/pretty;
 
-// TODO: Review positions. They are wrong when
-// reporting a problem in array.flow filtermap.
+/*
+TODO:
+- Review positions. They are wrong when  reporting a problem in array.flow filtermap.
+- flow vs other types (dynamic.flow)
+- ? vs ?? in flowstructs
+- downcast in filtermap
+- isSameStructType
+- C:/flow9/lib/securitymode.flow:20:40: ERROR: Merge SecurityMode and OWASP
+- toString and println does not work: 
+	C:/flow9/lib/runtime.flow:455:16: Could not resolve supertype: super100{e484}
+		println(annotation + toString(val));
+
+ds/tree.flow:
+Identical subtypes can be simplified:
+TODO: Check if we can unify intra-supers super96{TreeNode<super67_91{e119},super68_92{e120}>, TreeNode<super67_91{e119},super68_92{e120}>}
+
+
 export {
 	// Set up the type unification map
 	makeTMap(
@@ -478,7 +493,7 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 					{}
 				})
 			} else {
-				println("ERROR: Join typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, super));
+				tmap.onError(node.pos, "ERROR: Join typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, st));
 			}
 		} else {
 			// OK, we know that the node has to a supertype of st
@@ -493,7 +508,9 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 						// OK, we have the relation from the union to the struct in this union
 						unifyTNodeNameAgainstStruct(tmap, node, st, union, stype);
 					} : {
-						println("ERROR: Join typars of " + prettyTNode(tmap, node) + " impossible against " + prettyTNode(tmap, super));
+						// TODO. Let us check each of the subtypes and see if they have our guy as a
+						// subtype!
+						tmap.onError(node.pos, "ERROR: Unknown subtype " + prettyTNode(tmap, node) + " from " + prettyTNode(tmap, super));
 					}
 				}
 			}
@@ -509,7 +526,7 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 	}
 
 	if (!^found) {
-		println("ERROR: Join " + prettyTNode(tmap, node) + " impossible against " + prettyTNode(tmap, super));
+		tmap.onError(node.pos, "TODO: Join " + prettyTNode(tmap, node) + " not complete against " + prettyTNode(tmap, super));
 	}
 
 	node;
