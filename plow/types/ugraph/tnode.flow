@@ -4,14 +4,13 @@ import plow/types/pretty;
 /*
 TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
-- flow vs other types (dynamic.flow)
 - ? vs ?? in flowstructs
 - downcast in filtermap
 - isSameStructType
 - C:/flow9/lib/securitymode.flow:20:40: ERROR: Merge SecurityMode and OWASP
-- toString and println does not work: 
-	C:/flow9/lib/runtime.flow:455:16: Could not resolve supertype: super100{e484}
-		println(annotation + toString(val));
+- type9.flow: cprint does not work: 
+  C:/flow9/lib/runtime.flow:462:32: Add type annotation. Unresolved type (equivalence class e497)
+		\txt -> pprint(prefix + txt)
 */
 
 export {
@@ -399,11 +398,17 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 			switch (right) {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
-						// TODO: As a special case, if one of these
-						// is a singleton union with the other element,
-						// it is ok
-						error(max(pos, rpos));
-						left;
+						if (lname == "flow") {
+							right
+						} else  if (rname == "flow") {
+							left
+						} else {
+							// TODO: As a special case, if one of these
+							// is a singleton union with the other element,
+							// it is ok
+							error(max(pos, rpos));
+							left;
+						}
 					} else if (length(ltypars) != length(rtypars)) {
 						error(max(pos, rpos));
 					} else {
@@ -607,6 +612,9 @@ joinTNodes(tmap : TMap, left : int, right : int) -> int {
 // Are these node names incompatible forever?
 incompatibleTNodeNames(tmap : TMap, node : TNodeName, overload : TNodeName) -> bool {
 	if (isEmptyTNode(node) || isEmptyTNode(overload)) {
+		false
+	} else if (node.name == "flow" || overload.name == "flow") {
+		// This is always ok
 		false
 	} else {
 		node.name != overload.name 
