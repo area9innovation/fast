@@ -7,15 +7,7 @@ export {
 	unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TType, right : TType) -> void;
 }
 
-uniindent = ref "";
 unifyTType(env : TTypeEnv, topid : string, reason : string, pos : int, left : TType, right : TType) -> void {
-	indent = ^uniindent;
-	if (isTracingId(env.tracing, StageTypeInference(), 2, topid)) {
-		println(indent + "Unify " + topid + ": " + prettyTType(left) + "   vs   " + prettyTType(right) + ". " + reason);
-		uniindent :=indent + "  ";
-	}
-
-	unifyTNodes(env.tgraph.tmap, left, right, reason, pos);
-	uniindent := indent;
+	verbose = isTracingId(env.tracing, StageTypeInference(), 2, topid);
+	unifyTNodes(env.tgraph.tmap, left, right, verbose, reason, pos);
 }
-

@@ -5,12 +5,9 @@ import plow/types/pretty;
 TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - ? vs ?? in flowstructs
-- downcast in filtermap
 - isSameStructType
+- downcast in filtermap
 - C:/flow9/lib/securitymode.flow:20:40: ERROR: Merge SecurityMode and OWASP
-- type9.flow: cprint does not work: 
-  C:/flow9/lib/runtime.flow:462:32: Add type annotation. Unresolved type (equivalence class e497)
-		\txt -> pprint(prefix + txt)
 */
 
 export {
@@ -31,10 +28,10 @@ export {
 
 	// Unify these two types
 	unifyTNodes(tmap : TMap, left : TType, right : TType, 
-		reason : string, pos : int) -> void;
+		verbose : bool, reason : string, pos : int) -> void;
 
 	// At the end, extract the types for each type class
-	resolveTNodes(tmap : TMap) -> Tree<int, TType>;
+	resolveTNodes(tmap : TMap, verbose : bool) -> Tree<int, TType>;
 }
 
 makeTMap(onError : (int, string) -> void, nextEClass : ref int) -> TMap {
@@ -78,12 +75,15 @@ defaultTNode() -> TNode {
 }
 
 // These two types are unified
-unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
+unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
+		reason : string, pos : int) -> void {
 	lclass = findOrMakeTNodeClass(tmap, left, pos);
 	rclass = findOrMakeTNodeClass(tmap, right, pos);
-	// println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
-	// println("  " + debugTNode(tmap, lclass));
-	// println("  " + debugTNode(tmap, rclass));
+	if (verbose) {
+		println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+		// println("  " + debugTNode(tmap, lclass));
+		// println("  " + debugTNode(tmap, rclass));
+	}
 	if (lclass != -1 && rclass != -1) {
 		// println("  Union e" + i2s(lclass) + " and e" + i2s(rclass));
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
@@ -448,9 +448,11 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 						// TODO: It could be that we are throwing away information.
 						// Maybe we should record the right hand side inside the
 						// overload
-						// println("TODO: Unify typars for " + prettyTNode(tmap, right) + " and " + prettyTNode(tmap, noverload));
+						if (false) {
+							println("Potential information loss: Unify typars for " + prettyTNode(tmap, right) + " and " + prettyTNode(tmap, noverload));
+						}
 						// println("From " + prettyTNode(tmap, left));
-						noverload;
+						right;
 					}
 				}
 				TNodeOverload(unique, overloads, pos): {
@@ -821,7 +823,7 @@ getTNodes(tmap : TMap) -> Set<int> {
 
 // At the end, extract the types
 
-resolveTNodes(tmap : TMap) -> Tree<int, TType> {
+resolveTNodes(tmap : TMap, verbose : bool) -> Tree<int, TType> {
 	roots = getTNodes(tmap);
 	types = ref makeTree();
 	visited = ref makeSet();
@@ -830,7 +832,9 @@ resolveTNodes(tmap : TMap) -> Tree<int, TType> {
 		node = getUnionMapValue(tmap.tmap, root);
 		if (!isEmptyTNode(node)) {
 			t = resolveTNodeClass(tmap, types, visited, root);
-			// println("e" + i2s(root) + " = " + rpad(prettyTType(t), " ", 30) + "   from " + debugTNode(tmap, root));
+			if (verbose) {
+				println("e" + i2s(root) + " = " + rpad(prettyTType(t), " ", 30) + "   from " + debugTNode(tmap, root));
+			}
 		}
 	});
 
@@ -879,7 +883,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 			}
 		}
 		TNodeOverload(unique, overloads, pos): {
-			// println("TODO: Resolve overload: " + prettyTNode(tmap, node));
+			println("TODO: Resolve overload: " + prettyTNode(tmap, node));
 			mkClass(eclass);
 		}
 		TNodeSupertype(unique, subtypes, __, pos): {
