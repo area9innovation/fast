@@ -6,8 +6,10 @@ TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - ? vs ?? in flowstructs
 - isSameStructType
-- downcast in filtermap
-- C:/flow9/lib/securitymode.flow:20:40: ERROR: Merge SecurityMode and OWASP
+- (downcast in filtermap)
+- Handle unions with sub-unions:
+  C:/fast/plow/pexp/values.flow:26:13: ERROR: Unknown subtype PExp from super1{PBool}
+
 */
 
 export {
@@ -331,7 +333,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 				if (nnamed == 1) {
 					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
 					unifyTNodeNameWithSuper(tmap, fnode, node);
-				} else if (nnamed != 0 && nnamed < length(subtypes)) {	// This condition is a bit arbitrary
+				} else if (false && nnamed != 0 && nnamed < length(subtypes)) {	// This condition is a bit arbitrary
 					// Make an overload out of the rest
 					overloads = map(set2array(named), \n -> {
 						instantiateTNodeName(tmap, n, subtypes, pos)
@@ -400,12 +402,14 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					if (lname != rname) {
 						if (lname == "flow") {
 							right
-						} else  if (rname == "flow") {
+						} else if (rname == "flow") {
 							left
-						} else {
-							// TODO: As a special case, if one of these
+						} else if (isSingleUnionName(tmap, lname, rname)) {
+							// As a special case, if one of these
 							// is a singleton union with the other element,
 							// it is ok
+							left;
+						} else {
 							error(max(pos, rpos));
 							left;
 						}
@@ -483,6 +487,30 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					));
 				}
 			}
+		}
+	}
+}
+
+// It could be that we have a union with just one struct
+isSingleUnionName(tmap : TMap, name1 : string, name2 : string) -> bool {
+	// Are these names compatible
+	muname1 = ^(tmap.resolveUnionName)(name1);
+	switch (muname1) {
+		None(): {
+			muname2 = ^(tmap.resolveUnionName)(name2);
+			switch (muname1) {
+				None(): false;
+				Some(u): {
+					if (length(u.types) == 1) {
+						u.types[0].id == name1
+					} else false;
+				}
+			}
+		}
+		Some(u): {
+			if (length(u.types) == 1) {
+				u.types[0].id == name2
+			} else false;
 		}
 	}
 }
@@ -617,6 +645,8 @@ incompatibleTNodeNames(tmap : TMap, node : TNodeName, overload : TNodeName) -> b
 		false
 	} else if (node.name == "flow" || overload.name == "flow") {
 		// This is always ok
+		false
+	} else if (isSingleUnionName(tmap, node.name, overload.name)) {
 		false
 	} else {
 		node.name != overload.name 
@@ -883,8 +913,15 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 			}
 		}
 		TNodeOverload(unique, overloads, pos): {
-			println("TODO: Resolve overload: " + prettyTNode(tmap, node));
-			mkClass(eclass);
+			if (length(overloads) > 0) {
+				if (length(overloads) != 1) {
+					println("TODO: Picking random overload: " + prettyTNode(tmap, node));
+				}
+				resolveTNode(tmap, acc, visited, eclass, overloads[0]);
+			} else {
+				println("TODO: Resolve overload: " + prettyTNode(tmap, node));
+				mkClass(eclass);
+			}
 		}
 		TNodeSupertype(unique, subtypes, __, pos): {
 			simpler = simplifyTNode(tmap, node);

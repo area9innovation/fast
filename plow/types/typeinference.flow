@@ -118,7 +118,7 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		genv = fold(chunk, cenv, \acc, id -> {
 			mglobal = lookupTree(d.globals, id);
 			mglobal ?? {
-				ttypeInferenceDGlobal(acc, mglobal)
+				ttypeInferenceDGlobal(acc, d.flowpath, mglobal)
 			} : {acc}
 		});
 
@@ -159,8 +159,9 @@ extractConnectedComponents(deps : SimpleGraph<string, bool>, acc : [[string]], o
 	}
 }
 
-ttypeInferenceDGlobal(env : TTypeEnv, d : DGlobal) -> TTypeEnv {
-	if (isTracingId(env.tracing, StageTypeInference(), 1, d.id)) {
+ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEnv {
+	if (isTracingId(env.tracing, StageTypeInference(), 1, d.id)
+		|| isTracingId(env.tracing, StageTypeInference(), 1, flowpath)) {
 		println("\nInference of global " + d.id);
 	}
 
