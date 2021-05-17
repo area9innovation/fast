@@ -75,9 +75,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 				lookupTree(d.structs, str);
 			});
 			others = tenv.resolveField(name);
-			all = concat(istructs, others);
-			// println(name + " from " + d.flowpath + " is totally " + toString(all));
-			all;
+			uniq(concat(istructs, others));
 		},
 		resolveSupertypes = \name -> {
 			concat(
