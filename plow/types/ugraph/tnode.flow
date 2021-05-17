@@ -471,8 +471,6 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 		TNodeSupertype(lunique, lsubtypes, lusub, lpos): {
 			switch (right) {
 				TNodeName(name, typars, pos): {
-					// OK: Check that this name is a supertype
-					// of all subtypes
 					unifyTNodeNameWithSuper(tmap, right, left);
 				}
 				TNodeOverload(runique, roverloads, pos): {
@@ -515,43 +513,12 @@ isSingleUnionName(tmap : TMap, name1 : string, name2 : string) -> bool {
 	}
 }
 
+// OK, we have a named type against a super.
 unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> TNode {
 	// println("Unifying " + prettyTNode(tmap, node) + " vs " + prettyTNode(tmap, super));
-
-	munion = ^(tmap.resolveUnionName)(node.name);
 	found = ref false;
 	iter(super.subtypes, \st -> {
-		if (st.name == node.name) {
-			// OK, the same
-			if (length(st.typars) == length(node.typars)) {
-				found := true;
-				iteri(st.typars, \i, tp -> {
-					joinTNodes(tmap, tp, node.typars[i]);
-					{}
-				})
-			} else {
-				tmap.onError(node.pos, "ERROR: Join typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, st));
-			}
-		} else {
-			// OK, we know that the node has to a supertype of st
-			switch (munion) {
-				None(): {
-					println("TODO: Join typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, st));
-				}
-				Some(union): {
-					stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == st.name);
-					stype ?? {
-						found := true;
-						// OK, we have the relation from the union to the struct in this union
-						unifyTNodeNameAgainstStruct(tmap, node, st, union, stype);
-					} : {
-						// TODO. Let us check each of the subtypes and see if they have our guy as a
-						// subtype!
-						tmap.onError(node.pos, "ERROR: Unknown subtype " + prettyTNode(tmap, node) + " from " + prettyTNode(tmap, super));
-					}
-				}
-			}
-		}
+		found := unifyTNodeNameWithSubtype(tmap, node, st) || ^found;
 	});
 
 	if (!isEmptySet(super.unknownSubtypes)) {
@@ -569,11 +536,76 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 	node;
 }
 
+// Try to unify this super type against a subtype. Return true if successful
+unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) -> bool {
+	if (subtype.name == node.name) {
+		// OK, the same name, just go
+		if (length(subtype.typars) == length(node.typars)) {
+			iteri(subtype.typars, \i, tp -> {
+				joinTNodes(tmap, tp, node.typars[i]);
+				{}
+			});
+			true;
+		} else {
+			tmap.onError(node.pos, "ERROR: Mismatch typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
+			false;
+		}
+	} else {
+		// OK, we know that the node has to a supertype of st
+		munion = ^(tmap.resolveUnionName)(node.name);
+		switch (munion) {
+			None(): {
+				tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
+				false;
+			}
+			Some(union): {
+				stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == subtype.name);
+				stype ?? {
+					// OK, we have the relation from the union to the struct in this union
+					unifyTNodeNameAgainstSubtype(tmap, node, subtype, union, stype);
+					true;
+				} : {
+					// TODO. Let us check each of the subtypes and see if they have our guy as a
+					// subtype!
+					tmap.onError(node.pos, "ERROR: Unknown subtype " + prettyTNode(tmap, node) + " from " + prettyTNode(tmap, subtype));
+					false;
+				}
+			}
+		}
+	}
+}
+
 // OK, we have a union on the left hand side, and a subtype on the right hand side
 // We have to figure out how those typars relate to each other.
 // Thus, we have unionDef and the corresponding typename instantiation
-unifyTNodeNameAgainstStruct(tmap : TMap, unionNode : TNodeName, subNode : TNodeName, 
+unifyTNodeNameAgainstSubtype(tmap : TMap, unionNode : TNodeName, subNode : TNodeName, 
 		unionDef : DUnion, subDef : DTypeName) -> void {
+	msubInstantiated : Maybe<TNodeName>= instantiateTNodeNameAgainstSubtype(tmap, unionNode, subNode, 
+		unionDef, subDef);
+	msubInstantiated ?? {
+		subtypes = msubInstantiated.typars;
+		// println("    " + prettyTNode(tmap, subInstantiated) + " vs " + prettyTNode(tmap, subNode));
+		if (length(subtypes) == length(subNode.typars)) {
+			iteri(subtypes, \i, tp -> {
+				if (tp != -1) {
+					joinTNodes(tmap, tp, subNode.typars[i]);
+					{}
+				} else {
+					tmap.onError(unionNode.pos, "ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
+				}
+			{}
+			});
+		} else {
+			tmap.onError(unionNode.pos, "ERROR: Expected typars for " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
+		}
+	} : {
+		tmap.onError(unionNode.pos, "ERROR: Expected typars for " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
+	}
+}
+
+// Instantiates a typename that we know is in the union
+instantiateTNodeNameAgainstSubtype(tmap : TMap, unionNode : TNodeName, subNode : TNodeName, 
+		unionDef : DUnion, subDef : DTypeName) -> Maybe<TNodeName> {
 	// println("  Node " + prettyTNode(tmap, unionNode) + " vs " + prettyTNode(tmap, subNode));
 	if (length(unionNode.typars) == length(unionDef.typars)) {
 		// OK, map from the typar to the eclass it is bound to
@@ -588,30 +620,17 @@ unifyTNodeNameAgainstStruct(tmap : TMap, unionNode : TNodeName, subNode : TNodeN
 			// So we implicitly extend it when there are none
 			DTypeName(subDef with typars = unionDef.typars)
 		} else subDef;
-
 		subtypes = map(sdtype.typars, \tp -> {
 			dtype2eclass(tmap, typars, tp)
 		});
 		// OK, instantiate the struct from the union typars
 		subInstantiated = TNodeName(subNode.name, subtypes, subNode.pos);
-		// println("    " + prettyTNode(tmap, subInstantiated) + " vs " + prettyTNode(tmap, subNode));
-		if (length(subtypes) == length(subNode.typars)) {
-			iteri(subtypes, \i, tp -> {
-				if (tp != -1) {
-					joinTNodes(tmap, tp, subNode.typars[i]);
-					{}
-				} else {
-					println("ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
-				}
-			{}
-			});
-		} else {
-			println("ERROR: Expected typars for " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
-		}
+		Some(subInstantiated)
 	} else {
-		println("ERROR: Expected typars for " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
-	}
+		None();
+	}	
 }
+
 
 dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int {
 	todo = \ -> {
