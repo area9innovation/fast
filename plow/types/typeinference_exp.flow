@@ -156,6 +156,9 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 				} : None();
 			});
 
+			// TODO: Here, figure out if we have unions covered,
+			// and if so, also make a union overload
+
 			fntype = if (fieldFnTypes == []) {
 				env.onError(pos, "Unknown field " + field);
 				TTypeEClass(env.mkEClass());

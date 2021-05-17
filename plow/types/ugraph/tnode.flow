@@ -7,7 +7,7 @@ TODO:
 - ? vs ?? in flowstructs
 - isSameStructType
 - (downcast in filtermap)
-
+- .field in unions: type11
 */
 
 export {
