@@ -10,10 +10,6 @@ export {
 	// Given this typename, instantiate it as either a union or struct typename, or a basic type
 	instantiateTTypeName(env : TTypeEnv, name : string) -> TType;
 
-	// Given a typename we know is part of the union, with this instantiation,
-	// instantiate the corresponding typename
-	instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TTypeName, struct : string) -> Maybe<TType>;
-
 	// Given this struct definition, instantiate a typename for it, and a consistent set of field types
 	// Instantiates polymorphism.
 	instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]>;
@@ -50,31 +46,6 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeEClass>, t 
 			TTypeSupertype(unique, sortUnique(map(subtypes, rec)), maxed);
 		}
 	}
-}
-
-instantiateTTypeNameFromUnion(env : TTypeEnv, union : DUnion, unionInstance : TTypeName, struct : string) -> Maybe<TType> {
-	stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == struct);
-	stype ?? {
-		if (length(unionInstance.typars) == length(union.typars)) {
-			typars : Tree<TType, TType> = foldi(unionInstance.typars, makeTree(), 
-				\i, acc : Tree<TType, TType>, typar : TType -> {
-				name : string = union.typars[i].id;
-				setTree(acc, TTypeName(name, []), typar);
-			});
-			// Consider
-			// Maybe<?> ::= None, Some<?>
-			// If we are in the None, case, notice we have one too little typars
-			sdtype = if (length(stype.typars) == 0) {
-				// So we implicitly extend it when there are none
-				DTypeName(stype with typars = union.typars)
-			} else stype;
-			sstype = dtype2ttype(env, false, sdtype);
-			Some(replaceTType(typars, sstype));
-		} else {
-			env.onError(-1, "Expected #" + i2s(length(union.typars)) + " typars, got " + prettyTType(unionInstance));
-			None();
-		}
-	} : None();
 }
 
 instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]> {
