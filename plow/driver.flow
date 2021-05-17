@@ -203,12 +203,10 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 				}
 			},
 			resolveField = \id -> {
-				mstructs : Maybe<[string]> = lookupFromImport(cache.modules, cache.fieldLookup, imports, id);
-				mstructs ?? {
-					filtermap(mstructs, \str -> {
-						dd.resolveStructName(str);
-					})
-				} : []
+				structs : [string] = lookupsFromImport(cache.modules, cache.fieldLookup, imports, id);
+				filtermap(structs, \str -> {
+					dd.resolveStructName(str);
+				})
 			},
 			resolveSupertypes = \id -> {
 				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);

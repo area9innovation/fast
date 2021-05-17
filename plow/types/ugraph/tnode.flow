@@ -349,17 +349,30 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
 					overload;
 				} else {
-					// Remove duplicates
-					uni = fold(subtypes, [], \acc, st -> {
-						if (exists(acc, \tt -> isSameTNode(tmap, st, tt))) acc
-						else arrayPush(acc, st);
+					// Unify the typars of identical typenames
+					nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st -> {
+						treePushToArrayUnique(acc, st.name, st)
 					});
-					if (length(uni) > 1 && exists(uni, \st -> {
-						st.typars != []
-					})) {
-						println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
+					unis : Pair<[TNodeName], [TNode]> = foldTree(nameGroups, Pair([], []), \name, group, acc -> {
+						if (length(group) > 1) {
+							merged = foldi(tail(group), group[0], \i, nn, acc2 : TNode -> {
+								mergeTNodes(tmap, acc2, nn);
+							});
+							switch (merged) {
+								TNodeName(__, __, __): Pair(arrayPush(acc.first, merged), acc.second);
+								default: {
+									Pair(acc.first, arrayPush(acc.second, merged));
+								}
+							}
+						} else Pair(concat(acc.first, group), acc.second);
+					});
+					if (unis.second == []) {
+						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+					} else {
+						println("TODO: We found something in a supertype");
+						println(unis.second);
+						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
 					}
-					TNodeSupertype(uniques, uni, unknownSubtypes, pos);
 				}
 			}
 		}
