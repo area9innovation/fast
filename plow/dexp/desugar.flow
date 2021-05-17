@@ -577,7 +577,7 @@ desugarPWith(dd : DDesugar, w : PWith) -> DWith {
 
 desugarPMaybe(dd : DDesugar, m : PMaybe) -> DExp {
 	// PMaybe(value, match, otherwise, pos);
-	println("TODO: Expand maybe");
+	println("TODO: Expand ?? maybe syntax");
 	pexp2dexp(dd, m.otherwise);
 }
 

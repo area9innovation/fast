@@ -330,7 +330,9 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
 					overload;
 				} else {
-					if (length(subtypes) > 1) {
+					if (length(subtypes) > 1 && exists(subtypes, \st -> {
+						st.typars != []
+					})) {
 						println("TODO: Check if we can unify intra-supers " + prettyTNode(tmap, node));
 					}
 					node;
@@ -539,15 +541,19 @@ unifyTNodeNameAgainstStruct(tmap : TMap, unionNode : TNodeName, subNode : TNodeN
 		// OK, instantiate the struct from the union typars
 		subInstantiated = TNodeName(subNode.name, subtypes, subNode.pos);
 		// println("    " + prettyTNode(tmap, subInstantiated) + " vs " + prettyTNode(tmap, subNode));
-		iteri(subtypes, \i, tp -> {
-			if (tp != -1) {
-				joinTNodes(tmap, tp, subNode.typars[i]);
-				{}
-			} else {
-				println("ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
-			}
-		{}
-		});
+		if (length(subtypes) == length(subNode.typars)) {
+			iteri(subtypes, \i, tp -> {
+				if (tp != -1) {
+					joinTNodes(tmap, tp, subNode.typars[i]);
+					{}
+				} else {
+					println("ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
+				}
+			{}
+			});
+		} else {
+			println("ERROR: Expected typars for " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
+		}
 	} else {
 		println("ERROR: Expected typars for " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode));
 	}
@@ -853,8 +859,11 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 			simpler = simplifyTNode(tmap, node);
 			if (simpler != node) {
 				resolveTNode(tmap, acc, visited, eclass, simpler);
+			} else if (subtypes != []) {
+				println("TODO: Picking random supertype: " + prettyTNode(tmap, node));
+				resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
 			} else {
-				println("TODO: Resolve supertype: " + prettyTNode(tmap, node));
+				tmap.onError(pos, "Could not resolve supertype: " + prettyTNode(tmap, node));
 				mkClass(eclass);
 			}
 		}

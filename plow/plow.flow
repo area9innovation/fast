@@ -7,10 +7,10 @@ import fs/filesystem;
 import math/stringmath;
 
 main() {
-	file3 = "plow/tests/";
-	file0 = "plow/tests/type3.flow";
+	file = "plow/tests/";
+	file0 = "plow/tests/implicit_polymorphism.flow";
 	file4  = "plow/tests/maybe.flow";
-	file  = "runtime.flow";
+	file3  = "runtime.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
 	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
 	file5 = "mini/tests";
@@ -19,16 +19,16 @@ main() {
 	allincludes = filter(concat([".", getFlowDir() + "/lib", getFlowDir()], includes), neq(""));
 
 	errors = ref 0;
-	cache = makePlowCache(\e -> {
-		errors := ^errors + 1;
-		println(e);
-	}, allincludes);
-
 	t = timestamp();
 
 	thefile = getUrlParameterDef("file", file);
 
 	if (!isDirectory(thefile)) {
+		cache = makePlowCache(\e -> {
+			errors := ^errors + 1;
+			println(e);
+		}, allincludes);
+
 		b = compilePlow(cache, thefile);
 		{}
 	} else {
@@ -38,6 +38,11 @@ main() {
 			// println(fil);
 			if (^errors < 1000) {
 				println("\n" + fil);
+				cache = makePlowCache(\e -> {
+					errors := ^errors + 1;
+					println(e);
+				}, allincludes);
+
 				b = compilePlow(cache, fil);
 			}
 		});	
