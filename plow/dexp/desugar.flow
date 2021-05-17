@@ -481,7 +481,39 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 			None();
 		};
 
-	cases : [DCase] = filtermap(s.cases, \c : PCase -> {
+	// Collect the struct names we have explicitly named
+	structs : Set<string> = fold(s.cases, makeSet(), \acc, case : PCase -> {
+		mstruct = dd.resolveStructName(case.id);
+		mstruct ?? {
+			if (containsSet(acc, case.id)) {
+				dd.onError(case.pos, "Duplicate case " + case.id);
+			}
+			insertSet(acc, case.id)
+		} : acc;
+	});
+
+	// Expand union cases
+	unions = concatA(map(s.cases, \c : PCase -> {
+		if (containsSet(structs, c.id) || c.id == "default") {
+			// Already a struct, keep it as is
+			[c]
+		} else {
+			// A union - expand to the cases we do not already have
+			casestructs = expandDTypename2structs(dd, c.id);
+			newStructs = filter(casestructs, \ss : DStruct -> {
+				!containsSet(structs, ss.id)
+			});
+			if (newStructs == []) {
+				dd.onError(c.pos, "Union case " + c.id + " is superfluous");
+			}
+			map(newStructs, \str -> {
+				PCase(str.id, map(str.structArgs, \__ -> "__"), c.body, c.pos)
+			})
+		}
+	}));
+
+	// Add downcasts and desugar
+	cases : [DCase] = filtermap(unions, \c : PCase -> {
 		if (c.id == "default") None()
 		else {
 			body0 = pexp2dexp(dd, c.body);
@@ -526,39 +558,7 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 		}
 	});
 
-	// Collect the struct names we have explicitly named
-	structs : Set<string> = fold(cases, makeSet(), \acc, case -> {
-		mstruct = dd.resolveStructName(case.id);
-		mstruct ?? {
-			if (containsSet(acc, case.id)) {
-				dd.onError(case.pos, "Duplicate case " + case.id);
-			}
-			insertSet(acc, case.id)
-		} : acc;
-	});
-
-	// Expand union cases
-	unions = concatA(map(cases, \c : DCase -> {
-		if (containsSet(structs, c.id)) {
-			// Already a struct, keep it as is
-			[c]
-		} else {
-			// A union - expand to the cases we do not already have
-			casestructs = expandDTypename2structs(dd, c.id);
-			newStructs = filter(casestructs, \ss : DStruct -> {
-				!containsSet(structs, ss.id)
-			});
-			if (newStructs == []) {
-				dd.onError(c.pos, "Union case " + c.id + " is superfluous");
-			}
-
-			map(newStructs, \str -> {
-				DCase(str.id, c.body, c.pos)
-			})
-		}
-	}));
-
-	DSwitch(switchvar, type, unions, def, s.pos, newEClass(dd.nextEClass))
+	DSwitch(switchvar, type, cases, def, s.pos, newEClass(dd.nextEClass))
 }
 
 desugarPWith(dd : DDesugar, w : PWith) -> DWith {

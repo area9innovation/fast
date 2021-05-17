@@ -330,7 +330,6 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 				named = foldi(subtypes, makeSet(), \i, acc, t : TNodeName -> {
 					id = t.name;
 					supers0 = ^(tmap.resolveSupertypes)(id);
-					println(id + " gives " + toString(supers0));
 					supers = arrayPush(supers0, id);
 					supset = buildSet(supers);
 					if (i == 0) supset
