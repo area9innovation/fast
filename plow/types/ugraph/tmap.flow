@@ -16,6 +16,8 @@ export {
 		onError : (int, string) -> void,
 		// The next eclass
 		nextEClass : ref int,
+		// A list of pending unifications that we could not do
+		pending : ref List<Pair<TNode, TNode>>,
 	);
 
 	// Our nodes in the type graph
@@ -26,8 +28,6 @@ export {
 			unique : Set<int>, 
 			// When we do not know what overload to pick, we keep candidates here
 			overloads : [TNodeName], 
-			// When we have pending nodes to join with once it is clarified, we keep them here
-			pending : [TNodeName],
 			pos : int
 		);
 		TNodeSupertype(
