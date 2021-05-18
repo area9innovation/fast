@@ -17,6 +17,9 @@ export {
 
 	// Build a map from a type name to the subtypes it might have
 	makeDSubtypes(unions : Tree<string, DUnion>) -> Tree<string, [string]>;
+
+	// Build a map from field names to what unions have all those fields
+	makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>) -> Tree<string, Set<string>>;
 }
 
 extractDTyparsFromDExp(e : DExp) -> Set<string> {
@@ -90,6 +93,46 @@ makeDSubtypes(unions : Tree<string, DUnion>) -> Tree<string, [string]> {
 	foldTree(unions, makeTree(), \un, uni, acc -> {
 		fold(uni.types, acc, \acc2, tn -> {
 			treePushToArrayValue(acc2, un, tn.id)
+		})
+	});
+}
+
+makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>) -> Tree<string, Set<string>> {
+	typenameFields = makeDStructFields(structs);
+	foldTree(unions, makeTree(), \un, uni, acc -> {
+		fields = getDTypenameFields(unions, typenameFields, un);
+		if (!isEmptySet(fields)) {
+			println(un + " has " + toString(set2array(fields)));
+			setTree(acc, un, fields);
+		} else acc;
+	});
+}
+
+getDTypenameFields(
+	unions : Tree<string, DUnion>, 
+	typenameFields : Tree<string, [string]>,
+	typename : string,
+) -> Set<string> {
+	munion = lookupTree(unions, typename);
+	munion ?? {
+		foldi(munion.types, makeSet(), \i, acc, type -> {
+			fields = getDTypenameFields(unions, typenameFields, type.id);
+			if (i == 0) {
+				fields;
+			} else {
+				intersectSets(fields, acc);
+			}
+		});
+	} : {
+		buildSet(getTreeArrayValue(typenameFields, typename));
+	}
+}
+
+// What fields does each struct have?
+makeDStructFields(structs : Tree<string, DStruct>) -> Tree<string, [string]> {
+	foldTree(structs, makeTree(), \st, stru, acc -> {
+		fold(stru.structArgs, acc, \acc2, sa -> {
+			treePushToArrayValue(acc2, st, sa.id)
 		})
 	});
 }

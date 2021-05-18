@@ -1,16 +1,10 @@
 import plow/pexp/parse;
-
-import plow/lookup;
-
-import plow/dexp/dexp;
 import plow/dexp/desugar;
-import plow/dexp/pretty;
-
 import plow/types/typeinference;
-
 import plow/bexp/dmodule2bmodule;
-import plow/bexp/pretty;
 import plow/bexp/btype2ttype;
+import plow/bexp/pretty;
+import plow/lookup;
 
 import plow/tracing;
 
@@ -106,40 +100,40 @@ makePlowCache(
 		ref makeTree(), ref makeSet()
 	);
 	fieldLookup = BLookupFromImport(\module, n -> {
-		lookupTree(module.fields, n);
-	}, \module, n -> {
-		structs = getTreeArrayValue(module.fields, n);
-		// TODO: Maybe this is too much. We should probably just restrict
-		// to those that are exported
-		forall(structs, \s -> {
-			containsSet(module.exported.exportedTypes, s)
-		})
-	}, \upath, n, error -> {
-		println("TODO: What about the position of this field? " + toString(n));
-		makeOnError(upath, onError)(0, error)
-	}, ref makeTree(), ref makeSet()
+			lookupTree(module.fields, n);
+		}, \module, n -> {
+			structs = getTreeArrayValue(module.fields, n);
+			// TODO: Maybe this is too much. We should probably just restrict
+			// to those that are exported
+			forall(structs, \s -> {
+				containsSet(module.exported.exportedTypes, s)
+			})
+		}, \upath, n, error -> {
+			println("TODO: What about the position of this field? " + toString(n));
+			makeOnError(upath, onError)(0, error)
+		}, ref makeTree(), ref makeSet()
 	);
 
 	superTypeLookup = BLookupFromImport(\module, n -> {
-		supers = makeDSupers(module.unions);
-		Some(getTreeArrayValue(supers, n));
-	}, \module, n -> {
-		true;
-	}, \upath, nat, error -> {
-		println("TODO: What about the position of this field? " + toString(nat));
-		makeOnError(upath, onError)(0, error)
-	}, ref makeTree(), ref makeSet()
+			supers = makeDSupers(module.unions);
+			Some(getTreeArrayValue(supers, n));
+		}, \module, n -> {
+			true;
+		}, \upath, nat, error -> {
+			println("TODO: What about the position of this field? " + toString(nat));
+			makeOnError(upath, onError)(0, error)
+		}, ref makeTree(), ref makeSet()
 	);
 
 	subTypeLookup = BLookupFromImport(\module, n -> {
-		subs = makeDSubtypes(module.unions);
-		Some(getTreeArrayValue(subs, n));
-	}, \module, n -> {
-		true;
-	}, \upath, nat, error -> {
-		println("TODO: What about the position of this field? " + toString(nat));
-		makeOnError(upath, onError)(0, error)
-	}, ref makeTree(), ref makeSet()
+			subs = makeDSubtypes(module.unions);
+			Some(getTreeArrayValue(subs, n));
+		}, \module, n -> {
+			true;
+		}, \upath, nat, error -> {
+			println("TODO: What about the position of this field? " + toString(nat));
+			makeOnError(upath, onError)(0, error)
+		}, ref makeTree(), ref makeSet()
 	);
 
 	PlowCache(
@@ -172,21 +166,25 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		dd = makeDDesugar(makeOnError(path, cache.onError), cache.nextId, \n -> {
+		dd = makeDDesugar(makeOnError(path, cache.onError), cache.nextId, 
+			// resolveStructName
+			\n -> {
 				// OK, scan our imports for this struct
 				lookupFromImport(cache.modules, cache.structLookup, imports, n)
-			}, \n -> {
+			}, 
+			// resolveUnionName
+			\n -> {
 				// OK, scan our imports for this struct
 				lookupFromImport(cache.modules, cache.unionLookup, imports, n)
-			});
+			}
+		);
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
 		tgraph = makeTypeGraph(dd.onError, dd.nextEClass);
 
 		tenv1 = TTypeEnv(
-			makeTTypeEnv(tgraph) with
-			onError = dd.onError,
+			makeTTypeEnv(tgraph, dd.onError) with
 			resolveId = \pos, id -> {
 				mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
 				mbmod ?? {

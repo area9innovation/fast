@@ -65,6 +65,7 @@ getBuiltinTType(op : string) -> Maybe<TType> {
 			Pair(":=", TTypeFunction([refTType(typar1), typar1], voidTType)), // TODO: Add supertype?
 			Pair("__deref", TTypeFunction([refTType(typar1)], typar1)), // TODO: Add supertype?
 			Pair("__index", TTypeFunction([arrayTType(typar1), intTType], typar1)),
+			Pair("__structname", TTypeFunction([typar1], stringTType)),
 		])
 	});
 	lookupTree(ot, op);

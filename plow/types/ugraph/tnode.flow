@@ -84,13 +84,16 @@ defaultTNode() -> TNode {
 	TNodeName("", [], -1);
 }
 
+uindent = ref "";
 // These two types are unified
 unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		reason : string, pos : int) -> void {
 	lclass = findOrMakeTNodeClass(tmap, left, pos);
 	rclass = findOrMakeTNodeClass(tmap, right, pos);
+	ind = ^uindent;
+	uindent := ind + "  ";
 	if (verbose) {
-		println("Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+		println(ind + "Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -98,11 +101,12 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		// println("  Union e" + i2s(lclass) + " and e" + i2s(rclass));
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
 		
-		// println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
+		println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
 		{}
 	} else {
 		println("Not supposed to happen: " + prettyTType(left) + " and " + prettyTType(right));
 	}
+	uindent := ind;
 }
 
 findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
@@ -408,6 +412,7 @@ instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int)
 //
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
+	// println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 	todo = \ -> {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 		left;
@@ -539,7 +544,7 @@ isSingleUnionName(tmap : TMap, name1 : string, name2 : string) -> bool {
 
 // OK, we have a named type against a super.
 unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> TNode {
-	// println("Unifying " + prettyTNode(tmap, node) + " vs " + prettyTNode(tmap, super));
+	// println(^uindent + "Unifying " + prettyTNode(tmap, node) + " vs " + prettyTNode(tmap, super));
 	found = ref false;
 	iter(super.subtypes, \st -> {
 		found := unifyTNodeNameWithSubtype(tmap, node, st) || ^found;
@@ -548,6 +553,7 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 	if (!isEmptySet(super.unknownSubtypes)) {
 		eclass = findOrMakeTNode(tmap, node);
 		iterSet(super.unknownSubtypes, \st -> {
+			// println(^uindent + "Joining e" + i2s(eclass) + " and " + i2s(st));
 			joinTNodes(tmap, eclass, st);
 			found := true;
 		});

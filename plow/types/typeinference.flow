@@ -52,6 +52,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	// Make a field map
 	fields = makeDFieldMap(d.structs);
+	unionFields = makeDUnionFields(d.unions, d.structs);	// TODO: Make use of this
 	supers = makeDSupers(d.unions);
 	subs = makeDSubtypes(d.unions);
 
