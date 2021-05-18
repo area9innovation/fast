@@ -3,11 +3,11 @@ import text/gringo/dcode_lib;
 import string;
 
 export {
-	parse_flow(DParseAcc) -> bool;
+	parse_flow(acc : DParseAcc<?>) -> bool;
 }
 
 
-parse_flow(acc : DParseAcc) -> bool {
+parse_flow(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -48,7 +48,7 @@ parse_flow(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_toplevels(acc : DParseAcc) -> bool {
+parse_toplevels(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -97,7 +97,7 @@ parse_toplevels(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_toplevel(acc : DParseAcc) -> bool {
+parse_toplevel(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_import(acc)) {
@@ -132,7 +132,7 @@ parse_toplevel(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_semi(acc : DParseAcc) -> bool {
+parse_semi(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (if (matchString(acc, ";")) {
@@ -154,7 +154,7 @@ parse_semi(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_optsemi(acc : DParseAcc) -> bool {
+parse_optsemi(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -175,7 +175,7 @@ parse_optsemi(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_import(acc : DParseAcc) -> bool {
+parse_import(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchString(acc, "import")) {
@@ -206,7 +206,7 @@ parse_import(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_export(acc : DParseAcc) -> bool {
+parse_export(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchString(acc, "export")) {
@@ -253,7 +253,7 @@ parse_export(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_forbid(acc : DParseAcc) -> bool {
+parse_forbid(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchString(acc, "forbid")) {
@@ -284,7 +284,7 @@ parse_forbid(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_pathpos(acc : DParseAcc) -> bool {
+parse_pathpos(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -313,7 +313,7 @@ parse_pathpos(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_path(acc : DParseAcc) -> bool {
+parse_path(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_bid(acc)) {
@@ -341,7 +341,7 @@ parse_path(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_native(acc : DParseAcc) -> bool {
+parse_native(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchString(acc, "native")) {
@@ -435,7 +435,7 @@ parse_native(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_nativename(acc : DParseAcc) -> bool {
+parse_nativename(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_bid(acc)) {
@@ -463,7 +463,7 @@ parse_nativename(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_union(acc : DParseAcc) -> bool {
+parse_union(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_typename(acc)) {
@@ -494,7 +494,7 @@ parse_union(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_typenames(acc : DParseAcc) -> bool {
+parse_typenames(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -564,7 +564,7 @@ parse_typenames(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_global(acc : DParseAcc) -> bool {
+parse_global(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_idpos(acc)) {
@@ -716,7 +716,7 @@ parse_global(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_functionOrStruct(acc : DParseAcc) -> bool {
+parse_functionOrStruct(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_idpos(acc)) {
@@ -952,7 +952,7 @@ parse_functionOrStruct(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_structargs(acc : DParseAcc) -> bool {
+parse_structargs(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -1022,7 +1022,7 @@ parse_structargs(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_structarg(acc : DParseAcc) -> bool {
+parse_structarg(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -1092,7 +1092,7 @@ parse_structarg(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp(acc : DParseAcc) -> bool {
+parse_exp(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -1195,7 +1195,7 @@ parse_exp(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp1(acc : DParseAcc) -> bool {
+parse_exp1(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp2(acc)) {
@@ -1243,7 +1243,7 @@ parse_exp1(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp2(acc : DParseAcc) -> bool {
+parse_exp2(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp3(acc)) {
@@ -1291,7 +1291,7 @@ parse_exp2(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp3(acc : DParseAcc) -> bool {
+parse_exp3(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp4(acc)) {
@@ -1339,7 +1339,7 @@ parse_exp3(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp4(acc : DParseAcc) -> bool {
+parse_exp4(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp5(acc)) {
@@ -1387,7 +1387,7 @@ parse_exp4(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp5(acc : DParseAcc) -> bool {
+parse_exp5(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp6(acc)) {
@@ -1475,7 +1475,7 @@ parse_exp5(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp6(acc : DParseAcc) -> bool {
+parse_exp6(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp7(acc)) {
@@ -1633,7 +1633,7 @@ parse_exp6(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp7(acc : DParseAcc) -> bool {
+parse_exp7(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp8(acc)) {
@@ -1721,7 +1721,7 @@ parse_exp7(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp8(acc : DParseAcc) -> bool {
+parse_exp8(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp9(acc)) {
@@ -1844,7 +1844,7 @@ parse_exp8(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp9(acc : DParseAcc) -> bool {
+parse_exp9(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp10(acc)) {
@@ -1929,7 +1929,7 @@ parse_exp9(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp10(acc : DParseAcc) -> bool {
+parse_exp10(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_exp11(acc)) {
@@ -1989,7 +1989,7 @@ parse_exp10(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp11(acc : DParseAcc) -> bool {
+parse_exp11(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -2254,7 +2254,7 @@ parse_exp11(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp12(acc : DParseAcc) -> bool {
+parse_exp12(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -2294,7 +2294,7 @@ parse_exp12(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exp13(acc : DParseAcc) -> bool {
+parse_exp13(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -2908,7 +2908,7 @@ parse_exp13(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_with(acc : DParseAcc) -> bool {
+parse_with(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -2963,7 +2963,7 @@ parse_with(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_fields(acc : DParseAcc) -> bool {
+parse_fields(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -3033,7 +3033,7 @@ parse_fields(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_fieldassign(acc : DParseAcc) -> bool {
+parse_fieldassign(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_idpos(acc)) {
@@ -3060,7 +3060,7 @@ parse_fieldassign(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_switch(acc : DParseAcc) -> bool {
+parse_switch(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -3148,7 +3148,7 @@ parse_switch(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_cases(acc : DParseAcc) -> bool {
+parse_cases(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -3193,7 +3193,7 @@ parse_cases(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_defaultOrNamedCase(acc : DParseAcc) -> bool {
+parse_defaultOrNamedCase(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -3306,7 +3306,7 @@ parse_defaultOrNamedCase(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_names(acc : DParseAcc) -> bool {
+parse_names(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -3376,7 +3376,7 @@ parse_names(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_brace(acc : DParseAcc) -> bool {
+parse_brace(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -3415,7 +3415,7 @@ parse_brace(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_expsemi(acc : DParseAcc) -> bool {
+parse_expsemi(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -3468,7 +3468,7 @@ parse_expsemi(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_lambda(acc : DParseAcc) -> bool {
+parse_lambda(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -3511,7 +3511,7 @@ parse_lambda(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_lambdaargs(acc : DParseAcc) -> bool {
+parse_lambdaargs(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -3581,7 +3581,7 @@ parse_lambdaargs(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_lambdaarg(acc : DParseAcc) -> bool {
+parse_lambdaarg(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_id(acc)) {
@@ -3643,7 +3643,7 @@ parse_lambdaarg(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_lambdatype(acc : DParseAcc) -> bool {
+parse_lambdatype(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -3694,7 +3694,7 @@ parse_lambdatype(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_lambdatypeauto(acc : DParseAcc) -> bool {
+parse_lambdatypeauto(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -3745,7 +3745,7 @@ parse_lambdatypeauto(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_exps(acc : DParseAcc) -> bool {
+parse_exps(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -3815,7 +3815,7 @@ parse_exps(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_idpos(acc : DParseAcc) -> bool {
+parse_idpos(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -3834,7 +3834,7 @@ parse_idpos(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_type(acc : DParseAcc) -> bool {
+parse_type(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -4287,7 +4287,7 @@ parse_type(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_fntype(acc : DParseAcc) -> bool {
+parse_fntype(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addMatched(acc, i2s(acc.i))) {
@@ -4338,7 +4338,7 @@ parse_fntype(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_argtypes(acc : DParseAcc) -> bool {
+parse_argtypes(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -4408,7 +4408,7 @@ parse_argtypes(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_argtype(acc : DParseAcc) -> bool {
+parse_argtype(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -4471,7 +4471,7 @@ parse_argtype(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_typename(acc : DParseAcc) -> bool {
+parse_typename(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_idpos(acc)) {
@@ -4490,7 +4490,7 @@ parse_typename(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_typars(acc : DParseAcc) -> bool {
+parse_typars(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -4526,7 +4526,7 @@ parse_typars(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_types(acc : DParseAcc) -> bool {
+parse_types(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (addVerbatim(acc, "list")) {
@@ -4596,7 +4596,7 @@ parse_types(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_hexdigit(acc : DParseAcc) -> bool {
+parse_hexdigit(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchRange(acc, 48, 57)) {
@@ -4615,7 +4615,7 @@ parse_hexdigit(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_id(acc : DParseAcc) -> bool {
+parse_id(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		acc.starti ::= acc.i;
@@ -4638,7 +4638,7 @@ parse_id(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_bid(acc : DParseAcc) -> bool {
+parse_bid(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -4668,7 +4668,7 @@ parse_bid(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_letterOrDigit(acc : DParseAcc) -> bool {
+parse_letterOrDigit(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchRange(acc, 97, 122)) {
@@ -4691,7 +4691,7 @@ parse_letterOrDigit(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_string(acc : DParseAcc) -> bool {
+parse_string(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		acc.starti ::= acc.i;
@@ -4729,7 +4729,7 @@ parse_string(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_onechar_(acc : DParseAcc) -> bool {
+parse_onechar_(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -4864,7 +4864,7 @@ parse_onechar_(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_escapedchar_(acc : DParseAcc) -> bool {
+parse_escapedchar_(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_backslash(acc)) {
@@ -4891,15 +4891,15 @@ parse_escapedchar_(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_backslash(acc : DParseAcc) -> bool {
+parse_backslash(acc : DParseAcc<?>) -> bool {
 	matchString(acc, "\\")
 }
 
-parse_anychar(acc : DParseAcc) -> bool {
+parse_anychar(acc : DParseAcc<?>) -> bool {
 	matchRange(acc, 0, 65535)
 }
 
-parse_double(acc : DParseAcc) -> bool {
+parse_double(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		pushDCheckpoint(acc);
@@ -4942,7 +4942,7 @@ parse_double(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_int(acc : DParseAcc) -> bool {
+parse_int(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchRange(acc, 48, 57)) {
@@ -4959,13 +4959,13 @@ parse_int(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_ws(acc : DParseAcc) -> bool {
+parse_ws(acc : DParseAcc<?>) -> bool {
 	parseStar(acc, \ -> {
 		parse_s(acc)
 	})
 }
 
-parse_s(acc : DParseAcc) -> bool {
+parse_s(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (parse_cs(acc)) {
@@ -4982,7 +4982,7 @@ parse_s(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_cs(acc : DParseAcc) -> bool {
+parse_cs(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchString(acc, " ")) {
@@ -5056,7 +5056,7 @@ parse_cs(acc : DParseAcc) -> bool {
 	}
 }
 
-parse_lastLineComment(acc : DParseAcc) -> bool {
+parse_lastLineComment(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		if (matchString(acc, "//")) {

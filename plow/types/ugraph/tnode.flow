@@ -6,7 +6,12 @@ TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - isSameStructType
 - (downcast in filtermap)
+
+- text/gringo/dcode_lib.flow:98:26: ERROR: Merge overload600{(double, double)->double, (int, int)->int, (string, string)->string} and (void, int)->e620
+
 - fusion.flow
+	switch with default
+TODO: Convert DTypeName("auto", [], 13480) to eclass
 
 */
 
