@@ -1,4 +1,4 @@
-import plow/types/ugraph/type;
+import plow/types/ugraph/tmap;
 import plow/types/pretty;
 
 /*

@@ -1,5 +1,4 @@
 import plow/types/pretty;
-import plow/types/ugraph/type;
 import plow/types/ugraph/tnode;
 import ds/treeutils;
 
