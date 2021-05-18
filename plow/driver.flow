@@ -254,9 +254,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		// OK, clear the name lookup cache
 		clearPlowCache(cache);
 
-		prettyDModule(tenv, isTracingId(tenv.tracing, StageLower(), 0, flowpath), dmod);
 
 		if (isTracingId(tenv.tracing, StageLower(), 1, flowpath)) {
+			prettyDModule(tenv, true, dmod);
 			println(prettyBModule(bmodule));
 		}
 

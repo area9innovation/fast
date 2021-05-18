@@ -4,11 +4,10 @@ import plow/types/pretty;
 /*
 TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
-- ? vs ?? in flowstructs
 - isSameStructType
 - (downcast in filtermap)
-- "flow" type for impersonateCallstackFn is lost
-  - If a type is resolved, should we use that in the environment?
+- fusion.flow
+
 */
 
 export {
@@ -593,8 +592,12 @@ unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) ->
 		munion = ^(tmap.resolveUnionName)(node.name);
 		switch (munion) {
 			None(): {
-				tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
-				false;
+				if (node.name == "flow" || subtype.name == "flow") {
+					true;
+				} else {
+					tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
+					false;
+				}
 			}
 			Some(union): {
 				stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == subtype.name);

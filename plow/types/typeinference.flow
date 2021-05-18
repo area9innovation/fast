@@ -22,7 +22,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		type = dtype2ttype(acc, false, nativ.type);
 		unifyTType(acc, nat, "native", d.pos, type, TTypeEClass(nativ.eclass));
 
-		if (isTracingId(env.tracing, StageTypeInference(), 0, nat)) {
+		if (isTracingId(env.tracing, StageTypeInference(), 1, nat)) {
 			println("native " + nat + ": " + prettyTType(type));
 		}
 
@@ -42,7 +42,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 				TTypeEClass(global.eclass)
 			}
 		};
-		if (isTracingId(env.tracing, StageTypeInference(), 0, id)) {
+		if (isTracingId(env.tracing, StageTypeInference(), 1, id)) {
 			println(id + ": " + prettyTType(type));
 		}
 		if (!containsKeyTree(acc.moduleTypes, id)) {
