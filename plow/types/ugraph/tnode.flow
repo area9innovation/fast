@@ -93,7 +93,7 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 	ind = ^uindent;
 	uindent := ind + "  ";
 	if (verbose) {
-		println(ind + "Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+		println("\n" + ind + "Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -101,7 +101,8 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		// println("  Union e" + i2s(lclass) + " and e" + i2s(rclass));
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
 		
-		println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
+		// println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
+		// dumpTNodes(tmap);
 		{}
 	} else {
 		println("Not supposed to happen: " + prettyTType(left) + " and " + prettyTType(right));
@@ -158,9 +159,9 @@ isSameTNode(tmap : TMap, left : TNode, right : TNode) -> bool {
 				default: false;
 			}
 		}
-		TNodeOverload(uniques, overloads, __): {
+		TNodeOverload(uniques, overloads, __, __): {
 			switch (right) {
-				TNodeOverload(runiques, __, __): !isEmptySet(intersectSets(uniques, runiques));
+				TNodeOverload(runiques, __, __, __): !isEmptySet(intersectSets(uniques, runiques));
 				default: false;
 			}
 		}
@@ -193,6 +194,7 @@ makeTNode(tmap : TMap, t : TType, pos : int) -> TNode {
 			simplifyTNode(tmap, TNodeOverload(
 				uniques,
 				map(overloads, \st -> makeTNodeName(tmap, st, pos)),
+				[],
 				pos
 			))
 		}
@@ -229,7 +231,7 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 						addName(node);
 					}
 				}
-				TNodeOverload(unique, overloads, __): todo();
+				TNodeOverload(unique, overloads, __, __): todo();
 				TNodeSupertype(uniques, subtypes, usub, pos): {
 					TNodeSupertype(acc with
 						subtypes = concat(acc.subtypes, subtypes),
@@ -293,12 +295,33 @@ makeTNodeName(tmap : TMap, t : TType, pos : int) -> TNodeName {
 simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 	switch (node) {
 		TNodeName(name, typars, __): node;
-		TNodeOverload(unique, overloads, __): {
-			if (length(overloads) == 1) {
-				overloads[0];
+		TNodeOverload(unique, overloads, pending, __): {
+			// Filter to those that are compatible with any pending
+			foverloads = fold(pending, overloads, \acc, p -> {
+				filter(acc, \lo : TNodeName -> {
+					c = incompatibleTNodeNames(tmap, p, lo);
+					if (c) {
+						// println("Ignoring incompatible overload " + prettyTNode(tmap, lo) + " for " + prettyTNode(tmap, right));
+						false;
+					} else {
+						true;
+					}
+				})
+			});
+
+			if (length(foverloads) == 1) {
+				winner = foverloads[0];
+				fold(pending, winner, \acc, p -> {
+					mergeTNodes(tmap, acc, p);
+				});
 			} else {
-				// TODO: Doubt anything else is possible here?
-				node;
+				noverloads = TNodeOverload(node with overloads = foverloads);
+				// OK, we can try to merge with the pending
+				if (false) {
+					fold(pending, noverloads, \acc, p -> {
+						mergeTNodes(tmap, acc, p)
+					});
+				} else noverloads;
 			}
 		}
 		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
@@ -342,7 +365,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 					overloads = map(set2array(named), \n -> {
 						instantiateTNodeName(tmap, n, subtypes, pos)
 					});
-					overload = TNodeOverload(uniques, overloads, pos);
+					overload = TNodeOverload(uniques, overloads, [], pos);
 					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
 					overload;
 				} else {
@@ -412,7 +435,7 @@ instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int)
 //
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
-	// println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
+//	println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 	todo = \ -> {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 		left;
@@ -450,7 +473,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 						}), pos))
 					}
 				}
-				TNodeOverload(unique, overloads, __): {
+				TNodeOverload(unique, overloads, __, __): {
 					mergeTNodes(tmap, right, left);
 				}
 				TNodeSupertype(unique, subtypes, __, __): {
@@ -458,7 +481,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				}
 			}
 		}
-		TNodeOverload(lunique, loverloads, lpos): {
+		TNodeOverload(lunique, loverloads, lpending, lpos): {
 			switch (right) {
 				TNodeName(name, typars, pos): {
 					// OK: Find which of the overloads potentially match this one
@@ -475,20 +498,19 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 						error(max(lpos, pos));
 					} else if (length(overloads) == 1) {
 						winner = overloads[0];
-						mergeTNodes(tmap, winner, right);
+						fold(lpending, winner, \acc, p -> {
+							mergeTNodes(tmap, acc, p);
+						});
 					} else {
-						noverload = TNodeOverload(lunique, overloads, pos);
-						// TODO: It could be that we are throwing away information.
-						// Maybe we should record the right hand side inside the
-						// overload
-						if (false) {
-							println("Potential information loss: Unify typars for " + prettyTNode(tmap, right) + " and " + prettyTNode(tmap, noverload));
-						}
-						// println("From " + prettyTNode(tmap, left));
-						right;
+						// OK, we can not clarify it, so keep the
+						// match in our overload
+						noverload = TNodeOverload(lunique, overloads, 
+							arrayPush(lpending, right), pos);
+						// println("From " + prettyTNode(tmap, left) + " to " + prettyTNode(tmap, noverload));
+						noverload;
 					}
 				}
-				TNodeOverload(unique, overloads, pos): {
+				TNodeOverload(unique, overloads, __, pos): {
 					println("TODO: Find the intersection between " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 					left;
 				}
@@ -502,7 +524,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeName(name, typars, pos): {
 					unifyTNodeNameWithSuper(tmap, right, left);
 				}
-				TNodeOverload(runique, roverloads, pos): {
+				TNodeOverload(runique, roverloads, __, pos): {
 					todo();
 				}
 				TNodeSupertype(runique, rsubtypes, rusub, pos): {
@@ -776,7 +798,7 @@ incompatibleTNodes(tmap : TMap, left : TNode, right : TNode) -> bool {
 				default: incompatibleTNodes(tmap, right, left);
 			}
 		}
-		TNodeOverload(lunique, loverloads, pos): {
+		TNodeOverload(lunique, loverloads, __, pos): {
 			todo();
 		}
 		TNodeSupertype(luniques, lsubtypes, usubs, pos): {
@@ -854,7 +876,7 @@ isTTypeInTNode(tmap : TMap, t : TType, nclass : int, n : TNode) -> bool {
 				TTypeSupertype(unique, subtypes, maxed): false;
 			}
 		}
-		TNodeOverload(uniques, overloads, pos): {
+		TNodeOverload(uniques, overloads, __, pos): {
 			switch (t) {
 				TTypeOverload(tunique, __): {
 					uid = findTNode(tmap, tunique);
@@ -899,10 +921,11 @@ prettyTNode(tmap : TMap, t : TNode) -> string {
 				+ (if (typars != []) "<" + superglue(typars, \e -> prettyEClass(tmap, e), ",") + ">" else "");
 			}
 		}
-		TNodeOverload(uniques, overloads, pos): {
+		TNodeOverload(uniques, overloads, pending, pos): {
 			"overload" + superglue(set2array(uniques), i2s, "_") + "{"
 			+ superglue(overloads, \o -> prettyTNode(tmap, o), ", ")
-			+ "}";
+			+ "}"
+			+ (if (pending != []) ":" + superglue(pending, \p -> prettyTNode(tmap, p), ", ") else "");
 		}
 		TNodeSupertype(uniques, subtypes, usub, pos): {
 			"super" + superglue(set2array(uniques), i2s, "_") + "{"
@@ -943,6 +966,16 @@ getTNodes(tmap : TMap) -> Set<int> {
 }
 
 // At the end, extract the types
+
+dumpTNodes(tmap : TMap) -> void {
+	roots = getTNodes(tmap);
+	iterSet(roots, \root -> {
+		node = getUnionMapValue(tmap.tmap, root);
+		if (!isEmptyTNode(node)) {
+			println("e" + i2s(root) + " = " + debugTNode(tmap, root));
+		}
+	});
+}
 
 resolveTNodes(tmap : TMap, verbose : bool) -> Tree<int, TType> {
 	roots = getTNodes(tmap);
@@ -1003,8 +1036,11 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 				})))
 			}
 		}
-		TNodeOverload(unique, overloads, pos): {
-			if (length(overloads) > 0) {
+		TNodeOverload(unique, overloads, pending, pos): {
+			simpler = simplifyTNode(tmap, node);
+			if (simpler != node) {
+				resolveTNode(tmap, acc, visited, eclass, simpler);
+			} else if (length(overloads) > 0) {
 				if (length(overloads) != 1) {
 					println("TODO: Picking random overload: " + prettyTNode(tmap, node));
 				}

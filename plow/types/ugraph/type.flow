@@ -22,7 +22,14 @@ export {
 	TNode ::= TNodeName, TNodeOverload, TNodeSupertype;
 		// If the name is empty, it is a function. If name is empty, and typars empty, null
 		TNodeName(name : string, typars : [int], pos : int);
-		TNodeOverload(unique : Set<int>, overloads : [TNodeName], pos : int);
+		TNodeOverload(
+			unique : Set<int>, 
+			// When we do not know what overload to pick, we keep candidates here
+			overloads : [TNodeName], 
+			// When we have pending nodes to join with once it is clarified, we keep them here
+			pending : [TNodeName],
+			pos : int
+		);
 		TNodeSupertype(
 			uniques : Set<int>, 
 			// When we know what the name is of a subtype, it goes here
