@@ -10,7 +10,8 @@ export {
 	// Given this typename, instantiate it as either a union or struct typename, or a basic type
 	instantiateTTypeName(env : TTypeEnv, name : string) -> TType;
 
-	// Given this struct definition, instantiate a typename for it, and a consistent set of field types
+	// Given this struct definition, instantiate a typename for it, 
+	// and a consistent set of field types
 	// Instantiates polymorphism.
 	instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]>;
 }

@@ -140,33 +140,45 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 
 			fieldStructs : [DStruct] = env.resolveField(field);
 
+			// Types for overload functions
 			fieldFnTypes : [TTypeFunction] = filtermap(fieldStructs, \struct : DStruct -> {
-				stypenameFields = instantiateTTypeNameForStruct(env, struct);
-				stypename = stypenameFields.first;
-				fields = stypenameFields.second;
-
-				mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
-				fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
-					// OK, the typars are wrong here, since we should use the type
-					// of the field
-					ft.second
-				});
-				fieldType ?? {
-					Some(TTypeFunction([stypename], fieldType));
-				} : None();
+				getDStructFieldType(env, struct, field);
 			});
 
 			fieldUnions : Set<string> = env.resolveUnionField(field);
-			if (!isEmptySet(fieldUnions)) {
-				println("TODO: Make type function for field getter " + field);
-			}
+			unionFns = map(set2array(fieldUnions), \un -> {
+				utype = instantiateTTypeName(env, un);
 
-			fntype = if (fieldFnTypes == []) {
+				munion = env.resolveUnionName(un);
+				fieldType = switch (munion) {
+					None(): TTypeEClass(env.mkEClass());
+					Some(union): {
+						// Find the type of this field
+						fieldType : Maybe<TTypeFunction> = fold(union.types, None(), \acc, type -> {
+							mstruct = env.resolveStructName(type.id);
+							mstruct ?? {
+								getDStructFieldType(env, mstruct, field)
+							} : acc;
+						});
+						switch (fieldType) {
+							None(): TTypeEClass(env.mkEClass());
+							Some(ft): {
+								ft.returnType
+							}
+						}
+					}
+				};
+				TTypeFunction([utype], fieldType);
+			});
+
+			fnTypes = concat(fieldFnTypes, unionFns);
+
+			fntype = if (fnTypes == []) {
 				env.onError(pos, "Unknown field " + field);
 				TTypeEClass(env.mkEClass());
-			} else if (length(fieldFnTypes) == 1) {
-				fieldFnTypes[0]
-			} else TTypeOverload(TTypeEClass(eclass), sort(fieldFnTypes));
+			} else if (length(fnTypes) == 1) {
+				fnTypes[0]
+			} else TTypeOverload(TTypeEClass(eclass), sort(fnTypes));
 
 			rtype = TTypeEClass(eclass);
 			calltype = TTypeFunction([tvalue], rtype);
@@ -283,4 +295,20 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 			TTypeEClass(eclass);
 		}
 	}
+}
+
+getDStructFieldType(env : TTypeEnv, struct : DStruct, field : string) -> Maybe<TTypeFunction> {
+	stypenameFields = instantiateTTypeNameForStruct(env, struct);
+	stypename = stypenameFields.first;
+	fields = stypenameFields.second;
+
+	mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
+	fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
+		// OK, the typars are wrong here, since we should use the type
+		// of the field
+		ft.second
+	});
+	fieldType ?? {
+		Some(TTypeFunction([stypename], fieldType));
+	} : None();
 }
