@@ -7,8 +7,7 @@ TODO:
 - ? vs ?? in flowstructs
 - isSameStructType
 - (downcast in filtermap)
-- .field in unions: type11
-- behaviour: .structname
+- "flow" type for impersonateCallstackFn is lost
 */
 
 export {
@@ -32,7 +31,7 @@ export {
 		verbose : bool, reason : string, pos : int) -> void;
 
 	// At the end, extract the types for each type class
-	resolveTNodes(tmap : TMap, verbose : bool) -> Tree<int, TType>;
+	resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>;
 }
 
 makeTMap(onError : (int, string) -> void, nextEClass : ref int) -> TMap {
@@ -481,7 +480,13 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					} else {
 						// OK, we can not clarify it, so push it to pending
 						noverload = TNodeOverload(lunique, overloads, pos);
-						tmap.pending := Cons(Pair(noverload, right), ^(tmap.pending));
+						// If we have identical information already, we do not
+						// need to pend it
+						if (!exists(overloads, \o -> {
+							isSameTNode(tmap, o, right)
+						})) {
+							tmap.pending := Cons(Pair(noverload, right), ^(tmap.pending));
+						}
 						// println("From " + prettyTNode(tmap, left) + " to " + prettyTNode(tmap, noverload));
 						right;
 					}
@@ -790,8 +795,10 @@ incompatibleTNodes(tmap : TMap, left : TNode, right : TNode) -> bool {
 						if (containsSet(supers, rname)) {
 							false;
 						} else {
-							println("TODO 2: Check if node " + prettyTNode(tmap, left) + " is compatible with node " + prettyTNode(tmap, right));
-							false;
+							existsSet(usubs, \st -> {
+								unode = getUnionMapValue(tmap.tmap, st);
+								incompatibleTNodes(tmap, unode, right)
+							});
 						}
 					}
 					default: {
@@ -952,17 +959,23 @@ dumpTNodes(tmap : TMap) -> void {
 	});
 }
 
-resolveTNodes(tmap : TMap, verbose : bool) -> Tree<int, TType> {
+resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType> {
 	pending = ^(tmap.pending);
 	tmap.pending := makeList();
 	iterList(pending, \p : Pair<TNode, TNode> -> {
 		mergeTNodes(tmap, p.first, p.second);
 		{}
 	});
-	if (!isEmptyList(^(tmap.pending))) {
-		println("ERROR: Could not handle all");
+	if (!isEmptyList(^(tmap.pending)) && iterations >= 0) {
+		resolveTNodes(tmap, iterations - 1, verbose);
+	} else {
+		if (verbose) {
+			iterList(^(tmap.pending), \p -> {
+				println("Ignoring " + prettyTNode(tmap, p.first) + " vs " + prettyTNode(tmap, p.second));
+			});
+		}
+		extractTNodes(tmap, verbose);
 	}
-	extractTNodes(tmap, verbose);
 }
 
 extractTNodes(tmap : TMap, verbose : bool) -> Tree<int, TType> {

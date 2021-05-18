@@ -116,7 +116,6 @@ makePlowCache(
 	);
 	unionFieldLookup = BLookupFromImport(\module, n -> {
 			unionFields = makeDUnionFields(module.unions, module.structs);
-			println(unionFields);
 			unions = lookupTreeDef(unionFields, n, makeSet());
 			if (isEmptySet(unions)) None()
 			else Some(set2array(unions))

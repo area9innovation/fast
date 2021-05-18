@@ -223,6 +223,6 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 }
 
 resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
-	types = resolveTNodes(env.tgraph.tmap, verbose);
+	types = resolveTNodes(env.tgraph.tmap, 5, verbose);
 	TTypeEnv(env with etypes = types);
 }
