@@ -17,10 +17,10 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		println("\nStage: Type inference of " + d.flowpath);
 	}
 	// Resolve the types of natives
-	nenv = foldTree(d.natives, env, \nat, nativ, acc -> {
+	nenv1 = foldTree(d.natives, env, \nat, nativ, acc -> {
 		// The module types have to be with ? in the types
-		type = dtype2ttype(env, false, nativ.type);
-		unifyTType(env, nat, "native", d.pos, type, TTypeEClass(nativ.eclass));
+		type = dtype2ttype(acc, false, nativ.type);
+		unifyTType(acc, nat, "native", d.pos, type, TTypeEClass(nativ.eclass));
 
 		if (isTracingId(env.tracing, StageTypeInference(), 0, nat)) {
 			println("native " + nat + ": " + prettyTType(type));
@@ -30,7 +30,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	});
 
 	// Set the type of top levels, so mutual recursion has something to bite on
-	tenv = foldTree(d.globals, nenv, \id, global, acc -> {
+	tenv = foldTree(d.globals, nenv1, \id, global, acc -> {
 		// We need to set up a declared type here so polymorphism will work. 
 		// We need ? in the moduleTypes.
 		type = switch (global.value) {
@@ -105,7 +105,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	order : [[string]] = buildDModuleDeps(d.globals, d.order);
 	order2 = if (false) [d.order] else order;
 	if (order2 == []) {
-		resolveEClasses(env, d.flowpath, false);
+		resolveEClasses(tenv, d.flowpath, false);
 	} else {
 		ttypeInferenceChunk(tmenv, d, order2);
 	}
@@ -217,12 +217,25 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 			// TODO: This contaminates the TMap polymorphism
 			// println("// Review scope: Unify typars " + prettyTType(ftype) + " and " + prettyTType(etype));
 			unifyTType(env, d.id, "global " + d.id + " 3", d.pos, ftype, etype);
-			env;
+
+			if (!unresolvedTType(etype)) {
+				// The declared type is always better, so set it
+				// Consider impersonateCallstackFn which
+				// is inferred to be 
+				// impersonateCallstackFn(string, ...)
+				// rather than impersonateCallstackFn(flow, ...)
+				TTypeEnv(env with etypes = setTree(env.etypes, d.eclass, etype));
+			} else env;
 		}
 	}
 }
 
 resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
 	types = resolveTNodes(env.tgraph.tmap, 5, verbose);
-	TTypeEnv(env with etypes = types);
+	// Only grab the etypes we do not already have set above
+	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
+		if (containsKeyTree(acc, eclass)) acc
+		else setTree(acc, eclass, type)
+	});
+	TTypeEnv(env with etypes = etypes);
 }
