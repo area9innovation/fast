@@ -206,6 +206,10 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					dd.resolveStructName(str);
 				})
 			},
+			resolveUnionField = \id -> {
+				println("TODO: Find union fields for " + id);
+				makeSet();
+			},
 			resolveSupertypes = \id -> {
 				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
 			},

@@ -102,7 +102,7 @@ makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>)
 	foldTree(unions, makeTree(), \un, uni, acc -> {
 		fields = getDTypenameFields(unions, typenameFields, un);
 		if (!isEmptySet(fields)) {
-			println(un + " has " + toString(set2array(fields)));
+			// println(un + " has " + toString(set2array(fields)));
 			setTree(acc, un, fields);
 		} else acc;
 	});

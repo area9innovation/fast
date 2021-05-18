@@ -52,7 +52,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	// Make a field map
 	fields = makeDFieldMap(d.structs);
-	unionFields = makeDUnionFields(d.unions, d.structs);	// TODO: Make use of this
+	unionFields = makeDUnionFields(d.unions, d.structs);
 	supers = makeDSupers(d.unions);
 	subs = makeDSubtypes(d.unions);
 
@@ -68,7 +68,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			lunion = lookupTree(d.unions, name);
 			lunion ?? {
 				Some(lunion)
-			}: tenv.resolveUnionName(name);
+			} : tenv.resolveUnionName(name);
 		},
 		resolveField = \name -> {
 			structs = getTreeArrayValue(fields, name);
@@ -77,6 +77,11 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 			});
 			others = tenv.resolveField(name);
 			uniq(concat(istructs, others));
+		},
+		resolveUnionField = \name -> {
+			unions = lookupTreeDef(unionFields, name, makeSet());
+			others = tenv.resolveUnionField(name);
+			mergeSets(unions, others);
 		},
 		resolveSupertypes = \name -> {
 			concat(

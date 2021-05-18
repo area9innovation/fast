@@ -140,7 +140,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 
 			fieldStructs : [DStruct] = env.resolveField(field);
 
-			fieldFnTypes = filtermap(fieldStructs, \struct : DStruct -> {
+			fieldFnTypes : [TTypeFunction] = filtermap(fieldStructs, \struct : DStruct -> {
 				stypenameFields = instantiateTTypeNameForStruct(env, struct);
 				stypename = stypenameFields.first;
 				fields = stypenameFields.second;
@@ -155,6 +155,11 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 					Some(TTypeFunction([stypename], fieldType));
 				} : None();
 			});
+
+			fieldUnions : Set<string> = env.resolveUnionField(field);
+			if (!isEmptySet(fieldUnions)) {
+				println("TODO: Make type function for field getter " + field);
+			}
 
 			fntype = if (fieldFnTypes == []) {
 				env.onError(pos, "Unknown field " + field);
