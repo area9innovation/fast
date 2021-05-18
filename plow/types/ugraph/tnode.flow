@@ -102,7 +102,9 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		root = unionUnionMap(tmap.tmap, lclass, rclass);
 		
 		// println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
-		// dumpTNodes(tmap);
+		if (verbose) {
+			dumpTNodes(tmap);
+		}
 		{}
 	} else {
 		println("Not supposed to happen: " + prettyTType(left) + " and " + prettyTType(right));
@@ -575,7 +577,7 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 	if (!isEmptySet(super.unknownSubtypes)) {
 		eclass = findOrMakeTNode(tmap, node);
 		iterSet(super.unknownSubtypes, \st -> {
-			// println(^uindent + "Joining e" + i2s(eclass) + " and " + i2s(st));
+			// println(^uindent + "Joining e" + i2s(eclass) + " and e" + i2s(st));
 			joinTNodes(tmap, eclass, st);
 			found := true;
 		});

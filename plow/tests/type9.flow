@@ -20,7 +20,7 @@ pprint(annotation : string) {
 		val
 	}
 }
-
+/*
 idfn : (?) -> ?;
 idfn(x) x;
 
@@ -32,3 +32,4 @@ cprint(doPrint, prefix) {
 		\__ -> idfn
 	}
 }
+*/
