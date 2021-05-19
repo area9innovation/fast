@@ -337,47 +337,44 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 					node;
 				}
 			} else {
-				// OK, we can calculate potential super types here
-				// and reduce them to an overload or a given type
-				named = getPossibleTSupers(tmap, node);
-				nnamed = sizeSet(named);
+				mflow = find(subtypes, \st -> st.name == "flow");
+				mflow ?? {
+					mflow
+				} : {
+					// OK, we can calculate potential super types here
+					// and reduce them to an overload or a given type
+					named = getPossibleTSupers(tmap, node);
+					nnamed = sizeSet(named);
 
-				// Here we have the names that are possible
-				if (nnamed == 1) {
-					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
-					unifyTNodeNameWithSuper(tmap, fnode, node);
-				} else if (false && nnamed != 0 && nnamed < length(subtypes)) {	// This condition is a bit arbitrary
-					// Make an overload out of the rest
-					overloads = map(set2array(named), \n -> {
-						instantiateTNodeName(tmap, n, subtypes, pos)
-					});
-					overload = TNodeOverload(uniques, overloads, pos);
-					println("TODO: Supertype " + prettyTNode(tmap, node) + " becomes " + prettyTNode(tmap, overload));
-					overload;
-				} else {
-					// Unify the typars of identical typenames
-					nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st -> {
-						treePushToArrayUnique(acc, st.name, st)
-					});
-					unis : Pair<[TNodeName], [TNode]> = foldTree(nameGroups, Pair([], []), \name, group, acc -> {
-						if (length(group) > 1) {
-							merged = foldi(tail(group), group[0], \i, nn, acc2 : TNode -> {
-								mergeTNodes(tmap, acc2, nn);
-							});
-							switch (merged) {
-								TNodeName(__, __, __): Pair(arrayPush(acc.first, merged), acc.second);
-								default: {
-									Pair(acc.first, arrayPush(acc.second, merged));
-								}
-							}
-						} else Pair(concat(acc.first, group), acc.second);
-					});
-					if (unis.second == []) {
-						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+					// Here we have the names that are possible
+					if (nnamed == 1) {
+						fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
+						unifyTNodeNameWithSuper(tmap, fnode, node);
 					} else {
-						println("TODO: We found something in a supertype");
-						println(unis.second);
-						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+						// Unify the typars of identical typenames
+						nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st -> {
+							treePushToArrayUnique(acc, st.name, st)
+						});
+						unis : Pair<[TNodeName], [TNode]> = foldTree(nameGroups, Pair([], []), \name, group, acc -> {
+							if (length(group) > 1) {
+								merged = foldi(tail(group), group[0], \i, nn, acc2 : TNode -> {
+									mergeTNodes(tmap, acc2, nn);
+								});
+								switch (merged) {
+									TNodeName(__, __, __): Pair(arrayPush(acc.first, merged), acc.second);
+									default: {
+										Pair(acc.first, arrayPush(acc.second, merged));
+									}
+								}
+							} else Pair(concat(acc.first, group), acc.second);
+						});
+						if (unis.second == []) {
+							TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+						} else {
+							println("TODO: We found something in a supertype");
+							println(unis.second);
+							TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+						}
 					}
 				}
 			}
@@ -439,9 +436,9 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
 						if (lname == "flow") {
-							right
+							left; // right
 						} else if (rname == "flow") {
-							left
+							right; // left
 						} else if (isSingleUnionName(tmap, lname, rname)) {
 							// As a special case, if one of these
 							// is a singleton union with the other element,
@@ -594,17 +591,15 @@ unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) ->
 			tmap.onError(node.pos, "ERROR: Mismatch typars of " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
 			false;
 		}
+	} else if (node.name == "flow" || subtype.name == "flow") {
+		true;
 	} else {
 		// OK, we know that the node has to a supertype of st
 		munion = ^(tmap.resolveUnionName)(node.name);
 		switch (munion) {
 			None(): {
-				if (node.name == "flow" || subtype.name == "flow") {
-					true;
-				} else {
-					tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
-					false;
-				}
+				tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
+				false;
 			}
 			Some(union): {
 				stype : Maybe<DTypeName> = find(union.types, \tn -> tn.id == subtype.name);
