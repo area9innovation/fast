@@ -337,44 +337,39 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 					node;
 				}
 			} else {
-				mflow = find(subtypes, \st -> st.name == "flow");
-				mflow ?? {
-					unifyTNodeNameWithSuper(tmap, mflow, node);
-				} : {
-					// OK, we can calculate potential super types here
-					// and reduce them to an overload or a given type
-					named = getPossibleTSupers(tmap, node);
-					nnamed = sizeSet(named);
+				// OK, we can calculate potential super types here
+				// and reduce them to an overload or a given type
+				named = getPossibleTSupers(tmap, node);
+				nnamed = sizeSet(named);
 
-					// Here we have the names that are possible
-					if (nnamed == 1) {
-						fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
-						unifyTNodeNameWithSuper(tmap, fnode, node);
-					} else {
-						// Unify the typars of identical typenames
-						nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st -> {
-							treePushToArrayUnique(acc, st.name, st)
-						});
-						unis : Pair<[TNodeName], [TNode]> = foldTree(nameGroups, Pair([], []), \name, group, acc -> {
-							if (length(group) > 1) {
-								merged = foldi(tail(group), group[0], \i, nn, acc2 : TNode -> {
-									mergeTNodes(tmap, acc2, nn);
-								});
-								switch (merged) {
-									TNodeName(__, __, __): Pair(arrayPush(acc.first, merged), acc.second);
-									default: {
-										Pair(acc.first, arrayPush(acc.second, merged));
-									}
+				// Here we have the names that are possible
+				if (nnamed == 1) {
+					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
+					unifyTNodeNameWithSuper(tmap, fnode, node);
+				} else {
+					// Unify the typars of identical typenames
+					nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st -> {
+						treePushToArrayUnique(acc, st.name, st)
+					});
+					unis : Pair<[TNodeName], [TNode]> = foldTree(nameGroups, Pair([], []), \name, group, acc -> {
+						if (length(group) > 1) {
+							merged = foldi(tail(group), group[0], \i, nn, acc2 : TNode -> {
+								mergeTNodes(tmap, acc2, nn);
+							});
+							switch (merged) {
+								TNodeName(__, __, __): Pair(arrayPush(acc.first, merged), acc.second);
+								default: {
+									Pair(acc.first, arrayPush(acc.second, merged));
 								}
-							} else Pair(concat(acc.first, group), acc.second);
-						});
-						if (unis.second == []) {
-							TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
-						} else {
-							println("TODO: We found something in a supertype");
-							println(unis.second);
-							TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
-						}
+							}
+						} else Pair(concat(acc.first, group), acc.second);
+					});
+					if (unis.second == []) {
+						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+					} else {
+						println("TODO: We found something in a supertype");
+						println(unis.second);
+						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
 					}
 				}
 			}
@@ -1072,10 +1067,15 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 			if (simpler != node) {
 				resolveTNode(tmap, acc, visited, eclass, simpler);
 			} else if (subtypes != []) {
-				if (length(subtypes) != 1) {
-					println("TODO: Picking random supertype: " + prettyTNode(tmap, node));
+				mflow = find(subtypes, \st -> st.name == "flow");
+				mflow ?? {
+					resolveTNode(tmap, acc, visited, eclass, mflow);
+				} : {
+					if (length(subtypes) != 1) {
+						println("TODO: Picking random supertype: " + prettyTNode(tmap, node));
+					}
+					resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
 				}
-				resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
 			} else {
 				tmap.onError(pos, "Could not resolve supertype: " + prettyTNode(tmap, node));
 				mkClass(eclass);
