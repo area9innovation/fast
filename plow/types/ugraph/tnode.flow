@@ -9,8 +9,10 @@ TODO:
 
 - text/gringo/dcode_lib.flow:98:26: ERROR: Merge overload600{(double, double)->double, (int, int)->int, (string, string)->string} and (void, int)->e620
 
-- fusion.flow
-	switch with default
+- type13 from fusion.flow
+	switch with default:
+	This is due to subtyping required for typars
+
 TODO: Convert DTypeName("auto", [], 13480) to eclass
 
 */
@@ -722,7 +724,13 @@ dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int {
 	}
 	switch (d) {
 		DTypePar(id, pos): lookupTreeDef(typars, id, -1);
-		DTypeName(id, ttypars, pos): todo();
+		DTypeName(id, ttypars, pos): {
+			if (id == "auto") {
+				makeTNodeClass(tmap);
+			} else {
+				todo();
+			}
+		}
 		DTypeFunction(args, returnType, pos): todo();
 	}
 }

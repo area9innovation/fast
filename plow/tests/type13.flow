@@ -1,0 +1,15 @@
+Const(a : ?);
+Dyn(a : ?);
+Beh<?> ::= Const<?>, Dyn<?>;
+
+foo(a : Beh<?>) {
+	switch (a) {
+		Const(b): Const(a);
+		default: doFuse(a);
+	}
+}
+
+doFuse(t : Beh<?>) -> Const<Dyn<?>> {
+	Const(Dyn(t.a))
+}
+
