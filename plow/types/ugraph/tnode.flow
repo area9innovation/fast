@@ -339,7 +339,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 			} else {
 				mflow = find(subtypes, \st -> st.name == "flow");
 				mflow ?? {
-					mflow
+					unifyTNodeNameWithSuper(tmap, mflow, node);
 				} : {
 					// OK, we can calculate potential super types here
 					// and reduce them to an overload or a given type
