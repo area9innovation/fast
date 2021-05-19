@@ -68,7 +68,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 		DTyped(value, type, pos, eclass): {
 			valtype = ttypeInferenceDExp(env, topid, value);
 			ttype = dtype2ttype(env, true, type);
-			unifyTType(env, topid, "typed", pos, if (true) valtype else supertype([valtype], false), ttype);
+			unifyTType(env, topid, "typed", pos, if (false) valtype else supertype([valtype], false), ttype);
 			restype("typed", eclass, ttype);
 		}
 		DLet(id, value, body, pos, eclass): {
