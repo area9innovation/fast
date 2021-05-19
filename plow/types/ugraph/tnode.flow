@@ -13,7 +13,18 @@ TODO:
 	switch with default:
 	This is due to subtyping required for typars
 
-TODO: Convert DTypeName("auto", [], 13480) to eclass
+Unify supertype8{(Beh<e33>) -> Pair<Dyn<e33>>} and e1              41 vs 1 | var doFuse
+
+is resolved to
+
+e41 = (Beh<e33>)->Pair<Dyn<e33>>       covers e1 e41
+
+but this is wrong.
+
+It should be
+
+e41 = (Beh<e33>)->Pair<supertype8{Dyn<e33>}>       covers e1 e41
+
 
 */
 
@@ -21,7 +32,8 @@ export {
 	// Set up the type unification map
 	makeTMap(
 		onError : (int, string) -> void, 
-		nextEClass : ref int
+		nextEClass : ref int,
+		mkUnique : () -> int
 	) -> TMap;
 
 	// Define the resolvers we need
@@ -41,7 +53,9 @@ export {
 	resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>;
 }
 
-makeTMap(onError : (int, string) -> void, nextEClass : ref int) -> TMap {
+makeTMap(onError : (int, string) -> void, nextEClass : ref int,
+			mkUnique : () -> int
+		) -> TMap {
 	self = ref None();
 	tmap = TMap(
 		makeUnionFindMap(defaultTNode(), \l, r -> {
@@ -63,6 +77,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int) -> TMap {
 		},
 		onError,
 		nextEClass,
+		mkUnique,
 		ref makeList()
 	);
 	self := Some(tmap);
@@ -95,12 +110,15 @@ uindent = ref "";
 // These two types are unified
 unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		reason : string, pos : int) -> void {
+	ind = ^uindent;
+	if (verbose) {
+		uindent := ind + "  ";
+		println("\n" + ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason );
+	}
 	lclass = findOrMakeTNodeClass(tmap, left, pos);
 	rclass = findOrMakeTNodeClass(tmap, right, pos);
-	ind = ^uindent;
-	uindent := ind + "  ";
 	if (verbose) {
-		println("\n" + ind + "Unify " + rpad(prettyTType(left) + " and " + prettyTType(right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -126,6 +144,8 @@ findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
 	} else {
 		// OK, make a node out of it
 		node = makeTNode(tmap, type, pos);
+		// println("Making a type for "+ prettyTTypeNode(tmap, type));
+		// println(prettyTNode(tmap, node));
 		findOrMakeTNode(tmap, node);
 	}
 }
@@ -326,6 +346,11 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 								Pair(arrayPush(acc.first, unode), acc.second)
 							}
 						}
+						TNodeSupertype(nuniques, nsubtypes, nunknownSubtypes, npos): {
+							if (nsubtypes != []) {
+								Pair(concat(acc.first, nsubtypes), acc.second);
+							} else unknown();
+						}
 						default: unknown();
 					}
 				});
@@ -392,7 +417,11 @@ getPossibleTSupers(tmap : TMap, super : TNodeSupertype) -> Set<string> {
 instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int) -> TNodeName {
 	node = filter(nodes, \n -> n.name == name);	
 	if (length(node) > 0) {
-		node[0];
+		TNodeName(
+			name, map(node[0].typars, \tp -> {
+				 makeTNodeClass(tmap)
+			}), pos
+		)
 	} else {
 		munion = ^(tmap.resolveUnionName)(name);
 		switch (munion) {
@@ -578,7 +607,7 @@ unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) ->
 		// OK, the same name, just go
 		if (length(subtype.typars) == length(node.typars)) {
 			iteri(subtype.typars, \i, tp -> {
-				joinTNodes(tmap, tp, node.typars[i]);
+				subtypeTNodes(tmap, tp, node.typars[i], subtype.pos);
 				{}
 			});
 			true;
@@ -739,6 +768,13 @@ joinTNodes(tmap : TMap, left : int, right : int) -> int {
 	findUnionMapRoot(tmap.tmap, root);
 }
 
+subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
+	subnode = TNodeSupertype(makeSet1(tmap.mkUnique()), [], makeSet1(sub), pos);
+	id = findOrMakeTNode(tmap, subnode);
+	joinTNodes(tmap, id, super);
+	{}
+}
+
 // Are these node names incompatible forever?
 incompatibleTNodeNames(tmap : TMap, node : TNodeName, overload : TNodeName) -> bool {
 	if (isEmptyTNode(node) || isEmptyTNode(overload)) {
@@ -897,6 +933,24 @@ areTTypesInTNodes(tmap : TMap, ts : [TType], ns : [int]) -> bool {
 		node = getUnionMapValue(tmap.tmap, eclass);
 		isTTypeInTNode(tmap, t, eclass, node)
 	}), idfn)
+}
+
+prettyTTypeNode(tmap : TMap, t : TType) -> string {
+	rec = \tt -> prettyTTypeNode(tmap, tt);
+	switch (t) {
+		TTypeEClass(eclass): {
+			node = getUnionMapValue(tmap.tmap, eclass);
+			"e" + i2s(eclass) 
+			+ (if (isEmptyTNode(node)) {""}
+			else {
+				"=" + prettyEClass(tmap, eclass);
+			});
+		}
+		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, rec, ", ") + ">");
+		TTypeFunction(args, returnType): "(" + superglue(args, rec, ", ") + ") -> " + rec(returnType);
+		TTypeOverload(typar, overloads): "overloads{" + superglue(overloads, rec, ", ") + "}";
+		TTypeSupertype(unique, subtypes, maxed): "supertype" + i2s(unique) + "{" + superglue(subtypes, rec, if (maxed) " & " else ", ") + "}";
+	}
 }
 
 prettyTNode(tmap : TMap, t : TNode) -> string {

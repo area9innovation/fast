@@ -8,7 +8,8 @@ export {
 	// Construct a new graph of our types
 	makeTypeGraph(
 		onError : (int, string) -> void, 
-		nextEClass : ref int
+		nextEClass : ref int,
+		mkUnique : () -> int,
 	) -> TypeGraph;
 
 	setTypeGraphResolver(
@@ -26,10 +27,11 @@ export {
 
 makeTypeGraph(
 		onError : (int, string) -> void, 
-		nextEClass : ref int
+		nextEClass : ref int,
+		mkUnique : () -> int,
 	) -> TypeGraph {
 	TypeGraph(
-		makeTMap(onError, nextEClass),
+		makeTMap(onError, nextEClass, mkUnique),
 	)
 }
 

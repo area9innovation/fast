@@ -56,25 +56,29 @@ export {
 	);
 
 	makeTTypeEnv(
-		tgraph : TypeGraph, 
+		nextEClass : ref int, 
 		onError : (pos : int, error : string) -> void
 	) -> TTypeEnv;
 }
 
 makeTTypeEnv(
-	tgraph : TypeGraph, 
+	nextEClass : ref int, 
 	onError : (pos : int, error : string) -> void
 ) -> TTypeEnv {
 	unique = ref 0;
+	mkUnique = \ -> {
+			u = ^unique;
+			unique := u + 1;
+			u;
+		};
+
+	tgraph = makeTypeGraph(onError, nextEClass, mkUnique);
+
 	TTypeEnv(
 		makeTree(), \ -> {
 			emptyTTypeClass(tgraph)
 		}, 
-		\ -> {
-			u = ^unique;
-			unique := u + 1;
-			u;
-		},
+		mkUnique,
 		onError,
 		\pos, id -> {
 			println("TODO: Find the type of var '" + id + "'");

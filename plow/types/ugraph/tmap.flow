@@ -16,6 +16,8 @@ export {
 		onError : (int, string) -> void,
 		// The next eclass
 		nextEClass : ref int,
+		// Make a unique id for supertypes
+		mkUnique : () -> int,
 		// A list of pending unifications that we could not do
 		pending : ref List<Pair<TNode, TNode>>,
 	);
