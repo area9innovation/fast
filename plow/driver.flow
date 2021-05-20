@@ -9,6 +9,7 @@ import plow/lookup;
 import plow/tracing;
 
 import fast/fast_path;
+import string_utils;
 
 export {
 	// Constructs a compilation cache
@@ -279,10 +280,16 @@ makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void 
 				makeLineResolver(text);
 			});
 			linecol = findLine(res, pos); // maxi
+
+			indentation = strLeft(linecol.line, linecol.lineIndex - 1);
+			spaced = stringFoldChar(indentation, "", \acc, s -> {
+				acc + if (s == "\t") s else " ";
+			});
+
 			onError(
 				file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
 				+ "\n" + linecol.line
-				+ "\n" + lpad("^", " ", linecol.lineIndex - 1)
+				+ "\n" + spaced + "^"
 			);
 		}
 	}

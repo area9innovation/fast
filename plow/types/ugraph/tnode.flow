@@ -7,23 +7,10 @@ TODO:
 - isSameStructType
 - (downcast in filtermap)
 
-- text/gringo/dcode_lib.flow:98:26: ERROR: Merge overload600{(double, double)->double, (int, int)->int, (string, string)->string} and (void, int)->e620
+- Subtyping on typars
+- Consider to keep polymorphism as ? when possible
+- 
 
-- type13 from fusion.flow
-	switch with default:
-	This is due to subtyping required for typars
-
-Unify supertype8{(Beh<e33>) -> Pair<Dyn<e33>>} and e1              41 vs 1 | var doFuse
-
-is resolved to
-
-e41 = (Beh<e33>)->Pair<Dyn<e33>>       covers e1 e41
-
-but this is wrong.
-
-It should be
-
-e41 = (Beh<e33>)->Pair<supertype8{Dyn<e33>}>       covers e1 e41
 
 
 */

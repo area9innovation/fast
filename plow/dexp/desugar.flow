@@ -8,6 +8,7 @@ import plow/dexp/eclass;
 
 import plow/pexp/pexp;
 import plow/pexp/values;
+import plow/pexp/utils;
 
 import ds/set;
 import ds/arrayutils;
@@ -576,10 +577,31 @@ desugarPWith(dd : DDesugar, w : PWith) -> DWith {
 }
 
 desugarPMaybe(dd : DDesugar, m : PMaybe) -> DExp {
-	// PMaybe(value, match, otherwise, pos);
-	println("TODO: Expand ?? maybe syntax");
-	pexp2dexp(dd, m.otherwise);
+	// PMaybe(value, match, otherwise, pos)
+	// should expand to
+	//
+	//  tmp = value;
+	// 	switch (tmp) {
+	//		Some(unique): {
+	//			$replace(match, value, unique);
+	//		}
+	// 		None(): otherwise;
+	// 	}
+
+	un1 = makeTempDName(dd);
+	un2 = makeTempDName(dd);
+	replaced = replacePExp(m.match, m.value, PVar(un2, m.match.pos));
+	pswitch = 
+		PLet(un1, m.value,
+			PSwitch(PVar(un1, m.pos), [
+				PCase("Some", [un2], replaced, m.match.pos),
+				PCase("None", [], m.otherwise, m.otherwise.pos),
+			], m.pos),
+			m.pos
+		);
+	pexp2dexp(dd, pswitch);
 }
+
 
 getDTypePar(d : DType) -> DTypePar {
 	switch (d) {
