@@ -18,11 +18,14 @@ isSamePExp(l : PExp, r : PExp) -> bool {
 }
 
 // Split a pexp into the main value (with uniform pos) and the children
+// The main value should be directly comparable with == to identify
+// equivalence
 splitPExp(p : PExp) -> Pair<PExp, [PExp]> {
 	todo = \ -> {
 		println("TODO: Split " + toString(p));
 		Pair(p, []);
 	}
+	dummy = PVoid(0);
 	switch (p) {
 		PTopLevel(): Pair(p, []);
 		PType(): Pair(p, []);
@@ -33,23 +36,34 @@ splitPExp(p : PExp) -> Pair<PExp, [PExp]> {
 		PString(v, pos): Pair(PString(v, 0), []);
 		PStringInclude(path, pos): Pair(PStringInclude(path, 0), []);
 		PVar(var, pos): Pair(PVar(var, 0), []);
-		PLet(var, value, body, pos): todo();
-		PIf(cond, then, else_, pos): todo();
-		PCall(fn, args, pos): todo();
-		PCallOp(op, args, pos): todo();
-		PLambda(args, body, pos): todo();
-		PRef(value, pos): todo();
-		PSetMutable(lhs, field, value, pos): todo();
-		PField(value, field, pos): todo();
-		PArray(exps, pos): todo();
-		PSequence(exps, pos): todo();
-		PSwitch(value, cases, pos): todo();
-		PCase(id, args, body, pos): todo();
-		PCast(value, target, pos): todo();
-		PTyped(value, type, pos): todo();
+		PLet(var, value, body, pos): Pair(PLet(var, dummy, dummy, 0), [value, body]);
+		PIf(cond, then, else_, pos): Pair(PIf(dummy, dummy, dummy, 0), [cond, then, else_]);
+		PCall(fn, args, pos): Pair(PCall(dummy, [], 0), concat([fn], args));
+		PCallOp(op, args, pos): Pair(PCallOp(op, [], 0), args);
+		PLambda(args, body, pos): Pair(PLambda(args, dummy, 0), [body]);
+		PRef(value, pos): Pair(PRef(dummy, 0), [value]);
+		PSetMutable(lhs, field, value, pos): Pair(PSetMutable(dummy, field, dummy, 0), [lhs, value]);
+		PField(value, field, pos): Pair(PField(dummy, field, 0), [value]);
+		PArray(exps, pos): Pair(PArray([], 0), exps);
+		PSequence(exps, pos): Pair(PSequence([], 0), exps);
+		PSwitch(value, cases, pos): {
+			Pair(
+				PSwitch(dummy, map(cases, \c -> {
+					PCase(c.id, c.args, dummy, 0)
+				}), 0), 
+				concat([value], map(cases, \c -> c.body))
+			);
+		}
+		PCast(value, target, pos): todo(); // The target is potentially a problem
+		PTyped(value, type, pos): todo(); // The type is potentially a problem
 		PWith(struct, value, fields, pos): todo();
+		PMaybe(value, match, otherwise, pos): Pair(
+			PMaybe(dummy, dummy, dummy, 0),
+			[value, match, otherwise]
+		)
+
 		PFieldAssign(id, value, pos): todo();
-		PMaybe(value, match, otherwise, pos): todo();
+		PCase(id, args, body, pos): todo();
 		PList(l, pos): todo();
 	}
 }
