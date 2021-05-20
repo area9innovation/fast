@@ -104,7 +104,6 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 			);
 		}
 		DTyped(value, subtype, pos, eclass): rec(value);
-		DWith(struct, value, fields, pos, eclass): todo();
 	}
 }
 

@@ -282,18 +282,6 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 
 			restype("downcast", eclass, dtype);
 		}
-		DWith(struct, value, fields, pos, eclass): {
-			println("TODO: Infer the type of with");
-			vtype = ttypeInferenceDExp(env, topid, value);
-			fieldTypes = map(fields, \f -> {
-				ttypeInferenceDExp(env, topid, f.value);
-			});
-
-			// TODO: Check that struct has the named fields
-			// and that the types match
-			// Then make a typename struct type
-			TTypeEClass(eclass);
-		}
 	}
 }
 

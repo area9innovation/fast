@@ -140,11 +140,6 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			pr("typed : " + prettyDType(input, typ));
 			rec(value);
 		}
-		DWith(struct, value, fields, pos, eclass): {
-			pr("with " + struct);
-			rec(value);
-			// iter(fields, rec);
-		}
 		DConstruct(structid, args, pos, eclass): {
 			pr("construct " + structid);
 			iter(args, rec);
@@ -199,6 +194,5 @@ summarizeDExp(env : TTypeEnv, d : DExp) -> string {
 		DCast(value, target, pos): "cast";
 		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): "downcast " + oldid + " to " + newid;
 		DTyped(value, subtype, pos, eclass): "typed";
-		DWith(struct, value, fields, pos, eclass): "with";
 	}
 }

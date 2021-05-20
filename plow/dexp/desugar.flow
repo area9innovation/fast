@@ -562,17 +562,29 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 	DSwitch(switchvar, type, cases, def, s.pos, newEClass(dd.nextEClass))
 }
 
-desugarPWith(dd : DDesugar, w : PWith) -> DWith {
+desugarPWith(dd : DDesugar, w : PWith) -> DExp {
 	mstruct = dd.resolveStructName(w.struct);
 	mstruct ?? {
-		DWith(w.struct, pexp2dexp(dd, w.value), 
-			map(w.fields, \f : PFieldAssign -> {
-				// TODO: Check that this field exists in this struct
-				DFieldAssign(f.id, pexp2dexp(dd, f.value), f.pos)
-			}), w.pos, newEClass(dd.nextEClass))
+		uni = makeTempDName(dd);
+		var = DVar(uni, w.value.pos, newEClass(dd.nextEClass));
+		args = map(mstruct.structArgs, \sa : DStructArg -> {
+			mfield : Maybe<PFieldAssign> = find(w.fields, \f : PFieldAssign -> {
+				f.id == sa.id
+			});
+			switch (mfield) {
+				None(): DField(var, sa.id, w.pos, newEClass(dd.nextEClass));
+				Some(field): pexp2dexp(dd, field.value);
+			}
+		});
+		DLet(uni, 
+			pexp2dexp(dd, w.value),
+			DConstruct(w.struct, args, w.pos, newEClass(dd.nextEClass)),
+			w.pos,
+			newEClass(dd.nextEClass)
+		);
 	} : {
 		dd.onError(w.pos, "Unknown struct for with: " + w.struct);
-		DWith(w.struct, pexp2dexp(dd, w.value), [], w.pos, newEClass(dd.nextEClass))
+		pexp2dexp(dd, w.value)
 	}
 }
 
@@ -670,9 +682,6 @@ renameDVar(old : string, new : DVar, d : DExp) -> DExp {
 			}
 		}
 		DTyped(value, subtype, pos, eclass): DTyped(rec(value), subtype, pos, eclass);
-		DWith(struct, value, fields, pos, eclass): DWith(struct, rec(value), map(fields, \f : DFieldAssign -> {
-			DFieldAssign(f with value = rec(f.value))
-		}), pos, eclass);
 	}
 }
 

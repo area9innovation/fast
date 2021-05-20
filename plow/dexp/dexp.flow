@@ -50,8 +50,7 @@ export {
 	DExp ::= DValue, DStringInclude,
 		DVar, DLet, DIf, DCall, DConstruct, DLambda,
 		DRef, DField, DSetMutable, DArray, DSequence, DSwitch, 
-		DCast, DDowncast, DTyped,
-		DWith;
+		DCast, DDowncast, DTyped;
 
 		DStringInclude(path : string, pos : int);
 
@@ -79,9 +78,6 @@ export {
 		// This does a downcast from a supertype to a subtype - a la let-binding of newid : subtype = downcast(id); scope
 		DDowncast(id : string, newid : string, subtype : DType, supertype : int, scope : DExp, pos : int, eclass : int);
 		DTyped(value : DExp, subtype : DType, pos : int, eclass : int);
-
-		DWith(struct : string, value : DExp, fields : [DFieldAssign], pos : int, eclass : int);
-			DFieldAssign(id : string, value : DExp, pos : int);
 
 	DType ::= DTypePar, DTypeName, DTypeFunction;
 
