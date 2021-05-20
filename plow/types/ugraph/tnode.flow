@@ -242,7 +242,7 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 	}
 	addName = \n : TNodeName -> {
 		if (canBeSubtyped(tmap, n)) {
-			println("TODO: Wrap the children in supertype if not resolved! " + prettyTNode(tmap, n));
+			// println("TODO: Wrap the children in supertype if not resolved! " + prettyTNode(tmap, n));
 		}
 		TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, n));
 	}
@@ -809,7 +809,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
 							}
 							postpone();
 						} else {
-							println("Unifying subtype for e" + i2s(sub) + ": " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode));
+							// println("Unifying subtype for e" + i2s(sub) + ": " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode));
 							unifyTNodeNameWithSubtype(tmap, supernode, subnode);
 							{}
 						}
