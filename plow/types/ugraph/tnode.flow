@@ -78,7 +78,8 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 		onError,
 		nextEClass,
 		mkUnique,
-		ref makeList()
+		ref makeList(),
+		ref makeList(),
 	);
 	self := Some(tmap);
 	tmap;
@@ -240,6 +241,9 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 		acc;
 	}
 	addName = \n : TNodeName -> {
+		if (canBeSubtyped(tmap, n)) {
+			println("TODO: Wrap the children in supertype if not resolved! " + prettyTNode(tmap, n));
+		}
 		TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, n));
 	}
 	addEClass = \e : int -> {
@@ -411,6 +415,12 @@ getPossibleTSupers(tmap : TMap, super : TNodeSupertype) -> Set<string> {
 		if (i == 0) supset
 		else intersectSets(supset, acc)
 	});
+}
+
+canBeSubtyped(tmap : TMap, node : TNodeName) -> bool {
+	supertype = TNodeSupertype(makeSet(), [node], makeSet(), 0);
+	named = getPossibleTSupers(tmap, supertype);
+	sizeSet(named) > 1;
 }
 
 // We know we want a given name, and we have a set of candidates to pick from
@@ -604,7 +614,7 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 // Try to unify this super type against a subtype. Return true if successful
 unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) -> bool {
 	if (subtype.name == node.name) {
-		// OK, the same name, just go
+		// OK, the same name, just go and subtype the typars
 		if (length(subtype.typars) == length(node.typars)) {
 			iteri(subtype.typars, \i, tp -> {
 				subtypeTNodes(tmap, tp, node.typars[i], subtype.pos);
@@ -622,6 +632,8 @@ unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) ->
 		munion = ^(tmap.resolveUnionName)(node.name);
 		switch (munion) {
 			None(): {
+				// OK, it is not a union, so they have to be the same
+
 				tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
 				false;
 			}
@@ -768,11 +780,51 @@ joinTNodes(tmap : TMap, left : int, right : int) -> int {
 	findUnionMapRoot(tmap.tmap, root);
 }
 
+// We know that the eclass "sub" is a subclass of "super".
 subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
-	subnode = TNodeSupertype(makeSet1(tmap.mkUnique()), [], makeSet1(sub), pos);
-	id = findOrMakeTNode(tmap, subnode);
-	joinTNodes(tmap, id, super);
-	{}
+	postpone = \ -> {
+		tmap.pendingSubtypes := Cons(Triple(sub, super, pos), ^(tmap.pendingSubtypes));
+	}
+	supernode = getUnionMapValue(tmap.tmap, super);
+	subnode = getUnionMapValue(tmap.tmap, sub);
+	switch (subnode) {
+		TNodeSupertype(__, __, __, __): {
+			if (isEmptyTNode(supernode)) {
+				postpone();
+			} else {
+				joinTNodes(tmap, sub, super);
+				{}
+			}
+		}
+		TNodeName(name, typars, __): {
+			if (canBeSubtyped(tmap, subnode)) {
+				switch (supernode) {
+					TNodeName(__, __, __): {
+						if (isEmptyTNode(supernode)) {
+							supertype = TNodeSupertype(makeSet(), [subnode], makeSet(), 0);
+							supers = getPossibleTSupers(tmap, supertype);
+							nsupers = sizeSet(supers);
+							if (nsupers == 1) {
+								println("Ignoring that sub is  " + toString(set2array(supers)));
+							}
+							postpone();
+						} else {
+							println("Unifying subtype for e" + i2s(sub) + ": " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode));
+							unifyTNodeNameWithSubtype(tmap, supernode, subnode);
+							{}
+						}
+					}
+					default: {
+						postpone();
+					}
+				}
+			} else {
+				joinTNodes(tmap, sub, super);
+				{}
+			}
+		}
+		TNodeOverload(__, __, __): postpone();
+	}
 }
 
 // Are these node names incompatible forever?
@@ -949,7 +1001,7 @@ prettyTTypeNode(tmap : TMap, t : TType) -> string {
 		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, rec, ", ") + ">");
 		TTypeFunction(args, returnType): "(" + superglue(args, rec, ", ") + ") -> " + rec(returnType);
 		TTypeOverload(typar, overloads): "overloads{" + superglue(overloads, rec, ", ") + "}";
-		TTypeSupertype(unique, subtypes, maxed): "supertype" + i2s(unique) + "{" + superglue(subtypes, rec, if (maxed) " & " else ", ") + "}";
+		TTypeSupertype(unique, subtypes, maxed): "super" + i2s(unique) + "{" + superglue(subtypes, rec, if (maxed) " & " else ", ") + "}";
 	}
 }
 
@@ -1031,15 +1083,25 @@ resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>
 		mergeTNodes(tmap, p.first, p.second);
 		{}
 	});
-	if (!isEmptyList(^(tmap.pending)) && iterations >= 0) {
-		resolveTNodes(tmap, iterations - 1, verbose);
-	} else {
+	pendingSubtypes = ^(tmap.pendingSubtypes);
+	tmap.pendingSubtypes := makeList();
+	iterList(pendingSubtypes, \p : Triple<int, int, int> -> {
+		subtypeTNodes(tmap, p.first, p.second, p.third);
+	});
+	if (iterations == 0
+		|| (isEmptyList(^(tmap.pending)) && isEmptyList(^(tmap.pendingSubtypes)))
+	) {
 		if (verbose) {
 			iterList(^(tmap.pending), \p -> {
 				println("Ignoring " + prettyTNode(tmap, p.first) + " vs " + prettyTNode(tmap, p.second));
 			});
+			iterList(^(tmap.pendingSubtypes), \t -> {
+				println("Ignoring " + prettyEClass(tmap, t.first) + " sub " + prettyEClass(tmap, t.second));
+			});
 		}
 		extractTNodes(tmap, verbose);
+	} else {
+		resolveTNodes(tmap, iterations - 1, verbose);
 	}
 }
 

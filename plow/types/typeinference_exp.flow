@@ -126,7 +126,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, argTypes[i]))
 			});
 			retType = ttypeInferenceDExp(nenv, topid, body);
-			type = TTypeFunction(argTypes, if (false) retType else supertype([retType], false));
+			type = TTypeFunction(argTypes, if (true) retType else supertype([retType], false));
 			restype("lambda", eclass, type);
 		}
 		DRef(value, pos, eclass): {

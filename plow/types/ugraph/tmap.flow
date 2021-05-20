@@ -20,6 +20,8 @@ export {
 		mkUnique : () -> int,
 		// A list of pending unifications that we could not do
 		pending : ref List<Pair<TNode, TNode>>,
+		// A list of pending subtypings we could not do
+		pendingSubtypes : ref List<Triple<int, int, int>>
 	);
 
 	// Our nodes in the type graph
