@@ -45,7 +45,7 @@ functionOrStruct =
 exp = 
 	// These optsemi should really be semi, but we have too much legacy without
 	(idpos "=" ws exp optsemi expsemi $"sequence" $"let"
-		| idpos ":" ws type "=" ws exp optsemi exp $"let_typed"
+		| idpos ":" ws type "=" ws exp optsemi expsemi $"sequence" $"let_typed"
 	)
 	|> exp ":=" $$pos $"swap" ws exp $":=" $"setpos"
 	|> exp < ( "|>" $$pos $"swap" ws exp $"|>" $"setpos")*

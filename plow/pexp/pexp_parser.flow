@@ -1140,9 +1140,13 @@ parse_exp(acc : DParseAcc<?>) -> bool {
 										if (parse_ws(acc)) {
 											if (parse_exp(acc)) {
 												if (parse_optsemi(acc)) {
-													if (parse_exp(acc)) {
-														if (addVerbatim(acc, "let_typed")) {
-															discardDCheckpoint(acc)
+													if (parse_expsemi(acc)) {
+														if (addVerbatim(acc, "sequence")) {
+															if (addVerbatim(acc, "let_typed")) {
+																discardDCheckpoint(acc)
+															} else {
+																restoreDCheckpoint(acc)
+															}
 														} else {
 															restoreDCheckpoint(acc)
 														}
