@@ -1,3 +1,4 @@
+import plow/backends/js;
 import plow/pexp/parse;
 import plow/pexp/pretty;
 import plow/dexp/desugar;
@@ -31,7 +32,11 @@ main() {
 		}, allincludes);
 
 		b = compilePlow(cache, thefile);
-		{}
+		if (isUrlParameterTrue("js")) {
+			js = bmodule2js(b);
+			setFileContent(changeFileExt(thefile, ".js"), js);
+			{}
+		}
 	} else {
 		files = filter(readDirectoryRecursively(thefile), \f -> endsWith(f, ".flow"));
 
@@ -45,6 +50,11 @@ main() {
 				}, allincludes);
 
 				b = compilePlow(cache, fil);
+				if (isUrlParameterTrue("js")) {
+					js = bmodule2js(b);
+					setFileContent(changeFileExt(thefile, ".js"), js);
+					{}
+				}
 			}
 		});	
 	};

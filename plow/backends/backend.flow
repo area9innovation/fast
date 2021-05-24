@@ -1,0 +1,37 @@
+import plow/backends/back_ast;
+
+export {
+	// Initializes a backend structure
+	makeBackend(
+		name : string,
+		keywords : [string],
+		generators : [BackGen],
+	) -> Backend;
+}
+
+makeBackend(
+		name : string,
+		keywords : [string],
+		generators : [BackGen]
+) -> Backend {
+	Backend(
+		buildSet(keywords),
+		fold(generators, makeTree(), \acc, gen : BackGen -> {
+			// We expand short form for types
+			fntype = switch (gen.type) {
+				BTypeFunction(args, returnType): gen.type;
+				default: {
+					if (gen.type == bTypeVoid) bTypeVoid
+					else BTypeFunction([gen.type, gen.type], gen.type)
+				}
+			};
+			ngen = BackGen(gen with type = fntype);
+			treePushToArrayValue(acc, gen.name, ngen)
+		}),
+		\pos, error -> {
+			// TODO: Include position
+			println(name + ": " + i2s(pos) + ": " + error);
+		},
+		ref makeSet()
+	)
+}
