@@ -1,0 +1,368 @@
+import plow/backends/bprogram;
+import plow/bexp/builtin;
+import plow/bexp/bmodule;
+
+import ds/arrayutils;
+
+export {
+	bmodule2BExpProgram(module : BModule) -> BExpProgram;
+
+	bexpProgram2BProgram(b : BExpProgram) -> BProgram;
+
+	// This lowers our program to BExp with types. The name is used for error reporting
+	//miniExp2BExp(env : MiniTypeEnv, name : string, e : MiniExp) -> BExp;
+
+	// For use in backends, when expressions need a statement
+	bexp2BReturn(b : BExp) -> BStatement;
+
+	bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailcall : bool, b : BExp) -> BStatement;
+
+	bexpType(b : BExp) -> BType;
+	bstatementType(b : BStatement) -> BType;
+}
+
+bmodule2BExpProgram(module : BModule) -> BExpProgram {
+	// Here we effectively do DCE:
+	// TODO: Also include all top-level vars with side-effects
+	/*ids0 : Set<string> = getMiniDependencies(ast.idDependents, "main", true);
+	ids = if (isEmptySet(ids0)) {
+		println("Could not find main. Keep everything");
+		buildSet(getTreeKeys(ast.declarations)) 
+	} else ids0;
+
+	order = topologicalMiniOrder(ast.idDependents, ids);*/
+
+	bexp = BExpProgram(
+		filtermap(module.order, \id -> {
+			mdecl = lookupTree(module.globals, id);
+			mdecl ?? {
+				decl = bexp2BExpDeclaration(id, mdecl.value);
+				Some(decl)
+			} : None(); // We will let backends complain: Some(BComment("// ERROR: Unknown id " + id))
+		})
+	);
+
+	// Optimize constants
+	//opt = extractBExpGlobals(bexp);
+
+	//opt;
+	bexp;
+}
+
+bexpProgram2BProgram(b : BExpProgram) -> BProgram {
+	BProgram(
+		map(b.declarations, bexpDeclaration2Declaration)
+	);
+}
+
+bexpDeclaration2Declaration(be : BExpDeclaration) -> BDeclaration {
+	switch (be) {
+		BGlobalVar(name, body, type): be;
+		BExpFunction(name, args, body, type): {
+			hasTailcall = ref false;
+			bbody = bexp2BStatement(name, args, hasTailcall, true, body);
+			BStatFunction(
+				name, args, bbody,
+				^hasTailcall,
+				type
+			);
+		}
+		BExpNative(name, isio, type, nativeName, fallback): {
+			sfallback : Maybe<BDeclaration> = fallback ?? {
+				Some(bexpDeclaration2Declaration(fallback))
+			} : None();
+			BNativeDec(name, isio, type, nativeName, sfallback)
+		}
+	}
+}
+
+bexp2BExpDeclaration(declid : string, b : BExp) -> BExpDeclaration {
+	var = \ -> {
+		BGlobalVar(declid, b, bexpType(b));
+	};
+	switch (b) {
+		BValue(): var();
+		BVar(__, __): var();
+		BLet(__, __, __, __): var();
+		BLambda(args, body, type): {
+			BExpFunction(
+				declid, args, body,
+				type
+			);
+		}
+		BCall(fn, args, type): {
+			switch (fn) {
+				BVar(name, __): {
+					if (name == "__native") {
+						bisIo = args[0];
+						bnativeName = args[2];
+						nativeName = switch (bnativeName) {
+							BString(s): s;
+							default: "";
+						};
+						ntype = bexpType(args[1]);
+						fallback = if (length(args) > 3) {
+							Some(bexp2BExpDeclaration(declid, args[3]))
+						} else None();
+						BExpNative(declid, bisIo == BBool(true),
+							ntype,
+							nativeName,
+							fallback
+						);
+					} else var();
+				}
+				default: var();
+			}
+		}
+		BIf(cond, then, else_, type): var();
+		BSequence(exps, type): var();
+		BSwitch(val, __, cases, __, type): var();
+		BConstruct(struct, args, type): var();
+		BField(value, field, type): var();
+		BSetMutable(left, field, value, type): var();
+	}
+}
+
+bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailcall : bool, b : BExp) -> BStatement {
+	switch (b : BExp) {
+		/*BInt(value): {
+			//if (type == BTypeName("void", [])) BReturnVoid() else 
+			BReturn(b);
+		}*/
+		BValue(): BReturn(b);
+		BVar(name, type): BReturn(b);
+		BLet(name, value, body, type): {
+			BLetStatement(name, value, bexp2BStatement(decl, fnargs, hasTailcall, tailcall, body));
+		}
+		BLambda(args, body, type): BReturn(b);
+		BCall(fn, args, type): {
+			if (tailcall) {
+				switch (fn) {
+					BVar(fname, __): if (fname == decl) {
+						// Tail call
+						// Filter out trivial arguments
+						newArgs = foldi2(fnargs, [], [], \i, accnames, accvals, fnarg -> {
+							val = args[i];
+							def = \ -> {
+								Pair(arrayPush(accnames, fnarg), arrayPush(accvals, val));
+							};
+							switch (val) {
+								BVar(aname, __): {
+									if (aname == fnarg) {
+										// OK, no need for it
+										Pair(accnames, accvals)
+									} else {
+										def();
+									}
+								}
+								default: def();
+							}
+						});
+						hasTailcall := true;
+						BTailCall(decl, newArgs.first, newArgs.second, type);
+					} else BReturn(b);
+					default: BReturn(b);
+				}
+			} else BReturn(b);
+		}
+		BIf(cond, then, else_, type): {
+			BIfStatement(cond, 
+				bexp2BStatement(decl, fnargs, hasTailcall, tailcall, then), 
+				bexp2BStatement(decl, fnargs, hasTailcall, tailcall, else_)
+			);
+		}
+		BSequence(exps, type): {
+			if (exps == []) BReturnVoid()
+			else BSequenceStatement(mapi(exps, \i, e -> {
+				bexp2BStatement(decl, fnargs, hasTailcall, tailcall && i == length(exps) - 1, e)
+			}));
+		} 
+		BSwitch(val, s_type, cases, def_case, type): {
+			BSwitchStatement(val, map(cases, \case -> {
+					BCaseStatement(case.id, 
+						bexp2BStatement(decl, fnargs, hasTailcall, tailcall, case.body)
+					)
+				}), type
+			);
+		}
+		BConstruct(struct, args, type):  {
+			BReturn(b);
+		}
+		BField(value, field, type): {
+			BReturn(b);
+		}
+		BSetMutable(left, field, value, type): {
+			BSetMutableStatement(left, field, value);
+		}
+	}
+}
+
+/*
+miniExp2BExp(env : MiniTypeEnv, ename : string, e : MiniExp) -> BExp {
+	switch (e) {
+		MiniValue(): miniValue2BValue(env, ename, e);
+		MiniVar(name, pos, tv): BVar(name, resolveMiniTypeVar(env, ename, pos, tv));
+		MiniLet(name, value, body, pos, tv): BLet(name, 
+			miniExp2BExp(env, ename, value), 
+			miniExp2BExp(env, ename, body), 
+			resolveMiniTypeVar(env, ename, pos, tv)
+		);
+		MiniLambda(args, body, pos, tv): {
+			bbody = miniExp2BExp(env, ename, body);
+			BLambda(map(args, \a -> BFunArg(a)), bbody, resolveMiniTypeVar(env, ename, pos, tv));
+		}
+		MiniCall(fn, args, pos, tv): {
+			switch (fn) {
+				MiniVar(fname, __, __): {
+					if (fname == "__ifte") {
+						BIf(miniExp2BExp(env, ename, args[0]), 
+							miniExp2BExp(env, ename, args[1]), 
+							miniExp2BExp(env, ename, args[2]), 
+							resolveMiniTypeVar(env, ename, pos, tv)
+						);
+					} else if (fname == "__ift") {
+						BIf(miniExp2BExp(env, ename, args[0]), 
+							miniExp2BExp(env, ename, args[1]), 
+							BSequence([], resolveMiniTypeVar(env, ename, pos, tv)), 
+							resolveMiniTypeVar(env, ename, pos, tv)
+						);
+					} else if (fname == ";") {
+						n = length(args);
+						if (n == 1) {
+							miniExp2BExp(env, ename, args[0]);
+						} else {
+							BSequence(map(args, \a -> miniExp2BExp(env, ename, a)), resolveMiniTypeVar(env, ename, pos, tv));
+						}
+					} else if (fname == "__switch") {
+						BSwitch(
+							miniExp2BExp(env, ename, args[0]),
+							miniExp2BCases(env, ename, args[1]),
+							resolveMiniTypeVar(env, ename, pos, tv)
+						);
+					} else {
+						BCall(
+							miniExp2BExp(env, ename, fn), 
+							map(args, \a -> miniExp2BExp(env, ename, a)), 
+							resolveMiniTypeVar(env, ename, pos, tv)
+						);
+					}
+				}
+				default: BCall(
+					miniExp2BExp(env, ename, fn), 
+					map(args, \a -> miniExp2BExp(env, ename, a)), 
+					resolveMiniTypeVar(env, ename, pos, tv)
+				);
+			}
+		}
+	}
+}
+
+miniValue2BValue(env : MiniTypeEnv, name : string, v : MiniValue) -> BValue {
+	switch (v) {
+		MiniInt(value, pos, tv): BInt(value, resolveMiniTypeVar(env, name, pos, tv));
+		MiniDouble(value, __): BDouble(value);
+		MiniString(value, __): BString(value);
+	}
+}
+
+miniExp2BCases(env : MiniTypeEnv, name : string, arg : MiniExp) -> [BCase] {
+	switch (arg) {
+		MiniCall(fn, args, __, tv): {
+			switch (fn) {
+				MiniVar(fname, pos, vtv): {
+					if (fname == "__or") {
+						concat(miniExp2BCases(env, name, args[0]), miniExp2BCases(env, name, args[1]));
+					} else if (fname == "__case") {
+						case = miniExp2BExp(env, name, args[0]);
+						body = miniExp2BExp(env, name, args[1]);
+						[BCase(case, body)];
+					} else if (fname == "__defaultcase") {
+						body = miniExp2BExp(env, name, args[0]);
+						[BCase(BVar("default", resolveMiniTypeVar(env, name, pos, vtv)), body)];
+					} else {
+						println("TODO: Handle this case 1");
+						println(arg);
+						[];
+					}
+				}
+				default: {
+					println("TODO: Handle this case 2");
+					println(arg);
+					[];
+				}
+			}
+		}
+		default: {
+			println("TODO: Handle this case 3");
+			println(arg);
+			[];
+		}
+	}
+}
+*/
+bexp2BReturn(b : BExp) -> BStatement {
+	switch (b) {
+		//BVoid(): 
+		/*BInt(value): {
+			//if (type == miniTypeVoid) BReturnVoid() else
+			BReturn(b);
+		}*/
+		BValue(): BReturn(b);
+		BVar(name, type): BReturn(b);
+		BLet(name, value, body, type): {
+			BLetStatement(name, value, bexp2BReturn(body));
+		}
+		BLambda(args, body, type): BReturn(b);
+		BCall(fn, args, type): BReturn(b);
+		BIf(cond, then, else_, type): BIfStatement(cond, bexp2BReturn(then), bexp2BReturn(else_));
+		BSequence(exps, type): BSequenceStatement(map(exps, bexp2BReturn));
+		BSwitch(val, __, cases, __, type): 
+			BSwitchStatement(val, map(cases, \case -> {
+				BCaseStatement(case.id, bexp2BReturn(case.body))
+			}), type);
+		BConstruct(struct, args, type): {
+			BReturn(b);
+		}
+		BField(value, field, type): {
+			BReturn(b);
+		}
+		BSetMutable(left, field, value, type): {
+			BSetMutableStatement(left, field, value);
+		}
+	}
+}
+
+bexpType(b : BExp) -> BType {
+	switch (b) {
+		BVoid(): bTypeVoid;
+		BBool(v): bTypeBool;
+		BInt(value): bTypeInt;
+		BDouble(value): bTypeDouble;
+		BString(value): bTypeString;
+		BVar(name, type): type;
+		BLet(name, value, body, type): type;
+		BLambda(args, body, type): type;
+		BCall(fn, args, type): type;
+		BIf(cond, then, else_, type): type;
+		BSequence(exps, type): type;
+		BSwitch(val, __, cases, __, type): type;
+		BConstruct(struct, args, type): type;
+		BField(value, field, type):  type;
+		BSetMutable(left, field, value, type): type;
+	}
+}
+
+bstatementType(b : BStatement) -> BType {
+	switch (b) {
+		BIfStatement(cond, then, else_): bstatementType(then);
+		BLetStatement(name, value, body): bstatementType(body);
+		BReturnVoid(): bTypeVoid;
+		BReturn(val): bexpType(val);
+		BTailCall(fn, args, values, type): type;
+		BSequenceStatement(statements): {
+			bstatementType(lastElement(statements, BReturnVoid()));
+		}
+		BSwitchStatement(expr, cases, type): type;
+		BSetMutableStatement(left, field, value): bexpType(value);
+	}
+}
