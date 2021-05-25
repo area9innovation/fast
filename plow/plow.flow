@@ -33,7 +33,8 @@ main() {
 
 		b = compilePlow(cache, thefile);
 		if (isUrlParameterTrue("js")) {
-			js = bmodule2js(b);
+			println("building JS target");
+			js = bmodule2js(cache, b.flowpath);
 			setFileContent(changeFileExt(thefile, ".js"), js);
 			{}
 		}
@@ -51,7 +52,7 @@ main() {
 
 				b = compilePlow(cache, fil);
 				if (isUrlParameterTrue("js")) {
-					js = bmodule2js(b);
+					js = bmodule2js(cache, b.flowpath);
 					setFileContent(changeFileExt(thefile, ".js"), js);
 					{}
 				}

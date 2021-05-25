@@ -2,17 +2,57 @@ import plow/backends/bprogram;
 import plow/backends/back_eval;
 import plow/backends/bprogram_lower;
 import plow/backends/js_natives;
-import text/blueprint;
+import plow/backends/pretty;
+import plow/driver;
 
 export {
-	bmodule2js(module : BModule) -> string;
+	bmodule2js(cache : PlowCache, flowpath : string) -> string;
 	bprogram2js(b : BProgram) -> string;
 }
 
-bmodule2js(module : BModule) -> string {
+bmodule2js(cache : PlowCache, flowpath : string) -> string {
+	//println("Compiling to JS: " + file);
+	//println("Cached names: " + strGlue(keysConcurrentHashMap(cache.modules.modules), ", "));
+	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
+	//iteri(modules, \i, m -> println("module " + i2s(i) + ": " + m.flowpath + /*":\n" + prettyBModule(m)*/));
+	integral_module = fold(modules, empty_BModule, mergeBModules);
+	//println("INTEGERAL MODULE: \n" + prettyBModule(integral_module));
+
+	module = getCachedBModule(cache.modules, flowpath);
+	println("MODULE: \n" + prettyBModule(integral_module));
 	be = bmodule2BExpProgram(module);
+	println("BEXP_PROG: \n" + prettyBExpProgram(be));
 	b = bexpProgram2BProgram(be);
+	println("B_PROG: \n" + prettyBProgram(b));
 	bprogram2js(b);
+}
+
+programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited : Set<string>) -> Pair<List<BModule>, Set<string>> {
+	module = getCachedBModule(cache.modules, file);
+	imported_visited = fold(module.imports, Pair(acc, insertSet(visited, file)), \ac, imp -> {
+		if (containsSet(ac.second, imp.path)) ac else {
+			programBModules(cache, imp.path, ac.first, ac.second)
+		}
+	});
+	Pair(Cons(module, imported_visited.first), imported_visited.second);
+}
+
+empty_BModule = BModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), makeTree(), []);
+
+mergeBModules(b1 : BModule, b2 : BModule) -> BModule {
+	BModule("", "", [], [],
+		DExport(
+			mergeSets(b1.exported.exportedTypeNames, b2.exported.exportedTypeNames),
+			mergeSets(b1.exported.exportedTypes, b2.exported.exportedTypes),
+			mergeSets(b1.exported.exportedGlobals, b2.exported.exportedGlobals), -1
+		),
+		mergeTree(b1.structs, b2.structs),
+		mergeTree(b1.unions, b2.unions),
+		mergeTree(b1.fields, b2.fields),
+		mergeTree(b1.natives, b2.natives),
+		mergeTree(b1.globals, b2.globals),
+		concat(b1.order, b2.order)
+	);
 }
 
 bprogram2js(b : BProgram) -> string {
