@@ -1,0 +1,111 @@
+import plow/types/ugraph/tmap;
+import plow/types/type;
+import text/blueprint;
+
+export {
+	prettyTTypeNode(tmap : TMap, t : TType) -> string;
+	debugTNode(tmap : TMap, root : int) -> string;
+	prettyTNode(tmap : TMap, t : TNode) -> string;
+	prettyEClass(tmap : TMap, eclass : int) -> string;
+	dumpTNodes(tmap : TMap) -> void;
+
+	isEmptyTNode(n : TNode) -> bool;
+	getTNodes(tmap : TMap) -> Set<int>;
+}
+
+
+prettyTTypeNode(tmap : TMap, t : TType) -> string {
+	rec = \tt -> prettyTTypeNode(tmap, tt);
+	switch (t) {
+		TTypeEClass(eclass): {
+			node = getUnionMapValue(tmap.tmap, eclass);
+			"e" + i2s(eclass) 
+			+ (if (isEmptyTNode(node)) {""}
+			else {
+				"=" + prettyEClass(tmap, eclass);
+			});
+		}
+		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, rec, ", ") + ">");
+		TTypeFunction(args, returnType): "(" + superglue(args, rec, ", ") + ") -> " + rec(returnType);
+		TTypeOverload(typar, overloads): "overloads{" + superglue(overloads, rec, ", ") + "}";
+		TTypeSupertype(unique, subtypes, maxed): "super" + i2s(unique) + "{" + superglue(subtypes, rec, if (maxed) " & " else ", ") + "}";
+	}
+}
+
+prettyTNode(tmap : TMap, t : TNode) -> string {
+	switch (t) {
+		TNodeName(name, typars, pos): {
+			if (name == "") {
+				if (typars == []) "ε"
+				else {
+					args = subrange(typars, 0, length(typars) - 1);
+					rt = typars[length(typars) - 1];
+					"(" + superglue(args, \e -> prettyEClass(tmap, e), ", ") + ")"
+					+ "->" + prettyEClass(tmap, rt)
+				}
+			} else {
+				name
+				+ (if (typars != []) "<" + superglue(typars, \e -> prettyEClass(tmap, e), ",") + ">" else "");
+			}
+		}
+		TNodeOverload(uniques, overloads, pos): {
+			"overload" + superglue(set2array(uniques), i2s, "_") + "{"
+			+ superglue(overloads, \o -> prettyTNode(tmap, o), ", ")
+			+ "}"
+		}
+		TNodeSupertype(uniques, subtypes, usub, pos): {
+			"super" + superglue(set2array(uniques), i2s, "_") + "{"
+			+ superglue(subtypes, \o -> prettyTNode(tmap, o), ", ")
+			+ (if (isEmptySet(usub)) "" else 
+				superglue(set2array(usub), \st -> "e" + i2s(st), ", ")
+			)
+			+ "}"
+			;
+		}
+	}
+}
+
+prettyEClass(tmap : TMap, eclass : int) -> string {
+	node = getUnionMapValue(tmap.tmap, eclass);
+	if (isEmptyTNode(node)) "e" + i2s(eclass)
+	else prettyTNode(tmap, node)
+}
+
+debugTNode(tmap : TMap, root : int) -> string {
+	node = getUnionMapValue(tmap.tmap, root);
+
+	childClasses = foldRange(0, ^(tmap.nextEClass), [], \acc2, ec -> {
+		r = findUnionMapRoot(tmap.tmap, ec);
+		if (r == root) {
+			arrayPush(acc2, ec)
+		} else acc2;
+	});
+
+	rpad(prettyTNode(tmap, node), " ", 30) + "   covers " + superglue(childClasses, \c -> "e" + i2s(c), " ");
+}
+
+dumpTNodes(tmap : TMap) -> void {
+	roots = getTNodes(tmap);
+	iterSet(roots, \root -> {
+		node = getUnionMapValue(tmap.tmap, root);
+		if (!isEmptyTNode(node)) {
+			println("e" + i2s(root) + " = " + debugTNode(tmap, root));
+		}
+	});
+}
+
+getTNodes(tmap : TMap) -> Set<int> {
+	aroots = getUnionMapRoots(tmap.tmap);
+	filterSet(aroots, \r -> {
+		r < ^(tmap.nextEClass)
+	});
+}
+
+
+isEmptyTNode(n : TNode) -> bool {
+	switch (n) {
+		TNodeName(name, pars, pos): name == "" && pars == [];
+		default: false;
+	}
+}
+
