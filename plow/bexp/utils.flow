@@ -1,0 +1,61 @@
+import plow/bexp/bexp;
+
+export {
+	extractFreeNamesBExp(free : Set<string>, locals : Set<string>, e : BExp) -> Set<string>;
+}
+
+extractFreeNamesBExp(free : Set<string>, locals : Set<string>, e : BExp) -> Set<string> {
+	switch (e) {
+		BValue(): free;
+		BVar(id, type): {
+			if (containsSet(locals, id)) free
+			else insertSet(free, id);
+		}
+		BLet(id, value, body, type): {
+			nlocals = insertSet(locals, id);
+			free1 = extractFreeNamesBExp(free, nlocals, value);
+			extractFreeNamesBExp(free1, nlocals, body);
+		}
+		BIf(cond, then, else_, type): {
+			free1 = extractFreeNamesBExp(free, locals, cond);
+			free2 = extractFreeNamesBExp(free1, locals, then);
+			extractFreeNamesBExp(free2, locals, else_);
+		}
+		BCall(fn, args, type): {
+			free1 = extractFreeNamesBExp(free, locals, fn);
+			fold(args, free1, \acc, arg -> {
+				extractFreeNamesBExp(acc, locals, arg);
+			});
+		}
+		BLambda(args, body, type): {
+			nlocals = fold(args, locals, insertSet);
+			extractFreeNamesBExp(free, nlocals, body);
+		}
+		BSequence(exps, type): {
+			fold(exps, free, \acc, ex -> {
+				extractFreeNamesBExp(acc, locals, ex);
+			});
+		}
+		BConstruct(struct, args, type): {
+			fold(args, free, \acc, ex -> {
+				extractFreeNamesBExp(acc, locals, ex);
+			});
+		}
+		BField(value, field, type): {
+			extractFreeNamesBExp(free, locals, value);
+		}
+		BSetMutable(left, field, value, type): {
+			free1 = extractFreeNamesBExp(free, locals, left);
+			extractFreeNamesBExp(free1, locals, value);
+		}
+		BSwitch(value, switchType, cases, defaultCase, type): {
+			free1 = extractFreeNamesBExp(free, locals, value);
+			free2 = defaultCase ?? {
+				extractFreeNamesBExp(free1, locals, defaultCase);
+			} : free1;
+			fold(cases, free2, \acc, case -> {
+				extractFreeNamesBExp(acc, locals, case.body);
+			})
+		}
+	}
+}
