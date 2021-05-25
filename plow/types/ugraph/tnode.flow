@@ -1,5 +1,6 @@
 import plow/types/ugraph/tmap;
-import plow/types/ugraph/debug;
+import plow/types/ugraph/find;
+import plow/types/ugraph/incompatible;
 import plow/types/pretty;
 
 /*
@@ -393,17 +394,6 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 	}
 }
 
-getPossibleTSupers(tmap : TMap, super : TNodeSupertype) -> Set<string> {
-	foldi(super.subtypes, makeSet(), \i, acc, t : TNodeName -> {
-		id = t.name;
-		supers0 = ^(tmap.resolveSupertypes)(id);
-		supers = arrayPush(supers0, id);
-		supset = buildSet(supers);
-		if (i == 0) supset
-		else intersectSets(supset, acc)
-	});
-}
-
 canBeSubtyped(tmap : TMap, node : TNodeName) -> bool {
 	supertype = TNodeSupertype(makeSet(), [node], makeSet(), 0);
 	named = getPossibleTSupers(tmap, supertype);
@@ -546,30 +536,6 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					));
 				}
 			}
-		}
-	}
-}
-
-// It could be that we have a union with just one struct
-isSingleUnionName(tmap : TMap, name1 : string, name2 : string) -> bool {
-	// Are these names compatible
-	muname1 = ^(tmap.resolveUnionName)(name1);
-	switch (muname1) {
-		None(): {
-			muname2 = ^(tmap.resolveUnionName)(name2);
-			switch (muname1) {
-				None(): false;
-				Some(u): {
-					if (length(u.types) == 1) {
-						u.types[0].id == name1
-					} else false;
-				}
-			}
-		}
-		Some(u): {
-			if (length(u.types) == 1) {
-				u.types[0].id == name2
-			} else false;
 		}
 	}
 }
@@ -814,160 +780,10 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
 	}
 }
 
-// Are these node names incompatible forever?
-incompatibleTNodeNames(tmap : TMap, node : TNodeName, overload : TNodeName) -> bool {
-	if (isEmptyTNode(node) || isEmptyTNode(overload)) {
-		false
-	} else if (node.name == "flow" || overload.name == "flow") {
-		// This is always ok
-		false
-	} else if (isSingleUnionName(tmap, node.name, overload.name)) {
-		false
-	} else {
-		node.name != overload.name 
-		|| length(node.typars) != length(overload.typars)
-		|| exists(mapi(node.typars, \i, tp -> {
-			incompatibleEClasses(tmap, tp, overload.typars[i])
-		}), idfn)
-	}
-}
 
-incompatibleEClasses(tmap : TMap, left : int, right : int) -> bool {
-	lroot = findUnionMapRoot(tmap.tmap, left);
-	rroot = findUnionMapRoot(tmap.tmap, right);
-	lroot != rroot
-	&& {
-		lnode = getUnionMapValue(tmap.tmap, lroot);
-		rnode = getUnionMapValue(tmap.tmap, rroot);
-		incompatibleTNodes(tmap, lnode, rnode);
-	}
-}
-
-incompatibleTNodes(tmap : TMap, left : TNode, right : TNode) -> bool {
-	todo = \ -> {
-		println("TODO: Check if node " + prettyTNode(tmap, left) + " is compatible with node " + prettyTNode(tmap, right));
-		false;
-	}
-	if (isEmptyTNode(left) || isEmptyTNode(right)) false
-	else switch (left) {
-		TNodeName(lname, ltypars, lpos): {
-			switch (right) {
-				TNodeName(rname, rtypars, rpos): {
-					incompatibleTNodeNames(tmap, left, right)
-				}
-				default: incompatibleTNodes(tmap, right, left);
-			}
-		}
-		TNodeOverload(lunique, loverloads, pos): {
-			todo();
-		}
-		TNodeSupertype(luniques, lsubtypes, usubs, pos): {
-			if (existsSet(usubs, \s -> {
-				isEmptyEClass(tmap, s);
-			})) {
-				// OK, we have some unknown subtypes, so it can be anything
-				false
-			} else {
-				switch (right) {
-					TNodeName(rname, rtypars, rpos): {
-						supers = getPossibleTSupers(tmap, left);
-						if (containsSet(supers, rname)) {
-							false;
-						} else {
-							existsSet(usubs, \st -> {
-								unode = getUnionMapValue(tmap.tmap, st);
-								incompatibleTNodes(tmap, unode, right)
-							});
-						}
-					}
-					default: {
-						todo();
-					}
-				}
-			}
-		}
-	}
-}
-
-isEmptyEClass(tmap : TMap, eclass : int) -> bool {
-	node = getUnionMapValue(tmap.tmap, eclass);
-	isEmptyTNode(node);
-}
-
-findTNode(tmap : TMap, type : TType) -> int {
-	switch (type) {
-		TTypeEClass(eclass): {
-			findUnionMapRoot(tmap.tmap, eclass);
-		}
-		default: {
-			findUnionMap(tmap.tmap, \i, val : TNode -> {
-				c = isTTypeInTNode(tmap, type, i, val);
-				if (false && c) {
-					println("  e" + i2s(i) + " has " + prettyTType(type));
-				}
-				c;
-			}, -1);
-		}
-	}
-}
-
-isTTypeInTNode(tmap : TMap, t : TType, nclass : int, n : TNode) -> bool {
-	todo = \ -> {
-		println("TODO: Check if type " + prettyTType(t) + " is node " + prettyTNode(tmap, n));
-		false;
-	}
-	isSameEClass = \ec -> {
-		findUnionMapRoot(tmap.tmap, ec) == findUnionMapRoot(tmap.tmap, nclass)
-	}
-	switch (n) {
-		TNodeName(name, typars, pos): {
-			switch (t) {
-				TTypeName(id, ttypars): {
-					if (id == name) areTTypesInTNodes(tmap, ttypars, typars) else false;
-				}
-				TTypeFunction(args, returnType): {
-					if (name == "" && length(typars) == length(args) + 1) {
-						areTTypesInTNodes(tmap, args, subrange(typars, 0, length(args)))
-						&& areTTypesInTNodes(tmap, [returnType], [typars[length(args)]])
-					} else {
-						false;
-					}
-				}
-				TTypeEClass(eclass): isSameEClass(eclass);
-				TTypeOverload(unique, overloads): false;
-				TTypeSupertype(unique, subtypes, maxed): false;
-			}
-		}
-		TNodeOverload(uniques, overloads, pos): {
-			switch (t) {
-				TTypeOverload(tunique, __): {
-					uid = findTNode(tmap, tunique);
-					containsSet(uniques, uid);
-				}
-				TTypeEClass(eclass): isSameEClass(eclass);
-				default: false;
-			}
-		}
-		TNodeSupertype(uniques, subtypes, __, pos): {
-			switch (t) {
-				TTypeSupertype(uid, __, maxed): containsSet(uniques, uid);
-				TTypeEClass(eclass): isSameEClass(eclass);
-				default: false;
-			}
-		}
-	}
-}
-
-areTTypesInTNodes(tmap : TMap, ts : [TType], ns : [int]) -> bool {
-	length(ts) == length(ns)
-	&& forall(mapi(ts, \i, t -> {
-		eclass = ns[i];
-		node = getUnionMapValue(tmap.tmap, eclass);
-		isTTypeInTNode(tmap, t, eclass, node)
-	}), idfn)
-}
-
+//
 // At the end, extract the types
+//
 
 resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType> {
 	pending = ^(tmap.pending);
