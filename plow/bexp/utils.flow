@@ -1,7 +1,9 @@
 import plow/bexp/bexp;
 
 export {
+	// Find the globals that are used in this expression
 	extractFreeNamesBExp(free : Set<string>, locals : Set<string>, e : BExp) -> Set<string>;
+	// Find the typenames that are used in this expression
 	extractTypeNamesBExp(typename : Set<string>, e : BExp) -> Set<string>;
 }
 
