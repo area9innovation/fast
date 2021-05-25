@@ -21,7 +21,10 @@ export {
 		// A list of pending unifications that we could not do
 		pending : ref List<Pair<TNode, TNode>>,
 		// A list of pending subtypings we could not do
-		pendingSubtypes : ref List<Triple<int, int, int>>
+		pendingSubtypes : ref List<Triple<int, int, int>>,
+		// Are we at a point where we have to make up our mind about 
+		// supertypes and overloads even if they are ambigious?
+		finalPhase : ref bool
 	);
 
 	// Our nodes in the type graph
