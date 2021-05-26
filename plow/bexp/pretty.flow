@@ -161,6 +161,16 @@ prettyBExp(b : BExp) -> string {
 					"type2", prettyBType(type),
 			]);
 		}
+		BArray(args, type): {
+			blueprint("
+					[ // array
+						%args%
+					) /* %type% */",
+				[
+					"args", superglue(args, prettyBExp, ",\n"),
+					"type", prettyBType(type),
+			]);
+		}
 	}
 }
 

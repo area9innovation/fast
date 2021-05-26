@@ -75,8 +75,8 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 		}
 		DArray(exps, pos, eclass): {
 			typ = type(eclass);
-			// The type of __array is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
-			BCall(BVar("__array", typ), map(exps, rec), typ);
+			// The type of array is not right, but should not matter. It is really (typar_0_of(typ)) -> typ
+			BArray(map(exps, rec), typ);
 		}
 		DSequence(exps, pos, eclass): BSequence(map(exps, rec), type(eclass));
 		DSwitch(value, stype, cases, defaultCase, pos, eclass): {

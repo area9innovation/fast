@@ -20,6 +20,16 @@ TODO:
 - plow/tests/types.flow
   - Implicit polymorphism, but it is not referenced so maybe not worth complaining about?
 
+- tnode: 
+	C:/fast/plow/types/ugraph/tnode.flow:116:14: ERROR: Merge TNodeName and TNode
+		defaultTNode() -> TNode {
+			TNodeName("", [], -1);
+		}
+
+
+- lib/behaviour.flow:125
+  - Complain about DebuggedSubscriber is not exported
+
 - Consider to keep polymorphism as ? when possible
   - If the chunk is just one function, it is possible to keep ?, I believe
 */
