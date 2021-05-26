@@ -1,11 +1,12 @@
 import plow/backends/bprogram;
 import plow/bexp/builtin;
 import plow/bexp/bmodule;
+import plow/bexp/utils;
 
 import ds/arrayutils;
 
 export {
-	bmodule2BExpProgram(module : BModule) -> BExpProgram;
+	bmodules2BExpProgram(modules : [BModule]) -> BExpProgram;
 
 	bexpProgram2BProgram(b : BExpProgram) -> BProgram;
 
@@ -21,36 +22,122 @@ export {
 	bstatementType(b : BStatement) -> BType;
 }
 
-bmodule2BExpProgram(module : BModule) -> BExpProgram {
-	// Here we effectively do DCE:
-	// TODO: Also include all top-level vars with side-effects
-	/*ids0 : Set<string> = getMiniDependencies(ast.idDependents, "main", true);
-	ids = if (isEmptySet(ids0)) {
-		println("Could not find main. Keep everything");
-		buildSet(getTreeKeys(ast.declarations)) 
-	} else ids0;
-
-	order = topologicalMiniOrder(ast.idDependents, ids);*/
-
-	bexp = BExpProgram(
-		filtermap(module.order, \id -> {
-			mdecl = lookupTree(module.globals, id);
-			mdecl ?? {
-				decl = bexp2BExpDeclaration(id, mdecl.value);
-				Some(decl)
-			} : None(); // We will let backends complain: Some(BComment("// ERROR: Unknown id " + id))
+bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
+	names = bmodules2BNames(modules);
+	alive = aliveCode(names);
+	println("Alive:\n" + concatStrings(map(set2array(alive), \n -> "\t" + n + "\n")));
+	BExpProgram(
+		filterTree(names.structs, \id, __ -> containsSet(alive, id)),
+		filterTree(names.unions, \id, __ -> containsSet(alive, id)),
+		fold(modules, [], \acc, module -> {
+			println("\t" + module.flowpath + " ids: " + strGlue(module.order, ","));
+			fold(module.order, 
+				foldTree(module.natives, acc, \id, nat, ac -> 
+					if (!containsSet(alive, id)) ac else {
+						// BNative(id : string, isIo : bool, type : BType, name : string, fallback : Maybe<BGlobal>, pos : int);
+						// BExpNative(id : string, isio : bool, type : BType, nativeName : string, fallback : Maybe<BExpDeclaration>);
+						concat(ac, 
+							[BExpNative(id, nat.isIo, nat.type, nat.name, 
+								maybeMap(nat.fallback, \glob -> bexp2BExpDeclaration(id, glob.value))
+							)]
+						);
+					}
+				),
+				\ac, id -> {
+				if (!containsSet(alive, id)) ac else {
+					switch (lookupTree(module.globals, id)) {
+						Some(decl): concat(ac, [bexp2BExpDeclaration(id, decl.value)]);
+						None(): {
+							println("Unknown id: '" + id + "'");
+							ac;
+						}
+					}
+				}
+			})
 		})
 	);
+}
 
-	// Optimize constants
-	//opt = extractBExpGlobals(bexp);
+BNames(
+	structs : Tree<string, DStruct>,
+	unions : Tree<string, DUnion>,
+	natives : Tree<string, BNative>,
+	globals : Tree<string, BGlobal>
+);
 
-	//opt;
-	bexp;
+bmodules2BNames(modules : [BModule]) -> BNames {
+	fold(modules, BNames(makeTree(), makeTree(), makeTree(), makeTree()), \acc, m ->
+		BNames(
+			mergeTree(acc.structs, m.structs),
+			mergeTree(acc.unions, m.unions),
+			mergeTree(acc.natives, m.natives),
+			mergeTree(acc.globals, m.globals),
+		)
+	);
+}
+
+DeadCodeAcc(
+	queue : Set<string>, 
+	used : Set<string>
+);
+
+aliveCode(names : BNames) -> Set<string> {
+	visitDead(names, DeadCodeAcc(
+		makeSet1("main"), 
+		buildSet([
+			"bool", "void", "int", "double", "string", "ref", "array",
+			"<", "<=", "==", ">", ">=", ":=", "::=",
+			"+", "*", "/", "%", "&&", "||", "!",
+			"__deref", "__ref", "__not", "__array",
+		])
+	)).used;
+}
+
+visitDead(names : BNames, acc : DeadCodeAcc) -> DeadCodeAcc {
+	switch (popMinSet(acc.queue)) {
+		None(): acc;
+		Some(pop): {
+			name = pop.value;
+			visitDead(names, deadFiName(names, DeadCodeAcc(pop.rest, acc.used), name));
+		}
+	}
+}
+
+deadFiName(names : BNames, acc : DeadCodeAcc, name : string) -> DeadCodeAcc {
+	dead = \bglob : BGlobal -> {
+		used = insertSet(acc.used, name);
+		referenced = extractTypeNamesBExp(
+			extractFreeNamesBExp(makeSet(), makeSet(), bglob.value),
+			bglob.value
+		);
+		new = differenceSets(referenced, used);
+		DeadCodeAcc(
+			mergeSets(acc.queue, new), 
+			mergeSets(used, new)
+		);
+	}
+	switch (lookupTree(names.globals, name)) {
+		Some(glob): dead(glob);
+		None(): {
+			switch (lookupTree(names.natives, name)) {
+				Some(nat): {
+					switch (nat.fallback) {
+						Some(glob): dead(glob);
+						None(): acc;
+					}
+				}
+				None(): {
+					println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
+					acc;
+				}
+			}
+		}
+	}
 }
 
 bexpProgram2BProgram(b : BExpProgram) -> BProgram {
 	BProgram(
+		b.structs, b.unions,
 		map(b.declarations, bexpDeclaration2Declaration)
 	);
 }

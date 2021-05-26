@@ -14,13 +14,13 @@ bmodule2js(cache : PlowCache, flowpath : string) -> string {
 	//println("Compiling to JS: " + file);
 	//println("Cached names: " + strGlue(keysConcurrentHashMap(cache.modules.modules), ", "));
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	//iteri(modules, \i, m -> println("module " + i2s(i) + ": " + m.flowpath + /*":\n" + prettyBModule(m)*/));
-	integral_module = fold(modules, empty_BModule, mergeBModules);
+	//iteri(modules, \i, m -> println("module " + i2s(i) + ": " + m.flowpath + ":\n" + prettyBModule(m)));
+	//integral_module = fold(modules, empty_BModule, mergeBModules);
 	//println("INTEGERAL MODULE: \n" + prettyBModule(integral_module));
 
-	module = getCachedBModule(cache.modules, flowpath);
-	println("MODULE: \n" + prettyBModule(integral_module));
-	be = bmodule2BExpProgram(module);
+	//module = getCachedBModule(cache.modules, flowpath);
+	//println("MODULE: \n" + prettyBModule(integral_module));
+	be = bmodules2BExpProgram(modules);
 	println("BEXP_PROG: \n" + prettyBExpProgram(be));
 	b = bexpProgram2BProgram(be);
 	println("B_PROG: \n" + prettyBProgram(b));
@@ -184,7 +184,8 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 		}
 		BSetMutableStatement(left, field, value): {
 			// TODO: implement
-			"";
+			//"TODO: implement 'BSetMutableStatement' in 'bstatement2js'";
+			bexp2js(backend, left) + "." + field + "=" + bexp2js(backend, value) + ";";
 		}
 	}
 }
@@ -228,15 +229,18 @@ bexp2js(backend : Backend, b : BExp) -> string {
 		}
 		BConstruct(struct, args, type): {
 			// TODO: implement
-			""
+			//"TODO: implement 'BConstruct' in 'bexp2js'"
+			struct + "(" + superglue(args, \arg -> bexp2js(backend, arg), ", ") + ")";
 		}
 		BField(value, field, type): {
 			// TODO: implement
-			""
+			//"TODO: implement 'BField' in 'bexp2js'"
+			bexp2js(backend, value) + "." + field;
 		}
 		BSetMutable(left, field, value, type): {
 			// TODO: implement
-			""
+			//"TODO: implement 'BSetMutable' in 'bexp2js'"
+			bexp2js(backend, left) + "." + field + "=" + bexp2js(backend, value);
 		}
 	}
 }
