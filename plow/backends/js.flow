@@ -11,20 +11,10 @@ export {
 }
 
 bmodule2js(cache : PlowCache, flowpath : string) -> string {
-	//println("Compiling to JS: " + file);
-	//println("Cached names: " + strGlue(keysConcurrentHashMap(cache.modules.modules), ", "));
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	//iteri(modules, \i, m -> println("module " + i2s(i) + ": " + m.flowpath + ":\n" + prettyBModule(m)));
-	//integral_module = fold(modules, empty_BModule, mergeBModules);
-	//println("INTEGERAL MODULE: \n" + prettyBModule(integral_module));
-
-	//module = getCachedBModule(cache.modules, flowpath);
-	//println("MODULE: \n" + prettyBModule(integral_module));
-	be = bmodules2BExpProgram(modules);
-	println("BEXP_PROG: \n" + prettyBExpProgram(be));
-	b = bexpProgram2BProgram(be);
-	println("B_PROG: \n" + prettyBProgram(b));
-	bprogram2js(b);
+	bexp_program = bmodules2BExpProgram(modules);
+	b_program = bexpProgram2BProgram(bexp_program);
+	bprogram2js(b_program);
 }
 
 programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited : Set<string>) -> Pair<List<BModule>, Set<string>> {
@@ -57,11 +47,24 @@ mergeBModules(b1 : BModule, b2 : BModule) -> BModule {
 
 bprogram2js(b : BProgram) -> string {
 	backend = jsBackend();
+	structs = superglue(getTreeValues(b.structs), \s : DStruct -> dstruct2js(backend, s), "\n");
 	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");
 
 	getBackendRequirements(backend)
+	+ structs + "\n"
 	+ body
 	+ "\nmain()";
+}
+
+dstruct2js(backend : Backend, s : DStruct) -> string {
+	blueprint("
+		function %id%(%args%) {
+			%body%
+		}", [
+		"id", s.id,
+		"args", superglue(s.structArgs, \arg -> arg.id, ", "),
+		"body", superglue(s.structArgs, \arg -> "this." + arg.id + " = " + arg.id + ";", "\n")
+	]);
 }
 
 bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
@@ -183,8 +186,6 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 			])
 		}
 		BSetMutableStatement(left, field, value): {
-			// TODO: implement
-			//"TODO: implement 'BSetMutableStatement' in 'bstatement2js'";
 			bexp2js(backend, left) + "." + field + "=" + bexp2js(backend, value) + ";";
 		}
 	}
@@ -228,19 +229,16 @@ bexp2js(backend : Backend, b : BExp) -> string {
 			+ "}()"
 		}
 		BConstruct(struct, args, type): {
-			// TODO: implement
-			//"TODO: implement 'BConstruct' in 'bexp2js'"
-			struct + "(" + superglue(args, \arg -> bexp2js(backend, arg), ", ") + ")";
+			"new " + struct + "(" + superglue(args, \arg -> bexp2js(backend, arg), ", ") + ")";
 		}
 		BField(value, field, type): {
-			// TODO: implement
-			//"TODO: implement 'BField' in 'bexp2js'"
 			bexp2js(backend, value) + "." + field;
 		}
 		BSetMutable(left, field, value, type): {
-			// TODO: implement
-			//"TODO: implement 'BSetMutable' in 'bexp2js'"
 			bexp2js(backend, left) + "." + field + "=" + bexp2js(backend, value);
+		}
+		BArray(args, type): {
+			"[" + superglue(args, \arg -> bexp2js(backend, arg), ", ") + "]";
 		}
 	}
 }

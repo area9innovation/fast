@@ -91,6 +91,7 @@ jsBackend() -> Backend {
 			BackGen("__neg", BTypeFunction([bTypeDouble], bTypeDouble), BackPreOp("-", 60, BackArg(0))),
 
 			BackGen("!", bTypeVoid, BackPreOp("!", 60, BackArg(0))),
+			BackGen("__not", bTypeVoid, BackPreOp("!", 60, BackArg(0))),
 
 			BackGen("__void", bTypeVoid, BackText("null")),
 
@@ -110,7 +111,7 @@ jsBackend() -> Backend {
 			BackGen("__deref", bTypeVoid, BackPostOp(".v", 60, BackArg(0))),
 			BackGen(":=", bTypeVoid, BackBinOp(".v=", 70, BackArg(0), BackArg(1))),
 
-			BackGen("__emptyarray", bTypeVoid, BackText("[]")),
+			//BackGen("__emptyarray", bTypeVoid, BackText("[]")),
 			BackGen("[", bTypeVoid, BackConcat([BackText("["), BackArg(0), BackText("]")])),
 			BackGen(",", bTypeVoid, BackBinOp(",", 80, BackArg(0), BackArg(1))),
 			BackGen("__index", bTypeVoid, BackConcat([BackBinOp("[", 80, BackArg(0), BackArg(1)), BackText("]")])),

@@ -2,6 +2,7 @@ import plow/backends/bprogram;
 import plow/bexp/builtin;
 import plow/bexp/bmodule;
 import plow/bexp/utils;
+import plow/dexp/utils;
 
 import ds/arrayutils;
 
@@ -9,9 +10,6 @@ export {
 	bmodules2BExpProgram(modules : [BModule]) -> BExpProgram;
 
 	bexpProgram2BProgram(b : BExpProgram) -> BProgram;
-
-	// This lowers our program to BExp with types. The name is used for error reporting
-	//miniExp2BExp(env : MiniTypeEnv, name : string, e : MiniExp) -> BExp;
 
 	// For use in backends, when expressions need a statement
 	bexp2BReturn(b : BExp) -> BStatement;
@@ -25,17 +23,13 @@ export {
 bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
 	names = bmodules2BNames(modules);
 	alive = aliveCode(names);
-	println("Alive:\n" + concatStrings(map(set2array(alive), \n -> "\t" + n + "\n")));
 	BExpProgram(
 		filterTree(names.structs, \id, __ -> containsSet(alive, id)),
 		filterTree(names.unions, \id, __ -> containsSet(alive, id)),
 		fold(modules, [], \acc, module -> {
-			println("\t" + module.flowpath + " ids: " + strGlue(module.order, ","));
 			fold(module.order, 
 				foldTree(module.natives, acc, \id, nat, ac -> 
 					if (!containsSet(alive, id)) ac else {
-						// BNative(id : string, isIo : bool, type : BType, name : string, fallback : Maybe<BGlobal>, pos : int);
-						// BExpNative(id : string, isio : bool, type : BType, nativeName : string, fallback : Maybe<BExpDeclaration>);
 						concat(ac, 
 							[BExpNative(id, nat.isIo, nat.type, nat.name, 
 								maybeMap(nat.fallback, \glob -> bexp2BExpDeclaration(id, glob.value))
@@ -76,13 +70,13 @@ bmodules2BNames(modules : [BModule]) -> BNames {
 	);
 }
 
-DeadCodeAcc(
+UsedCodeAcc(
 	queue : Set<string>, 
 	used : Set<string>
 );
 
 aliveCode(names : BNames) -> Set<string> {
-	visitDead(names, DeadCodeAcc(
+	findUsed(names, UsedCodeAcc(
 		makeSet1("main"), 
 		buildSet([
 			"bool", "void", "int", "double", "string", "ref", "array",
@@ -93,42 +87,61 @@ aliveCode(names : BNames) -> Set<string> {
 	)).used;
 }
 
-visitDead(names : BNames, acc : DeadCodeAcc) -> DeadCodeAcc {
+findUsed(names : BNames, acc : UsedCodeAcc) -> UsedCodeAcc {
 	switch (popMinSet(acc.queue)) {
 		None(): acc;
 		Some(pop): {
 			name = pop.value;
-			visitDead(names, deadFiName(names, DeadCodeAcc(pop.rest, acc.used), name));
+			findUsed(names, findUsedIn(names, UsedCodeAcc(pop.rest, acc.used), name));
 		}
 	}
 }
 
-deadFiName(names : BNames, acc : DeadCodeAcc, name : string) -> DeadCodeAcc {
-	dead = \bglob : BGlobal -> {
+findUsedIn(names : BNames, acc : UsedCodeAcc, name : string) -> UsedCodeAcc {
+	proc_glob = \bglob : BGlobal -> {
 		used = insertSet(acc.used, name);
 		referenced = extractTypeNamesBExp(
 			extractFreeNamesBExp(makeSet(), makeSet(), bglob.value),
 			bglob.value
 		);
 		new = differenceSets(referenced, used);
-		DeadCodeAcc(
+		UsedCodeAcc(
+			mergeSets(acc.queue, new), 
+			mergeSets(used, new)
+		);
+	}
+	proc_struct_union = \su -> {
+		used = insertSet(acc.used, name);
+		referenced = extractTypeNamesDType(makeSet(), su, names.structs, names.unions);
+		new = differenceSets(referenced, used);
+		UsedCodeAcc(
 			mergeSets(acc.queue, new), 
 			mergeSets(used, new)
 		);
 	}
 	switch (lookupTree(names.globals, name)) {
-		Some(glob): dead(glob);
+		Some(glob): proc_glob(glob);
 		None(): {
 			switch (lookupTree(names.natives, name)) {
 				Some(nat): {
 					switch (nat.fallback) {
-						Some(glob): dead(glob);
+						Some(glob): proc_glob(glob);
 						None(): acc;
 					}
 				}
 				None(): {
-					println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
-					acc;
+					switch (lookupTree(names.structs, name)) {
+						Some(struct): proc_struct_union(struct);
+						None(): {
+							switch (lookupTree(names.unions, name)) {
+								Some(union): proc_struct_union(union);
+								None(): {
+									println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
+									acc;
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -207,6 +220,7 @@ bexp2BExpDeclaration(declid : string, b : BExp) -> BExpDeclaration {
 		BConstruct(struct, args, type): var();
 		BField(value, field, type): var();
 		BSetMutable(left, field, value, type): var();
+		BArray(args, type): var();
 	}
 }
 
@@ -281,6 +295,9 @@ bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailca
 		BSetMutable(left, field, value, type): {
 			BSetMutableStatement(left, field, value);
 		}
+		BArray(args, type): {
+			BReturn(b);
+		}
 	}
 }
 
@@ -313,6 +330,9 @@ bexp2BReturn(b : BExp) -> BStatement {
 		BSetMutable(left, field, value, type): {
 			BSetMutableStatement(left, field, value);
 		}
+		BArray(args, type): {
+			BReturn(b);
+		}
 	}
 }
 
@@ -333,6 +353,7 @@ bexpType(b : BExp) -> BType {
 		BConstruct(struct, args, type): type;
 		BField(value, field, type):  type;
 		BSetMutable(left, field, value, type): type;
+		BArray(args, type): type;
 	}
 }
 
