@@ -1,11 +1,20 @@
 import plow/bexp/bexp;
+import plow/dexp/dexp;
 
 export {
 	// Typed intermediate representation with code in topological order, but not in statements yet
-	BExpProgram(declarations : [BExpDeclaration]);
+	BExpProgram(
+		structs : Tree<string, DStruct>,
+		unions : Tree<string, DUnion>,
+		declarations : [BExpDeclaration]
+	);
 
 	// This is the typed AST we send to the backends when they need to compile using statements
-	BProgram(declarations : [BDeclaration]);
+	BProgram(
+		structs : Tree<string, DStruct>,
+		unions : Tree<string, DUnion>,
+		declarations : [BDeclaration]
+	);
 
 	BExpDeclaration ::= BGlobalVar, BExpFunction, BExpNative;
 	BDeclaration ::= BGlobalVar, BStatFunction, BNativeDec;

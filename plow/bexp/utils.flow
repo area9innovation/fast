@@ -60,6 +60,11 @@ extractFreeNamesBExp(free : Set<string>, locals : Set<string>, e : BExp) -> Set<
 				extractFreeNamesBExp(acc, locals, case.body);
 			})
 		}
+		BArray(args, type): {
+			fold(args, free, \acc, ex -> {
+				extractFreeNamesBExp(acc, locals, ex);
+			});
+		}
 	}
 }
 
@@ -116,6 +121,10 @@ extractTypeNamesBExp(acc : Set<string>, e : BExp) -> Set<string> {
 				extractTypeNamesBExp(acc5, case.body);
 			});
 			extractTypeNamesBType(acc4, type);
+		}
+		BArray(args, type): {
+			acc1 = fold(args, acc, extractTypeNamesBExp);
+			extractTypeNamesBType(acc1, type);
 		}
 	}
 }
