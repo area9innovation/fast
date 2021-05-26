@@ -263,7 +263,7 @@ extractDUnion(dd : DDesugar, acc : Tree<string, DUnion>, tl : PTopLevel) -> Tree
 }
 
 adjustImplicitStructArity(dd : DDesugar, unions : Tree<string, DUnion>, structs : Tree<string, DStruct>) -> Tree<string, DStruct> {
-	foldTree(unions, structs, \un, union, acc -> {
+	foldTree(unions, structs, \un, union : DUnion, acc -> {
 		arity = length(union.typars);
 		fold(union.types, acc, \acc2, tn : DTypeName -> {
 			nameArity = typenameArity(dd, tn.id);
