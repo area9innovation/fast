@@ -9,11 +9,25 @@ TODO:
 - isSameStructType
 - (downcast in filtermap)
 
-- Subtyping on typars
+- ds/array: We could allow subtyping in cast, or have special case
+
+- plow/tests/type4:
+  - Handling functions as named is wrong, since supertyping is different for functions
+  - Alternatively, we should allow subtyping in lambdas
+
+- hello: Strange string vs int
+
+- plow/tests/type13
+  - Subtyping on typars
+
+
+- plow/tests/types.flow
+  - Implicit polymorphism, but it is not referenced so maybe not worth complaining about?
+
 - Consider to keep polymorphism as ? when possible
   - If the chunk is just one function, it is possible to keep ?, I believe
-
 */
+
 
 export {
 	// Set up the type unification map
@@ -27,6 +41,7 @@ export {
 	setTMapResolvers(t : TMap, 
 		resolveUnionName : (string) -> Maybe<DUnion>,
 		resolveSupertypes : (string) -> [string], 
+		resolveSubtypes : (string) -> [string], 
 	) -> TMap;
 
 	// Make a new type class
@@ -62,6 +77,10 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 			println("TODO: The resolvers are not set");
 			[];
 		},
+		ref \__ -> {
+			println("TODO: The resolvers are not set");
+			[];
+		},
 		onError,
 		nextEClass,
 		mkUnique,
@@ -76,14 +95,17 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 setTMapResolvers(t : TMap, 
 	resolveUnionName : (string) -> Maybe<DUnion>,
 	resolveSupertypes : (string) -> [string], 
+	resolveSubtypes : (string) -> [string], 
 ) -> TMap {
 	t.resolveUnionName := resolveUnionName;
 	t.resolveSupertypes := \type -> {
 		transitiveResolveSuperType(resolveSupertypes, type)
 	};
+	t.resolveSubtypes := resolveSubtypes;
 	t;
 }
 
+// Collect all supertypes of this name, based on a one-step resolver
 transitiveResolveSuperType(basic : (string) -> [string], name : string) -> [string] {
 	supers = basic(name);
 	fold(supers, supers, \acc, base -> {
@@ -96,6 +118,7 @@ defaultTNode() -> TNode {
 }
 
 uindent = ref "";
+
 // These two types are unified
 unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		reason : string, pos : int) -> void {
@@ -223,13 +246,10 @@ makeTNode(tmap : TMap, t : TType, pos : int) -> TNode {
 	}
 }
 
+// Add t to this supertype as a subtype. If t is a supertype, add all members of that
 extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
-	todo = \ -> {
-		println("TODO: Figure out how to represent this as a named node in a super: " + prettyTType(t));
-		acc;
-	}
 	addName = \n : TNodeName -> {
-		if (canBeSubtyped(tmap, n)) {
+		if (hasSupertype(tmap, n)) {
 			// println("TODO: Wrap the children in supertype if not resolved! " + prettyTNode(tmap, n));
 		}
 		TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, n));
@@ -251,7 +271,10 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 						addName(node);
 					}
 				}
-				TNodeOverload(unique, overloads, __): todo();
+				TNodeOverload(unique, overloads, __): {
+					println("TODO: Figure out how to represent this overload as a named type: " + prettyTType(t));
+					acc;
+				}
 				TNodeSupertype(uniques, subtypes, usub, pos): {
 					TNodeSupertype(acc with
 						subtypes = concat(acc.subtypes, subtypes),
@@ -266,11 +289,14 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 		TTypeFunction(args, returnType): {
 			addName(makeTNodeName(tmap, t, acc.pos));
 		}
-		TTypeOverload(unique, overloads): todo();
+		TTypeOverload(unique, overloads): {
+			println("TODO: Figure out how to represent this overload as a named node: " + prettyTType(t));
+			acc;
+		}
 	}
 }
 
-// Used for the args of overloads and supertypes
+// Ensure that we get a named type out of this type. Used for the args of overloads and supertypes
 makeTNodeName(tmap : TMap, t : TType, pos : int) -> TNodeName {
 	error = \ -> {
 		println("ERROR: Could not make TNodeName for " + prettyTType(t));
@@ -307,15 +333,17 @@ makeTNodeName(tmap : TMap, t : TType, pos : int) -> TNodeName {
 
 // Given a node, simplify overload and supertypes as much as possible.
 // - If overloads are unique, pick the one it is
-// - If a supertype has unknown subtypes, see if
-//   any are known
-// - If a supertype has all subtypes known, find the potential
-//   supers
+// - If a supertype has unknown subtypes, see if any are known
+// - If a supertype has all subtypes known, find the potential supers
 
 simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 	switch (node) {
-		TNodeName(name, typars, __): node;
+		TNodeName(name, typars, pos): {
+			// The typars are eclasses, to they will be simplified elsewhere
+			node;
+		}
 		TNodeOverload(unique, overloads, __): {
+			// The overloads are assumed to be simplified already
 			if (length(overloads) == 1) {
 				overloads[0];
 			} else {
@@ -384,7 +412,7 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 					if (unis.second == []) {
 						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
 					} else {
-						println("TODO: We found something in a supertype");
+						println("TODO: We found a non-named thing in a supertype");
 						println(unis.second);
 						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
 					}
@@ -394,10 +422,17 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 	}
 }
 
-canBeSubtyped(tmap : TMap, node : TNodeName) -> bool {
+// Are there any supertypes of this node?
+hasSupertype(tmap : TMap, node : TNodeName) -> bool {
 	supertype = TNodeSupertype(makeSet(), [node], makeSet(), 0);
 	named = getPossibleTSupers(tmap, supertype);
 	sizeSet(named) > 1;
+}
+
+// Could there be a different subtype that this one?
+hasSubtype(tmap : TMap, node : TNodeName) -> bool {
+	subtypes = ^(tmap.resolveSubtypes)(node.name);
+	length(subtypes) > 1;
 }
 
 // We know we want a given name, and we have a set of candidates to pick from
@@ -745,12 +780,13 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
 			if (isEmptyTNode(supernode)) {
 				postpone();
 			} else {
+				// This is optimistic, but we just take the chance
 				joinTNodes(tmap, sub, super);
 				{}
 			}
 		}
 		TNodeName(name, typars, __): {
-			if (canBeSubtyped(tmap, subnode)) {
+			if (hasSupertype(tmap, subnode)) {
 				switch (supernode) {
 					TNodeName(__, __, __): {
 						if (isEmptyTNode(supernode)) {

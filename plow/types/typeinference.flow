@@ -99,7 +99,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	// OK, send the resolver to the unification friend
 	tmenv = TTypeEnv(senv with
-		tgraph = setTypeGraphResolver(senv.tgraph, senv.resolveUnionName, senv.resolveSupertypes)
+		tgraph = setTypeGraphResolver(senv.tgraph, senv.resolveUnionName, senv.resolveSupertypes, senv.resolveSubtypes)
 	);
 
 	order : [[string]] = buildDModuleDeps(d.globals, d.order);

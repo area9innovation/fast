@@ -19,10 +19,11 @@ prettyTTypeNode(tmap : TMap, t : TType) -> string {
 	switch (t) {
 		TTypeEClass(eclass): {
 			node = getUnionMapValue(tmap.tmap, eclass);
-			"e" + i2s(eclass) 
+			root = findUnionMapRoot(tmap.tmap, eclass);
+			"e" + i2s(root) 
 			+ (if (isEmptyTNode(node)) {""}
 			else {
-				"=" + prettyEClass(tmap, eclass);
+				"=" + prettyEClass(tmap, root);
 			});
 		}
 		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, rec, ", ") + ">");
@@ -57,7 +58,10 @@ prettyTNode(tmap : TMap, t : TNode) -> string {
 			"super" + superglue(set2array(uniques), i2s, "_") + "{"
 			+ superglue(subtypes, \o -> prettyTNode(tmap, o), ", ")
 			+ (if (isEmptySet(usub)) "" else 
-				superglue(set2array(usub), \st -> "e" + i2s(st), ", ")
+				superglue(set2array(usub), \st -> {
+					root = findUnionMapRoot(tmap.tmap, st);
+					"e" + i2s(root)
+				}, ", ")
 			)
 			+ "}"
 			;
@@ -66,8 +70,9 @@ prettyTNode(tmap : TMap, t : TNode) -> string {
 }
 
 prettyEClass(tmap : TMap, eclass : int) -> string {
+	root = findUnionMapRoot(tmap.tmap, eclass);
 	node = getUnionMapValue(tmap.tmap, eclass);
-	if (isEmptyTNode(node)) "e" + i2s(eclass)
+	if (isEmptyTNode(node)) "e" + i2s(root)
 	else prettyTNode(tmap, node)
 }
 

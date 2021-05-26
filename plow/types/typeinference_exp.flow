@@ -126,7 +126,9 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, argTypes[i]))
 			});
 			retType = ttypeInferenceDExp(nenv, topid, body);
-			type = TTypeFunction(argTypes, if (true) retType else supertype([retType], false));
+			// TODO: With this as true, we have a problem that super(fn-type) does not preserve
+			// the supertype of the return value
+			type = TTypeFunction(argTypes, if (false) retType else supertype([retType], false));
 			restype("lambda", eclass, type);
 		}
 		DRef(value, pos, eclass): {

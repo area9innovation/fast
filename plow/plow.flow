@@ -9,8 +9,8 @@ import math/stringmath;
 
 main() {
 	file0 = "plow/plow.flow";
-	file6 = "plow/tests/";
-	file = "plow/tests/fold.flow";
+	file = "plow/tests/";
+	file6 = "plow/tests/type4.flow";
 	file4  = "plow/tests/maybe.flow";
 	file3  = "behaviour.flow";
 	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
