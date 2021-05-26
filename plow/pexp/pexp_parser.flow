@@ -2114,7 +2114,7 @@ parse_exp11(acc : DParseAcc<?>) -> bool {
 																	if (parse_idpos(acc)) {
 																		if (matchString(acc, "::=")) {
 																			if (parse_ws(acc)) {
-																				if (parse_exp11(acc)) {
+																				if (parse_exp(acc)) {
 																					if (addVerbatim(acc, "::=")) {
 																						if (addVerbatim(acc, "setpos")) {
 																							discardDCheckpoint(acc)

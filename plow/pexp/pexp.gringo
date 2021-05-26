@@ -68,7 +68,7 @@ exp =
 		| exp (
 			( $$pos "(" $"swap" ws exps ")" ws $"call" $"setpos")
 			| with
-			| $$pos "." $"swap" ws idpos "::=" ws exp $"::=" $"setpos"
+			| $$pos "." $"swap" ws idpos "::=" ws exp "" $"::=" $"setpos"	// The "" prevents right recursion
 			| $$pos "." $"swap" ws idpos $"dot" $"setpos"
 			| $$pos "[" $"swap" ws exp "]" ws $"__index" $"setpos"
 		)*
