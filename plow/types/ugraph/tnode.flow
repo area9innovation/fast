@@ -17,10 +17,6 @@ TODO:
 
 - hello: Strange string vs int
 
-- plow/tests/type13
-  - Subtyping on typars
-
-
 - plow/tests/types.flow
   - Implicit polymorphism, but it is not referenced so maybe not worth complaining about?
 
@@ -803,6 +799,11 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
 							{}
 						}
 					}
+					TNodeSupertype(suniques, stypes, seclass, spos): {
+						mega = TNodeSupertype(suniques, arrayPush(stypes, subnode), seclass, spos);
+						mergeTNodes(tmap, supernode, mega);
+						{}
+					}
 					default: {
 						postpone();
 					}
@@ -831,20 +832,33 @@ resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>
 	pendingSubtypes = ^(tmap.pendingSubtypes);
 	tmap.pendingSubtypes := makeList();
 	iterList(pendingSubtypes, \p : Triple<int, int, int> -> {
+		// println("Subtype " + prettyEClass(tmap, p.first) + " sub " + prettyEClass(tmap, p.second));
 		subtypeTNodes(tmap, p.first, p.second, p.third);
 	});
 	if (iterations == 0
 		|| (isEmptyList(^(tmap.pending)) && isEmptyList(^(tmap.pendingSubtypes)))
 	) {
-		if (verbose) {
-			iterList(^(tmap.pending), \p -> {
-				println("Ignoring " + prettyTNode(tmap, p.first) + " vs " + prettyTNode(tmap, p.second));
-			});
-			iterList(^(tmap.pendingSubtypes), \t -> {
-				println("Ignoring " + prettyEClass(tmap, t.first) + " sub " + prettyEClass(tmap, t.second));
-			});
-		}
-		extractTNodes(tmap, verbose);
+		pendingSubtypes2 = ^(tmap.pendingSubtypes);
+		switch (pendingSubtypes2) {
+			EmptyList(): {
+				if (verbose) {
+					iterList(^(tmap.pending), \p -> {
+						println("Ignoring " + prettyTNode(tmap, p.first) + " vs " + prettyTNode(tmap, p.second));
+					});
+					iterList(^(tmap.pendingSubtypes), \t -> {
+						println("Ignoring " + prettyEClass(tmap, t.first) + " sub " + prettyEClass(tmap, t.second));
+					});
+				}
+				extractTNodes(tmap, verbose);
+			}
+			Cons(head, ltail): {
+				// OK, we will just switch to join instead, and then continue
+				// println("Joining " + prettyEClass(tmap, head.first) + " sub " + prettyEClass(tmap, head.second));
+				joinTNodes(tmap, head.first, head.second);
+				tmap.pendingSubtypes := ltail;
+				resolveTNodes(tmap, 0, verbose);
+			}
+		};
 	} else {
 		resolveTNodes(tmap, iterations - 1, verbose);
 	}
