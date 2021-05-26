@@ -5,6 +5,10 @@ import plow/types/pretty;
 
 /*
 TODO:
+- Try to reduce size of eclasses. In principle, we do not need all of them
+  if we construct eclasses when we start typing the globals instead of when
+  desugaring.
+
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - isSameStructType
 - (downcast in filtermap)
@@ -31,7 +35,10 @@ TODO:
   - Complain about DebuggedSubscriber is not exported
 
 - Consider to keep polymorphism as ? when possible
-  - If the chunk is just one function, it is possible to keep ?, I believe
+  - Even within a chunk, it should be OK to keep ? as is
+
+- Change unify API to be eclass based, so we can reduce searching
+
 */
 
 
@@ -170,6 +177,8 @@ findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
 
 findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 	// And see if we can find that node!
+
+	// TODO: This is the bottleneck
 	sclass = findUnionMap(tmap.tmap, \i, val : TNode -> isSameTNode(tmap, node, val), -1);
 
 	if (sclass == -1) {
@@ -191,8 +200,8 @@ makeTNodeClass(tmap : TMap) -> int {
 }
 
 isSameTNode(tmap : TMap, left : TNode, right : TNode) -> bool {
-	left == right
-	|| switch (left) {
+	/*left == right
+	|| */switch (left) {
 		TNodeName(lname, ltypars, __): {
 			switch (right) {
 				TNodeName(rname, rtypars, __): {

@@ -41,6 +41,7 @@ doImportLookup(modules : BModules, m : BLookupFromImport<?>, imports : [DImport]
 		mfind = fold(imports, None(), \acc, impor : DImport -> {
 			if (acc == None()) {
 				module : BModule = getCachedBModule(modules, impor.path);
+				// TODO: Maybe check exported first to speed this up?
 				modfind = m.lookup(module, name);
 				switch (modfind) {
 					None(): {
