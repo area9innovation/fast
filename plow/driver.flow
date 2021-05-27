@@ -220,7 +220,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 					switch (mbnat) {
 						None(): {
 							dd.onError(pos, "Unknown id " + id);
-							TTypeEClass(emptyTTypeClass(tenv0.tgraph));
+							TTypeEClass(makeTNodeClass(tenv0.tgraph.tmap));
 						}
 						Some(bnat): btype2ttype(bnat.type);
 					}

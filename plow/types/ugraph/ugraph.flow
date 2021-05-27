@@ -19,9 +19,6 @@ export {
 		resolveSubtypes : (string) -> [string], 
 	) -> TypeGraph;
 
-	// Prepare an empty equivalence class
-	emptyTTypeClass(tg : TypeGraph) -> int;
-
 	// Given this eclass, what is the root equivalence class?
 	rootTTypeEClass(tg : TypeGraph, eclass : int) -> int;
 }
@@ -43,10 +40,6 @@ setTypeGraphResolver(
 	resolveSubtypes : (string) -> [string], 
 ) -> TypeGraph {
 	TypeGraph(t with tmap = setTMapResolvers(t.tmap, resolveUnionName, resolveSupertypes, resolveSubtypes));
-}
-
-emptyTTypeClass(tg : TypeGraph) -> int {
-	makeTNodeClass(tg.tmap);
 }
 
 rootTTypeEClass(tg : TypeGraph, eclass : int) -> int {

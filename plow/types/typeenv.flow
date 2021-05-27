@@ -76,7 +76,7 @@ makeTTypeEnv(
 
 	TTypeEnv(
 		makeTree(), \ -> {
-			emptyTTypeClass(tgraph)
+			makeTNodeClass(tgraph.tmap);
 		}, 
 		mkUnique,
 		onError,
