@@ -171,30 +171,11 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 		println("\nInference of global " + d.id);
 	}
 
-	// Instantiate the typars
-	typars = fold(d.typars, makeTree(), \acc, tp -> {
-		setTree(acc, tp, env.mkEClass())
-	});
-	nenv = TTypeEnv(env with typars = typars, onError = \p, e -> env.onError(p, d.id + ": " + e));
+	nenv = TTypeEnv(env with onError = \p, e -> env.onError(p, d.id + ": " + e));
 
 	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
 
-	type = ttypeInferenceDExp(nenv, d.id, d.value);
-
-	// Now, unify the typars and their corresponding eclasses, and abstract the final type again
-	ftype = replaceTTypeEClasss(
-		foldTree(typars, makeTree(), \tp, tv, acc -> {
-			typar = TTypeName(tp, []);
-			// TODO: This is wrong, since it
-			// contaminates the entire tmap
-
-			// println("// Review scope: Unify typars " + prettyTType(typar) + " and e" + i2s(tv));
-			unifyTType(env, d.id, "global " + d.id, d.pos, typar, TTypeEClass(tv));
-
-			setTree(acc, tv, TTypeName(tp, []))
-		}),
-		type
-	);
+	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
 
 	unifyTType(env, d.id, "global " + d.id + " 2", d.pos, ftype, TTypeEClass(d.eclass));
 

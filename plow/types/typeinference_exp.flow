@@ -76,7 +76,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DTyped(value, type, pos, eclass): {
 			valtype = ttypeInferenceDExp(env, topid, value);
-			ttype = dtype2ttype(env, true, type);
+			ttype = dtype2ttype(env, false, type);
 			unifyTType(env, topid, "typed", pos, if (false) valtype else supertype([valtype], false), ttype);
 			restype("typed", eclass, ttype);
 		}
@@ -129,7 +129,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DLambda(args, body, pos, eclass): {
 			argTypes = map(args, \arg -> {
-				dtype2ttype(env, true, arg.type)
+				dtype2ttype(env, false, arg.type)
 			});
 			nenv = foldi(args, env, \i, acc, arg -> {
 				aclass = findOrMakeTNodeClass(env.tgraph.tmap, argTypes[i], arg.pos);
@@ -252,7 +252,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DSwitch(value, type, cases, defaultCase, pos, eclass): {
 			tvalue = ttypeInferenceDExp(env, topid, value);
-			ttype = dtype2ttype(env, true, type);
+			ttype = dtype2ttype(env, false, type);
 			unifyTType(env, topid, "switch val", pos, supertype([tvalue], false), ttype);
 
 			// Relate the type of the value with all structs mentioned
@@ -270,14 +270,14 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DCast(value, target, pos): {
 			tvalue = ttypeInferenceDExp(env, topid, value);
-			ttarget = dtype2ttype(env, true, target);
+			ttarget = dtype2ttype(env, false, target);
 			// We allow casting a type to a supertype
 			unifyTType(env, topid, "cast", pos, supertype([tvalue], true), ttarget);
 			// TODO: Add an eclass
 			res(ttarget);
 		}
 		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
-			tsubtype = dtype2ttype(env, true, subtype);
+			tsubtype = dtype2ttype(env, false, subtype);
 			teclass = TTypeEClass(findOrMakeTNodeClass(env.tgraph.tmap, tsubtype, pos));
 
 			nenv = TTypeEnv(env with 

@@ -30,15 +30,10 @@ TODO:
 			TNodeName("", [], -1);
 		}
 
-
 - lib/behaviour.flow:125
   - Complain about DebuggedSubscriber is not exported
 
-- Consider to keep polymorphism as ? when possible
-  - Even within a chunk, it should be OK to keep ? as is
-
 - Change unify API to be eclass based, so we can reduce searching
-
 */
 
 
