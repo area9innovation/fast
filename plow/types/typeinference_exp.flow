@@ -3,12 +3,12 @@ import plow/types/builtin;
 import plow/dexp/pretty;
 
 export {
-	ttypeInferenceDExp(env : TTypeEnv, id : string, d : DExp) -> TType;
+	ttypeInferenceDExp(env : TTypeEnv, id : string, d : DExp) -> TTypeEClass;
 }
 
 inferenceIndent = ref "  ";
 
-ttypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
+ttypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 	if (true) {
 		doTTtypeInferenceDExp(env, topid, d);
 	} else {
@@ -28,21 +28,30 @@ ttypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 	}
 }
 
-doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
+doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 	restype = \reason, tv, type -> {
-		unifyTType(env, topid, reason, d.pos, type, TTypeEClass(tv));
+		if (true) {
+			tclass = findOrMakeTNodeClass(env.tgraph.tmap, type, d.pos);
+			unifyEClass(env.tgraph.tmap, tclass, tv);
+		} else {
+			unifyTType(env, topid, reason, d.pos, type, TTypeEClass(tv));
+		}
 		// We return the class, so anything will unify against this
 		TTypeEClass(tv);
 	};
+	res = \type -> {
+		eclass = findOrMakeTNodeClass(env.tgraph.tmap, type, d.pos);
+		TTypeEClass(eclass);
+	}
 	supertype = \types : [TType], maxed : bool -> makeTTypeSupertype(env.mkUnique, types, maxed);
 
 	switch (d) {
-		DVoid(pos): TTypeName("void", []);
-		DBool(v, pos): TTypeName("bool", []);
-		DInt(v, pos): TTypeName("int", []); 
-		DDouble(v, pos): TTypeName("double", []);
-		DString(v, pos): TTypeName("string", []);
-		DStringInclude(path, pos): TTypeName("string", []);
+		DVoid(pos): res(TTypeName("void", []));
+		DBool(v, pos): res(TTypeName("bool", []));
+		DInt(v, pos): res(TTypeName("int", [])); 
+		DDouble(v, pos): res(TTypeName("double", []));
+		DString(v, pos): res(TTypeName("string", []));
+		DStringInclude(path, pos): res(TTypeName("string", []));
 		DVar(id, pos, eclass): {
 			mtype = lookupTree(env.localTypes, id);
 			utype = mtype ?? {
@@ -123,7 +132,8 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 				dtype2ttype(env, true, arg.type)
 			});
 			nenv = foldi(args, env, \i, acc, arg -> {
-				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, argTypes[i]))
+				aclass = findOrMakeTNodeClass(env.tgraph.tmap, argTypes[i], arg.pos);
+				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, TTypeEClass(aclass)))
 			});
 			retType = ttypeInferenceDExp(nenv, topid, body);
 			// TODO: With this as true, we have a problem that super(fn-type) does not preserve
@@ -264,23 +274,24 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TType {
 			// We allow casting a type to a supertype
 			unifyTType(env, topid, "cast", pos, supertype([tvalue], true), ttarget);
 			// TODO: Add an eclass
-			ttarget;
+			res(ttarget);
 		}
 		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
 			tsubtype = dtype2ttype(env, true, subtype);
+			teclass = TTypeEClass(findOrMakeTNodeClass(env.tgraph.tmap, tsubtype, pos));
 
 			nenv = TTypeEnv(env with 
 				localTypes = setTree(
 					env.localTypes,
 //					setTree(env.localTypes, oldid, tsubtype),
-					newid, tsubtype
+					newid, teclass
 				)
 			);
 			dtype = ttypeInferenceDExp(nenv, topid, scope);
 
 			// Relate the subtype with the supertype
 			etype = TTypeEClass(supereclass);
-			unifyTType(env, topid, "downcast super", pos, supertype([tsubtype], false), etype);
+			unifyTType(env, topid, "downcast super", pos, supertype([teclass], false), etype);
 
 			restype("downcast", eclass, dtype);
 		}

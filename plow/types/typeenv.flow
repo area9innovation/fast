@@ -40,7 +40,7 @@ export {
 		moduleTypes : Tree<string, TType>,
 
 		// The types of local ids so far, instantiated
-		localTypes : Tree<string, TType>,
+		localTypes : Tree<string, TTypeEClass>,
 
 		// The egraph with the type equivalent classes
 		tgraph : TypeGraph,

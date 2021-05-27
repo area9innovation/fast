@@ -60,6 +60,9 @@ export {
 	// Make a new type class
 	makeTNodeClass(tmap : TMap) -> int;
 
+	findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int;
+	unifyEClass(tmap : TMap, lclass : int, rclass : int) -> void;
+
 	// Unify these two types
 	unifyTNodes(tmap : TMap, left : TType, right : TType, 
 		verbose : bool, reason : string, pos : int) -> void;
@@ -160,6 +163,10 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		println("Not supposed to happen: " + prettyTType(left) + " and " + prettyTType(right));
 	}
 	uindent := ind;
+}
+
+unifyEClass(tmap : TMap, lclass : int, rclass : int) -> void {
+	root = unionUnionMap(tmap.tmap, lclass, rclass);
 }
 
 findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
