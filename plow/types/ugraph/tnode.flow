@@ -18,12 +18,6 @@ TODO:
 - isSameStructType
 - (downcast in filtermap)
 
-- ds/array: We could allow subtyping in cast, or have special case
-
-- plow/tests/type4:
-  - Handling functions as named is wrong, since supertyping is different for functions
-  - Alternatively, we should allow subtyping in lambdas
-
 - hello: Strange string vs int
 
 - plow/tests/types.flow
@@ -35,10 +29,6 @@ TODO:
 			TNodeName("", [], -1);
 		}
 
-- lib/behaviour.flow:125
-  - Complain about DebuggedSubscriber is not exported
-
-- Change unify API to be eclass based, so we can reduce searching
 */
 
 
