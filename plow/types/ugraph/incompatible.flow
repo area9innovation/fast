@@ -9,6 +9,8 @@ export {
 
 	// What potential typenames could resolve this super type?
 	getPossibleTSupers(tmap : TMap, super : TNodeSupertype) -> Set<string>;
+
+	isFlowNode(node : TNode) -> bool;
 }
 
 // Are these node names incompatible forever?
@@ -125,4 +127,12 @@ getPossibleTSupers(tmap : TMap, super : TNodeSupertype) -> Set<string> {
 		if (i == 0) supset
 		else intersectSets(supset, acc)
 	});
+}
+
+isFlowNode(node : TNode) -> bool {
+	switch (node) {
+		TNodeName(name, typars, pos): name == "flow";
+		TNodeOverload(unique, overloads, pos): false;
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): false;
+	}
 }

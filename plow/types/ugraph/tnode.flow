@@ -327,9 +327,13 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 						addName(node);
 					}
 				}
-				TNodeOverload(unique, overloads, __): {
-					println("TODO: Figure out how to represent this overload as a named type: " + prettyTType(t));
-					acc;
+				TNodeOverload(unique, overloads, pos): {
+					if (exists(overloads, isFlowNode)) {
+						TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, TNodeName("flow", [], pos)));
+					} else {
+						println("TODO: Figure out how to represent this overload as a named type: " + prettyTType(t));
+						acc;
+					}
 				}
 				TNodeSupertype(uniques, subtypes, usub, pos): {
 					TNodeSupertype(acc with
@@ -537,10 +541,14 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 			switch (right) {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
-						if (lname == "flow") {
-							left; // right
-						} else if (rname == "flow") {
-							right; // left
+						if (lname == "flow" || rname == "flow") {
+							if (false) {
+								// TODO: This causes a bunch of problems, but is maybe a way forward
+								TNodeOverload(makeSet1(tmap.mkUnique()), [left, right], min(pos, rpos));
+							} else {
+								// This is conservative
+								TNodeName("flow", [], pos);
+							}
 						} else if (isSingleUnionName(tmap, lname, rname)) {
 							// As a special case, if one of these
 							// is a singleton union with the other element,
@@ -973,10 +981,21 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 			if (simpler != node) {
 				resolveTNode(tmap, acc, visited, eclass, simpler);
 			} else if (length(overloads) > 0) {
-				if (length(overloads) != 1) {
-					println("TODO: Picking random overload: " + prettyTNode(tmap, node));
+				nonflow = filter(overloads, \t -> {
+					!isFlowNode(t)
+				});
+				res = if (length(nonflow) == 1) {
+					nonflow[0];
+				} else if (length(nonflow) != length(overloads)) {
+					// There is a flow in there
+					TNodeName("flow", [], pos);
+				} else {
+					if (length(overloads) != 1) {
+						println("TODO: Picking random overload: " + prettyTNode(tmap, node));
+					}
+					overloads[0];
 				}
-				resolveTNode(tmap, acc, visited, eclass, overloads[0]);
+				resolveTNode(tmap, acc, visited, eclass, res);
 			} else {
 				println("TODO: Resolve overload: " + prettyTNode(tmap, node));
 				mkClass(eclass);
