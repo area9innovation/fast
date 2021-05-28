@@ -9,6 +9,11 @@ TODO:
   unifyTTypes
 - Change type inference to lower to BExp sooner, so we can clean out the
   tmaps.
+- The exported types for dynamic.flow, are wrong. flow distributes itself
+  into everything. Consider to have flow as an explicit typenode, along
+  with other types so we only promote to flow if really required.
+
+- Test 15: Figure out what goes wrong here
 
 - Try to reduce size of eclasses. In principle, we do not need all of them
   if we construct eclasses when we start typing the globals instead of when

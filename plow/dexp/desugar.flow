@@ -232,7 +232,10 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 				}
 			}
 		}
-	})
+	});
+	// TODO: Should we also traverse exported unions and consider structs in those
+	// as exported typenames?
+
 	exports = DExport(exports0 with 
 		// We do not have to include the exported type names
 		exportedTypeNames = differenceSets(exportedTypenames, exports0.exportedTypes)

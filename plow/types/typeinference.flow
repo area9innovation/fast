@@ -181,6 +181,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 
 	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
 
+	// This is any declared type
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
 	unifyTType(env, d.id, "global " + d.id + " 1", d.pos, etype, TTypeEClass(d.eclass));
 
