@@ -59,7 +59,10 @@ dtype2ttype(env : TTypeEnv, instantiate : bool, d : DType) -> TType {
 			}
 		}
 		DTypeFunction(args, returnType, pos): {
-			TTypeFunction(map(args, \tv -> dtype2ttype(env, instantiate, tv)), dtype2ttype(env, instantiate, returnType));
+			TTypeFunction(
+				map(args, \tv -> dtype2ttype(env, instantiate, tv)), 
+				dtype2ttype(env, instantiate, returnType)
+			);
 		}
 	}
 }

@@ -54,13 +54,14 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		DStringInclude(path, pos): res(TTypeName("string", []));
 		DVar(id, pos, eclass): {
 			mtype = lookupTree(env.localTypes, id);
-			utype = mtype ?? {
+			type = mtype ?? {
+				// Local types should NOT be instantiated
 				mtype
 			} : {
 				moptype = getBuiltinTType(id);
-				switch (moptype) {
+				externalType = switch (moptype) {
 					None(): {
-						modtype = lookupTree(env.moduleTypes, id);
+						modtype : Maybe<TType> = lookupTree(env.moduleTypes, id);
 						switch (modtype) {
 							None(): env.resolveId(pos, id);
 							Some(mdtype): mdtype;
@@ -68,15 +69,15 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 					}
 					Some(optype): optype;
 				}
+				// Any other type needs instantiation
+				instantiateTTypePar(env, externalType);
 			};
-
-			type = instantiateTTypePar(env, utype);
 			// println(id + " : " + prettyTType(type));
 			restype("var " + id, eclass, type);
 		}
 		DTyped(value, type, pos, eclass): {
 			valtype = ttypeInferenceDExp(env, topid, value);
-			ttype = dtype2ttype(env, false, type);
+			ttype = TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), type));
 			unifyTType(env, topid, "typed", pos, if (false) valtype else supertype([valtype], false), ttype);
 			restype("typed", eclass, ttype);
 		}
@@ -129,7 +130,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DLambda(args, body, pos, eclass): {
 			argTypes = map(args, \arg -> {
-				dtype2ttype(env, false, arg.type)
+				TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), arg.type));
 			});
 			nenv = foldi(args, env, \i, acc, arg -> {
 				aclass = findOrMakeTNodeClass(env.tgraph.tmap, argTypes[i], arg.pos);
@@ -252,7 +253,8 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DSwitch(value, type, cases, defaultCase, pos, eclass): {
 			tvalue = ttypeInferenceDExp(env, topid, value);
-			ttype = dtype2ttype(env, false, type);
+
+			ttype = TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), type));
 			unifyTType(env, topid, "switch val", pos, supertype([tvalue], false), ttype);
 
 			// Relate the type of the value with all structs mentioned
@@ -270,14 +272,14 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DCast(value, target, pos): {
 			tvalue = ttypeInferenceDExp(env, topid, value);
-			ttarget = dtype2ttype(env, false, target);
+			ttarget = TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), target));
 			// We allow casting a type to a supertype
 			unifyTType(env, topid, "cast", pos, supertype([tvalue], true), ttarget);
 			// TODO: Add an eclass
 			res(ttarget);
 		}
 		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
-			tsubtype = dtype2ttype(env, false, subtype);
+			tsubtype = TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), subtype));
 			teclass = TTypeEClass(findOrMakeTNodeClass(env.tgraph.tmap, tsubtype, pos));
 
 			nenv = TTypeEnv(env with 

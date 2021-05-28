@@ -19,14 +19,20 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 	// Resolve the types of natives
 	nenv1 = foldTree(d.natives, env, \nat, nativ, acc -> {
 		// The module types have to be with ? in the types
-		type = dtype2ttype(acc, false, nativ.type);
-		unifyTType(acc, nat, "native", d.pos, type, TTypeEClass(nativ.eclass));
+		fulltype = dtype2ttype(acc, false, nativ.type);
+
+		// TODO: This is arguably wrong. Only required temporarily
+		unifyTType(acc, nat, "native", d.pos, fulltype, TTypeEClass(nativ.eclass));
 
 		if (isTracingId(env.tracing, StageTypeInference(), 1, nat)) {
-			println("native " + nat + ": " + prettyTType(type));
+			println("native " + nat + ": " + prettyTType(fulltype));
 		}
 
-		TTypeEnv(acc with moduleTypes = setTree(acc.moduleTypes, nat, type))
+		// We need a full type here, a TypeEClass will not do
+		TTypeEnv(acc with 
+			moduleTypes = setTree(acc.moduleTypes, nat, fulltype),
+			// etypes = setTree(acc.etypes, nativ.eclass, fulltype)
+		)
 	});
 
 	// Set the type of top levels, so mutual recursion has something to bite on
@@ -175,15 +181,15 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 
 	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
 
-	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
+	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
+	unifyTType(env, d.id, "global " + d.id + " 1", d.pos, etype, TTypeEClass(d.eclass));
 
+	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
 	unifyTType(env, d.id, "global " + d.id + " 2", d.pos, ftype, TTypeEClass(d.eclass));
 
 	if (tracingId) {
 		println("Inference " + d.id + " ends with " + prettyTType(ftype) + "\n");
 	}
-
-	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
 
 	switch (etype) {
 		TTypeEClass(__): {
@@ -193,14 +199,8 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 			TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
 		}
 		default: {
-		//	println(prettyTType(ftype) + " vs " + prettyTType(etype));
-			
-			// TODO: This contaminates the TMap polymorphism
-			// println("// Review scope: Unify typars " + prettyTType(ftype) + " and " + prettyTType(etype));
-			unifyTType(env, d.id, "global " + d.id + " 3", d.pos, ftype, etype);
-
 			if (!unresolvedTType(etype)) {
-				// The declared type is always better, so set it
+				// The declared type is always better, so set it to that
 				// Consider impersonateCallstackFn which
 				// is inferred to be 
 				// impersonateCallstackFn(string, ...)
