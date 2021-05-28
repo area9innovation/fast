@@ -5,6 +5,7 @@ import plow/dexp/vars;
 import plow/dexp/types;
 import plow/dexp/unions;
 import plow/dexp/eclass;
+import plow/dexp/utils;
 
 import plow/pexp/pexp;
 import plow/pexp/values;
@@ -24,9 +25,9 @@ Differences to PExp:
 - Extract let-bindings from cases
 - Extract structs and unions
 - Expand |> to a normal call
-TODO:
 - Expand ?? to switch
-- Fix with
+- Expand "with" to constructor
+TODO:
 - Collect string includes
 */
 
@@ -207,12 +208,35 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 		}
 	});
 
-	// TODO: Should we retire the fallback natives from globals? 
-	// If so, be sure to do type inference on them
-	
-	// TODO: Traverse the typenames mentioned in the exported names and put those
+	// Traverse the typenames mentioned in the exported names and put those
 	// in exportedTypeNames if they are not in exportedTypes
-	exports = exports0;
+	exportedTypenames = foldSet(exports0.exportedGlobals, makeSet(), \acc, gl -> {
+		mglobal : Maybe<DGlobal> = lookupTree(globals, gl);
+		mglobal ?? {
+			switch (mglobal.value) {
+				DTyped(__, dtype, __, __): {
+					// If there is a declared type, use that
+					extractTypeNamesDType(acc, dtype, structs, unions);
+				}
+				default: acc;
+			};
+		} : {
+			mnative = lookupTree(natives, gl);
+			switch (mnative) {
+				None(): {
+					println("Unknown global " + gl);
+					acc;
+				}
+				Some(nat): {
+					extractTypeNamesDType(acc, nat.type, structs, unions);
+				}
+			}
+		}
+	})
+	exports = DExport(exports0 with 
+		// We do not have to include the exported type names
+		exportedTypeNames = differenceSets(exportedTypenames, exports0.exportedTypes)
+	);
 
 	DModule(
 		flowpath,

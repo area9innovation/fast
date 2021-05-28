@@ -274,8 +274,16 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			tvalue = ttypeInferenceDExp(env, topid, value);
 			ttarget = TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), target));
 			// We allow casting a type to a supertype
-			unifyTType(env, topid, "cast", pos, supertype([tvalue], true), ttarget);
-			// TODO: Add an eclass
+			unifyTType(env, topid, "cast", pos, 
+				supertype([tvalue], true), 
+				if (true) {
+					supertype([ttarget], true)
+				} else {
+					// If we do not allow downcasts, use this one
+					ttarget
+				}
+			);
+			// TODO: Add an eclass?
 			res(ttarget);
 		}
 		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {

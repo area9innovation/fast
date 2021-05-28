@@ -39,7 +39,8 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeEClass>, t 
 			}
 		}
 		TTypeEClass(id): {
-			println("Invariant broken: We can not instantiate type class e" + i2s(id));
+			// This happens when we have mutual "auto" top-levels in a chunk
+			// println("Invariant broken: We can not instantiate type class e" + i2s(id));
 			t;
 		}
 		TTypeFunction(args, returnType): TTypeFunction(map(args, rec), rec(returnType));
