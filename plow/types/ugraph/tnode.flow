@@ -16,14 +16,82 @@ TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - isSameStructType
 
-- plow/tests/types.flow
-  - Implicit polymorphism, but it is not referenced so maybe not worth complaining about?
+Errors towards plow\plow.flow:
+C:/flow9/lib/text/serialize.flow:286:25: Add type parameter. Implicit polymorphism in None<e2594>
+		Triple(flow(None()), start, "");
 
-- tnode: 
-	C:/fast/plow/types/ugraph/tnode.flow:116:14: ERROR: Merge TNodeName and TNode
-		defaultTNode() -> TNode {
-			TNodeName("", [], -1);
-		}
+C:/flow9/lib/promise.flow:246:49: Add type parameter. Implicit polymorphism in None<e1312>
+		resultsR = ref map(promises, \__ -> None());
+		                                       ^
+Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow
+TODO: Picking random supertype: super60{PArgType, PTypeFunction, PTypeName, PTypePar}
+
+C:/flow9/lib/ds/treeutils.flow:186:43: Add type parameter. Implicit polymorphism in EmptyList<e1841>
+	c = lookupTreeDef(tree, key, EmptyList());
+
+C:/flow9/lib/ds/digraph2dot.flow:41:16: Add type parameter. Implicit polymorphism in (flow, (GEdge<e491>) -> array<flow>) -> array<array<flow>>
+	nodesIds = map(edges, \edge -> [edge.from, edge.to]) |> concatA |> uniq;
+	          ^
+
+C:/flow9/lib/ds/easygraph_utils.flow:205:9: Add type parameter. Implicit polymorphism in (flow, flow, (flow, GEdge<e1983>) -> flow) -> flow
+		fold(edges, acc, \acc2, edge -> {
+	^
+C:/flow9/lib/ds/easygraph_utils.flow:206:18: Add type parameter. Implicit polymorphism in GEdge<e1983>
+			to = edge.to;
+			    ^
+C:/flow9/lib/ds/easygraph_utils.flow:205:26: Add type parameter. Implicit polymorphism in (flow, GEdge<e1983>) -> flow
+		fold(edges, acc, \acc2, edge -> {
+		                ^
+
+Parsed 'tools/gringo/prefix' as C:/flow9/tools/gringo/prefix.flow
+TODO: Picking random supertype: super617{PExport, PForbid, PGlobal, PImport, PModule, PNative, PStruct, PStructArg, PTypeDef, PUnion}
+
+C:/flow9/lib/sys/concurrent.flow:183:5: Add type parameter. Implicit polymorphism in (Tree<flow, e671>, flow) -> bool
+	containsKeyTree(^t, key);
+^
+C:/flow9/lib/sys/concurrent.flow:198:5: Add type parameter. Implicit polymorphism in (Tree<flow, e755>) -> array<flow>
+	getTreeKeys(^t);
+^
+C:/flow9/lib/sys/concurrent.flow:178:10: Add type parameter. Implicit polymorphism in (flow, Tree<flow, e639>) -> void
+	t1 := mergeTree(^t1, ^t2);
+	    ^
+C:/flow9/lib/sys/concurrent.flow:193:9: Add type parameter. Implicit polymorphism in (flow, Tree<flow, e725>) -> void
+	t := removeFromTree(^t, key);
+	   ^
+C:/flow9/lib/sys/concurrent.flow:203:5: Add type parameter. Implicit polymorphism in (Tree<flow, e779>) -> int
+	sizeTree(^t);
+^
+C:/flow9/lib/sys/concurrent.flow:188:5: Add type parameter. Implicit polymorphism in (Tree<e697, ??>) -> array<??>
+	getTreeValues(^t);
+^
+
+Parsed 'plow/pexp/utils' as C:/fast/plow/pexp/utils.flow
+TODO: Picking random supertype: super2_3{PImport, PTopLevel}
+TODO: Picking random supertype: super23_24{PForbid, PTopLevel}
+TODO: Picking random supertype: super39_40{PExport, PTopLevel}
+TODO: Picking random supertype: super136_137{PExport, PTopLevel}
+TODO: Picking random supertype: super145_146{PExport, PForbid, PGlobal, PImport, PModule, PNative, PStruct, PStructArg, PTopLevel, PTypeDef, PUnion}
+
+C:/fast/plow/types/ugraph/debug.flow:53:67: Could not resolve supertype: super128{e204}
+			"overload" + superglue(set2array(uniques), i2s, "_") + "{"
+			                                                     ^
+C:/fast/plow/types/ugraph/debug.flow:54:14: Could not resolve supertype: super130{e206}
+			+ superglue(overloads, \o -> prettyTNode(tmap, o), ", ")
+			^
+
+C:/fast/plow/types/ugraph/tnode.flow:141:14: ERROR: Merge TNode and TNodeName
+	TNodeName("", [], -1);
+	        ^
+C:/fast/plow/types/ugraph/tnode.flow:1021:49: ERROR: Merge overload2854{(DNative)->flow, (TNodeName)->flow} and (TNode)->flow
+				mflow = find(subtypes, \st -> st.name == "flow");
+				                               ^
+C:/fast/plow/types/ugraph/tnode.flow:825:52: Could not resolve supertype: super1179{e2199}
+			+ " from " + prettyTNode(tmap, lnode) + " and " + prettyTNode(tmap, rnode));
+			                                      ^
+
+C:/fast/plow/types/polymorphism.flow:60:35: ERROR: Merge overload152{(DArray)->flow, (DCall)->flow, (DConstruct)->flow, (DDowncast)->flow, (DField)->flow, (DGlobal)->flow, (DIf)->flow, (DLambda)->flow, (DLet)->flow, (DNative)->flow, (DRef)->flow, (DSequence)->flow, (DSetMutable)->flow, (DSwitch)->flow, (DTyped)->flow, (DVar)->flow, (TTypeEClass)->flow} and (TType)->flow
+		setTree(acc, tp, typars[i].eclass)
+		                         ^
 
 */
 

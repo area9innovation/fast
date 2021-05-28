@@ -16,7 +16,12 @@ dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
 		d.exported,
 		d.structs,
 		d.unions,
-		makeDFieldMap(d.structs),
+		makeDFieldMap(
+			// We only include those that are exported fully
+			filterTree(d.structs, \id, st -> {
+				containsSet(d.exported.exportedTypes, id)
+			})
+		),
 		mapTree(d.natives, \nat : DNative -> {
 			mtype = lookupTree(env.eclassType, nat.eclass);
 			btype = mtype ?? {

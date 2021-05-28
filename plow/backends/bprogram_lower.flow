@@ -32,7 +32,7 @@ bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
 					if (!containsSet(alive, id)) ac else {
 						concat(ac, 
 							[BExpNative(id, nat.isIo, nat.type, nat.name, 
-								maybeMap(nat.fallback, \glob -> bexp2BExpDeclaration(id, glob.value))
+								maybeMap(nat.fallback, \glob : BGlobal -> bexp2BExpDeclaration(id, glob.value))
 							)]
 						);
 					}

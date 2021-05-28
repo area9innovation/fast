@@ -6,6 +6,7 @@ import sys/concurrent;
 export {
 	// A structure to help do lookups in the modules import tree
 	BLookupFromImport(
+		kind : string,
 		// A function to lookup a name in a module (not transitively)
 		lookup : (BModule, string) -> Maybe<?>,
 		// A function to check if this name is exported
@@ -51,7 +52,8 @@ doImportLookup(modules : BModules, m : BLookupFromImport<?>, imports : [DImport]
 					}
 					Some(f): {
 						if (!m.isExported(module, name)) {
-							m.onError(module.fullpath, f, name + " is not exported");
+
+							m.onError(module.fullpath, f, name + " is not exported for " + m.kind);
 						};
 						Some(f);
 					}
