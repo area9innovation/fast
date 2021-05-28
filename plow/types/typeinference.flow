@@ -31,7 +31,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 		// We need a full type here, a TypeEClass will not do
 		TTypeEnv(acc with 
 			moduleTypes = setTree(acc.moduleTypes, nat, fulltype),
-			// etypes = setTree(acc.etypes, nativ.eclass, fulltype)
+			etypes = setTree(acc.etypes, nativ.eclass, fulltype)
 		)
 	});
 
@@ -192,24 +192,12 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 		println("Inference " + d.id + " ends with " + prettyTType(ftype) + "\n");
 	}
 
-	switch (etype) {
-		TTypeEClass(__): {
-			// OK, it was not a real class.
-			// Let us at least define what we have
-			// println("Refined type for " + d.id);
-			TTypeEnv(env with moduleTypes = setTree(env.moduleTypes, d.id, ftype));
-		}
-		default: {
-			if (!unresolvedTType(etype)) {
-				// The declared type is always better, so set it to that
-				// Consider impersonateCallstackFn which
-				// is inferred to be 
-				// impersonateCallstackFn(string, ...)
-				// rather than impersonateCallstackFn(flow, ...)
-				TTypeEnv(env with etypes = setTree(env.etypes, d.eclass, etype));
-			} else env;
-		}
-	}
+	finalType = backfillType(etype, ftype);
+	// println("Refined type for " + d.id + " " + prettyTTypeNode(env.tgraph.tmap, finalType));
+	TTypeEnv(env with 
+		moduleTypes = setTree(env.moduleTypes, d.id, finalType),
+		// etypes = setTree(env.etypes, d.eclass, etype)
+	);
 }
 
 resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
@@ -220,4 +208,35 @@ resolveEClasses(env : TTypeEnv, flowpath : string, verbose : bool) -> TTypeEnv {
 		else setTree(acc, eclass, type)
 	});
 	TTypeEnv(env with etypes = etypes);
+}
+
+// Use the refined type to fill our the given core type
+backfillType(core : TType, refined : TType) -> TType {
+	switch (core) {
+		TTypeName(cid, ctypars): {
+			switch (refined) {
+				TTypeName(rid, rtypars): {
+					if (cid == rid) {
+						TTypeName(cid, mapi(ctypars, \i, ct -> {
+							backfillType(ct, rtypars[i])
+						}));
+					} else core;
+				}
+				default: core;
+			}
+		}
+		TTypeEClass(eclass): refined;
+		TTypeFunction(cargs, creturnType): {
+			switch (refined) {
+				TTypeFunction(rargs, rreturnType): {
+					TTypeFunction(mapi(cargs, \i, ct -> {
+						backfillType(ct, rargs[i])
+					}), backfillType(creturnType, rreturnType))
+				}
+				default: core;
+			}
+		}
+		TTypeOverload(unique, overloads): refined;
+		TTypeSupertype(unique, subtypes, maxed): refined;
+	}
 }

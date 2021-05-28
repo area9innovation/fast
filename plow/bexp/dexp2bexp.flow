@@ -13,6 +13,8 @@ export {
 		eclassType : Tree<int, TType>,
 	);
 
+	ttype2btype(env : BExpEnv, type : TType) -> BType;
+
 	resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType;
 }
 

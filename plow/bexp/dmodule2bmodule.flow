@@ -17,8 +17,12 @@ dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
 		d.structs,
 		d.unions,
 		makeDFieldMap(d.structs),
-		mapTree(d.natives, \nat -> {
-			BNative(nat.id, nat.isIo, resolveBType(env, nat.pos, nat.eclass), nat.name, 
+		mapTree(d.natives, \nat : DNative -> {
+			mtype = lookupTree(env.eclassType, nat.eclass);
+			btype = mtype ?? {
+				ttype2btype(env, mtype)
+			} : resolveBType(env, nat.pos, nat.eclass);
+			BNative(nat.id, nat.isIo, btype, nat.name, 
 				{
 					if (nat.fallback) {
 						lookupTree(globals, nat.id);
