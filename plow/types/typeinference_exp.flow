@@ -64,15 +64,25 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 						modtype : Maybe<TType> = lookupTree(env.moduleTypes, id);
 						switch (modtype) {
 							None(): env.resolveId(pos, id);
-							Some(mdtype): mdtype;
+							Some(mdtype): {
+								mdtype;
+							}
 						}
 					}
 					Some(optype): optype;
+				};
+				if (isTracingId(env.tracing, StageTypeInference(), 2, topid)) {
+					println(id + " : " + prettyTType(externalType));
 				}
+
 				// Any other type needs instantiation
 				instantiateTTypePar(env, externalType);
 			};
-			// println(id + " : " + prettyTType(type));
+
+			if (isTracingId(env.tracing, StageTypeInference(), 2, topid)) {
+				println(id + " : " + prettyTType(type));
+			}
+			
 			restype("var " + id, eclass, type);
 		}
 		DTyped(value, type, pos, eclass): {

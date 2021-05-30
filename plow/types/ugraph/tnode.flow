@@ -16,6 +16,8 @@ TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - isSameStructType
 
+type17: Due to wrong type of makeTree somehow.
+
 Errors towards plow\plow.flow:
 Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow
 TODO: Picking random supertype: super60{PArgType, PTypeFunction, PTypeName, PTypePar}
@@ -592,7 +594,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
 						if (lname == "flow" || rname == "flow") {
-							if (false) {
+							if (true) {
 								// TODO: This causes a bunch of problems, but is maybe a way forward
 								TNodeOverload(makeSet1(tmap.mkUnique()), [left, right], min(pos, rpos));
 							} else {
@@ -660,11 +662,17 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					}
 				}
 				TNodeOverload(unique, overloads, pos): {
-					println("TODO: Find the intersection between " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
-					left;
+					flows = filter(concat(loverloads, overloads), isFlowNode);
+					if (flows != []) {
+						flows[0];
+					} else {
+						println("TODO: Find the intersection between " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
+						left;
+					}
 				}
 				TNodeSupertype(uniques, subtypes, usub, pos): {
-					todo();
+					// We handle it in the opposite case
+					mergeTNodes(tmap, right, left);
 				}
 			}
 		}
@@ -674,7 +682,13 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					unifyTNodeNameWithSuper(tmap, right, left);
 				}
 				TNodeOverload(runique, roverloads, pos): {
-					todo();
+					flows = filter(roverloads, isFlowNode);
+					if (flows != []) {
+						// OK, we resolve to the flow type
+						flows[0];
+					} else {
+						todo();
+					}
 				}
 				TNodeSupertype(runique, rsubtypes, rusub, pos): {
 					simplifyTNode(tmap, TNodeSupertype(
