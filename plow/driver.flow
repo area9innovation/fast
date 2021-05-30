@@ -246,7 +246,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		);
 		tenv = ttypeInference(tenv1, dmod);
 
-		benv = BExpEnv(tenv.onError, tenv.tgraph, tenv.etypes);
+		benv = BExpEnv(tenv.onError, tenv.tgraph, tenv.etypes, tenv.resolveStructName);
 		bmodule = dmodule2bmodule(benv, dmod);
 
 		setCachedBModule(cache.modules, flowpath, bmodule);

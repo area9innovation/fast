@@ -17,17 +17,8 @@ TODO:
 - isSameStructType
 
 Errors towards plow\plow.flow:
-C:/flow9/lib/text/serialize.flow:286:25: Add type parameter. Implicit polymorphism in None<e2594>
-		Triple(flow(None()), start, "");
-
-C:/flow9/lib/promise.flow:246:49: Add type parameter. Implicit polymorphism in None<e1312>
-		resultsR = ref map(promises, \__ -> None());
-		                                       ^
 Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow
 TODO: Picking random supertype: super60{PArgType, PTypeFunction, PTypeName, PTypePar}
-
-C:/flow9/lib/ds/treeutils.flow:186:43: Add type parameter. Implicit polymorphism in EmptyList<e1841>
-	c = lookupTreeDef(tree, key, EmptyList());
 
 C:/flow9/lib/ds/digraph2dot.flow:41:16: Add type parameter. Implicit polymorphism in (flow, (GEdge<e491>) -> array<flow>) -> array<array<flow>>
 	nodesIds = map(edges, \edge -> [edge.from, edge.to]) |> concatA |> uniq;

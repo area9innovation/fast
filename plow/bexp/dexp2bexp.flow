@@ -11,6 +11,7 @@ export {
 		onError : (int, string) -> void,
 		tgraph : TypeGraph,
 		eclassType : Tree<int, TType>,
+		resolveStructName : (string) -> Maybe<DStruct>,
 	);
 
 	ttype2btype(env : BExpEnv, type : TType) -> BType;
@@ -23,13 +24,33 @@ resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
 		if (unresolvedTType(mtype)) {
-			env.onError(pos, "Add type parameter. Implicit polymorphism in " + prettyTType(mtype));
+			if (reportErrorOnType(env, mtype)) {
+				env.onError(pos, "Add type parameter. Implicit polymorphism in " + prettyTType(mtype));
+			}
 		}
 		ttype2btype(env, mtype)
 	} : {
 		// These are already reported
 		env.onError(pos, "Add type annotation. Unresolved type (equivalence class e" + i2s(root) + ")");
 		BTypeName("Error!", []);
+	}
+}
+
+reportErrorOnType(env : BExpEnv, type : TType) -> bool {
+	rec = \tt -> reportErrorOnType(env, tt);
+	switch (type) {
+		TTypeName(id, typars): {
+			mstruct = env.resolveStructName(id);
+			mstruct ?? {
+				// OK, if this struct has implicit type-pars, we do not care
+				!mstruct.implicitTypars;
+			} : {
+				// Check recursively
+				forall(typars, rec)
+			}
+		}
+		TTypeFunction(args, returnType): forall(args, rec) && rec(returnType);
+		default: true;
 	}
 }
 
@@ -114,7 +135,7 @@ ttype2btype(env : BExpEnv, type : TType) -> BType {
 		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
 		TTypeEClass(eclass): {
 			// println("ERROR: Tyvar");
-			BTypeName("ERROR", []);
+			BTypeName("bool", []);
 		}
 		TTypeFunction(args, returnType): {
 			BTypeFunction(map(args, \a -> ttype2btype(env, a)), ttype2btype(env, returnType));

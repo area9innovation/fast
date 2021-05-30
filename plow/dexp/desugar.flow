@@ -265,7 +265,7 @@ extractDStruct(dd : DDesugar, acc : Tree<string, DStruct>, tl : PTopLevel) -> Tr
 			stypars : Set<string> = fold(sargs, makeSet(), \sacc, sa : DStructArg -> {
 				extractDTypars(sacc, sa.type)
 			});
-			dstruct = DStruct(id, set2array(stypars), sargs, pos);
+			dstruct = DStruct(id, false, set2array(stypars), sargs, pos);
 			if (containsKeyTree(acc, id)) {
 				dd.onError(pos, "Duplicate struct def " + id);
 			};
@@ -303,7 +303,7 @@ adjustImplicitStructArity(dd : DDesugar, unions : Tree<string, DUnion>, structs 
 				// OK, implicit polymorphism
 				mstruct = lookupTree(acc2, tn.id);
 				mstruct ?? {
-					newStruct = DStruct(mstruct with typars = generate(0, arity, \i -> strLeft("??????????", i + 1)));
+					newStruct = DStruct(mstruct with implicitTypars = true, typars = generate(0, arity, \i -> strLeft("??????????", i + 1)));
 					// println("Promoting " + tn.id + " to have " + i2s(arity) + " typars like " + un + " " + toString(newStruct));
 					setTree(acc2, tn.id, newStruct)
 				} : {

@@ -43,8 +43,17 @@ export {
 
 	// Defining a union. Typars are ?, ??.
 	DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);
-	// Defining a struct. The typars are ?, ??, but since they are implicit, we do not have positions
-	DStruct(id : string, typars : [string], structArgs : [DStructArg], pos : int);
+	// Defining a struct.
+	DStruct(
+		id : string, 
+		// If this struct appears in a parametric union, we implicitly make it polymorphic.
+		// When that happens, we set this to true
+		implicitTypars : bool, 
+		//  The typars are ?, ??, but since they are implicit, we do not have positions
+		typars : [string], 
+		structArgs : [DStructArg], 
+		pos : int
+	);
 		DStructArg(id : string, ismutable : bool, type : DType, pos : int);
 		
 	DValue ::= DVoid, DBool, DInt, DDouble, DString;

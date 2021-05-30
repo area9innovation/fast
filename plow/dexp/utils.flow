@@ -34,7 +34,7 @@ extractTypeNamesDType(acc : Set<string>, t : DTypeOrStructOrUnion, structs : Tre
 				extractTypeNamesDType(ac, arg_type, structs, unions)
 			);
 		}
-		DStruct(id, typars, structArgs, __): {
+		DStruct(id, __, typars, structArgs, __): {
 			if (containsSet(acc, id)) acc else {
 				fold(structArgs, 
 					fold(typars, insertSet(acc, id), \ac, typar -> 
