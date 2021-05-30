@@ -6,13 +6,14 @@ import plow/types/polymorphism;
 import plow/types/util;
 import ds/simplegraph;
 import ds/arrayutils;
+import plow/bexp/dmodule2bmodule;
 
 export {
 	// Given a module, figure out what the types are
-	ttypeInference(t : TTypeEnv, d : DModule) -> TTypeEnv;
+	ttypeInference(t : TTypeEnv, d : DModule) -> BModule;
 }
 
-ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
+ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 	if (isTracingStage(env.tracing, StageTypeInference(), 1)) {
 		println("\nStage: Type inference of " + d.flowpath);
 	}
@@ -110,16 +111,20 @@ ttypeInference(env : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	order : [[string]] = buildDModuleDeps(d.globals, d.order);
 	order2 = if (false) [d.order] else order;
-	if (order2 == []) {
-		resolveEClasses(tenv, d.flowpath, false);
-	} else {
-		ttypeInferenceChunk(tmenv, d, order2);
+	tbenv = ttypeInferenceChunk(tmenv, d, order2);
+	
+	benv = BExpEnv(tbenv.onError, tbenv.tgraph, tbenv.etypes, tbenv.resolveStructName);
+
+	if (isTracingId(tbenv.tracing, StageLower(), 1, d.flowpath)) {
+		prettyDModule(tbenv, true, d);
 	}
+
+	dmodule2bmodule(benv, d);
 }
 
 ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv {
 	if (order == []) {
-		env
+		resolveEClasses(env, d.flowpath, false);
 	} else {
 		chunk = order[0];
 		cenv = env;

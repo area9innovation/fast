@@ -1,7 +1,6 @@
 import plow/pexp/parse;
 import plow/dexp/desugar;
 import plow/types/typeinference;
-import plow/bexp/dmodule2bmodule;
 import plow/bexp/btype2ttype;
 import plow/bexp/pretty;
 import plow/lookup;
@@ -244,19 +243,13 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			resolveStructName = dd.resolveStructName,
 			resolveUnionName = dd.resolveUnionName
 		);
-		tenv = ttypeInference(tenv1, dmod);
-
-		benv = BExpEnv(tenv.onError, tenv.tgraph, tenv.etypes, tenv.resolveStructName);
-		bmodule = dmodule2bmodule(benv, dmod);
-
+		bmodule = ttypeInference(tenv1, dmod);
 		setCachedBModule(cache.modules, flowpath, bmodule);
 
 		// OK, clear the name lookup cache
 		clearPlowCache(cache);
 
-
-		if (isTracingId(tenv.tracing, StageLower(), 1, flowpath)) {
-			prettyDModule(tenv, true, dmod);
+		if (isTracingId(tenv1.tracing, StageLower(), 1, flowpath)) {
 			println(prettyBModule(bmodule));
 		}
 
