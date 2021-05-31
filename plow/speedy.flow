@@ -1,0 +1,424 @@
+import string;
+import plow/dexp/dexp;
+
+import formats/json/json;
+
+export {
+	// Given the type definitions and default values of types in play,
+	// serialize this given value to a string
+	serializeSpeedy(structs : Tree<string, SpeedyStruct>, value : flow) -> string;
+
+	// Given the current type definitions and default values of types in play,
+	// deserialize this string as best as possible
+	deserializeSpeedy(structs : Tree<string, SpeedyStruct>, value : string) -> flow;
+		SpeedyStruct(struct : DStruct, defValue : flow);
+}
+
+SpeedyOut(
+	onError : (string) -> void,
+	structs : Tree<string, SpeedyStruct>,
+	structIds : Tree<string, int>,
+	output : ref List<string>,
+	// Cache for objects & strings
+	objects : ref Tree<flow, int>,
+	// Id of the next object
+	nobject : ref int
+);
+
+/*
+Format:
+
+speedy0
+<int> : number of struct definitions
+<structdef>
+...
+<structdef>
+<value>
+
+--
+
+<structdef>: 
+	<string>	Name of the struct
+	<int> 		is # fields
+	<structfield>
+	...
+	<structfield>
+
+<structfield>:
+	<string>	Name of the field
+	<type>
+
+<type>:
+	<string>	Name of the type
+	<int>		# type pars
+	<type>
+	...
+	<type>
+
+--
+
+<bool>
+	t	true
+	f	false
+
+<string>
+	S : empty string
+	s<int><chars> : string of <int> chars
+	o<int>  : object #int from cache
+
+<int>:
+	0		: 0 int
+	1<hex>  : int of 1 char in hex
+	2<hex>  : int of 2 chars in hex
+	...
+	8<hex>  : int of 8 chars in hex
+
+<double>:
+	D		: 0.0 double
+	d<int>d	: double in ASCII format
+
+<struct>:
+	c
+	<int> : index of the struct from the manifest
+	<structvalue>
+	<structvalue>
+	...
+
+<structvalue>:
+	=		The default value
+	<value>
+
+<array>
+	A	The empty array
+	a<int><values>
+*/
+
+serializeSpeedy(structs : Tree<string, SpeedyStruct>, value : flow) -> string {
+	// OK, build a manifest from the types
+	used = extractSpeedyStructs(structs, println, makeTree(), value);
+
+	ser = SpeedyOut(println, used, 
+		foldTree(used, Pair(0, makeTree()), \s, __, acc -> {
+			Pair(acc.first + 1, setTree(acc.second, s, acc.first))
+		}).second,
+		ref makeList1("speedy0"), ref makeTree(), ref 0
+	);
+
+	// Serialize the structure of all structs we use
+	soutInt(ser, sizeTree(used));
+	traverseInOrder(used, \s, st -> {
+		soutStructSignature(ser, st.struct);
+	});
+
+	serializeSpeedyValue(ser, value);
+
+	list2string(
+		^(ser.output)
+	);
+}
+
+// Find which structs are referenced in this value
+// TODO: We could also build up the cache of objects in this pass
+extractSpeedyStructs(structs : Tree<string, SpeedyStruct>, onError : (string) -> void, 
+	acc : Tree<string, SpeedyStruct>, value : flow) -> Tree<string, SpeedyStruct> {
+	if (isSameStructType(value, value)) {
+		// OK, it is a struct
+		name = value.structname;
+		mspeedy = lookupTree(structs, name);
+		mspeedy ?? {
+			acc1 = setTree(acc, name, mspeedy);
+			args = extractStructArguments(value);
+			fold(args, acc1, \acc2, arg -> {
+				if (isSameStructType(arg, arg) || isArray(arg)) {
+					// OK, it could have structure
+					extractSpeedyStructs(structs, onError, acc2, arg)
+				} else {
+					// Basic types without internal structure
+					acc2;
+				}
+			});
+		} : {
+			onError("Unknown structure " + name);
+			acc;
+		}
+	} else if (isArray(value)) {
+		fold(value, acc, \acc2, val -> {
+			extractSpeedyStructs(structs, onError, acc2, val)
+		})
+	} else {
+		onError("Expected structure");
+		acc;
+	}
+}
+
+// Build a manifest of how each structure is laid out
+soutStructSignature(sout : SpeedyOut, d : DStruct) -> void {
+	soutString(sout, d.id);
+	soutInt(sout, length(d.structArgs));
+	iter(d.structArgs, \sa -> {
+		soutString(sout, sa.id);
+		soutDType(sout, sa.type)
+	});
+}
+
+soutDType(sout : SpeedyOut, d : DType) -> void {
+	switch (d) {
+		DTypePar(id, pos): {
+			soutString(sout, id);
+			soutInt(sout, 0);
+		}
+		DTypeName(id, typars, pos): {
+			soutString(sout, id);
+			soutInt(sout, length(typars));
+			iter(typars, \tp -> {
+				soutDType(sout, tp)
+			});
+		}
+		DTypeFunction(args, returnType, pos): {
+			sout.onError("Can not handle functions");
+		}
+	}
+}
+
+serializeSpeedyValue(sout : SpeedyOut, value : flow) -> void {
+	if (isSameStructType(value, value)) {
+		// OK, it is a struct
+		name = value.structname;
+		soutSpeedyTyped(sout, value, DTypeName(name, [], 0));
+	} else if (isArray(value)) {
+		if (value ==[]) {
+			soutConstant(sout, "A");
+		} else {
+			array = cast(value : flow -> [flow]);
+			len = length(array);
+			soutConstant(sout, "a");
+			soutInt(sout, len);
+			iter(array, \val -> {
+				serializeSpeedyValue(sout, val);
+			});
+		}
+	} else {
+		sout.onError("Expected structure");
+	}
+}
+
+// TODO: Arguably, we should also send the default value in here
+soutSpeedyTyped(sout : SpeedyOut, value : flow, type : DType) -> void {
+	switch (type) {
+		DTypePar(id, pos): sout.onError("TODO: Can not handle this polymorphism");
+		DTypeName(id, typars, pos): {
+			if (id == "array") {
+				if (value ==[]) {
+					soutConstant(sout, "A");
+				} else {
+					// TODO: Add check on whether we should cache this or not
+					array = cast(value : flow -> [flow]);
+					len = length(array);
+					soutConstant(sout, "a");
+					soutInt(sout, len);
+					iter(array, \val -> {
+						soutSpeedyTyped(sout, val, typars[0]);
+					});
+				}
+			} else if (id == "bool") {
+				if (value == true) {
+					soutConstant(sout, "t");
+				} else {
+					soutConstant(sout, "f");
+				}
+			} else if (id == "int") {
+				soutInt(sout, value);
+			} else if (id == "double") {
+				soutDouble(sout, value);
+			} else if (id == "string") {
+				soutString(sout, value);
+			} else {
+				mstruct = lookupTree(sout.structs, id);
+				mstruct ?? {
+					checkSoutCache(sout, value, \ -> {
+						fields : [DType] = instantiateSpeedyDFields(mstruct.struct, type);
+						def = mstruct.defValue;
+						args = extractStructArguments(value);
+						defargs = extractStructArguments(def);
+
+						// Output the struct #
+						structId = lookupTreeDef(sout.structIds, id, -1);
+						soutConstant(sout, "c");
+						soutInt(sout, structId);
+						iteri(args, \i, arg : flow -> {
+							if (arg == defargs[i]) {
+								// The same as the default value here
+								soutConstant(sout, "=");
+							} else {
+								soutSpeedyTyped(sout, arg, fields[i])
+							}
+						});
+						if (length(args) > 0) {
+							addSoutCache(sout, value);
+						}
+					})
+				} : {
+					// OK, it is a union. Just go with the struct type then
+					serializeSpeedyValue(sout, value);
+				}
+			}
+		}
+		DTypeFunction(__, __, __): sout.onError("Can not handle functions");
+	}
+}
+
+instantiateSpeedyDFields(s : DStruct, typename : DTypeName) -> [DType] {
+	bindings : Tree<string, DType> = foldi(s.typars, makeTree(), \i, acc, tp -> {
+		setTree(acc, tp, typename.typars[i])
+	});
+	map(s.structArgs, \a -> {
+		instantiateSpeedyTypars(bindings, a.type)
+	})
+}
+
+instantiateSpeedyTypars(bindings : Tree<string, DType>, type : DType) -> DType {
+	rec = \tt -> instantiateSpeedyTypars(bindings, tt);
+	switch (type) {
+		DTypeName(id, args, pos): {
+			if (args == []) {
+				lookupTreeDef(bindings, id, type)
+			} else {
+				DTypeName(id, map(args, rec), pos)
+			}
+		}
+		DTypePar(id, pos): {
+			lookupTreeDef(bindings, id, type)
+		}
+		DTypeFunction(args, returnType, pos): {
+			type;
+		}
+	}
+}
+
+checkSoutCache(sout : SpeedyOut, value : flow, nonCache : () -> void) -> void {
+	mcached = lookupTree(^(sout.objects), value);
+	mcached	?? {
+		// OK, it is a cached entry.
+		soutConstant(sout, "o");
+		soutInt(sout, mcached);
+	} : {
+		nonCache();
+	}
+}
+
+soutString(sout : SpeedyOut, s : string) -> void {
+	checkSoutCache(sout, s, \ -> {
+		if (s == "") {
+			soutConstant(sout, "S"); // the empty string
+		} else {
+			soutConstant(sout, "s");
+			soutInt(sout, strlen(s));
+			soutConstant(sout, s);
+	
+			// TODO: Mark whether we should cache or not
+			if (strlen(s) > 4) {
+				addSoutCache(sout, s);
+			}
+		}
+	});
+}
+
+soutDouble(sout : SpeedyOut, d : double) -> void {
+	if (d == 0.0) {
+		soutConstant(sout, "D");
+	} else {
+		h = d2s(d);
+		soutConstant(sout, "d");
+		soutConstant(sout, h);
+		soutConstant(sout, "d");
+	}
+}
+
+soutConstant(sout : SpeedyOut, s : string) -> void {
+	sout.output := Cons(s, ^(sout.output));
+}
+
+soutInt(sout : SpeedyOut, i : int) -> void {
+	if (i == 0) {
+		soutConstant(sout, "0");
+	} else {
+		// OK, format as hex for now
+		h = formatHex(i);
+		len = strlen(h);
+		soutConstant(sout, i2s(len) + h);
+	}
+}
+
+addSoutCache(sout : SpeedyOut, value : flow) -> void {
+	n = ^(sout.nobject);
+	sout.objects := setTree(^(sout.objects), value, n);
+	sout.nobject := n + 1;
+}
+
+//
+
+deserializeSpeedy(structs : Tree<string, SpeedyStruct>, value : string) -> flow {
+	value;
+}
+
+
+
+main() {
+	structs = pairs2tree([
+		Pair("JsonObject", SpeedyStruct(
+			DStruct("JsonObject", false, [], [
+				DStructArg("members", false, DTypeName("array", [
+					DTypeName("Pair", [DTypeName("string", [], 0), DTypeName("Json", [], 0)], 0)
+				], 0), 0)
+			], 0),
+			JsonObject([])
+		)),
+		Pair("JsonArray", SpeedyStruct(
+			DStruct("JsonArray", false, [], [
+				DStructArg("value", false, DTypeName("array", [
+					DTypeName("Json", [], 0)
+				], 0), 0)
+			], 0),
+			JsonObject([])
+		)),
+		Pair("JsonBool", SpeedyStruct(
+			DStruct("JsonBool", false, [], [
+				DStructArg("v", false, DTypeName("bool", [], 0), 0)
+			], 0),
+			JsonBool(false)
+		)),
+		Pair("JsonDouble", SpeedyStruct(
+			DStruct("JsonDouble", false, [], [
+				DStructArg("v", false, DTypeName("double", [], 0), 0)
+			], 0),
+			JsonDouble(0.0)
+		)),
+		Pair("JsonString", SpeedyStruct(
+			DStruct("JsonString", false, [], [
+				DStructArg("v", false, DTypeName("string", [], 0), 0)
+			], 0),
+			JsonString("")
+		)),
+		Pair("JsonNull", SpeedyStruct(
+			DStruct("JsonNull", false, [], [], 0),
+			JsonNull()
+		)),
+		Pair("Pair", SpeedyStruct(
+			DStruct("Pair", false, ["?", "??"], [
+				DStructArg("first", false, DTypeName("?", [], 0), 0),
+				DStructArg("second", false, DTypeName("??", [], 0), 0)
+			], 0),
+			Pair(0, 0)
+		))
+	]);
+
+	println(
+		serializeSpeedy(structs, 
+			JsonObject([
+				Pair("field", JsonArray([]))
+			])
+		)
+	);
+	quit(0);
+	{}
+}
