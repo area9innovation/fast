@@ -1,6 +1,4 @@
 import string;
-import plow/dexp/dexp;
-
 import formats/json/json;
 
 /*
@@ -10,8 +8,10 @@ It uses a cache of strings and objects, so when deserialization, we do not
 use as much memory, since objects can be reused by pointers.
 
 TODO:
-- Handle the situation where the struct signatures drift
-- Optimize the representation. We are pretty stupid around int, string & double
+- Handle the situation where the struct signatures drift, with fixups or otherwise
+- Optimize the representation. We are pretty stupid around int, string & 
+  double being bigger than they need to be
+- Check that emojiis are handled correctly
 - Better error checking on array out of bounds and such
 */
 
@@ -23,7 +23,11 @@ export {
 	// Given the current type definitions and default values of types in play,
 	// deserialize this string as best as possible
 	deserializeSpeedy(structs : Tree<string, SpeedyStruct>, onError : (string) -> void, value : string) -> flow;
-		SpeedyStruct(struct : DStruct, defValue : flow);
+		SpeedyStruct(struct : SpeedyStructDef, defValue : flow);
+
+	SpeedyStructDef(id : string, typars : [string], structArgs : [SpeedyStructArg]);
+		SpeedyStructArg(id : string, type : SpeedyType);
+	SpeedyType(id : string, typars : [SpeedyType]);
 }
 
 SpeedyOut(
@@ -164,55 +168,42 @@ extractSpeedyStructs(structs : Tree<string, SpeedyStruct>, onError : (string) ->
 }
 
 // Build a manifest of how each structure is laid out
-soutStructSignature(sout : SpeedyOut, d : DStruct) -> void {
+soutStructSignature(sout : SpeedyOut, d : SpeedyStructDef) -> void {
 	soutString(sout, d.id);
 	soutInt(sout, length(d.structArgs));
 	iter(d.structArgs, \sa -> {
 		soutString(sout, sa.id);
-		soutDType(sout, sa.type)
+		soutSpeedyType(sout, sa.type)
 	});
 }
 
 // Read the struct signature
-spinStructSignature(spin : SpeedyIn) -> DStruct {
+spinStructSignature(spin : SpeedyIn) -> SpeedyStructDef {
 	id = spinString(spin);
 	nargs = spinInt(spin);
-	DStruct(id, false, [],
+	SpeedyStructDef(id, [],
 		generate(0, nargs, \a -> {
-			DStructArg(spinString(spin), false, spinDType(spin), 0)
+			SpeedyStructArg(spinString(spin), spinSpeedyType(spin))
 		}),
-		0
 	)
 }
 
-soutDType(sout : SpeedyOut, d : DType) -> void {
-	switch (d) {
-		DTypePar(id, pos): {
-			soutString(sout, id);
-			soutInt(sout, 0);
-		}
-		DTypeName(id, typars, pos): {
-			soutString(sout, id);
-			soutInt(sout, length(typars));
-			iter(typars, \tp -> {
-				soutDType(sout, tp)
-			});
-		}
-		DTypeFunction(args, returnType, pos): {
-			sout.onError("Can not handle functions");
-		}
-	}
+soutSpeedyType(sout : SpeedyOut, t : SpeedyType) -> void {
+	soutString(sout, t.id);
+	soutInt(sout, length(t.typars));
+	iter(t.typars, \tp -> {
+		soutSpeedyType(sout, tp)
+	});
 }
 
-spinDType(spin : SpeedyIn) -> DType {
+spinSpeedyType(spin : SpeedyIn) -> SpeedyType {
 	name = spinString(spin);
 	ntypars = spinInt(spin);
-	DTypeName(
+	SpeedyType(
 		name,
 		generate(0, ntypars, \tp -> {
-			spinDType(spin)
+			spinSpeedyType(spin)
 		}),
-		0
 	)
 }
 
@@ -220,7 +211,7 @@ serializeSpeedyValue(sout : SpeedyOut, value : flow) -> void {
 	if (isSameStructType(value, value)) {
 		// OK, it is a struct
 		name = value.structname;
-		soutSpeedyTyped(sout, value, DTypeName(name, [], 0));
+		soutSpeedyTyped(sout, value, SpeedyType(name, []));
 	} else if (isArray(value)) {
 		if (value ==[]) {
 			soutConstant(sout, "A");
@@ -239,67 +230,62 @@ serializeSpeedyValue(sout : SpeedyOut, value : flow) -> void {
 }
 
 // TODO: Arguably, we should also send the default value in here
-soutSpeedyTyped(sout : SpeedyOut, value : flow, type : DType) -> void {
-	switch (type) {
-		DTypePar(id, pos): sout.onError("TODO: Can not handle this polymorphism");
-		DTypeName(id, typars, pos): {
-			if (id == "array") {
-				if (value ==[]) {
-					soutConstant(sout, "A");
-				} else {
-					// TODO: Add check on whether we should cache this or not
-					array = cast(value : flow -> [flow]);
-					len = length(array);
-					soutConstant(sout, "a");
-					soutInt(sout, len);
-					iter(array, \val -> {
-						soutSpeedyTyped(sout, val, typars[0]);
-					});
-				}
-			} else if (id == "bool") {
-				if (value == true) {
-					soutConstant(sout, "t");
-				} else {
-					soutConstant(sout, "f");
-				}
-			} else if (id == "int") {
-				soutInt(sout, value);
-			} else if (id == "double") {
-				soutDouble(sout, value);
-			} else if (id == "string") {
-				soutString(sout, value);
-			} else {
-				mstruct = lookupTree(sout.structs, id);
-				mstruct ?? {
-					checkSoutCache(sout, value, \ -> {
-						fields : [DType] = instantiateSpeedyDFields(mstruct.struct, type);
-						def = mstruct.defValue;
-						args = extractStructArguments(value);
-						defargs = extractStructArguments(def);
-
-						// Output the struct #
-						structId = lookupTreeDef(sout.structIds, id, -1);
-						soutConstant(sout, "c");
-						soutInt(sout, structId);
-						iteri(args, \i, arg : flow -> {
-							if (arg == defargs[i]) {
-								// The same as the default value here
-								soutConstant(sout, "=");
-							} else {
-								soutSpeedyTyped(sout, arg, fields[i])
-							}
-						});
-						if (length(args) > 0) {
-							addSoutCache(sout, value);
-						}
-					})
-				} : {
-					// OK, it is a union. Just go with the struct type then
-					serializeSpeedyValue(sout, value);
-				}
-			}
+soutSpeedyTyped(sout : SpeedyOut, value : flow, type : SpeedyType) -> void {
+	id = type.id;
+	if (id == "array") {
+		if (value ==[]) {
+			soutConstant(sout, "A");
+		} else {
+			// TODO: Add check on whether we should cache this or not
+			array = cast(value : flow -> [flow]);
+			len = length(array);
+			soutConstant(sout, "a");
+			soutInt(sout, len);
+			iter(array, \val -> {
+				soutSpeedyTyped(sout, val, type.typars[0]);
+			});
 		}
-		DTypeFunction(__, __, __): sout.onError("Can not handle functions");
+	} else if (id == "bool") {
+		if (value == true) {
+			soutConstant(sout, "t");
+		} else {
+			soutConstant(sout, "f");
+		}
+	} else if (id == "int") {
+		soutInt(sout, value);
+	} else if (id == "double") {
+		soutDouble(sout, value);
+	} else if (id == "string") {
+		soutString(sout, value);
+	} else {
+		mstruct = lookupTree(sout.structs, id);
+		mstruct ?? {
+			checkSoutCache(sout, value, \ -> {
+				fields : [SpeedyType] = instantiateSpeedyDFields(mstruct.struct, type);
+				def = mstruct.defValue;
+				args = extractStructArguments(value);
+				defargs = extractStructArguments(def);
+
+				// Output the struct #
+				structId = lookupTreeDef(sout.structIds, id, -1);
+				soutConstant(sout, "c");
+				soutInt(sout, structId);
+				iteri(args, \i, arg : flow -> {
+					if (arg == defargs[i]) {
+						// The same as the default value here
+						soutConstant(sout, "=");
+					} else {
+						soutSpeedyTyped(sout, arg, fields[i])
+					}
+				});
+				if (length(args) > 0) {
+					addSoutCache(sout, value);
+				}
+			})
+		} : {
+			// OK, it is a union. Just go with the struct type then
+			serializeSpeedyValue(sout, value);
+		}
 	}
 }
 
@@ -343,7 +329,7 @@ spinValue(spin : SpeedyIn) -> flow {
 			None();
 		};
 		defArgs = extractStructArguments(def);
-		args = mapi(structSig.structArgs, \i, sa : DStructArg -> {
+		args = mapi(structSig.structArgs, \i, sa : SpeedyStructArg -> {
 			achar = spinPeek(spin);
 			if (achar == "=") {
 				// Default value!
@@ -368,31 +354,20 @@ spinValue(spin : SpeedyIn) -> flow {
 	}
 }
 
-instantiateSpeedyDFields(s : DStruct, typename : DTypeName) -> [DType] {
-	bindings : Tree<string, DType> = foldi(s.typars, makeTree(), \i, acc, tp -> {
+instantiateSpeedyDFields(s : SpeedyStructDef, typename : SpeedyType) -> [SpeedyType] {
+	bindings : Tree<string, SpeedyType> = foldi(s.typars, makeTree(), \i, acc, tp -> {
 		setTree(acc, tp, typename.typars[i])
 	});
-	map(s.structArgs, \a -> {
-		instantiateSpeedyTypars(bindings, a.type)
+	map(s.structArgs, \sa -> {
+		instantiateSpeedyTypars(bindings, sa.type)
 	})
 }
 
-instantiateSpeedyTypars(bindings : Tree<string, DType>, type : DType) -> DType {
-	rec = \tt -> instantiateSpeedyTypars(bindings, tt);
-	switch (type) {
-		DTypeName(id, args, pos): {
-			if (args == []) {
-				lookupTreeDef(bindings, id, type)
-			} else {
-				DTypeName(id, map(args, rec), pos)
-			}
-		}
-		DTypePar(id, pos): {
-			lookupTreeDef(bindings, id, type)
-		}
-		DTypeFunction(args, returnType, pos): {
-			type;
-		}
+instantiateSpeedyTypars(bindings : Tree<string, SpeedyType>, type : SpeedyType) -> SpeedyType {
+	if (type.typars == []) {
+		lookupTreeDef(bindings, type.id, type)
+	} else {
+		SpeedyType(type.id, map(type.typars, \tt -> instantiateSpeedyTypars(bindings, tt)))
 	}
 }
 
@@ -512,7 +487,7 @@ SpeedyIn(
 	// This is what we have in the compiled program
 	structs : Tree<string, SpeedyStruct>,
 	// This is the type index from the file
-	structSignatures : [DStruct],
+	structSignatures : [SpeedyStructDef],
 	onError : (string) -> void,
 	value : string,
 	// The cache
@@ -544,48 +519,48 @@ spinPeek(spin : SpeedyIn) -> string {
 main() {
 	structs = pairs2tree([
 		Pair("JsonObject", SpeedyStruct(
-			DStruct("JsonObject", false, [], [
-				DStructArg("members", false, DTypeName("array", [
-					DTypeName("Pair", [DTypeName("string", [], 0), DTypeName("Json", [], 0)], 0)
-				], 0), 0)
-			], 0),
+			SpeedyStructDef("JsonObject", [], [
+				SpeedyStructArg("members", SpeedyType("array", [
+					SpeedyType("Pair", [SpeedyType("string", []), SpeedyType("Json", [])])
+				]))
+			]),
 			JsonObject([])
 		)),
 		Pair("JsonArray", SpeedyStruct(
-			DStruct("JsonArray", false, [], [
-				DStructArg("value", false, DTypeName("array", [
-					DTypeName("Json", [], 0)
-				], 0), 0)
-			], 0),
+			SpeedyStructDef("JsonArray", [], [
+				SpeedyStructArg("value", SpeedyType("array", [
+					SpeedyType("Json", [])
+				]))
+			]),
 			JsonObject([])
 		)),
 		Pair("JsonBool", SpeedyStruct(
-			DStruct("JsonBool", false, [], [
-				DStructArg("v", false, DTypeName("bool", [], 0), 0)
-			], 0),
+			SpeedyStructDef("JsonBool", [], [
+				SpeedyStructArg("v", SpeedyType("bool", []))
+			]),
 			JsonBool(false)
 		)),
 		Pair("JsonDouble", SpeedyStruct(
-			DStruct("JsonDouble", false, [], [
-				DStructArg("v", false, DTypeName("double", [], 0), 0)
-			], 0),
+			SpeedyStructDef("JsonDouble", [], [
+				SpeedyStructArg("v", SpeedyType("double", []))
+			]),
 			JsonDouble(0.0)
 		)),
 		Pair("JsonString", SpeedyStruct(
-			DStruct("JsonString", false, [], [
-				DStructArg("v", false, DTypeName("string", [], 0), 0)
-			], 0),
+			SpeedyStructDef("JsonString", [], [
+				SpeedyStructArg("v", SpeedyType("string", []))
+			]),
 			JsonString("")
 		)),
 		Pair("JsonNull", SpeedyStruct(
-			DStruct("JsonNull", false, [], [], 0),
+			SpeedyStructDef("JsonNull", [], []),
 			JsonNull()
 		)),
 		Pair("Pair", SpeedyStruct(
-			DStruct("Pair", false, ["?", "??"], [
-				DStructArg("first", false, DTypeName("?", [], 0), 0),
-				DStructArg("second", false, DTypeName("??", [], 0), 0)
-			], 0),
+			SpeedyStructDef("Pair", ["?", "??"], [
+				SpeedyStructArg("first", SpeedyType("?", [])),
+				SpeedyStructArg("second", SpeedyType("??", []))
+			]),
 			Pair(0, 0)
 		))
 	]);
