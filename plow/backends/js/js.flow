@@ -2,6 +2,7 @@ import plow/backends/link;
 import plow/backends/back_eval;
 import plow/backends/pretty;
 import plow/backends/js/js_natives;
+import plow/backends/js/js_runtime;
 
 export {
 	// Compiles the given flow path to JS as a single string
@@ -9,21 +10,42 @@ export {
 }
 
 bmodule2js(cache : PlowCache, flowpath : string) -> string {
-	bprogram2js(linkBProgram(cache, flowpath));
+	bprogram2js(linkBProgram(cache, flowpath), flowpath);
 }
 
-bprogram2js(b : BProgram) -> string {
+bprogram2js(b : BProgram, flowpath : string) -> string {
 	backend = jsBackend();
+	cfg = JsConfig(makeJsConfig(flowpath) with verbose = 2);
+	native_names = collectBProgramNativeNames(b);
+	native_classes = ref makeSet();
+	add_class = \class_ -> native_classes := insertSet(^native_classes, class_);
+	runtime = linkRuntime(cfg, native_names, ^native_classes, add_class, "main");
 	structs = superglue(getTreeValues(b.structs), \s : DStruct -> dstruct2js(backend, s), "\n");
 	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");
 
 	// The backend keeps track of what requirements are used by the various
 	// constructs used
 	getBackendRequirements(backend)
+	+ "// RUNTIME\n" 
+	+ runtime + "\n"
+	+ "// STRUCTS\n"
 	+ structs + "\n"
+	+ "// BODY\n"
 	+ body
 	+ "\nmain()";
 }
+
+collectBProgramNativeNames(b : BProgram) -> [string] {
+	fold(b.declarations, [], \acc, decl ->
+		switch (decl) {
+			BNativeDec(id, __,__, nativeName, __): {
+				concat(acc, [nativeName]);
+			}
+			default: acc;
+		}
+	);
+}
+
 
 dstruct2js(backend : Backend, s : DStruct) -> string {
 	blueprint("
