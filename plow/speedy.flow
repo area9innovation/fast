@@ -10,7 +10,7 @@ export {
 
 	// Given the current type definitions and default values of types in play,
 	// deserialize this string as best as possible
-	deserializeSpeedy(structs : Tree<string, SpeedyStruct>, value : string) -> flow;
+	deserializeSpeedy(structs : Tree<string, SpeedyStruct>, onError : (string) -> void, value : string) -> flow;
 		SpeedyStruct(struct : DStruct, defValue : flow);
 }
 
@@ -161,6 +161,18 @@ soutStructSignature(sout : SpeedyOut, d : DStruct) -> void {
 	});
 }
 
+// Read the struct signature
+spinStructSignature(spin : SpeedyIn) -> DStruct {
+	id = spinString(spin);
+	nargs = spinInt(spin);
+	DStruct(id, false, [],
+		generate(0, nargs, \a -> {
+			DStructArg(spinString(spin), false, spinDType(spin), 0)
+		}),
+		0
+	)
+}
+
 soutDType(sout : SpeedyOut, d : DType) -> void {
 	switch (d) {
 		DTypePar(id, pos): {
@@ -178,6 +190,18 @@ soutDType(sout : SpeedyOut, d : DType) -> void {
 			sout.onError("Can not handle functions");
 		}
 	}
+}
+
+spinDType(spin : SpeedyIn) -> DType {
+	name = spinString(spin);
+	ntypars = spinInt(spin);
+	DTypeName(
+		name,
+		generate(0, ntypars, \tp -> {
+			spinDType(spin)
+		}),
+		0
+	)
 }
 
 serializeSpeedyValue(sout : SpeedyOut, value : flow) -> void {
@@ -267,6 +291,71 @@ soutSpeedyTyped(sout : SpeedyOut, value : flow, type : DType) -> void {
 	}
 }
 
+spinValue(spin : SpeedyIn) -> flow {
+	char = spinTake(spin, 1);
+	if (char == "A") flow([])
+	else if (char == "a") {
+		len = spinInt(spin);
+		flow(generate(0, len, \i -> {
+			spinValue(spin);
+		}))
+	} else if (char == "t") { flow(true)
+	} else if (char == "f") { flow(false)
+	} else if (char == "0") { flow(0)
+	} else if ("1" <= char && char <= "9") {
+		h = spinTake(spin, s2i(char));
+		flow(parseHex(h));
+	} else if (char == "D") { flow(0.0)
+	} else if (char == "d") {
+		len = spinInt(spin);
+		h = spinTake(spin, len);
+		flow(s2d(h));
+	} else if (char == "S") { ""
+	} else if (char == "s") {
+		len = spinInt(spin);
+		s = spinTake(spin, len);
+		if (strlen(s) > 4) {
+			addSpinCache(spin, s);
+		} else flow(s);
+	} else if (char == "o") {
+		// cache
+		spinCache(spin);
+	} else if (char == "c") {
+		structId = spinInt(spin);
+		structSig = spin.structSignatures[structId];
+		mstructDef = lookupTree(spin.structs, structSig.id);
+		def = mstructDef ?? {
+			mstructDef.defValue;
+		} : {
+			spin.onError("Unknown struct " + structSig.id);
+			None();
+		};
+		defArgs = extractStructArguments(def);
+		args = mapi(structSig.structArgs, \i, sa : DStructArg -> {
+			achar = spinPeek(spin);
+			if (achar == "=") {
+				// Default value!
+				spinTake(spin, 1);
+				defArgs[i];
+			} else {
+				spinValue(spin);
+			}
+		});
+		val = makeStructValue(structSig.id, args, IllegalStruct());
+
+		if (val == IllegalStruct()) {
+			spin.onError("Could not make struct " + structSig.id);
+		}
+
+		if (length(args) > 0) {
+			addSpinCache(spin, val);
+		} else val;
+	} else {
+		spin.onError("Unknown code " + char);
+		"";
+	}
+}
+
 instantiateSpeedyDFields(s : DStruct, typename : DTypeName) -> [DType] {
 	bindings : Tree<string, DType> = foldi(s.typars, makeTree(), \i, acc, tp -> {
 		setTree(acc, tp, typename.typars[i])
@@ -323,14 +412,33 @@ soutString(sout : SpeedyOut, s : string) -> void {
 	});
 }
 
+spinString(spin : SpeedyIn) -> string {
+	char = spinTake(spin, 1);
+	if (char == "S") {
+		"";
+	} else if (char == "s") {
+		len = spinInt(spin);
+		s = spinTake(spin, len);
+		if (strlen(s) > 4) {
+			addSpinCache(spin, s);
+		} else s;
+	} else if (char == "o") {
+		// cache
+		spinCache(spin);
+	} else {
+		spin.onError("Expected string");
+		"";
+	}
+}
+
 soutDouble(sout : SpeedyOut, d : double) -> void {
 	if (d == 0.0) {
 		soutConstant(sout, "D");
 	} else {
 		h = d2s(d);
 		soutConstant(sout, "d");
+		soutInt(sout, strlen(h));
 		soutConstant(sout, h);
-		soutConstant(sout, "d");
 	}
 }
 
@@ -349,6 +457,16 @@ soutInt(sout : SpeedyOut, i : int) -> void {
 	}
 }
 
+spinInt(spin : SpeedyIn) -> int {
+	char = spinTake(spin, 1);
+	if (char == "0") 0
+	else {
+		h = spinTake(spin, s2i(char));
+		parseHex(h);
+	}
+}
+
+
 addSoutCache(sout : SpeedyOut, value : flow) -> void {
 	n = ^(sout.nobject);
 	sout.objects := setTree(^(sout.objects), value, n);
@@ -356,12 +474,60 @@ addSoutCache(sout : SpeedyOut, value : flow) -> void {
 }
 
 //
+// Deserialization
+//
 
-deserializeSpeedy(structs : Tree<string, SpeedyStruct>, value : string) -> flow {
+
+deserializeSpeedy(structs : Tree<string, SpeedyStruct>, onError : (string) -> void, value : string) -> flow {
+	if (startsWith(value, "speedy0")) {
+		index = ref 7;
+		spin0 = SpeedyIn(structs, [], \e -> {
+			onError(i2s(^index) + ": " + e)
+		}, value, ref [], index);
+		nstructs = spinInt(spin0);
+		structSigs = generate(0, nstructs, \i -> {
+			spinStructSignature(spin0)
+		});
+		spin = SpeedyIn(spin0 with structSignatures = structSigs);
+		spinValue(spin);
+	} else {
+		onError("Expected speedy0 prefix");
+		value;
+	}
+}
+
+SpeedyIn(
+	// This is what we have in the compiled program
+	structs : Tree<string, SpeedyStruct>,
+	// This is the type index from the file
+	structSignatures : [DStruct],
+	onError : (string) -> void,
+	value : string,
+	// The cache
+	objects : ref [flow],
+	// How far are we in the processing?
+	i : ref int
+);
+
+spinCache(spin : SpeedyIn) -> flow {
+	entry = spinInt(spin);
+	^(spin.objects)[entry];
+}
+
+addSpinCache(spin : SpeedyIn, value : flow) -> flow {
+	spin.objects := arrayPush(^(spin.objects), value);
 	value;
 }
 
+spinTake(spin : SpeedyIn, n : int) -> string {
+	i = ^(spin.i);
+	spin.i := i + n;
+	substring(spin.value, i, n);
+}
 
+spinPeek(spin : SpeedyIn) -> string {
+	getCharAt(spin.value, ^(spin.i))
+}
 
 main() {
 	structs = pairs2tree([
@@ -412,13 +578,22 @@ main() {
 		))
 	]);
 
-	println(
-		serializeSpeedy(structs, 
-			JsonObject([
-				Pair("field", JsonArray([]))
-			])
-		)
-	);
+	// OK, test this stuff
+
+	origValue = JsonObject([
+		Pair("field", JsonArray([
+			JsonDouble(1.0),
+			JsonBool(false),
+			JsonBool(true),
+			JsonString("Hello!"),
+			JsonNull(),
+		]))
+	]);
+
+	serialized = serializeSpeedy(structs, origValue);
+
+	value = deserializeSpeedy(structs, println, serialized);
+	println(value);
 	quit(0);
 	{}
 }
