@@ -98,3 +98,9 @@ https://github.com/doublec/gc
 Advanced, performant, but complicated:
 https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/platform/heap/BlinkGCAPIReference.md
 
+# General backend plan
+
+1. Extend lambda calculus with dyn & join
+2. Extend lambda calculus with inline construct
+3. Add backend to compile lambda calculus to flow-code, JS, Java, Wasm, Bytecode, C++
+4. First use case is Gringo to flow
