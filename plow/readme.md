@@ -37,9 +37,9 @@ This compiler has these representations:
    ``BExp`. Typing happens in `ttypeInference` and then we get a bmodule from
    `dmodule2bmodule`.
    BExp = Backend, Typed Expressions.
-   Status: Subtyping to be done.
+   Status: Mostly done. Fixing bugs in type checker.
 
-4. Then plug into the backends.
+4. Then plug into the backends. Initial JS backend exists. js=1
 
 This pipeline is exposed by 
 
@@ -50,8 +50,6 @@ where `PlowCache` is a cache for modules.
 # TODOs
 
 - Positions on some operators are off a bit.
-- Implement With desugaring
-- Add a JS backend
 - Add a compile server
   - Add option to only type check given ids
 
@@ -73,6 +71,8 @@ TODO: Review the lower/upper types from
 https://gilmi.me/blog/post/2021/04/13/giml-typing-polymorphic-variants
 
 # Proposal: Rewrite syntax
+
+We could extend Plow with a rewriting feature.
 
 flow-exp: $id = $val; $body
 =>
