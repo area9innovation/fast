@@ -1,7 +1,7 @@
 import plow/backends/link;
 import plow/backends/back_eval;
-import plow/backends/js_natives;
 import plow/backends/pretty;
+import plow/backends/js/js_natives;
 
 export {
 	// Compiles the given flow path to JS as a single string

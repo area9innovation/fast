@@ -1,4 +1,4 @@
-import plow/backends/js;
+import plow/backends/js/js;
 import plow/pexp/parse;
 import plow/pexp/pretty;
 import plow/dexp/desugar;
