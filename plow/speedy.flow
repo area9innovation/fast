@@ -3,6 +3,18 @@ import plow/dexp/dexp;
 
 import formats/json/json;
 
+/*
+This is a general facility to make serialization of typed structures into
+a performant, but tight string-representations.
+It uses a cache of strings and objects, so when deserialization, we do not
+use as much memory, since objects can be reused by pointers.
+
+TODO:
+- Handle the situation where the struct signatures drift
+- Optimize the representation. We are pretty stupid around int, string & double
+- Better error checking on array out of bounds and such
+*/
+
 export {
 	// Given the type definitions and default values of types in play,
 	// serialize this given value to a string
@@ -586,12 +598,15 @@ main() {
 			JsonBool(false),
 			JsonBool(true),
 			JsonString("Hello!"),
+			JsonString("Hello!"),
+			JsonString("Hello!"),
+			JsonString("Hello!"),
 			JsonNull(),
 		]))
 	]);
 
 	serialized = serializeSpeedy(structs, origValue);
-
+	println(serialized);
 	value = deserializeSpeedy(structs, println, serialized);
 	println(value);
 	quit(0);
