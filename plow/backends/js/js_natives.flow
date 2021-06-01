@@ -161,9 +161,6 @@ jsBackend() -> Backend {
 			BackGen("Native.getCharCodeAt", bTypeVoid, BackText("function(s,i){return s.charCodeAt(i);}")),
 			BackGen("Native.getCharAt", bTypeVoid, BackText("function(s,i){return s.charAt(i);}")),
 
-			BackGen("Native.toLowerCase", bTypeString, BackText("Native.toLowerCase")),
-			BackGen("Native.toUpperCase", bTypeString, BackText("Native.toUpperCase")),
-
 
 
 /*
