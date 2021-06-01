@@ -132,7 +132,10 @@ extractTypeNamesBExp(acc : Set<string>, e : BExp) -> Set<string> {
 extractTypeNamesBType(acc : Set<string>, t : BType) -> Set<string> {
 	switch (t) {
 		BTypePar(id): acc;
-		BTypeName(id, typars): fold(typars, insertSet(acc, id), extractTypeNamesBType);
+		BTypeName(id, typars): {
+			acc1 = if (startsWith(id, "?")) acc else insertSet(acc, id);
+			fold(typars, acc1, extractTypeNamesBType);
+		}
 		BTypeFunction(args, returnType): fold(args, extractTypeNamesBType(acc, returnType), extractTypeNamesBType);
 	}
 }
