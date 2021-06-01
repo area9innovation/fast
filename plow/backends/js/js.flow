@@ -16,6 +16,7 @@ bmodule2js(cache : PlowCache, flowpath : string) -> string {
 bprogram2js(b : BProgram, flowpath : string) -> string {
 	backend = jsBackend();
 	cfg = JsConfig(makeJsConfig(flowpath) with 
+		// The debugging configuration: while backend is under development.
 		verbose = 2,
 		jsmode = NODEJS_MODE,
 		code = true
@@ -93,7 +94,7 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 				mfallback ?? {
 					bdeclaration2js(backend, mfallback);
 				}: {
-					backend.onError(0, "native " + nativeName + " not implemented");
+					// If the native is missing in runtime provided, a JS runtime error will occur.
 					nativeName
 				}
 			} else {
