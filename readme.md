@@ -44,6 +44,7 @@ Currently, it is still alpha, but it shows some interesting promise.
 	- [Future plans](#future-plans)
 		- [Coverage report](#coverage-report)
 		- [Reflection and sophisticated meta-programming](#reflection-and-sophisticated-meta-programming)
+		- [Embedded low-level language](#embedded-low-level-language)
 		- [Asynchronous code and calls](#asynchronous-code-and-calls)
 		- [Interpreter](#interpreter)
 		- [Compiler](#compiler)
@@ -997,6 +998,12 @@ TODO:
 
 - In the standard library, include functions to do downloads or preparations of any prerequisites 
   on the local machine
+
+### Embedded low-level language
+
+See Terra, where they embed a small language inside Lua for code gen.
+
+https://terralang.org/
 
 ### Asynchronous code and calls
 
