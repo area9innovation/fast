@@ -1,3 +1,4 @@
+import text/blueprint;
 import fast/fast_path;
 import plow/backends/js/js_utils;
 import plow/backends/js/js_webfont;
@@ -12,8 +13,6 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 		delfile = if (cfg.debug) \s -> "" else deleteFile;
 		deleteFiles = \filenames : [string] -> iter(filenames, \fn -> {delfile(fn); {}});
 
-		rt = "import HaxeRuntime;\n";
-
 		imports = foldSet(native_classes, "",  \acc, e -> {
 			importName = if ((e == "RenderSupport" || e == "RenderSupport3D" || e == "MediaStreamSupport" || e == "MediaRecorderSupport") && (cfg.jsmode == NODEJS_MODE || !isEmptySet(cfg.jslibrary))) {
 				e + "NodeJs" 
@@ -24,26 +23,28 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 			acc + "import " + importName + ";\n";
 		});
 
-		class = "FlowJsProgram";
 		jsfile = cfg.outputfile;
-		hx = class + ".hx";
+		hx = "FlowJsProgram.hx";
+		code = blueprint("
+			import HaxeRuntime;
+			%imports%
 
-		cls = "\nclass " + class + " {
-			static public var globals__  = {
-				HaxeRuntime._structnames_    = new haxe.ds.IntMap<String>();
-				HaxeRuntime._structids_      = new haxe.ds.StringMap<Int>();
-				HaxeRuntime._structargs_     = new haxe.ds.IntMap<Array<String>>();
-				HaxeRuntime._structargtypes_ = new haxe.ds.IntMap<Array<RuntimeType>>();
-				";
-
-		rs = if (containsSet(native_classes, "RenderSupport")) {
-				"  new RenderSupport();\n";
-			} else {
-				""
+			class FlowJsProgram {
+				static public var globals__  = {
+					HaxeRuntime._structnames_    = new haxe.ds.IntMap<String>();
+					HaxeRuntime._structids_      = new haxe.ds.StringMap<Int>();
+					HaxeRuntime._structargs_     = new haxe.ds.IntMap<Array<String>>();
+					HaxeRuntime._structargtypes_ = new haxe.ds.IntMap<Array<RuntimeType>>();
+					%render%
+				}
 			}
+			", [
+				"imports", imports, 
+				"render", if (containsSet(native_classes, "RenderSupport")) "  new RenderSupport();\n" else ""
+			]
+		);
 
-		fin = "  }\n}\n";
-		saveFileContent(hx, rt + imports + cls + rs + fin);
+		saveFileContent("FlowJsProgram.hx", code);
 		srcDir = pathCombine(getFlowDir(), "platforms/js");
 		commonSrcDir = pathCombine(getFlowDir(), "platforms/common/haxe");
 		hxparams =
