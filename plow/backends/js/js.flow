@@ -54,6 +54,7 @@ collectBProgramNativeNames(b : BProgram, add_class : (string) -> void) -> Tree<s
 dstruct2js(backend : Backend, s : DStruct) -> string {
 	blueprint("
 		function %id%(%args%) {
+			this._id = '%id%';
 			%body%
 		}", [
 		"id", s.id,
@@ -95,7 +96,7 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 					bdeclaration2js(backend, mfallback);
 				}: {
 					// If the native is missing in runtime provided, a JS runtime error will occur.
-					nativeName
+					"var " + name + " = " + nativeName + ";"
 				}
 			} else {
 				"var " + name + " = " + generated + ";"
@@ -169,16 +170,39 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 			}, "\n");
 		}
 		BSwitchStatement(val, cases, type): {
+			def_case = filter(cases, \c -> c.id == "default");
+			js_cases = concat(
+				map(
+					filter(cases, \c -> c.id != "default"), \c -> 
+					blueprint("
+						if (__case_val._id == '%id%') {
+							%body%
+						} else ", 
+						["id", c.id, "body", bstatement2js(backend, c.body, withReturn)]
+					)
+				),
+				[if (def_case == []) {
+					blueprint("
+						{
+							throw 'Unexpected value is switch: ' + __case_val.toString();
+						}", []
+					);
+				} else {
+					blueprint("
+						{
+							%body%
+						}", 
+						["body", bstatement2js(backend, def_case[0].body, withReturn)]
+					)
+				}]
+			);
 			blueprint("
-				switch (%val%) {
-					%cases%
-				}", [
+				let __case_val = %val%;
+				%cases%
+				", [
 					"val", bexp2js(backend, val),
-					"cases", superglue(cases, \c -> {
-						(if (c.id == "default") c.id else "case " + c.id)
-						 + ": " + bstatement2js(backend, c.body, withReturn)
-					}, "\n"),
-			])
+					"cases", concatStrings(js_cases),
+			]);
 		}
 		BSetMutableStatement(left, field, value): {
 			bexp2js(backend, left) + "." + field + "=" + bexp2js(backend, value) + ";";
