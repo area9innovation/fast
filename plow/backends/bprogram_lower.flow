@@ -80,9 +80,9 @@ aliveCode(names : BNames) -> Set<string> {
 		makeSet1("main"), 
 		buildSet([
 			"bool", "void", "int", "double", "string", 
-			"flow", "ref", "array",
+			"flow", "ref", "array", "__negate", "__index",
 			"<", "<=", "==", ">", ">=", ":=", "::=",
-			"+", "*", "/", "%", "&&", "||", "!",
+			"+", "-", "*", "/", "%", "&&", "||", "!",
 			"__deref", "__ref", "__not", "__array",
 		])
 	)).used;

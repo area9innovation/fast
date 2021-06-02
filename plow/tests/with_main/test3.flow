@@ -9,11 +9,11 @@ uniqq(a : [?]) -> [?] {
 	a
 }
 
-fn10() {
+fn10() -> [?] {
 //	debugtyping;
 	z : Z = X(11.0);
 
-	transitiveImports = fold([], [], \acc, imp -> {
+	transitiveImports = fold([], [], \acc : [?], imp : ?? -> {
 		hfdsgfdhdfhkljfklsdhjkljdklsgj = 
 			switch(z) {
 				X(x): x;
