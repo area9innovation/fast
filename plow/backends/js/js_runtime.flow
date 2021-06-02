@@ -13,15 +13,16 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 		delfile = if (cfg.debug) \s -> "" else deleteFile;
 		deleteFiles = \filenames : [string] -> iter(filenames, \fn -> {delfile(fn); {}});
 
-		imports = foldSet(native_classes, "",  \acc, e -> {
-			importName = if ((e == "RenderSupport" || e == "RenderSupport3D" || e == "MediaStreamSupport" || e == "MediaRecorderSupport") && (cfg.jsmode == NODEJS_MODE || !isEmptySet(cfg.jslibrary))) {
-				e + "NodeJs" 
-			} else {
-				e
-			};
-
-			acc + "import " + importName + ";\n";
-		});
+		imports = superglue(set2array(native_classes), \e -> {
+				importName = if ((e == "RenderSupport" || e == "RenderSupport3D" || e == "MediaStreamSupport" || e == "MediaRecorderSupport") && (cfg.jsmode == NODEJS_MODE || !isEmptySet(cfg.jslibrary))) {
+					e + "NodeJs" 
+				} else {
+					e
+				};
+				"import " + importName + ";"
+			}, 
+			"\n"
+		);
 
 		jsfile = cfg.outputfile;
 		hx = "FlowJsProgram.hx";
@@ -40,7 +41,7 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 			}
 			", [
 				"imports", imports, 
-				"render", if (containsSet(native_classes, "RenderSupport")) "  new RenderSupport();\n" else ""
+				"render", if (containsSet(native_classes, "RenderSupport")) "  new RenderSupport();" else ""
 			]
 		);
 
