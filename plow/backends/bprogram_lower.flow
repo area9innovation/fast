@@ -79,9 +79,10 @@ aliveCode(names : BNames) -> Set<string> {
 	findUsed(names, UsedCodeAcc(
 		makeSet1("main"), 
 		buildSet([
-			"bool", "void", "int", "double", "string", "ref", "array",
+			"bool", "void", "int", "double", "string", 
+			"flow", "ref", "array", "__negate", "__index",
 			"<", "<=", "==", ">", ">=", ":=", "::=",
-			"+", "*", "/", "%", "&&", "||", "!",
+			"+", "-", "*", "/", "%", "&&", "||", "!",
 			"__deref", "__ref", "__not", "__array",
 		])
 	)).used;

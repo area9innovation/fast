@@ -2,6 +2,7 @@ import plow/backends/link;
 import plow/backends/back_eval;
 import plow/backends/pretty;
 import plow/backends/js/js_natives;
+import plow/backends/js/js_runtime;
 
 export {
 	// Compiles the given flow path to JS as a single string
@@ -9,25 +10,51 @@ export {
 }
 
 bmodule2js(cache : PlowCache, flowpath : string) -> string {
-	bprogram2js(linkBProgram(cache, flowpath));
+	bprogram2js(linkBProgram(cache, flowpath), flowpath);
 }
 
-bprogram2js(b : BProgram) -> string {
+bprogram2js(b : BProgram, flowpath : string) -> string {
 	backend = jsBackend();
+	cfg = JsConfig(makeJsConfig(flowpath) with 
+		// The debugging configuration: while backend is under development.
+		verbose = 2,
+		jsmode = NODEJS_MODE,
+		code = true
+	);
+	native_classes = ref makeSet();
+	native_names = collectBProgramNativeNames(b, \class_ -> native_classes := insertSet(^native_classes, class_));
+
+	runtime = linkRuntime(cfg, ^native_classes, "main");
 	structs = superglue(getTreeValues(b.structs), \s : DStruct -> dstruct2js(backend, s), "\n");
 	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");
 
 	// The backend keeps track of what requirements are used by the various
 	// constructs used
 	getBackendRequirements(backend)
+	+ "// RUNTIME\n" 
+	+ runtime + "\n"
+	+ "// STRUCTS\n"
 	+ structs + "\n"
+	+ "// BODY\n"
 	+ body
 	+ "\nmain()";
+}
+
+collectBProgramNativeNames(b : BProgram, add_class : (string) -> void) -> Tree<string, string> {
+	fold(b.declarations, makeTree(), \acc, decl ->
+		switch (decl) {
+			BNativeDec(id, __,__, nativeName, __): {
+				setTree(acc, nativeName, mangleNativeName(nativeName, add_class));
+			}
+			default: acc;
+		}
+	);
 }
 
 dstruct2js(backend : Backend, s : DStruct) -> string {
 	blueprint("
 		function %id%(%args%) {
+			this._id = '%id%';
 			%body%
 		}", [
 		"id", s.id,
@@ -68,8 +95,8 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 				mfallback ?? {
 					bdeclaration2js(backend, mfallback);
 				}: {
-					backend.onError(0, "native " + nativeName + " not implemented");
-					nativeName
+					// If the native is missing in runtime provided, a JS runtime error will occur.
+					"var " + name + " = " + nativeName + ";"
 				}
 			} else {
 				"var " + name + " = " + generated + ";"
@@ -143,16 +170,39 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 			}, "\n");
 		}
 		BSwitchStatement(val, cases, type): {
+			def_case = filter(cases, \c -> c.id == "default");
+			js_cases = concat(
+				map(
+					filter(cases, \c -> c.id != "default"), \c -> 
+					blueprint("
+						if (__case_val._id == '%id%') {
+							%body%
+						} else ", 
+						["id", c.id, "body", bstatement2js(backend, c.body, withReturn)]
+					)
+				),
+				[if (def_case == []) {
+					blueprint("
+						{
+							throw 'Unexpected value is switch: ' + __case_val.toString();
+						}", []
+					);
+				} else {
+					blueprint("
+						{
+							%body%
+						}", 
+						["body", bstatement2js(backend, def_case[0].body, withReturn)]
+					)
+				}]
+			);
 			blueprint("
-				switch (%val%) {
-					%cases%
-				}", [
+				let __case_val = %val%;
+				%cases%
+				", [
 					"val", bexp2js(backend, val),
-					"cases", superglue(cases, \c -> {
-						(if (c.id == "default") c.id else "case " + c.id)
-						 + ": " + bstatement2js(backend, c.body, withReturn)
-					}, "\n"),
-			])
+					"cases", concatStrings(js_cases),
+			]);
 		}
 		BSetMutableStatement(left, field, value): {
 			bexp2js(backend, left) + "." + field + "=" + bexp2js(backend, value) + ";";
