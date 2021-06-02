@@ -19,48 +19,77 @@ main() {
 
 	includes = strSplit(getUrlParameter("I"), ",");
 	allincludes = filter(concat([".", getFlowDir() + "/lib", getFlowDir()], includes), neq(""));
+	verbose = isUrlParameterTrue("verbose");
 
 	errors = ref 0;
 	t = timestamp();
 
-	thefile = getUrlParameterDef("file", file);
-
-	if (!isDirectory(thefile)) {
+	process_file = \src_file -> {
+		flow_file = path2fastPath(allincludes, src_file);
+		if (verbose) {
+			println("compiling file '" + src_file + "' (" + flow_file + ")");
+		}
 		cache = makePlowCache(\e -> {
 			errors := ^errors + 1;
 			println(e);
 		}, allincludes);
 
-		b = compilePlow(cache, thefile);
+		b = compilePlow(cache, flow_file);
 		if (isUrlParameterTrue("js")) {
-			println("building JS target");
-			js = bmodule2js(cache, b.flowpath);
-			setFileContent(changeFileExt(thefile, ".js"), js);
-			{}
+			buildJsTarget(cache, b, src_file);
 		}
+	}
+
+	thefile = if (isUrlParameterTrue("flowc-tests")) {
+		tests_dir = pathCombineMany(["tests", "with_main"]);
+		if (verbose) {
+			println("Going to run tests in '" + tests_dir + "'\n====================\n");
+		}
+		tests_dir;
 	} else {
-		files = filter(readDirectoryRecursively(thefile), \f -> endsWith(f, ".flow"));
+		getUrlParameterDef("file", file);
+	}
 
-		iter(files, \fil -> {
-			// println(fil);
-			if (^errors < 1000) {
-				println("\n" + fil);
-				cache = makePlowCache(\e -> {
-					errors := ^errors + 1;
-					println(e);
-				}, allincludes);
-
-				b = compilePlow(cache, fil);
-				if (isUrlParameterTrue("js")) {
-					js = bmodule2js(cache, b.flowpath);
-					setFileContent(changeFileExt(thefile, ".js"), js);
-					{}
-				}
-			}
-		});	
+	if (!isDirectory(thefile)) {
+		process_file(thefile);
+	} else {
+		files = sort(filter(readDirectoryRecursively(thefile), \f -> endsWith(f, ".flow")));
+		iter(files, process_file);
 	};
 
 	println(d2st((timestamp() - t) / 1000.0, 2) + "s");
 
 	quit(0);
+}
+
+buildJsTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
+	verbose = isUrlParameterTrue("verbose");
+	run_tests = isUrlParameterTrue("run-tests");
+	if (verbose) {
+		println("building JS target");
+	}
+	js_src = bmodule2js(cache, b.flowpath);
+	js_file = changeFileExt(src_file, ".js");
+	setFileContent(js_file, js_src);
+	if (verbose) {
+		println("JS target '" + js_file + "' is built.");
+	}
+	if (run_tests) {
+		if (verbose) {
+			println("Running test '" + js_file + "'");
+		}
+		exit_code = execSystemProcess("node", [js_file], ".", println, println);
+		if (exit_code != 0 || verbose) {
+			println("Test '" + js_file + "' " +
+				(if (exit_code == 0) "PASSED" else  "FAILED with code: " + i2s(exit_code))
+			);
+		}
+		del_err = deleteFile(js_file);
+		if (del_err != "") {
+			println(del_err);
+		}
+	}
+	if (verbose) {
+		println("\n-------------------\n");
+	}
 }
