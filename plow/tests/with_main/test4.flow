@@ -1,0 +1,18 @@
+native map : ([?], (?) -> ??) -> [??] = Native.map;
+
+shuffleArray(array) {
+//	debugtyping;
+	nr = map(array, \no -> ref no);
+	nr;
+}
+
+native println2 : io (flow) -> void = Native.println;
+native quit : io (code : int) -> void = Native.quit;
+native toString2 : (flow) -> string = Native.toString;
+
+main() -> void {
+	println2("Test4...");
+	println2(map([1, 2, 3, 4], toString2));
+	println2(map(shuffleArray([1, 2, 3, 4]), toString2));
+	quit(0);
+}
