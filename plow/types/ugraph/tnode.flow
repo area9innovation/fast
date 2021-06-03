@@ -225,10 +225,7 @@ findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
 	if (eclass != -1) {
 		eclass
 	} else {
-		// OK, make a node out of it
-		node = makeTNode(tmap, type, pos);
-		// println(^uindent + "Making a type for "+ prettyTTypeNode(tmap, type) + " from " + prettyTNode(tmap, node));
-		findOrMakeTNode(tmap, node);
+		makeTNodeClassForType(tmap, type, pos);
 	}
 }
 
@@ -241,7 +238,7 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 	sclass = switch (node) {
 		TNodeOverload(unique, overloads, pos): -1;
 		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): -1;
-		default: {
+		TNodeName(name, typars, pos): {
 			// TODO: This is the bottleneck
 			findUnionMap(tmap.tmap, \i, val : TNode -> {
 				isSameTNode(tmap, node, val)

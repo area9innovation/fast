@@ -12,6 +12,8 @@ findTNode(tmap : TMap, type : TType) -> int {
 		TTypeEClass(eclass): {
 			findUnionMapRoot(tmap.tmap, eclass);
 		}
+		TTypeOverload(unique, overloads): -1;
+		TTypeSupertype(unique, subtypes, maxed): -1;
 		default: {
 			findUnionMap(tmap.tmap, \i, val : TNode -> {
 				c = isTTypeInTNode(tmap, type, i, val);
