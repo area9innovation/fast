@@ -7,6 +7,7 @@ import plow/types/util;
 import ds/simplegraph;
 import ds/arrayutils;
 import plow/bexp/dmodule2bmodule;
+import plow/bexp/dtype2btype;
 
 export {
 	// Given a module, figure out what the types are
@@ -29,12 +30,21 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 			println("native " + nat + ": " + prettyTType(fulltype));
 		}
 
+		// OK, prepare the native - without the fallback, though
+		btype = dtype2btype(nativ.type);
+		bnative = BNative(nativ.id, nativ.isIo, btype, nativ.name, None(), nativ.pos);
+
+		// Also set this in the BModule
+		bmod = BModule(acc.bmodule with natives = setTree(acc.bmodule.natives, nativ.id, bnative));
+
 		// We need a full type here, a TypeEClass will not do
 		TTypeEnv(acc with 
 			moduleTypes = setTree(acc.moduleTypes, nat, fulltype),
-			etypes = setTree(acc.etypes, nativ.eclass, fulltype)
+			etypes = setTree(acc.etypes, nativ.eclass, fulltype),
+			bmodule = bmod
 		)
 	});
+
 
 	// Set the type of top levels, so mutual recursion has something to bite on
 	tenv = foldTree(d.globals, nenv1, \id, global, acc -> {
