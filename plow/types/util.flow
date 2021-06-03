@@ -2,23 +2,9 @@ import plow/types/type;
 import algorithms;
 
 export {
-	makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType], maxed : bool) -> TType;
-
 	getTTypeName(t : TType) -> string;
 	unresolvedTType(t : TType) -> bool;
 	containsTTypeEClass(t : TType) -> bool;
-}
-
-makeTTypeSupertype(mkUnique : () -> int, subtypes : [TType], maxed : bool) -> TType {
-	ss2 = fold(subtypes, makeSet(), extractTSupers);
-	TTypeSupertype(mkUnique(), set2array(ss2), maxed);
-}
-
-extractTSupers(acc : Set<TType>, t : TType) -> Set<TType> {
-	switch (t) {
-		TTypeSupertype(__, supers, maxed): fold(supers, acc, extractTSupers);
-		default: insertSet(acc, t);
-	}
 }
 
 getTTypeName(t : TType) -> string {
