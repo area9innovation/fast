@@ -134,12 +134,11 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			}
 		}
 		DLambda(args, body, pos, eclass): {
-			argTypes = map(args, \arg -> {
+			argTypes : [TTypeEClass] = map(args, \arg -> {
 				TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), arg.type));
 			});
 			nenv = foldi(args, env, \i, acc, arg -> {
-				aclass = findOrMakeTNodeClass(env.tgraph.tmap, argTypes[i], arg.pos);
-				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, TTypeEClass(aclass)))
+				TTypeEnv(acc with localTypes = setTree(acc.localTypes, arg.id, argTypes[i]))
 			});
 			retType = ttypeInferenceDExp(nenv, topid, body);
 			// TODO: With this as true, we have a problem that super(fn-type) does not preserve
@@ -293,7 +292,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
 			tsubtype = TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), subtype));
-			teclass = TTypeEClass(findOrMakeTNodeClass(env.tgraph.tmap, tsubtype, pos));
+			teclass = asEClass(tsubtype);
 
 			nenv = TTypeEnv(env with 
 				localTypes = setTree(
@@ -329,11 +328,10 @@ getDStructFieldType(env : TTypeEnv, struct : DStruct, field : string) -> Maybe<T
 	} : None();
 }
 
-
 makeTTypeSupertype(env : TTypeEnv, subtypes : [TType], maxed : bool, pos :int) -> TTypeEClass {
 	ss2 = fold(subtypes, makeSet(), extractTSupers);
 	type = TTypeSupertype(env.mkUnique(), set2array(ss2), maxed);
-	eclass = findOrMakeTNodeClass(env.tgraph.tmap, type, pos);
+	eclass = makeTNodeClassForType(env.tgraph.tmap, type, pos);
 	TTypeEClass(eclass);
 }
 
