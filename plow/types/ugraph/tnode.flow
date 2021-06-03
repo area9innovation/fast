@@ -238,15 +238,21 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 	// println("\nLooking for " + prettyTNode(tmap, node));
 	// dumpTNodes(tmap);
 
-	// TODO: This is the bottleneck
-	sclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
-		isSameTNode(tmap, node, val)
-	}, -1);
+	sclass = switch (node) {
+		TNodeOverload(unique, overloads, pos): -1;
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): -1;
+		default: {
+			// TODO: This is the bottleneck
+			findUnionMap(tmap.tmap, \i, val : TNode -> {
+				isSameTNode(tmap, node, val)
+			}, -1);
+		}
+	};
 
 	if (sclass == -1) {
 		makeEClassForTNode(tmap, node);
 	} else {
-		// println(^uindent + "Found it as an existing node " + i2s(sclass) + "\n");
+ 		// println(^uindent + "Found it as an existing node " + i2s(sclass) + "\n");
 		sclass;
 	}
 }
