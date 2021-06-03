@@ -1,4 +1,5 @@
 import plow/backends/backend;
+import text/blueprint;
 
 export {
 	jsBackend() -> Backend;
@@ -59,6 +60,60 @@ jsBackend() -> Backend {
 		comparison("<", "<", 35),
 		comparison(">=", ">=", 35),
 		comparison(">", ">", 35),
+
+		[
+			// General deep comparison of objects
+			BackGen("==", bTypeVoid, 
+				BackRequire(
+					BackText(
+						blueprint("
+							var deepEquality = function(a,b) {
+								if (a === b) return true;
+
+								var isArray = Array.isArray;
+								var hasProp = Object.prototype.hasOwnProperty;
+
+								if (a && b && (typeof a == 'object') && (typeof b == 'object')) {
+									var arrA = isArray(a), arrB = isArray(b), i, length, key;
+									if (arrA && arrB) {
+										length = a.length;
+										if (length != b.length) return false;
+										for (i = length; i-- !== 0;) {
+											if (!deepEquality(a[i], b[i])) return false;
+										}
+										return true;
+									}
+
+									if (arrA != arrB) return false;
+									var result = false;
+
+									if (hasProp.call(a, '_id') && hasProp.call(b, '_id')) {
+										if (a._id !== b._id) {
+											return false;
+										} else {
+											result = true;
+										}
+										var keys = Object.keys(a);
+										length = keys.length;
+										for (i = 1; i < length; i++) {
+											key = keys[i];
+											if (!deepEquality(a[key], b[key])) return false;
+										}
+									}
+									if (hasProp.call(a, '__v') && hasProp.call(b, '__v')) {
+										return false;
+									}
+									return result;
+								}
+								return false;
+							}
+							", []
+						)
+					),
+					BackCall("deepEquality", [BackArg(0), BackArg(1)])
+				)
+			),
+		],
 
 		// In JS, we have bitshifts here <<, >>, >>>
 
