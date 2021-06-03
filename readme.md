@@ -434,6 +434,8 @@ TODO:
   https://github.com/WebAssembly/multi-value/blob/master/proposals/multi-value/Overview.md
   It is in stage 4, supported in Chrome, as an example
 
+- https://github.com/bytecodealliance/wizer
+  
 #### Java backend
 
 - Fix tail-calls

@@ -2,6 +2,8 @@ import ds/tree;
 import plow/types/type;
 import plow/types/ugraph/ugraph;
 import plow/dexp/dexp;
+import plow/bexp/bmodule;
+import plow/bexp/init;
 import plow/tracing;
 
 export {
@@ -51,19 +53,24 @@ export {
 		// When we start to extract equivalence classes
 		etypes : Tree<int, TType>,
 
+		// The typed bmodule we are building
+		bmodule : BModule,
+
 		// For debugging
 		tracing : Tracing,
 	);
 
 	makeTTypeEnv(
 		nextEClass : ref int, 
-		onError : (pos : int, error : string) -> void
+		onError : (pos : int, error : string) -> void,
+		d : DModule
 	) -> TTypeEnv;
 }
 
 makeTTypeEnv(
 	nextEClass : ref int, 
-	onError : (pos : int, error : string) -> void
+	onError : (pos : int, error : string) -> void,
+	d : DModule
 ) -> TTypeEnv {
 	unique = ref 0;
 	mkUnique = \ -> {
@@ -109,7 +116,8 @@ makeTTypeEnv(
 			[]
 		},
 		makeTree(), makeTree(),
-		tgraph, ref makeSet(), makeTree(),
+		tgraph, ref makeSet(), makeTree(), 
+		initBModule(d),
 		makeTracing(),
 	);
 }
