@@ -84,9 +84,11 @@ buildJsTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
 				(if (exit_code == 0) "PASSED" else  "FAILED with code: " + i2s(exit_code))
 			);
 		}
-		del_err = deleteFile(js_file);
-		if (del_err != "") {
-			println(del_err);
+		if (!isUrlParameterTrue("leave-js")) {
+			del_err = deleteFile(js_file);
+			if (del_err != "") {
+				println(del_err);
+			}
 		}
 	}
 	if (verbose) {
