@@ -236,7 +236,9 @@ jsBackend() -> Backend {
 			BackGen("Native.enumFromTo", bTypeVoid, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
 			BackGen("Native.length", bTypeVoid, BackText("function(a){return a.length;}")),
 
-			BackGen("Native.isSameStructType", bTypeVoid, BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")),
+			BackGen("Native.isSameStructType", bTypeVoid, 
+				BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")
+			),
 
 			BackGen("Native.quit", bTypeVoid, 
 				BackIfDef("browser",
