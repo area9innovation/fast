@@ -1,10 +1,14 @@
 import plow/bexp/bexp;
+import plow/bexp/builtin;
 
 export {
 	// Find the globals that are used in this expression
 	extractFreeNamesBExp(free : Set<string>, locals : Set<string>, e : BExp) -> Set<string>;
 	// Find the typenames that are used in this expression
 	extractTypeNamesBExp(typename : Set<string>, e : BExp) -> Set<string>;
+
+	// Get the type of the expression.
+	bexpType(b : BExp) -> BType;
 }
 
 extractFreeNamesBExp(free : Set<string>, locals : Set<string>, e : BExp) -> Set<string> {
@@ -137,5 +141,26 @@ extractTypeNamesBType(acc : Set<string>, t : BType) -> Set<string> {
 			fold(typars, acc1, extractTypeNamesBType);
 		}
 		BTypeFunction(args, returnType): fold(args, extractTypeNamesBType(acc, returnType), extractTypeNamesBType);
+	}
+}
+
+bexpType(b : BExp) -> BType {
+	switch (b) {
+		BVoid(): bTypeVoid;
+		BBool(v): bTypeBool;
+		BInt(value): bTypeInt;
+		BDouble(value): bTypeDouble;
+		BString(value): bTypeString;
+		BVar(name, type): type;
+		BLet(name, value, body, type): type;
+		BLambda(args, body, type): type;
+		BCall(fn, args, type): type;
+		BIf(cond, then, else_, type): type;
+		BSequence(exps, type): type;
+		BSwitch(val, __, cases, __, type): type;
+		BConstruct(struct, args, type): type;
+		BField(value, field, type):  type;
+		BSetMutable(left, field, value, type): type;
+		BArray(args, type): type;
 	}
 }

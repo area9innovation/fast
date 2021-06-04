@@ -16,7 +16,6 @@ export {
 
 	bexp2BStatement(decl : string, fnargs : [string], hasTailcall : ref bool, tailcall : bool, b : BExp) -> BStatement;
 
-	bexpType(b : BExp) -> BType;
 	bstatementType(b : BStatement) -> BType;
 }
 
@@ -334,27 +333,6 @@ bexp2BReturn(b : BExp) -> BStatement {
 		BArray(args, type): {
 			BReturn(b);
 		}
-	}
-}
-
-bexpType(b : BExp) -> BType {
-	switch (b) {
-		BVoid(): bTypeVoid;
-		BBool(v): bTypeBool;
-		BInt(value): bTypeInt;
-		BDouble(value): bTypeDouble;
-		BString(value): bTypeString;
-		BVar(name, type): type;
-		BLet(name, value, body, type): type;
-		BLambda(args, body, type): type;
-		BCall(fn, args, type): type;
-		BIf(cond, then, else_, type): type;
-		BSequence(exps, type): type;
-		BSwitch(val, __, cases, __, type): type;
-		BConstruct(struct, args, type): type;
-		BField(value, field, type):  type;
-		BSetMutable(left, field, value, type): type;
-		BArray(args, type): type;
 	}
 }
 
