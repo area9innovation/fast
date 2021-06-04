@@ -107,6 +107,9 @@ export {
 	// Make a new type class
 	makeTNodeClass(tmap : TMap) -> int;
 
+	// When we know the type is unique - supertypes come to mind
+	makeTNodeClassForType(tmap : TMap, type : TType, pos : int) -> int;
+
 	dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int;
 	findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int;
 	unifyEClass(tmap : TMap, lclass : int, rclass : int) -> void;
@@ -222,10 +225,7 @@ findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
 	if (eclass != -1) {
 		eclass
 	} else {
-		// OK, make a node out of it
-		node = makeTNode(tmap, type, pos);
-		// println(^uindent + "Making a type for "+ prettyTTypeNode(tmap, type) + " from " + prettyTNode(tmap, node));
-		findOrMakeTNode(tmap, node);
+		makeTNodeClassForType(tmap, type, pos);
 	}
 }
 
@@ -235,21 +235,37 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 	// println("\nLooking for " + prettyTNode(tmap, node));
 	// dumpTNodes(tmap);
 
-	// TODO: This is the bottleneck
-	sclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
-		isSameTNode(tmap, node, val)
-	}, -1);
+	sclass = switch (node) {
+		TNodeOverload(unique, overloads, pos): -1;
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): -1;
+		TNodeName(name, typars, pos): {
+			// TODO: This is the bottleneck
+			findUnionMap(tmap.tmap, \i, val : TNode -> {
+				isSameTNode(tmap, node, val)
+			}, -1);
+		}
+	};
 
 	if (sclass == -1) {
-		// OK, could not find it. We need a new class
-		nclass = makeTNodeClass(tmap);
-		// println(^uindent + "Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + "\n");
-		setUnionMapValue(tmap.tmap, nclass, node);
-		nclass;
+		makeEClassForTNode(tmap, node);
 	} else {
-		// println(^uindent + "Found it as an existing node " + i2s(sclass) + "\n");
+ 		// println(^uindent + "Found it as an existing node " + i2s(sclass) + "\n");
 		sclass;
 	}
+}
+
+makeTNodeClassForType(tmap : TMap, type : TType, pos : int) -> int {
+	node = makeTNode(tmap, type, pos);
+	// println(^uindent + "Making a type for "+ prettyTTypeNode(tmap, type) + " from " + prettyTNode(tmap, node));
+	makeEClassForTNode(tmap, node);
+}
+
+makeEClassForTNode(tmap : TMap, node : TNode) -> int {
+	// OK, could not find it. We need a new class
+	nclass = makeTNodeClass(tmap);
+	// println(^uindent + "Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + "\n");
+	setUnionMapValue(tmap.tmap, nclass, node);
+	nclass;
 }
 
 makeTNodeClass(tmap : TMap) -> int {

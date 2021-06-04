@@ -3,42 +3,7 @@ import plow/bexp/bmodule;
 import plow/dexp/types;
 
 export {
-	dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule;
-}
-
-dmodule2bmodule(env : BExpEnv, d : DModule) -> BModule {
-	globals = mapTree(d.globals, \gl -> dglobal2bglobal(env, gl));
-	BModule(
-		d.flowpath,
-		d.fullpath,
-		d.imports,
-		d.forbids,
-		d.exported,
-		d.structs,
-		d.unions,
-		makeDFieldMap(
-			// We only include those that are exported fully
-			filterTree(d.structs, \id, st -> {
-				containsSet(d.exported.exportedTypes, id)
-			})
-		),
-		mapTree(d.natives, \nat : DNative -> {
-			mtype = lookupTree(env.eclassType, nat.eclass);
-			btype = mtype ?? {
-				ttype2btype(env, mtype)
-			} : resolveBType(env, nat.pos, nat.eclass);
-			BNative(nat.id, nat.isIo, btype, nat.name, 
-				{
-					if (nat.fallback) {
-						lookupTree(globals, nat.id);
-					} else None()
-				},
-				nat.pos
-			)
-		}),
-		globals,
-		d.order
-	)
+	dglobal2bglobal(env : BExpEnv, d : DGlobal) -> BGlobal;
 }
 
 dglobal2bglobal(env : BExpEnv, d : DGlobal) -> BGlobal {

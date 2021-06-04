@@ -29,9 +29,11 @@ bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
 			fold(module.order, 
 				foldTree(module.natives, acc, \id, nat, ac -> 
 					if (!containsSet(alive, id)) ac else {
+						// Look for a fallback
+						mfallback = lookupTree(module.globals, id);
 						concat(ac, 
-							[BExpNative(id, nat.isIo, nat.type, nat.name, 
-								maybeMap(nat.fallback, \glob : BGlobal -> bexp2BExpDeclaration(id, glob.value))
+							[BExpNative(id, nat.isIo, nat.type, nat.name,
+								maybeMap(mfallback, \glob : BGlobal -> bexp2BExpDeclaration(id, glob.value))
 							)]
 						);
 					}
@@ -122,24 +124,16 @@ findUsedIn(names : BNames, acc : UsedCodeAcc, name : string) -> UsedCodeAcc {
 	switch (lookupTree(names.globals, name)) {
 		Some(glob): proc_glob(glob);
 		None(): {
-			switch (lookupTree(names.natives, name)) {
-				Some(nat): {
-					switch (nat.fallback) {
-						Some(glob): proc_glob(glob);
-						None(): acc;
-					}
-				}
+			switch (lookupTree(names.structs, name)) {
+				Some(struct): proc_struct_union(struct);
 				None(): {
-					switch (lookupTree(names.structs, name)) {
-						Some(struct): proc_struct_union(struct);
+					switch (lookupTree(names.unions, name)) {
+						Some(union): proc_struct_union(union);
 						None(): {
-							switch (lookupTree(names.unions, name)) {
-								Some(union): proc_struct_union(union);
-								None(): {
-									println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
-									acc;
-								}
+							if (!containsKeyTree(names.natives, name)) {
+								println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
 							}
+							acc;
 						}
 					}
 				}
@@ -190,30 +184,7 @@ bexp2BExpDeclaration(declid : string, b : BExp) -> BExpDeclaration {
 				type
 			);
 		}
-		BCall(fn, args, type): {
-			switch (fn) {
-				BVar(name, __): {
-					if (name == "__native") {
-						bisIo = args[0];
-						bnativeName = args[2];
-						nativeName = switch (bnativeName) {
-							BString(s): s;
-							default: "";
-						};
-						ntype = bexpType(args[1]);
-						fallback = if (length(args) > 3) {
-							Some(bexp2BExpDeclaration(declid, args[3]))
-						} else None();
-						BExpNative(declid, bisIo == BBool(true),
-							ntype,
-							nativeName,
-							fallback
-						);
-					} else var();
-				}
-				default: var();
-			}
-		}
+		BCall(fn, args, type): var();
 		BIf(cond, then, else_, type): var();
 		BSequence(exps, type): var();
 		BSwitch(val, __, cases, __, type): var();
