@@ -10,6 +10,7 @@ B(l : Un, r : [Un]);
 main() -> void {
 	println2("Test on deep equality ...");
 	println2([2] == [2]);
+	println2([1, 2, 3] == [1, 2, 3]);
 	a = B(
 		B(C("xyz"), [A(1), B(A(3), [C("A")])]), 
 		[B(C("123"), [B(C("#"), [B(A(-1), [])]), A(5)]), A(123)]
