@@ -31,18 +31,18 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string
 				BVar(name, __): {
 					// OK, we have a named call. Look for a code gen proc for this that matches the type
 					gens = getTreeArrayValue(backend.generators, name);
-					match = filter(gens, \g -> g.type == call_type);
+					match = filter(gens, \g -> g.type == bexpType(fn));
 					universal = filter(gens, \g -> g.type == bTypeVoid);
 
-					/*if (name == "==" || name == "<") {
+					if (name == "==" || name == "<") {
 						println(
-							"Genetating " + name + " for call_type " + prettyBType(call_type) + "\n" +
-							"fn.type: " + prettyBType(bexpType(fn)) + "\n" +
+							"Genetating " + name + " for call type " + prettyBType(bexpType(fn)) + "\n" +
+							//"fn.type: " + prettyBType(bexpType(fn)) + "\n" +
 							"expr: " + prettyBExp(e) + "\n" + 
 							"match: \n" + concatStrings(map(match, \gen -> "\t" + gen.name + " : " + prettyBType(gen.type) + "\n")) +
 							"universal: \n" + concatStrings(map(universal, \gen -> "\t" + gen.name + " : " + prettyBType(gen.type) + "\n"))
 						);
-					}*/
+					}
 
 					if (length(match) == 1) {
 						// We have a hit
@@ -54,7 +54,7 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string
 						evalBackExp(backend, args, rec, gen.product);
 					} else if (gens != []) {
 						backend.onError(0 /*call.pos*/, 
-							"Can not generate " + name + " for type " + prettyBType(call_type) + "\n" +
+							"Can not generate " + name + " for type " + prettyBType(bexpType(fn)) + "\n" +
 							"expr: " + prettyBExp(e) + "\n" + 
 							"generators: \n" + concatStrings(map(concat(match, universal), \gen -> "\t" + gen.name + " : " + prettyBType(gen.type) + "\n"))
 						);
