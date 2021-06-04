@@ -81,7 +81,7 @@ buildJsTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
 		exit_code = execSystemProcess("node", [js_file], ".", println, println);
 		if (exit_code != 0 || verbose) {
 			println("Test '" + js_file + "' " +
-				(if (exit_code == 0) "PASSED" else  "FAILED with code: " + i2s(exit_code))
+				(if (exit_code == 0) "COMPLETED" else  "FAILED with code: " + i2s(exit_code))
 			);
 		}
 		if (!isUrlParameterTrue("leave-js")) {
