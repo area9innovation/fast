@@ -67,7 +67,7 @@ jsBackend() -> Backend {
 				BackRequire(
 					BackText(
 						blueprint("
-							var deepEquality = function(a,b) {
+							var deepEquality = function(a, b) {
 								if (a === b) return true;
 
 								var isArray = Array.isArray;
@@ -93,11 +93,8 @@ jsBackend() -> Backend {
 										} else {
 											result = true;
 										}
-										var keys = Object.keys(a);
-										length = keys.length;
-										for (i = 1; i < length; i++) {
-											key = keys[i];
-											if (!deepEquality(a[key], b[key])) return false;
+										for (field in a) {
+											if (!deepEquality(a[field], b[field])) return false;
 										}
 									}
 									if (hasProp.call(a, '__v') && hasProp.call(b, '__v')) {
@@ -111,6 +108,73 @@ jsBackend() -> Backend {
 						)
 					),
 					BackCall("deepEquality", [BackArg(0), BackArg(1)])
+				)
+			),
+			BackGen("<", bTypeVoid, 
+				BackRequire(
+					BackText(
+						blueprint("
+							let compareByValue = function(o1, o2) {
+								if (o1 === o2) return 0;
+								if (o1 == null || o2 == null) {
+									return 1;
+								}
+								var isArray = Array.isArray;
+								if (isArray(o1)) {
+									if (!isArray(o2)) {
+										return 1;
+									}
+									var l1 = o1.length;
+									var l2 = o2.length;
+									var l = l1 < l2 ? l1 : l2;
+									for (var i = 0; i < l; ++ i) {
+										var c = compareByValue(o1[i], o2[i]);
+										if(c != 0) {
+											return c;
+										}
+									}
+									if (l1 == l2) {
+										return 0;
+									} else if (l1 < l2) {
+										return -1;
+									} else {
+										return 1;
+									}
+								}
+								var hasProp = Object.prototype.hasOwnProperty;
+								if (hasProp.call(o1, '_id')) {
+									if (!hasProp.call(o2, '_id')) {
+										return 1;
+									}
+									var i1 = o1._id;
+									var i2 = o2._id;
+									if (i1 < i2) {
+										return -1;
+									}
+									if (i1 > i2) {
+										return 1;
+									}
+									for (field in a) {
+										var c = compareByValue(o1[field], o2[field]);
+										if(c != 0) {
+											return c;
+										}
+									}
+									return 0;
+								}
+								if (o1 < o2) {
+									return -1;
+								} else {
+									return 1;
+								}
+							};
+							", []
+						)
+					),
+					BackBinOp("<", 35,
+						BackCall("compareByValue", [BackArg(0), BackArg(1)]),
+						BackText("0")
+					)
 				)
 			),
 		],
@@ -215,6 +279,75 @@ jsBackend() -> Backend {
 
 			BackGen("Native.getCharCodeAt", bTypeVoid, BackText("function(s,i){return s.charCodeAt(i);}")),
 			BackGen("Native.getCharAt", bTypeVoid, BackText("function(s,i){return s.charAt(i);}")),
+
+			BackGen("Native.toString", bTypeVoid, 
+				BackRequire(
+					BackText(blueprint("
+						var toString = function(value, keepStringEscapes) {
+							if (keepStringEscapes == null) {
+								keepStringEscapes = false;
+							}
+							if (value == null) {
+								return '{}';
+							}
+							if (!Reflect.isObject(value)) {
+								return Std.string(value);
+							}
+							if (Array.isArray(value)) {
+								var r = '[';
+								var s = '';
+								for (i in value) {
+									r += s + toString(value[i]);
+									s = ', ';
+								}
+								return r + ']';
+							}
+							if (Object.prototype.hasOwnProperty.call(value,'__v')) {
+								return 'ref ' + toString(value.__v);
+							}
+							if (Object.prototype.hasOwnProperty.call(value, '_id')) {
+								var id = value._id;
+								var r = id + '(';
+								if (id == 'DLink') {
+									return r + '...)';
+								}
+								var s = '';
+								var first = true;
+								for (field in value) {
+									if (field != '_id') {
+										r += s + toString(value[field]);
+										s = ', ';
+									}
+								}
+								r += ')';
+								return r;
+							}
+							if (Reflect.isFunction(value)) {
+								return '<function>';
+							}
+							try {
+								var s = value;
+								if (!keepStringEscapes) {
+									s = StringTools.replace(s,'\\\\','\\\\\\\\');
+									s = StringTools.replace(s,'\\\"','\\\\\"');
+									s = StringTools.replace(s,'\\n','\\\\n');
+									s = StringTools.replace(s,'\\t','\\\t');
+									return '\\\"' + s + '\\\"';
+								} else {
+									StringTools.replace(s,'\\\\','\\\\\\\\');
+									return s;
+								}
+							} catch ( _g ) {
+								//haxe_NativeStackTrace.lastError = _g;
+								return '<native>';
+							}
+						};
+						", []
+					)),
+					BackText("toString")
+				)
+			),
+
 
 
 
