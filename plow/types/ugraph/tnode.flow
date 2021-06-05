@@ -1085,7 +1085,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 					resolveTNode(tmap, acc, visited, eclass, mflow);
 				} : {
 					if (length(subtypes) != 1) {
-						println("TODO: Picking random supertype: " + prettyTNode(tmap, node));
+						tmap.onError(pos, "TODO: Picking random supertype: " + prettyTNode(tmap, node));
 					}
 					resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
 				}

@@ -1,12 +1,39 @@
 import plow/dexp/dexp;
 
 export {
-	DTypeOrStructOrUnion ::= DType, DStruct, DUnion;
 	// Find the typenames that are used in this struct
-	extractTypeNamesDType(acc : Set<string>, t : DTypeOrStructOrUnion, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string>;
+	extractTypeNamesDType(acc : Set<string>, t : DType, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string>;
+
+	extractTypeNamesDUnion(acc : Set<string>, t : DUnion, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string>;
+	extractTypeNamesDStruct(acc : Set<string>, t : DStruct, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string>;
 }
 
-extractTypeNamesDType(acc : Set<string>, t : DTypeOrStructOrUnion, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string> {
+extractTypeNamesDUnion(acc : Set<string>, t : DUnion, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string> {
+	if (containsSet(acc, t.id)) acc else {
+		fold(t.types, 
+			fold(t.typars, insertSet(acc, t.id), \ac, typar -> 
+				extractTypeNamesDType(ac, typar, structs, unions)
+			),
+			\ac, type -> 
+				extractTypeNamesDType(ac, type, structs, unions)
+		);
+	}
+}
+
+extractTypeNamesDStruct(acc : Set<string>, t : DStruct, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string> {
+	if (containsSet(acc, t.id)) acc else {
+		fold(t.structArgs, 
+			fold(t.typars, insertSet(acc, t.id), \ac, typar -> 
+				extractTypeNamesDType(ac, DTypePar(typar, 0), structs, unions)
+			),
+			\ac, struct_arg -> 
+				extractTypeNamesDType(ac, struct_arg.type, structs, unions)
+		);
+	}
+
+}
+
+extractTypeNamesDType(acc : Set<string>, t : DType, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string> {
 	switch (t) {
 		DTypeName(id, typars, __): {
 			if (containsSet(acc, id)) acc else {
@@ -17,10 +44,10 @@ extractTypeNamesDType(acc : Set<string>, t : DTypeOrStructOrUnion, structs : Tre
 		}
 		DTypePar(id,__): {
 			switch (lookupTree(structs, id)) {
-				Some(s): extractTypeNamesDType(acc, s, structs, unions);
+				Some(s): extractTypeNamesDStruct(acc, s, structs, unions);
 				None(): {
 					switch (lookupTree(unions, id)) {
-						Some(u): extractTypeNamesDType(acc, u, structs, unions);
+						Some(u): extractTypeNamesDUnion(acc, u, structs, unions);
 						None(): {
 							// Unresolved(?) (free?) typar?
 							acc;
@@ -33,28 +60,6 @@ extractTypeNamesDType(acc : Set<string>, t : DTypeOrStructOrUnion, structs : Tre
 			fold(args, extractTypeNamesDType(acc, returnType, structs, unions), \ac, arg_type -> 
 				extractTypeNamesDType(ac, arg_type, structs, unions)
 			);
-		}
-		DStruct(id, __, typars, structArgs, __): {
-			if (containsSet(acc, id)) acc else {
-				fold(structArgs, 
-					fold(typars, insertSet(acc, id), \ac, typar -> 
-						extractTypeNamesDType(ac, DTypePar(typar, 0), structs, unions)
-					),
-					\ac, struct_arg -> 
-						extractTypeNamesDType(ac, struct_arg.type, structs, unions)
-				);
-			}
-		}
-		DUnion(id, typars, types, __): {
-			if (containsSet(acc, id)) acc else {
-				fold(types, 
-					fold(typars, insertSet(acc, id), \ac, typar -> 
-						extractTypeNamesDType(ac, typar, structs, unions)
-					),
-					\ac, type -> 
-						extractTypeNamesDType(ac, type, structs, unions)
-				);
-			}
 		}
 	}
 }

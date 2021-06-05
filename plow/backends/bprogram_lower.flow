@@ -113,9 +113,18 @@ findUsedIn(names : BNames, acc : UsedCodeAcc, name : string) -> UsedCodeAcc {
 			mergeSets(used, new)
 		);
 	}
-	proc_struct_union = \su -> {
+	proc_struct = \su -> {
 		used = insertSet(acc.used, name);
-		referenced = extractTypeNamesDType(makeSet(), su, names.structs, names.unions);
+		referenced = extractTypeNamesDStruct(makeSet(), su, names.structs, names.unions);
+		new = differenceSets(referenced, used);
+		UsedCodeAcc(
+			mergeSets(acc.queue, new), 
+			mergeSets(used, new)
+		);
+	}
+	proc_union = \su -> {
+		used = insertSet(acc.used, name);
+		referenced = extractTypeNamesDUnion(makeSet(), su, names.structs, names.unions);
 		new = differenceSets(referenced, used);
 		UsedCodeAcc(
 			mergeSets(acc.queue, new), 
@@ -126,10 +135,10 @@ findUsedIn(names : BNames, acc : UsedCodeAcc, name : string) -> UsedCodeAcc {
 		Some(glob): proc_glob(glob);
 		None(): {
 			switch (lookupTree(names.structs, name)) {
-				Some(struct): proc_struct_union(struct);
+				Some(struct): proc_struct(struct);
 				None(): {
 					switch (lookupTree(names.unions, name)) {
-						Some(union): proc_struct_union(union);
+						Some(union): proc_union(union);
 						None(): {
 							if (!containsKeyTree(names.natives, name)) {
 								println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
