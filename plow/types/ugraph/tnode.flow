@@ -16,13 +16,6 @@ TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 - isSameStructType
 
-C:/flow9/lib/behaviour.flow:324:54: ERROR: Merge DynamicBehaviour<int> and Behaviour<int>
-                                        uncountNexts(subscribersCounter, getValue(subscribersCounter) + 1);
-                                                                        ^
-C:/flow9/lib/behaviour.flow:424:21: ERROR: Merge DynamicBehaviour<int> and Behaviour<int>
-                uncountNexts(nextCounter, getValue(nextCounter) + lengthDList(behaviour.subscribers));
-
-
 Errors towards plow\plow.flow:
 Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow
 TODO: Picking random supertype: super60{PArgType, PTypeFunction, PTypeName, PTypePar}
@@ -591,7 +584,15 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 		left;
 	}
 	error = \pos -> {
-		tmap.onError(pos, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
+		lclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
+				isSameTNode(tmap, left, val)
+			}, -1);
+
+		rclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
+				isSameTNode(tmap, right, val)
+			}, -1);
+		tmap.onError(pos, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass));
+		// dumpTNodes(tmap);
 		left;
 	}
 	if (isEmptyTNode(left)) simplifyTNode(tmap, right)

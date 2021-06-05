@@ -170,8 +170,8 @@ buildDModuleDeps(globals : Tree<string, DGlobal>, order : [string]) -> [[string]
 		foldSet(vars, acc, \acc2, var -> {
 			if (containsKeyTree(globals, var)) {
 				// OK, an internal name - add a bidirectional dependency
-				acc3 = if (true) acc2 else addSimpleEdge(acc2, id, var, false, 1);
-				addSimpleEdge(acc3, var, id, false, 1)
+				acc3 = if (false) acc2 else addSimpleEdge(acc2, id, var, false, 1);
+				if (true) addSimpleEdge(acc3, var, id, false, 1) else acc3
 			} else acc2;
 		})
 	});
@@ -207,11 +207,11 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
 	unifyTType(env, d.id, "global " + d.id + " 2", d.pos, ftype, TTypeEClass(d.eclass));
 
+	finalType = backfillType(etype, ftype);
 	if (tracingId) {
-		println("Inference " + d.id + " ends with " + prettyTType(ftype) + "\n");
+		println("Inference " + d.id + " ends with " + prettyTType(finalType) + "\n");
 	}
 
-	finalType = backfillType(etype, ftype);
 	// println("Refined type for " + d.id + " " + prettyTTypeNode(env.tgraph.tmap, finalType));
 	TTypeEnv(env with 
 		moduleTypes = setTree(env.moduleTypes, d.id, finalType),
@@ -237,9 +237,20 @@ resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : 
 			setTree(acc, gl, bglobal)
 		} : acc;
 	});
-
 	bmodule = BModule(env.bmodule with globals = globals);
-	TTypeEnv(env with etypes = etypes, bmodule = bmodule);
+
+	mtypes = fold(chunk, env.moduleTypes, \acc, gl -> {
+		mglobal = lookupTree(dmodule.globals, gl);
+		mglobal ?? {
+			mtype = lookupTree(etypes, mglobal.eclass);
+			switch (mtype) {
+				None(): acc;
+				Some(type): setTree(acc, gl, type)
+			}
+		} : acc;
+	});
+
+	TTypeEnv(env with etypes = etypes, bmodule = bmodule, moduleTypes = mtypes);
 }
 
 // Use the refined type to fill our the given core type
