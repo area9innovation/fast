@@ -9,6 +9,8 @@ export {
 	TMap(
 		// The union/find map of tnodes for each equivalence class
 		tmap : UnionFindMap<TNode>,
+		// To help find a type name in the union find map
+		typenameEClasses : ref Tree<string, [int]>,
 		// The helpers we need to do the unification
 		resolveUnionName : ref (string) -> Maybe<DUnion>,
 		resolveSupertypes : ref (string) -> [string],

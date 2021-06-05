@@ -122,6 +122,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 				Some(s): mergeTNodes(s, l, r);
 			}
 		}),
+		ref makeTree(),
 		ref \__ -> {
 			println("TODO: The resolvers are not set");
 			None();
@@ -250,6 +251,12 @@ makeEClassForTNode(tmap : TMap, node : TNode) -> int {
 	// OK, could not find it. We need a new class
 	nclass = makeTNodeClass(tmap);
 	// println(^uindent + "Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + "\n");
+	switch (node) {
+		TNodeName(name, __, __): {
+			tmap.typenameEClasses := treePushToArrayValue(^(tmap.typenameEClasses), name, nclass);
+		}
+		default: {}
+	}
 	setUnionMapValue(tmap.tmap, nclass, node);
 	nclass;
 }

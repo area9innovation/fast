@@ -259,7 +259,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			tvalue = ttypeInferenceDExp(env, topid, value);
 
 			ttype = TTypeEClass(dtype2eclass(env.tgraph.tmap, makeTree(), type));
-			unifyTType(env, topid, "switch val", pos, makeTTypeSupertype(env, [tvalue], false, pos), ttype);
+			unifyTType(env, topid, "switch val", pos, if (true) tvalue else makeTTypeSupertype(env, [tvalue], false, pos), ttype);
 
 			// Relate the type of the value with all structs mentioned
 			caseTypes = map(cases, \c -> instantiateTTypeName(env, c.id));
