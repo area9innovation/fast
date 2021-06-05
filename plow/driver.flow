@@ -178,6 +178,10 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	if (hasCachedBModule(cache.modules, flowpath)) {
 		getCachedBModule(cache.modules, flowpath);
 	} else if (fileExists(path)) {
+
+		// TODO: We should mark this as being processes,
+		// so we do not concurrently do the same file many times
+
 		// OK, we have to parse this
 		code = getFileContent(path);
 

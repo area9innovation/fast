@@ -101,7 +101,7 @@ isSingleUnionName(tmap : TMap, name1 : string, name2 : string) -> bool {
 	switch (muname1) {
 		None(): {
 			muname2 = ^(tmap.resolveUnionName)(name2);
-			switch (muname1) {
+			switch (muname2) {
 				None(): false;
 				Some(u): {
 					if (length(u.types) == 1) {

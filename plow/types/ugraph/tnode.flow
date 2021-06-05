@@ -12,6 +12,10 @@ TODO:
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 
 Errors towards plow\plow.flow:
+
+plow/pexp/utils: Very slow
+plow/dexp/pretty': Very slow
+
 Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow
 TODO: Picking random supertype: super60{PArgType, PTypeFunction, PTypeName, PTypePar}
 
