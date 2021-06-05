@@ -3,10 +3,9 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 pub fn i2s(allocator: *Allocator, i : i32) !std.ArrayList(u8) {
-    var buf: [8]u8 = undefined;
-    const slice = try std.fmt.bufPrint(&buf, "{d}", .{i});
-    var digits = std.ArrayList(u8).fromOwnedSlice(allocator, &buf);
-    return digits;
+    var list = std.ArrayList(u8).init(allocator);
+    try list.writer().print("{d}", .{i});
+    return list;
 }
 
 pub fn main() !void {
