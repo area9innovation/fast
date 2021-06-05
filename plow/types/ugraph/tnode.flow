@@ -5,16 +5,11 @@ import plow/types/pretty;
 
 /*
 TODO:
-- Change typeinference to make eclasses directly, and basically retire
-  unifyTTypes
-- Change type inference to lower to BExp sooner, so we can clean out the
-  tmaps.
 - Try to reduce size of eclasses. In principle, we do not need all of them
   if we construct eclasses when we start typing the globals instead of when
   desugaring.
 
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
-- isSameStructType
 
 Errors towards plow\plow.flow:
 Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow

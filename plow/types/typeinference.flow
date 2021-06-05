@@ -141,6 +141,7 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		// Clear etypes
 		cenv.tgraph.tmap.tmap.parents := [];
 		cenv.tgraph.tmap.tmap.values := [];
+		cenv.tgraph.tmap.typenameEClasses := makeTree();
 
 		// println(chunk);
 
