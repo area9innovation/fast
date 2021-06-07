@@ -5,6 +5,8 @@ import plow/types/pretty;
 
 /*
 TODO:
+- Add debugging of type vars, so it becomes easier to debug
+
 - Try to reduce size of eclasses. In principle, we do not need all of them
   if we construct eclasses when we start typing the globals instead of when
   desugaring.
