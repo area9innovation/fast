@@ -1,5 +1,5 @@
 import ds/set;
-import plow/bexp/builtin;
+import plow/bexp/type;
 
 export {
 	// A DSL for producing output for our backends

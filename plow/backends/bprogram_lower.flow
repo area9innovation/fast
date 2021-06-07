@@ -1,5 +1,5 @@
 import plow/backends/bprogram;
-import plow/bexp/builtin;
+import plow/bexp/type;
 import plow/bexp/bmodule;
 import plow/bexp/utils;
 import plow/dexp/utils;
@@ -181,7 +181,7 @@ bexpDeclaration2Declaration(be : BExpDeclaration) -> BDeclaration {
 
 bexp2BExpDeclaration(declid : string, b : BExp) -> BExpDeclaration {
 	var = \ -> {
-		BGlobalVar(declid, b, bexpType(b));
+		BGlobalVar(declid, b, getBType(b));
 	};
 	switch (b) {
 		BValue(): var();
@@ -320,13 +320,13 @@ bstatementType(b : BStatement) -> BType {
 	switch (b) {
 		BIfStatement(cond, then, else_): bstatementType(then);
 		BLetStatement(name, value, body): bstatementType(body);
-		BReturnVoid(): bTypeVoid;
-		BReturn(val): bexpType(val);
+		BReturnVoid(): bvoidType;
+		BReturn(val): getBType(val);
 		BTailCall(fn, args, values, type): type;
 		BSequenceStatement(statements): {
 			bstatementType(lastElement(statements, BReturnVoid()));
 		}
 		BSwitchStatement(expr, cases, type): type;
-		BSetMutableStatement(left, field, value): bexpType(value);
+		BSetMutableStatement(left, field, value): getBType(value);
 	}
 }

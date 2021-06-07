@@ -5,7 +5,7 @@ export {
 	bboolType = BTypeName("bool", []);
 	bintType = BTypeName("int", []);
 	bdoubleType = BTypeName("double", []);
-	dstringType = BTypeName("string", []);
+	bstringType = BTypeName("string", []);
 
 	getBType(b : BExp) -> BType;
 
@@ -18,7 +18,7 @@ getBType(b : BExp) -> BType {
 		BBool(v): bboolType;
 		BInt(v): bintType;
 		BDouble(v): bdoubleType;
-		BString(v): dstringType;
+		BString(v): bstringType;
 		BVar(id, type): type;
 		BLet(id, value, body, type): type;
 		BIf(cond, then, else_, type): type;

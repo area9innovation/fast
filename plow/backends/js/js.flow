@@ -84,7 +84,7 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 					}", [
 					"name", name,
 					"args", strGlue(args, ", "),
-					"body", bstatement2js(backend, body, bstatementType(body) != bTypeVoid)
+					"body", bstatement2js(backend, body, bstatementType(body) != bvoidType)
 				]);
 			}
 		}
@@ -166,7 +166,7 @@ bstatement2js(backend : Backend, b : BStatement, withReturn : bool) -> string {
 		}
 		BSequenceStatement(statements): {
 			supergluei(statements, \i, stat -> {
-				bstatement2js(backend, stat, withReturn && i == length(statements) - 1 && bstatementType(stat) != bTypeVoid)
+				bstatement2js(backend, stat, withReturn && i == length(statements) - 1 && bstatementType(stat) != bvoidType)
 			}, "\n");
 		}
 		BSwitchStatement(val, cases, type): {
@@ -222,13 +222,13 @@ bexp2js(backend : Backend, b : BExp) -> string {
 				}()", [
 					"name", name,
 					"value", bexp2js(backend, value),
-					"body", bstatement2js(backend, bexp2BReturn(body), type != bTypeVoid),
+					"body", bstatement2js(backend, bexp2BReturn(body), type != bvoidType),
 			])
 		}
 		BLambda(args, body, __): {
 			"function(" 
 			+ strGlue(args, ", ") + ") {" 
-			+ bstatement2js(backend, bexp2BReturn(body), bexpType(body) != bTypeVoid)
+			+ bstatement2js(backend, bexp2BReturn(body), getBType(body) != bvoidType)
 			+ "}"
 		};
 		BCall(fn, args, restype): {
@@ -244,7 +244,7 @@ bexp2js(backend : Backend, b : BExp) -> string {
 		}
 		BSwitch(val, __, cases, __, type): {
 			"function() {" 
-			+ bstatement2js(backend, bexp2BReturn(b), type != bTypeVoid)
+			+ bstatement2js(backend, bexp2BReturn(b), type != bvoidType)
 			+ "}()"
 		}
 		BConstruct(struct, args, type): {

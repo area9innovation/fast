@@ -21,7 +21,7 @@ makeBackend(
 			fntype = switch (gen.type) {
 				BTypeFunction(args, returnType): gen.type;
 				default: {
-					if (gen.type == bTypeVoid) bTypeVoid
+					if (gen.type == bvoidType) bvoidType
 					else BTypeFunction([gen.type, gen.type], gen.type)
 				}
 			};

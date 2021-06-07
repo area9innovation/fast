@@ -1,9 +1,0 @@
-import plow/bexp/bexp;
-
-export {
-	bTypeVoid : BType   = BTypeName("void", []);
-	bTypeInt : BType    = BTypeName("int", []);
-	bTypeBool : BType   = BTypeName("bool", []);
-	bTypeDouble : BType = BTypeName("double", []);
-	bTypeString : BType = BTypeName("string", []);
-}
