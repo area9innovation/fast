@@ -2,10 +2,6 @@ import ds/union_find_map;
 import plow/dexp/dexp;
 
 export {
-	TypeGraph(
-		tmap : TMap,
-	);
-
 	TMap(
 		// The union/find map of tnodes for each equivalence class
 		tmap : UnionFindMap<TNode>,

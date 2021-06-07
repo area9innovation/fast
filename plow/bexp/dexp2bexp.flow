@@ -9,7 +9,7 @@ export {
 
 	BExpEnv(
 		onError : (int, string) -> void,
-		tgraph : TypeGraph,
+		tmap : TMap,
 		eclassType : Tree<int, TType>,
 		resolveStructName : (string) -> Maybe<DStruct>,
 	);
@@ -20,7 +20,7 @@ export {
 }
 
 resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
-	root = rootTTypeEClass(env.tgraph, eclass);
+	root = rootTTypeEClass(env.tmap, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
 		if (unresolvedTType(mtype)) {

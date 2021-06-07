@@ -50,13 +50,6 @@ TODO: Picking random supertype: super39_40{PExport, PTopLevel}
 TODO: Picking random supertype: super136_137{PExport, PTopLevel}
 TODO: Picking random supertype: super145_146{PExport, PForbid, PGlobal, PImport, PModule, PNative, PStruct, PStructArg, PTopLevel, PTypeDef, PUnion}
 
-C:/fast/plow/types/ugraph/debug.flow:53:67: Could not resolve supertype: super128{e204}
-			"overload" + superglue(set2array(uniques), i2s, "_") + "{"
-			                                                     ^
-C:/fast/plow/types/ugraph/debug.flow:54:14: Could not resolve supertype: super130{e206}
-			+ superglue(overloads, \o -> prettyTNode(tmap, o), ", ")
-			^
-
 C:/fast/plow/types/ugraph/tnode.flow:141:14: ERROR: Merge TNode and TNodeName
 	TNodeName("", [], -1);
 	        ^
@@ -89,6 +82,9 @@ export {
 		resolveSubtypes : (string) -> [string], 
 	) -> TMap;
 
+	// Given this eclass, what is the root equivalence class?
+	rootTTypeEClass(tg : TMap, eclass : int) -> int;
+	
 	// Make a new type class
 	makeTNodeClass(tmap : TMap) -> int;
 
@@ -99,7 +95,7 @@ export {
 	findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int;
 	unifyEClass(tmap : TMap, lclass : int, rclass : int) -> void;
 
-	// Unify these two types
+
 	unifyTNodes(tmap : TMap, left : TType, right : TType, 
 		verbose : bool, reason : string, pos : int) -> void;
 
@@ -156,6 +152,10 @@ setTMapResolvers(t : TMap,
 	};
 	t.resolveSubtypes := resolveSubtypes;
 	t;
+}
+
+rootTTypeEClass(tg : TMap, eclass : int) -> int {
+	findUnionMapRoot(tg.tmap, eclass)
 }
 
 // Collect all supertypes of this name, based on a one-step resolver
@@ -367,9 +367,9 @@ makeTNode(tmap : TMap, t : TType, pos : int) -> TNode {
 // Add t to this supertype as a subtype. If t is a supertype, add all members of that
 extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 	addName = \n : TNodeName -> {
-		if (hasSupertype(tmap, n)) {
+		//if (hasSupertype(tmap, n)) {
 			// println("TODO: Wrap the children in supertype if not resolved! " + prettyTNode(tmap, n));
-		}
+		// }
 		TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, n));
 	}
 	addEClass = \e : int -> {
@@ -474,6 +474,8 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 		}
 		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
 			if (!isEmptySet(unknownSubtypes)) {
+				// We have some typevars in here. See if any of those are
+				// resolved
 				resolved = foldSet(unknownSubtypes, Pair([], makeSet()), 
 						\acc : Pair<[TNodeName], Set<int>>, st : int -> {
 					unode = getUnionMapValue(tmap.tmap, st);
@@ -599,7 +601,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 		rclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
 				isSameTNode(tmap, right, val)
 			}, -1);
-		tmap.onError(pos, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass));
+		tmap.onError(pos, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass) + ")");
 		// dumpTNodes(tmap);
 		left;
 	}
@@ -612,13 +614,8 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
 						if (lname == "flow" || rname == "flow") {
-							if (true) {
-								// TODO: This causes a bunch of problems, but is maybe a way forward
-								TNodeOverload(makeSet1(tmap.mkUnique()), [left, right], min(pos, rpos));
-							} else {
-								// This is conservative
-								TNodeName("flow", [], pos);
-							}
+							// OK, we model it as an overload
+							TNodeOverload(makeSet1(tmap.mkUnique()), [left, right], min(pos, rpos));
 						} else if (isSingleUnionName(tmap, lname, rname)) {
 							// As a special case, if one of these
 							// is a singleton union with the other element,
@@ -666,13 +663,13 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					} else if (length(overloads) == 1) {
 						mergeTNodes(tmap, overloads[0], right);
 					} else {
-						// OK, we can not clarify it, so push it to pending
-						noverload = TNodeOverload(lunique, overloads, pos);
 						// If we have identical information already, we do not
 						// need to pend it
 						if (!exists(overloads, \o -> {
 							isSameTNode(tmap, o, right)
 						})) {
+							// OK, we can not clarify it, so push it to pending
+							noverload = TNodeOverload(lunique, overloads, pos);
 							tmap.pending := Cons(Pair(noverload, right), ^(tmap.pending));
 						}
 						// println("From " + prettyTNode(tmap, left) + " to " + prettyTNode(tmap, noverload));
@@ -682,6 +679,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeOverload(unique, overloads, pos): {
 					flows = filter(concat(loverloads, overloads), isFlowNode);
 					if (flows != []) {
+						// OK, we have a flow type, so just pick that
 						flows[0];
 					} else {
 						println("TODO: Find the intersection between " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
@@ -763,12 +761,11 @@ unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) ->
 	} else if (node.name == "flow" || subtype.name == "flow") {
 		true;
 	} else {
-		// OK, we know that the node has to a supertype of st
+		// OK, we know that the node has to be a supertype of st
 		munion = ^(tmap.resolveUnionName)(node.name);
 		switch (munion) {
 			None(): {
 				// OK, it is not a union, so they have to be the same
-
 				tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
 				false;
 			}
@@ -882,8 +879,6 @@ instantiateTNodeNameAgainstSubtype(tmap : TMap, unionNode : TNodeName, subNode :
 	}	
 }
 
-
-
 joinTNodes(tmap : TMap, left : int, right : int) -> int {
 	root = unionUnionMap(tmap.tmap, left, right);
 	
@@ -894,8 +889,7 @@ joinTNodes(tmap : TMap, left : int, right : int) -> int {
 		println("  Joining e" + i2s(left) + " and e" + i2s(right) + " to e" + i2s(root) + ": " + debugTNode(tmap, root)
 			+ " from " + prettyTNode(tmap, lnode) + " and " + prettyTNode(tmap, rnode));
 	}
-
-	findUnionMapRoot(tmap.tmap, root);
+	root;
 }
 
 // We know that the eclass "sub" is a subclass of "super".
