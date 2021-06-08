@@ -25,7 +25,9 @@ bprogram2js(b : BProgram, flowpath : string) -> string {
 	native_names = collectBProgramNativeNames(b, \class_ -> native_classes := insertSet(^native_classes, class_));
 
 	runtime = linkRuntime(cfg, ^native_classes, "main");
-	structs = superglue(getTreeValues(b.structs), \s : DStruct -> dstruct2js(backend, s), "\n");
+	structs = getTreeValues(b.structs);
+	struct_funcs = superglue(structs, \s : DStruct -> dstruct2js(backend, s), "\n");
+	//struct_tables = initStructTables(structs);
 	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");
 
 	// The backend keeps track of what requirements are used by the various
@@ -34,10 +36,12 @@ bprogram2js(b : BProgram, flowpath : string) -> string {
 	+ "// RUNTIME\n" 
 	+ runtime + "\n"
 	+ "// STRUCTS\n"
-	+ structs + "\n"
+	+ struct_funcs + "\n"
+	//+ struct_tables + "\n"
 	+ "// BODY\n"
-	+ body
-	+ "\nmain()";
+	+ body + "\n"
+	+ "initStructs()\n"
+	+ "main()";
 }
 
 collectBProgramNativeNames(b : BProgram, add_class : (string) -> void) -> Tree<string, string> {

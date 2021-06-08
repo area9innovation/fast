@@ -16,7 +16,7 @@ jsBackend() -> Backend {
 		]
 	};
 
-	makeBackend("js", [
+	backend = makeBackend("js", [
 			// Keywords
 			"abstract", "arguments",  "await",        "boolean",
 			"break",    "byte",       "case",         "catch",
@@ -381,4 +381,22 @@ Native.iter = function(values,clos) {
 		]
 		]),
 	);
+	backend.requirements := insertSet(^(backend.requirements), 
+		blueprint("
+		// Global variables
+		var _structnames_ = { };
+		var _structids_ = { };
+		var _structargs_= { };
+		var _structargtypes_ = { };
+
+		var initStruct = function(id, name, args, atypes) {
+			_structnames_[id] = name;
+			_structids_[name] = id;
+			_structargs_[id] = args;
+			_structargtypes_[id] = atypes;
+		};
+		", []
+		)
+	);
+	backend;
 }
