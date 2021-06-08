@@ -185,8 +185,11 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, topid : string, reason : s
 	}
 	lclass = findOrMakeTNodeClass(tmap, left, pos);
 	rclass = findOrMakeTNodeClass(tmap, right, pos);
-	if (verbose) {
-		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+	verbose2 = verbose 
+		|| isDebuggingEClass(tmap, topid, lclass)
+		|| isDebuggingEClass(tmap, topid, rclass);
+	if (verbose2) {
+		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + topid + ": " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
