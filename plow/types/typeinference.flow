@@ -149,7 +149,9 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		genv = fold(chunk, cenv, \acc, id -> {
 			mglobal = lookupTree(d.globals, id);
 			mglobal ?? {
-				ttypeInferenceDGlobal(acc, d.flowpath, mglobal)
+				nenv = ttypeInferenceDGlobal(acc, d.flowpath, mglobal);
+				dumpDebugEClasses(acc.tmap, id);
+				nenv;
 			} : {acc}
 		});
 
