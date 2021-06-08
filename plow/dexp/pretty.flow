@@ -1,7 +1,6 @@
 import plow/dexp/dexp;
 import plow/types/typeof;
 import plow/types/pretty;
-import plow/types/unify;
 import string;
 import text/blueprint;
 

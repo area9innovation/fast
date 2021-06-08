@@ -1,6 +1,6 @@
-import plow/types/unify;
 import plow/types/builtin;
 import plow/dexp/pretty;
+import plow/types/polymorphism;
 
 export {
 	ttypeInferenceDExp(env : TTypeEnv, id : string, d : DExp) -> TTypeEClass;
@@ -83,7 +83,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		DTyped(value, type, pos, eclass): {
 			valtype = ttypeInferenceDExp(env, topid, value);
 			ttype = TTypeEClass(dtype2eclass(env.tmap, makeTree(), type));
-			unifyTType(env, topid, "typed", pos, if (false) valtype else makeTTypeSupertype(env, [valtype], false, pos), ttype);
+			unifyTNodes(env.tmap, if (false) valtype else makeTTypeSupertype(env, [valtype], false, pos), ttype, topid, "typed", pos);
 			restype("typed", eclass, ttype);
 		}
 		DLet(id, value, body, pos, eclass): {
@@ -94,7 +94,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		}
 		DIf(cond, then, else_, pos, eclass): {
 			tcond = ttypeInferenceDExp(env, topid, cond);
-			unifyTType(env, topid, "if-cond", pos, tcond, TTypeName("bool", []));
+			unifyTNodes(env.tmap, tcond, TTypeName("bool", []), topid, "if-cond", pos);
 
 			tthen = ttypeInferenceDExp(env, topid, then);
 			telse = ttypeInferenceDExp(env, topid, else_);
@@ -108,7 +108,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			rettype = TTypeEClass(env.mkEClass());
 			fntype2 = TTypeFunction(argtypes, rettype);
 			// println(prettyTType(fntype1) + " vs " + prettyTType(fntype2));
-			unifyTType(env, topid, "call", pos, fntype1, fntype2);
+			unifyTNodes(env.tmap, fntype1, fntype2, topid, "call", pos);
 
 			restype("call-ret", eclass, rettype);
 		}
@@ -121,7 +121,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 				itype = instantiateTTypeNameForStruct(env, mstruct);
 				if (length(argTypes) == length(itype.second)) {
 					iteri(itype.second, \i, fields : Pair<string, TType> -> {
-						unifyTType(env, topid, "construct call", pos, makeTTypeSupertype(env, [argTypes[i]], false, pos), fields.second);
+						unifyTNodes(env.tmap, makeTTypeSupertype(env, [argTypes[i]], false, pos), fields.second, topid, "construct call", pos);
 					});
 				} else {
 					env.onError(pos, "Struct " + structid + " expects " + i2s(length(itype.second)) + " arguments, got " + i2s(length(argTypes)));
@@ -200,7 +200,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			rtype = TTypeEClass(eclass);
 			calltype = TTypeFunction([tvalue], rtype);
 
-			unifyTType(env, topid, "field", pos, calltype, fntype);
+			unifyTNodes(env.tmap, calltype, fntype, topid, "field", pos);
 			rtype;
 		}
 		DSetMutable(left, field, value, pos, eclass): {
@@ -234,7 +234,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 
 			calltype = TTypeFunction([ltype], makeTTypeSupertype(env, [valtype], false, pos));
 
-			unifyTType(env, topid, "field", pos, calltype, fntype);
+			unifyTNodes(env.tmap, calltype, fntype, topid, "field", pos);
 			restype("setmutable", eclass, asEClass(voidTType))
 		}
 		DArray(exps, pos, eclass): {
@@ -259,11 +259,11 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			tvalue = ttypeInferenceDExp(env, topid, value);
 
 			ttype = TTypeEClass(dtype2eclass(env.tmap, makeTree(), type));
-			unifyTType(env, topid, "switch val", pos, if (true) tvalue else makeTTypeSupertype(env, [tvalue], false, pos), ttype);
+			unifyTNodes(env.tmap, if (true) tvalue else makeTTypeSupertype(env, [tvalue], false, pos), ttype, topid, "switch val", pos);
 
 			// Relate the type of the value with all structs mentioned
 			caseTypes = map(cases, \c -> instantiateTTypeName(env, c.id));
-			unifyTType(env, topid, "switch res", pos, makeTTypeSupertype(env, caseTypes, defaultCase == None(), pos), ttype);
+			unifyTNodes(env.tmap, makeTTypeSupertype(env, caseTypes, defaultCase == None(), pos), ttype, topid, "switch res", pos);
 
 			// Find the resulting type of the bodies
 			caseBodyTypes = map(cases, \c -> ttypeInferenceDExp(env, topid, c.body));
@@ -278,14 +278,14 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			tvalue = ttypeInferenceDExp(env, topid, value);
 			ttarget = TTypeEClass(dtype2eclass(env.tmap, makeTree(), target));
 			// We allow casting a type to a supertype
-			unifyTType(env, topid, "cast", pos, 
+			unifyTNodes(env.tmap, 
 				makeTTypeSupertype(env, [tvalue], true, pos), 
 				if (true) {
 					makeTTypeSupertype(env, [ttarget], true, pos)
 				} else {
 					// If we do not allow downcasts, use this one
 					ttarget
-				}
+				}, topid, "cast", pos
 			);
 			// TODO: Add an eclass?
 			asEClass(ttarget);
@@ -305,7 +305,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 
 			// Relate the subtype with the supertype
 			etype = TTypeEClass(supereclass);
-			unifyTType(env, topid, "downcast super", pos, makeTTypeSupertype(env, [teclass], false, pos), etype);
+			unifyTNodes(env.tmap, makeTTypeSupertype(env, [teclass], false, pos), etype, topid, "downcast super", pos);
 
 			restype("downcast", eclass, dtype);
 		}

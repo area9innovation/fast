@@ -74,7 +74,8 @@ export {
 	makeTMap(
 		onError : (int, string) -> void, 
 		nextEClass : ref int,
-		mkUnique : () -> int
+		mkUnique : () -> int, 
+		tracing : Tracing
 	) -> TMap;
 
 	// Define the resolvers we need
@@ -98,15 +99,14 @@ export {
 	unifyEClass(tmap : TMap, lclass : int, rclass : int) -> void;
 
 
-	unifyTNodes(tmap : TMap, left : TType, right : TType, 
-		verbose : bool, reason : string, pos : int) -> void;
+	unifyTNodes(tmap : TMap, left : TType, right : TType, topid : string, reason : string, pos : int) -> void;
 
 	// At the end, extract the types for each type class
 	resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>;
 }
 
 makeTMap(onError : (int, string) -> void, nextEClass : ref int,
-			mkUnique : () -> int
+			mkUnique : () -> int, tracing : Tracing
 		) -> TMap {
 	self = ref None();
 	tmap = TMap(
@@ -138,6 +138,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 		ref makeList(),
 		ref makeList(),
 		ref false,
+		tracing,
 	);
 	self := Some(tmap);
 	tmap;
@@ -175,9 +176,9 @@ defaultTNode() -> TNode {
 uindent = ref "";
 
 // These two types are unified
-unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
-		reason : string, pos : int) -> void {
+unifyTNodes(tmap : TMap, left : TType, right : TType, topid : string, reason : string, pos : int) -> void {
 	ind = ^uindent;
+	verbose = isTracingId(tmap.tracing, StageTypeInference(), 2, topid);
 	if (verbose) {
 		uindent := ind + "  ";
 		println("\n" + ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason );

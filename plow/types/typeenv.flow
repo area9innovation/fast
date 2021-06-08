@@ -78,8 +78,9 @@ makeTTypeEnv(
 			unique := u + 1;
 			u;
 		};
+	tracing = makeTracing();
 
-	tmap = makeTMap(onError, nextEClass, mkUnique);
+	tmap = makeTMap(onError, nextEClass, mkUnique, tracing);
 
 	TTypeEnv(
 		makeTree(), \ -> {
@@ -118,6 +119,6 @@ makeTTypeEnv(
 		makeTree(), makeTree(),
 		tmap, ref makeSet(), makeTree(), 
 		initBModule(d),
-		makeTracing(),
+		tracing,
 	);
 }

@@ -1,5 +1,6 @@
 import ds/union_find_map;
 import plow/dexp/dexp;
+import plow/tracing;
 
 export {
 	TMap(
@@ -23,7 +24,9 @@ export {
 		pendingSubtypes : ref List<Triple<int, int, int>>,
 		// Are we at a point where we have to make up our mind about 
 		// supertypes and overloads even if they are ambigious?
-		finalPhase : ref bool
+		finalPhase : ref bool,
+		// For debugging
+		tracing : Tracing
 	);
 
 	// Our nodes in the type graph

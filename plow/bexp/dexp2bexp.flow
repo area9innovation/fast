@@ -3,6 +3,7 @@ import plow/dexp/pretty;
 import plow/types/typeenv;
 import plow/types/builtin;
 import plow/bexp/bexp;
+import plow/types/util;
 
 export {
 	dexp2bexp(env : BExpEnv, d : DExp) -> BExp;
