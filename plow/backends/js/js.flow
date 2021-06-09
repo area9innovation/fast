@@ -6,15 +6,15 @@ import plow/backends/js/js_runtime;
 
 export {
 	// Compiles the given flow path to JS as a single string
-	bmodule2js(cache : PlowCache, flowpath : string) -> string;
+	bmodule2js(cache : PlowCache, flowpath : string, shorten_ids : bool) -> string;
 }
 
-bmodule2js(cache : PlowCache, flowpath : string) -> string {
-	bprogram2js(linkBProgram(cache, flowpath), flowpath);
-}
-
-bprogram2js(b : BProgram, flowpath : string) -> string {
+bmodule2js(cache : PlowCache, flowpath : string, shorten_ids : bool) -> string {
 	backend = jsBackend();
+	bprogram2js(linkBProgram(cache, flowpath, shorten_ids, backend.keywords), flowpath, backend);
+}
+
+bprogram2js(b : BProgram, flowpath : string, backend : Backend) -> string {
 	cfg = JsConfig(makeJsConfig(flowpath) with 
 		// The debugging configuration: while backend is under development.
 		verbose = 2,

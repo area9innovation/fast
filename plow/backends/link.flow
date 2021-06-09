@@ -1,19 +1,23 @@
-import plow/backends/bprogram;
+import plow/backends/shorten_ids;
 import plow/backends/bprogram_lower;
 import plow/driver;
 
 export {
-	linkBExpProgram(cache : PlowCache, flowpath : string) -> BExpProgram;
-	linkBProgram(cache : PlowCache, flowpath : string) -> BProgram;
+	linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BExpProgram;
+	linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BProgram;
 }
 
-linkBExpProgram(cache : PlowCache, flowpath : string) -> BExpProgram {
+linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BExpProgram {
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	bmodules2BExpProgram(modules);
+	if (shorten_ids) {
+		shortenIdsBExpProgram(bmodules2BExpProgram(modules), keywords);
+	} else {
+		bmodules2BExpProgram(modules);
+	}
 }
 
-linkBProgram(cache : PlowCache, flowpath : string) -> BProgram {
-	bexp_program = linkBExpProgram(cache, flowpath);
+linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BProgram {
+	bexp_program = linkBExpProgram(cache, flowpath, shorten_ids, keywords);
 	bexpProgram2BProgram(bexp_program);
 }
 
