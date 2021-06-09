@@ -4,6 +4,7 @@ import plow/backends/bprogram;
 export {
 	prettyBProgram(b : BProgram) -> string;
 	prettyBExpProgram(p : BExpProgram) -> string;
+	prettyBExpDeclaration(b : BExpDeclaration) -> string;
 }
 prettyBProgram(p : BProgram) -> string {
 	superglue(p.declarations, prettyBDeclaration, "\n");

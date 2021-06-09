@@ -8,6 +8,8 @@ export {
 	prettyDModule(env : TTypeEnv, verbose : bool, d : DModule) -> void;
 	prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void;
 	summarizeDExp(env : TTypeEnv, d : DExp) -> string;
+	prettyDStruct(input : string, s : DStruct) -> string;
+	prettyDUnion(input : string, u : DUnion) -> string;
 }
 
 prettyDModule(env : TTypeEnv, verbose : bool, d : DModule) -> void {
@@ -168,6 +170,11 @@ prettyDStruct(input : string, s : DStruct) -> string {
 		(if (sa.ismutable) "mutable " else "") 
 		+ sa.id + " : " + prettyDType(input, sa.type)
 	}, ", ") + ")";
+}
+
+prettyDUnion(input : string, u : DUnion) -> string {
+	u.id + "<" + superglue(u.typars, \tp -> tp.id, ", ") + "> " +
+	"::= " + superglue(u.types, \tp : DTypeName -> prettyDType(input, tp), ", ") + ")";
 }
 
 summarizeDExp(env : TTypeEnv, d : DExp) -> string {
