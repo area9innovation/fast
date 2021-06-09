@@ -1,9 +1,11 @@
 import plow/backends/bprogram;
+import plow/backends/pretty;
+import plow/dexp/pretty;
 
 export {
 	// This function converts names to short ones, avoiding keywords.
 	// (for example "main" -> "$o2") or changes "keyword" to "keyword__" .
-	renameBExpProgram(prog : BExpProgram, keywords : Set<string>) -> BExpProgram;
+	shortenIdsBExpProgram(prog : BExpProgram, keywords : Set<string>) -> BExpProgram;
 }
 
 makeRenaming(names : [string], keywords : Set<string>) -> Tree<string, string> {
@@ -12,21 +14,33 @@ makeRenaming(names : [string], keywords : Set<string>) -> Tree<string, string> {
 	);
 }
 
-renameId(id : string, renaming : Tree<string, string>) -> string {
-	switch (lookupTree(renaming, id)) {
-		Some(renamed): renamed;
-		None(): {
-			fail("unknown id '" + id + "' met during renaming. Must not happen.");
-			id
+builtin_ids_set = buildSet([
+	"void", "bool", "int", "double", "string", "flow", 
+	"array", "ref",
+	"main"
+]);
+
+renameId(id : string, renaming : Tree<string, string>, err_msg : string) -> string {
+	if (isLetter(getCharAt(id, 0)) && !containsSet(builtin_ids_set, id)) {
+		// The case of identifier
+		switch (lookupTree(renaming, id)) {
+			Some(renamed): renamed;
+			None(): {
+				fail("unknown id '" + id + "' met during renaming " + err_msg);
+				id
+			}
 		}
+	} else {
+		// The case of operators like +, *, <, <=, or builtin like 'int' or 'main' ...
+		id
 	}
 }
 
 renameDStruct(s : DStruct, type_renamings : Tree<string, string>, field_renamings : Tree<string, string>) -> DStruct {
 	DStruct(s with 
-		id = renameId(s.id, type_renamings),
+		id = renameId(s.id, type_renamings, prettyDStruct("", s)),
 		structArgs = map(s.structArgs, \arg -> 
-			DStructArg(arg with id = renameId(arg.id, field_renamings))
+			DStructArg(arg with id = renameId(arg.id, field_renamings, prettyDStruct("", s)))
 		)
 	);
 }
@@ -34,15 +48,19 @@ renameDStruct(s : DStruct, type_renamings : Tree<string, string>, field_renaming
 renameDUnion(u : DUnion, type_renamings : Tree<string, string>) -> DUnion {
 	DUnion(u with
 		types = map(u.types, \tp -> 
-			DTypeName(tp with id = renameId(tp.id, type_renamings))
+			DTypeName(tp with id = renameId(tp.id, type_renamings, prettyDUnion("", u)))
 		)
 	);
 }
 
-renameBExpProgram(prog : BExpProgram, keywords : Set<string>) -> BExpProgram {
-	type_renamings = makeRenaming(
-		concat(getTreeKeys(prog.structs), getTreeKeys(prog.unions)), 
-		keywords
+shortenIdsBExpProgram(prog : BExpProgram, keywords : Set<string>) -> BExpProgram {
+	type_renamings = mapTree(
+		makeRenaming(
+			concat(getTreeKeys(prog.structs), getTreeKeys(prog.unions)), 
+			keywords
+		), 
+		// Prefix type ids with 't_' in order to distinguish them from vars
+		\id -> "t_" + id
 	);
 	field_renamings = makeRenaming(
 		concatA(map(getTreeValues(prog.structs), \s -> map(s.structArgs, \arg -> arg.id))),
@@ -75,14 +93,26 @@ renameBExpDeclaration(
 	ren_ex = \e -> renameBExp(e, type_renamings, field_renamings, var_renamings, keywords);
 	ren_tp = \t -> renameBType(t, type_renamings);
 	switch (decl) {
-		BGlobalVar(id, body, type):
-			BGlobalVar(renameId(id, var_renamings), ren_ex(body), ren_tp(type));
-		BExpFunction(id, args, body, type):
-			BExpFunction(renameId(id, var_renamings), args, ren_ex(body), ren_tp(type));
-		BExpNative(id, isio, type, nativeName, fallback):
-			BExpNative(renameId(id, var_renamings), isio, ren_tp(type), nativeName, 
+		BGlobalVar(id, body, type): {
+			BGlobalVar(renameId(id, var_renamings, prettyBExpDeclaration(decl)), ren_ex(body), ren_tp(type));
+		}
+		BExpFunction(id, args, body, type): {
+			n_vars = sizeTree(var_renamings);
+			args_renamings = foldi(args, var_renamings, \i, acc, arg -> 
+				setTree(acc, arg, makeSmallId(i + n_vars, keywords))
+			);
+			BExpFunction(
+				renameId(id, var_renamings, prettyBExpDeclaration(decl)), 
+				map(args, \arg -> renameId(arg, args_renamings, prettyBExpDeclaration(decl))), 
+				renameBExp(body, type_renamings, field_renamings, args_renamings, keywords),
+				ren_tp(type)
+			)
+		}
+		BExpNative(id, isio, type, nativeName, fallback): {
+			BExpNative(renameId(id, var_renamings, prettyBExpDeclaration(decl)), isio, ren_tp(type), nativeName, 
 				maybeMap(fallback, \fb -> renameBExpDeclaration(fb, type_renamings, field_renamings, var_renamings, keywords))
 			);
+		}
 	}
 }
 
@@ -94,9 +124,9 @@ renameBExp(e : BExp,
 ) -> BExp {
 	ren_tp = \tp -> renameBType(tp, type_renamings);
 	ren_ex = \ex -> renameBExp(ex, type_renamings, field_renamings, var_renamings, keywords);
-	ren_var = \var -> BVar(renameId(var.id, var_renamings), ren_tp(var.type));
-	ren_struct = \str -> renameId(str, type_renamings);
-	ren_field = \fld -> renameId(fld, field_renamings);
+	ren_var = \var -> BVar(renameId(var.id, var_renamings, "expr: " + prettyBExp(e)), ren_tp(var.type));
+	ren_struct = \str -> renameId(str, type_renamings, "expr: " + prettyBExp(e));
+	ren_field = \fld -> renameId(fld, field_renamings, "expr: " + prettyBExp(e));
 	switch (e) {
 		BValue(): e;
 		BVar(__,__): {
@@ -117,7 +147,7 @@ renameBExp(e : BExp,
 				setTree(acc, arg, makeSmallId(i + n_vars, keywords))
 			);
 			BLambda(
-				map(args, \arg -> lookupTreeDef(lambda_renamings, arg, arg)), 
+				map(args, \arg -> renameId(arg, lambda_renamings, prettyBExp(e))), 
 				renameBExp(body, type_renamings, field_renamings, lambda_renamings, keywords),
 				ren_tp(type)
 			);
@@ -173,7 +203,7 @@ renameBType(t : BType, type_renamings : Tree<string, string>) -> BType {
 	switch (t) {
 		BTypePar(id): t;
 		BTypeName(id, typars): {
-			BTypeName(renameId(id, type_renamings), map(typars, \tp -> renameBType(tp, type_renamings)));
+			BTypeName(renameId(id, type_renamings, "type: " + prettyBType(t)), map(typars, \tp -> renameBType(tp, type_renamings)));
 		}
 		BTypeFunction(args, ret_type): {
 			BTypeFunction(
