@@ -10,7 +10,7 @@ export {
 }
 
 bmodule2wasm(cache : PlowCache, flowpath : string) -> string {
-	bprogram2wasm(linkBExpProgram(cache, flowpath), flowpath);
+	bprogram2wasm(linkBExpProgram(cache, flowpath, false, makeSet()), flowpath);
 }
 
 bprogram2wasm(b : BExpProgram, flowpath : string) -> string {

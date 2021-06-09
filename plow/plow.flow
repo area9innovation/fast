@@ -88,7 +88,7 @@ buildJsTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
 	if (verbose) {
 		println("building JS target");
 	}
-	js_src = bmodule2js(cache, b.flowpath);
+	js_src = bmodule2js(cache, b.flowpath, isUrlParameterTrue("shorten-ids"));
 	js_file = changeFileExt(src_file, ".js");
 	setFileContent(js_file, js_src);
 	if (verbose) {
