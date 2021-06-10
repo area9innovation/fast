@@ -24,7 +24,8 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 		fulltype = dtype2ttype(acc, false, nativ.type);
 
 		// TODO: This is arguably wrong. Only required temporarily
-		unifyTNodes(acc.tmap, fulltype, TTypeEClass(nativ.eclass), nat, "native", d.pos, );
+		// TODO: Should we put nat in TMap?
+		unifyTNodes(acc.tmap, fulltype, TTypeEClass(nativ.eclass), "native", d.pos, );
 
 		if (isTracingId(env.tracing, StageTypeInference(), 1, nat)) {
 			println("native " + nat + ": " + prettyTType(fulltype));
@@ -150,7 +151,6 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 			mglobal = lookupTree(d.globals, id);
 			mglobal ?? {
 				nenv = ttypeInferenceDGlobal(acc, d.flowpath, mglobal);
-				dumpDebugEClasses(acc.tmap, id);
 				nenv;
 			} : {acc}
 		});
@@ -199,21 +199,26 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 		println("\nInference of global " + d.id);
 	}
 
-	nenv = TTypeEnv(env with onError = \p, e -> env.onError(p, d.id + ": " + e));
+	nenv = TTypeEnv(env with 
+		onError = \p, e -> env.onError(p, d.id + ": " + e), 
+		tmap = TMap(env.tmap with topid = d.id)
+	);
 
 	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
 
 	// This is any declared type
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
-	unifyTNodes(env.tmap, etype, TTypeEClass(d.eclass), d.id, "global " + d.id + " 1", d.pos);
+	unifyTNodes(env.tmap, etype, TTypeEClass(d.eclass), "global " + d.id + " 1", d.pos);
 
 	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
-	unifyTNodes(env.tmap, ftype, TTypeEClass(d.eclass), d.id, "global " + d.id + " 2", d.pos);
+	unifyTNodes(env.tmap, ftype, TTypeEClass(d.eclass), "global " + d.id + " 2", d.pos);
 
 	finalType = backfillType(etype, ftype);
 	if (tracingId) {
 		println("Inference " + d.id + " ends with " + prettyTType(finalType) + "\n");
 	}
+
+	dumpDebugEClasses(env.tmap);
 
 	// println("Refined type for " + d.id + " " + prettyTTypeNode(env.tmap, finalType));
 	TTypeEnv(env with 

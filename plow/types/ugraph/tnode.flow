@@ -98,7 +98,7 @@ export {
 	findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int;
 	joinTNodes(tmap : TMap, left : int, right : int) -> int;
 
-	unifyTNodes(tmap : TMap, left : TType, right : TType, topid : string, reason : string, pos : int) -> void;
+	unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void;
 
 	// At the end, extract the types for each type class
 	resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>;
@@ -138,6 +138,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 		ref makeList(),
 		ref false,
 		tracing,
+		"",
 	);
 	self := Some(tmap);
 	tmap;
@@ -175,9 +176,9 @@ defaultTNode() -> TNode {
 uindent = ref "";
 
 // These two types are unified
-unifyTNodes(tmap : TMap, left : TType, right : TType, topid : string, reason : string, pos : int) -> void {
+unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
 	ind = ^uindent;
-	verbose = isTracingId(tmap.tracing, StageTypeInference(), 2, topid);
+	verbose = isTracingId(tmap.tracing, StageTypeInference(), 2, tmap.topid);
 	if (verbose) {
 		uindent := ind + "  ";
 		println("\n" + ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason );
@@ -185,10 +186,10 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, topid : string, reason : s
 	lclass = findOrMakeTNodeClass(tmap, left, pos);
 	rclass = findOrMakeTNodeClass(tmap, right, pos);
 	verbose2 = verbose 
-		|| isDebuggingEClass(tmap, topid, lclass)
-		|| isDebuggingEClass(tmap, topid, rclass);
+		|| isDebuggingEClass(tmap, lclass)
+		|| isDebuggingEClass(tmap, rclass);
 	if (verbose2) {
-		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + topid + ": " + reason );
+		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + tmap.topid + ": " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -589,6 +590,7 @@ instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int)
 //
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
+	
 	// println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 	todo = \ -> {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
