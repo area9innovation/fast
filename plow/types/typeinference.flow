@@ -24,7 +24,8 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 		fulltype = dtype2ttype(acc, false, nativ.type);
 
 		// TODO: This is arguably wrong. Only required temporarily
-		unifyTType(acc, nat, "native", d.pos, fulltype, TTypeEClass(nativ.eclass));
+		// TODO: Should we put nat in TMap?
+		unifyTNodes(acc.tmap, fulltype, TTypeEClass(nativ.eclass), "native", d.pos, );
 
 		if (isTracingId(env.tracing, StageTypeInference(), 1, nat)) {
 			println("native " + nat + ": " + prettyTType(fulltype));
@@ -115,14 +116,14 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 
 	// OK, send the resolver to the unification friend
 	tmenv = TTypeEnv(senv with
-		tgraph = setTypeGraphResolver(senv.tgraph, senv.resolveUnionName, senv.resolveSupertypes, senv.resolveSubtypes)
+		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, senv.resolveSupertypes, senv.resolveSubtypes)
 	);
 
 	order : [[string]] = buildDModuleDeps(d.globals, d.order);
 	order2 = if (false) [d.order] else order;
 	tbenv = ttypeInferenceChunk(tmenv, d, order2);
 	
-	benv = BExpEnv(tbenv.onError, tbenv.tgraph, tbenv.etypes, tbenv.resolveStructName);
+	benv = BExpEnv(tbenv.onError, tbenv.tmap, tbenv.etypes, tbenv.resolveStructName);
 
 	if (isTracingId(tbenv.tracing, StageLower(), 1, d.flowpath)) {
 		prettyDModule(tbenv, true, d);
@@ -139,8 +140,9 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		cenv = env;
 
 		// Clear etypes
-		cenv.tgraph.tmap.tmap.parents := [];
-		cenv.tgraph.tmap.tmap.values := [];
+		cenv.tmap.tmap.parents := [];
+		cenv.tmap.tmap.values := [];
+		cenv.tmap.typenameEClasses := makeTree();
 
 		// println(chunk);
 
@@ -148,7 +150,8 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		genv = fold(chunk, cenv, \acc, id -> {
 			mglobal = lookupTree(d.globals, id);
 			mglobal ?? {
-				ttypeInferenceDGlobal(acc, d.flowpath, mglobal)
+				nenv = ttypeInferenceDGlobal(acc, d.flowpath, mglobal);
+				nenv;
 			} : {acc}
 		});
 
@@ -170,8 +173,8 @@ buildDModuleDeps(globals : Tree<string, DGlobal>, order : [string]) -> [[string]
 		foldSet(vars, acc, \acc2, var -> {
 			if (containsKeyTree(globals, var)) {
 				// OK, an internal name - add a bidirectional dependency
-				acc3 = if (true) acc2 else addSimpleEdge(acc2, id, var, false, 1);
-				addSimpleEdge(acc3, var, id, false, 1)
+				acc3 = if (false) acc2 else addSimpleEdge(acc2, id, var, false, 1);
+				if (true) addSimpleEdge(acc3, var, id, false, 1) else acc3
 			} else acc2;
 		})
 	});
@@ -196,23 +199,28 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 		println("\nInference of global " + d.id);
 	}
 
-	nenv = TTypeEnv(env with onError = \p, e -> env.onError(p, d.id + ": " + e));
+	nenv = TTypeEnv(env with 
+		onError = \p, e -> env.onError(p, d.id + ": " + e), 
+		tmap = TMap(env.tmap with topid = d.id)
+	);
 
 	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
 
 	// This is any declared type
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
-	unifyTType(env, d.id, "global " + d.id + " 1", d.pos, etype, TTypeEClass(d.eclass));
+	unifyTNodes(env.tmap, etype, TTypeEClass(d.eclass), "global " + d.id + " 1", d.pos);
 
 	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
-	unifyTType(env, d.id, "global " + d.id + " 2", d.pos, ftype, TTypeEClass(d.eclass));
-
-	if (tracingId) {
-		println("Inference " + d.id + " ends with " + prettyTType(ftype) + "\n");
-	}
+	unifyTNodes(env.tmap, ftype, TTypeEClass(d.eclass), "global " + d.id + " 2", d.pos);
 
 	finalType = backfillType(etype, ftype);
-	// println("Refined type for " + d.id + " " + prettyTTypeNode(env.tgraph.tmap, finalType));
+	if (tracingId) {
+		println("Inference " + d.id + " ends with " + prettyTType(finalType) + "\n");
+	}
+
+	dumpDebugEClasses(env.tmap);
+
+	// println("Refined type for " + d.id + " " + prettyTTypeNode(env.tmap, finalType));
 	TTypeEnv(env with 
 		moduleTypes = setTree(env.moduleTypes, d.id, finalType),
 		// etypes = setTree(env.etypes, d.eclass, etype)
@@ -220,7 +228,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 }
 
 resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : string, verbose : bool) -> TTypeEnv {
-	types = resolveTNodes(env.tgraph.tmap, 5, verbose);
+	types = resolveTNodes(env.tmap, 5, verbose);
 	// Only grab the etypes we do not already have set above
 	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
 		if (containsKeyTree(acc, eclass)) acc
@@ -228,7 +236,7 @@ resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : 
 	});
 
 	// OK, now lower the typed chunk into BGlobals
-	benv = BExpEnv(env.onError, env.tgraph, etypes, env.resolveStructName);
+	benv = BExpEnv(env.onError, env.tmap, etypes, env.resolveStructName);
 
 	globals = fold(chunk, env.bmodule.globals, \acc, gl -> {
 		mglobal = lookupTree(dmodule.globals, gl);
@@ -237,9 +245,20 @@ resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : 
 			setTree(acc, gl, bglobal)
 		} : acc;
 	});
-
 	bmodule = BModule(env.bmodule with globals = globals);
-	TTypeEnv(env with etypes = etypes, bmodule = bmodule);
+
+	mtypes = fold(chunk, env.moduleTypes, \acc, gl -> {
+		mglobal = lookupTree(dmodule.globals, gl);
+		mglobal ?? {
+			mtype = lookupTree(etypes, mglobal.eclass);
+			switch (mtype) {
+				None(): acc;
+				Some(type): setTree(acc, gl, type)
+			}
+		} : acc;
+	});
+
+	TTypeEnv(env with etypes = etypes, bmodule = bmodule, moduleTypes = mtypes);
 }
 
 // Use the refined type to fill our the given core type

@@ -1,6 +1,6 @@
 import ds/tree;
 import plow/types/type;
-import plow/types/ugraph/ugraph;
+import plow/types/ugraph/tnode;
 import plow/dexp/dexp;
 import plow/bexp/bmodule;
 import plow/bexp/init;
@@ -44,8 +44,8 @@ export {
 		// The types of local ids so far, instantiated
 		localTypes : Tree<string, TTypeEClass>,
 
-		// The egraph with the type equivalent classes
-		tgraph : TypeGraph,
+		// The datastructure for our type inference with the type equivalent classes
+		tmap : TMap,
 
 		// When we are unifying, we keep the visited classes here
 		visited : ref Set<int>,
@@ -78,12 +78,13 @@ makeTTypeEnv(
 			unique := u + 1;
 			u;
 		};
+	tracing = makeTracing();
 
-	tgraph = makeTypeGraph(onError, nextEClass, mkUnique);
+	tmap = makeTMap(onError, nextEClass, mkUnique, tracing);
 
 	TTypeEnv(
 		makeTree(), \ -> {
-			makeTNodeClass(tgraph.tmap);
+			makeTNodeClass(tmap);
 		}, 
 		mkUnique,
 		onError,
@@ -116,8 +117,8 @@ makeTTypeEnv(
 			[]
 		},
 		makeTree(), makeTree(),
-		tgraph, ref makeSet(), makeTree(), 
+		tmap, ref makeSet(), makeTree(), 
 		initBModule(d),
-		makeTracing(),
+		tracing,
 	);
 }

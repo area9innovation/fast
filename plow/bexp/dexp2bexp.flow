@@ -3,13 +3,14 @@ import plow/dexp/pretty;
 import plow/types/typeenv;
 import plow/types/builtin;
 import plow/bexp/bexp;
+import plow/types/util;
 
 export {
 	dexp2bexp(env : BExpEnv, d : DExp) -> BExp;
 
 	BExpEnv(
 		onError : (int, string) -> void,
-		tgraph : TypeGraph,
+		tmap : TMap,
 		eclassType : Tree<int, TType>,
 		resolveStructName : (string) -> Maybe<DStruct>,
 	);
@@ -20,7 +21,7 @@ export {
 }
 
 resolveBType(env : BExpEnv, pos : int, eclass : int) -> BType {
-	root = rootTTypeEClass(env.tgraph, eclass);
+	root = rootTTypeEClass(env.tmap, eclass);
 	mtype = lookupTree(env.eclassType, root);
 	mtype ?? {
 		if (unresolvedTType(mtype)) {

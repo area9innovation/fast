@@ -8,10 +8,10 @@ export {
 jsBackend() -> Backend {
 	comparison = \name, target, prec -> {
 		[
-			BackGen(name, BTypeFunction([bTypeBool, bTypeBool], bTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
-			BackGen(name, BTypeFunction([bTypeInt, bTypeInt], bTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
-			BackGen(name, BTypeFunction([bTypeDouble, bTypeDouble], bTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
-			BackGen(name, BTypeFunction([bTypeString, bTypeString], bTypeBool), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, BTypeFunction([bboolType, bboolType], bboolType), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, BTypeFunction([bintType, bintType], bboolType), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, BTypeFunction([bdoubleType, bdoubleType], bboolType), BackBinOp(target, prec, BackArg(0), BackArg(1))),
+			BackGen(name, BTypeFunction([bstringType, bstringType], bboolType), BackBinOp(target, prec, BackArg(0), BackArg(1))),
 			// TODO: We need something fancy for other types here
 		]
 	};
@@ -45,8 +45,8 @@ jsBackend() -> Backend {
 		// In JS, there is ? here for if
 
 		[
-			BackGen("||", bTypeBool, BackBinOp("||", 10, BackArg(0), BackArg(1))),
-			BackGen("&&", bTypeBool, BackBinOp("&&", 20, BackArg(0), BackArg(1))),
+			BackGen("||", bboolType, BackBinOp("||", 10, BackArg(0), BackArg(1))),
+			BackGen("&&", bboolType, BackBinOp("&&", 20, BackArg(0), BackArg(1))),
 		],
 
 		//	BackBinOp("|", 25, BackArg(0), BackArg(1)),
@@ -63,7 +63,7 @@ jsBackend() -> Backend {
 
 		[
 			// General deep comparison of objects
-			BackGen("==", bTypeVoid, 
+			BackGen("==", bvoidType, 
 				BackRequire(
 					BackText(
 						blueprint("
@@ -110,7 +110,7 @@ jsBackend() -> Backend {
 					BackCall("deepEquality", [BackArg(0), BackArg(1)])
 				)
 			),
-			BackGen("<", bTypeVoid, 
+			BackGen("<", bvoidType, 
 				BackRequire(
 					BackText(
 						blueprint("
@@ -182,94 +182,94 @@ jsBackend() -> Backend {
 		// In JS, we have bitshifts here <<, >>, >>>
 
 		[
-			BackGen("+", bTypeInt, BackBinOp("|", 25, BackBinOp("+", 40, BackArg(0), BackArg(1)), BackText("0"))),
-			BackGen("+", bTypeDouble, BackBinOp("+", 40, BackArg(0), BackArg(1))),
-			BackGen("+", bTypeString, BackBinOp("+", 40, BackArg(0), BackArg(1))),
+			BackGen("+", bintType, BackBinOp("|", 25, BackBinOp("+", 40, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("+", bdoubleType, BackBinOp("+", 40, BackArg(0), BackArg(1))),
+			BackGen("+", bstringType, BackBinOp("+", 40, BackArg(0), BackArg(1))),
 
-			BackGen("-", bTypeInt, BackBinOp("|", 25, BackBinOp("-", 40, BackArg(0), BackArg(1)), BackText("0"))),
-			BackGen("-", bTypeDouble, BackBinOp("-", 40, BackArg(0), BackArg(1))),
+			BackGen("-", bintType, BackBinOp("|", 25, BackBinOp("-", 40, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("-", bdoubleType, BackBinOp("-", 40, BackArg(0), BackArg(1))),
 
-			BackGen("*", bTypeInt, 
+			BackGen("*", bintType, 
 				BackRequire(
 					// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul
 					BackText("if (!Math.imul) Math.imul = function(opA, opB) {var result = (opA & 0x003fffff) * opB;if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB |0;return result |0;};"),
 					BackCall("Math.imul", [BackArg(0), BackArg(1)])
 				)
 			),
-			BackGen("*", bTypeDouble, BackBinOp("*", 50, BackArg(0), BackArg(1))),
+			BackGen("*", bdoubleType, BackBinOp("*", 50, BackArg(0), BackArg(1))),
 
-			BackGen("/", bTypeInt, BackBinOp("|", 25, BackBinOp("/", 50, BackArg(0), BackArg(1)), BackText("0"))),
-			BackGen("/", bTypeDouble, BackBinOp("/", 50, BackArg(0), BackArg(1))),
+			BackGen("/", bintType, BackBinOp("|", 25, BackBinOp("/", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("/", bdoubleType, BackBinOp("/", 50, BackArg(0), BackArg(1))),
 
-			BackGen("%", bTypeInt, BackBinOp("|", 25, BackBinOp("%", 50, BackArg(0), BackArg(1)), BackText("0"))),
-			BackGen("%", bTypeDouble, BackBinOp("%", 50, BackArg(0), BackArg(1))),
+			BackGen("%", bintType, BackBinOp("|", 25, BackBinOp("%", 50, BackArg(0), BackArg(1)), BackText("0"))),
+			BackGen("%", bdoubleType, BackBinOp("%", 50, BackArg(0), BackArg(1))),
 
-			BackGen("__negate", BTypeFunction([bTypeInt], bTypeInt), BackBinOp("|", 25, BackPreOp("-", 60, BackArg(0)), BackText("0"))),
-			BackGen("__negate", BTypeFunction([bTypeDouble], bTypeDouble), BackPreOp("-", 60, BackArg(0))),
-			BackGen("__not", bTypeVoid, BackPreOp("!", 60, BackArg(0))),
+			BackGen("__negate", BTypeFunction([bintType], bintType), BackBinOp("|", 25, BackPreOp("-", 60, BackArg(0)), BackText("0"))),
+			BackGen("__negate", BTypeFunction([bdoubleType], bdoubleType), BackPreOp("-", 60, BackArg(0))),
+			BackGen("__not", bvoidType, BackPreOp("!", 60, BackArg(0))),
 
 			// Cast and type is ignored
-			BackGen(":", bTypeVoid, BackArg(0)),
+			BackGen(":", bvoidType, BackArg(0)),
 
-			BackGen("__ref", bTypeVoid, 
+			BackGen("__ref", bvoidType, 
 				BackRequire(
 					// Alternative: class R_ {constructor(v) { this.__v = v; } }
 					BackText("function R_(v){this.v=v}"),
 					BackCall("new R_", [BackArg(0)])
 				)
 			),
-			BackGen("__deref", bTypeVoid, BackPostOp(".v", 60, BackArg(0))),
-			BackGen(":=", bTypeVoid, BackBinOp(".v=", 70, BackArg(0), BackArg(1))),
+			BackGen("__deref", bvoidType, BackPostOp(".v", 60, BackArg(0))),
+			BackGen(":=", bvoidType, BackBinOp(".v=", 70, BackArg(0), BackArg(1))),
 
-			BackGen("[", bTypeVoid, BackConcat([BackText("["), BackArg(0), BackText("]")])),
-			BackGen(",", bTypeVoid, BackBinOp(",", 80, BackArg(0), BackArg(1))),
-			BackGen("__index", bTypeVoid, BackConcat([BackBinOp("[", 80, BackArg(0), BackArg(1)), BackText("]")])),
+			BackGen("[", bvoidType, BackConcat([BackText("["), BackArg(0), BackText("]")])),
+			BackGen(",", bvoidType, BackBinOp(",", 80, BackArg(0), BackArg(1))),
+			BackGen("__index", bvoidType, BackConcat([BackBinOp("[", 80, BackArg(0), BackArg(1)), BackText("]")])),
 
-			BackGen(".", bTypeVoid, BackBinOp(".", 60, BackArg(0), BackUnquote(BackArg(1)))),
+			BackGen(".", bvoidType, BackBinOp(".", 60, BackArg(0), BackUnquote(BackArg(1)))),
 
 			// Inlined natives
-			BackGen("Native.println", bTypeVoid, BackText("console.log")),
+			BackGen("Native.println", bvoidType, BackText("console.log")),
 
-			BackGen("Native.fold", bTypeVoid, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
-			BackGen("Native.map", bTypeVoid, BackText("function(a,fn){return a.map(fn);}")),
-			BackGen("Native.filter", bTypeVoid, BackText("function(a,fn){return a.filter(fn);}")),
-			BackGen("Native.enumFromTo", bTypeVoid, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
-			BackGen("Native.length", bTypeVoid, BackText("function(a){return a.length;}")),
+			BackGen("Native.fold", bvoidType, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
+			BackGen("Native.map", bvoidType, BackText("function(a,fn){return a.map(fn);}")),
+			BackGen("Native.filter", bvoidType, BackText("function(a,fn){return a.filter(fn);}")),
+			BackGen("Native.enumFromTo", bvoidType, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
+			BackGen("Native.length", bvoidType, BackText("function(a){return a.length;}")),
 
-			BackGen("Native.isSameStructType", bTypeVoid, 
+			BackGen("Native.isSameStructType", bvoidType, 
 				BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")
 			),
 
-			BackGen("Native.quit", bTypeVoid, 
+			BackGen("Native.quit", bvoidType, 
 				BackIfDef("browser",
 					BackText("function(c) {window.open('','_top').close();}"),
 					BackText("function(c) {}")
 				)
 			),
-			BackGen("Native.sin", bTypeVoid, BackText("Math.sin")),
-			BackGen("Native.asin", bTypeVoid, BackText("Math.asin")),
-			BackGen("Native.cos", bTypeVoid, BackText("Math.cos")),
-			BackGen("Native.acos", bTypeVoid, BackText("Math.acos")),
-			BackGen("Native.atan", bTypeVoid, BackText("Math.atan")),
-			BackGen("Native.atan2", bTypeVoid, BackText("Math.atan2")),
-			BackGen("Native.exp", bTypeVoid, BackText("Math.exp")),
-			BackGen("Native.log", bTypeVoid, BackText("Math.log")),
+			BackGen("Native.sin", bvoidType, BackText("Math.sin")),
+			BackGen("Native.asin", bvoidType, BackText("Math.asin")),
+			BackGen("Native.cos", bvoidType, BackText("Math.cos")),
+			BackGen("Native.acos", bvoidType, BackText("Math.acos")),
+			BackGen("Native.atan", bvoidType, BackText("Math.atan")),
+			BackGen("Native.atan2", bvoidType, BackText("Math.atan2")),
+			BackGen("Native.exp", bvoidType, BackText("Math.exp")),
+			BackGen("Native.log", bvoidType, BackText("Math.log")),
 			// d->i
-			BackGen("Native.trunc", bTypeVoid, BackText("function(d){return (d)|0;}")),
-			BackGen("Native.i2d", bTypeVoid, BackText("function(i){return i;}")),
-			BackGen("Native.i2s", bTypeVoid, BackText("function(i){return String(i);}")),
-			BackGen("Native.d2s", bTypeVoid, BackText("function(d){return String(d);}")),
-			BackGen("Native.bitXor", bTypeVoid, BackText("function(a,b){return a^b;}")),
-			BackGen("Native.bitAnd", bTypeVoid, BackText("function(a,b){return a&b;}")),
-			BackGen("Native.bitOr", bTypeVoid, BackText("function(a,b){return a|b;}")),
-			BackGen("Native.bitUshr", bTypeVoid, BackText("function(a,b){return a>>>b;}")),
-			BackGen("Native.bitShl", bTypeVoid, BackText("function(a,b){return a<<b;}")),
-			BackGen("Native.bitNot", bTypeVoid, BackText("function(a){return ~a;}")),
+			BackGen("Native.trunc", bvoidType, BackText("function(d){return (d)|0;}")),
+			BackGen("Native.i2d", bvoidType, BackText("function(i){return i;}")),
+			BackGen("Native.i2s", bvoidType, BackText("function(i){return String(i);}")),
+			BackGen("Native.d2s", bvoidType, BackText("function(d){return String(d);}")),
+			BackGen("Native.bitXor", bvoidType, BackText("function(a,b){return a^b;}")),
+			BackGen("Native.bitAnd", bvoidType, BackText("function(a,b){return a&b;}")),
+			BackGen("Native.bitOr", bvoidType, BackText("function(a,b){return a|b;}")),
+			BackGen("Native.bitUshr", bvoidType, BackText("function(a,b){return a>>>b;}")),
+			BackGen("Native.bitShl", bvoidType, BackText("function(a,b){return a<<b;}")),
+			BackGen("Native.bitNot", bvoidType, BackText("function(a){return ~a;}")),
 
-			BackGen("Native.strlen", bTypeVoid, BackText("function(s){return s.length;}")),
-			BackGen("Native.strIndexOf", bTypeVoid, BackText("function(str,substr) {return str.indexOf(substr,0);}")),
+			BackGen("Native.strlen", bvoidType, BackText("function(s){return s.length;}")),
+			BackGen("Native.strIndexOf", bvoidType, BackText("function(str,substr) {return str.indexOf(substr,0);}")),
 
-			BackGen("Native.substring", bTypeVoid, 
+			BackGen("Native.substring", bvoidType, 
 				// It turns out that Chrome does NOT copy strings out when doing substring,
 				// and thus we never free the original string
 				BackText("function(str,start,len){
@@ -277,12 +277,12 @@ jsBackend() -> Backend {
 					if (2 * s.length < str.length){return (' '+s).slice(1);} else return s;
 				}")
 			),
-			BackGen("Native.cloneString", bTypeVoid, BackText("function(s){return (' '+s).slice(1);}")),
+			BackGen("Native.cloneString", bvoidType, BackText("function(s){return (' '+s).slice(1);}")),
 
-			BackGen("Native.getCharCodeAt", bTypeVoid, BackText("function(s,i){return s.charCodeAt(i);}")),
-			BackGen("Native.getCharAt", bTypeVoid, BackText("function(s,i){return s.charAt(i);}")),
+			BackGen("Native.getCharCodeAt", bvoidType, BackText("function(s,i){return s.charCodeAt(i);}")),
+			BackGen("Native.getCharAt", bvoidType, BackText("function(s,i){return s.charAt(i);}")),
 
-			BackGen("Native.toString", bTypeVoid, 
+			BackGen("Native.toString", bvoidType, 
 				BackRequire(
 					BackText(blueprint("
 						var toString = function(value, keepStringEscapes) {

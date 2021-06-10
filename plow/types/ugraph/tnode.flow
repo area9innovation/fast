@@ -5,58 +5,45 @@ import plow/types/pretty;
 
 /*
 TODO:
-- Change typeinference to make eclasses directly, and basically retire
-  unifyTTypes
-- Change type inference to lower to BExp sooner, so we can clean out the
-  tmaps.
+- Add debugging of type vars, so it becomes easier to debug
+
 - Try to reduce size of eclasses. In principle, we do not need all of them
   if we construct eclasses when we start typing the globals instead of when
   desugaring.
 
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
-- isSameStructType
-
-type17: Due to wrong type of makeTree somehow.
 
 Errors towards plow\plow.flow:
+
+plow/pexp/utils: Very slow
+plow/dexp/pretty': Very slow
+
 Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow
 TODO: Picking random supertype: super60{PArgType, PTypeFunction, PTypeName, PTypePar}
 
-C:/flow9/lib/ds/digraph2dot.flow:41:16: Add type parameter. Implicit polymorphism in (flow, (GEdge<e491>) -> array<flow>) -> array<array<flow>>
-	nodesIds = map(edges, \edge -> [edge.from, edge.to]) |> concatA |> uniq;
-	          ^
-
-C:/flow9/lib/ds/easygraph_utils.flow:205:9: Add type parameter. Implicit polymorphism in (flow, flow, (flow, GEdge<e1983>) -> flow) -> flow
-		fold(edges, acc, \acc2, edge -> {
-	^
-C:/flow9/lib/ds/easygraph_utils.flow:206:18: Add type parameter. Implicit polymorphism in GEdge<e1983>
-			to = edge.to;
-			    ^
-C:/flow9/lib/ds/easygraph_utils.flow:205:26: Add type parameter. Implicit polymorphism in (flow, GEdge<e1983>) -> flow
-		fold(edges, acc, \acc2, edge -> {
-		                ^
-
-Parsed 'tools/gringo/prefix' as C:/flow9/tools/gringo/prefix.flow
-TODO: Picking random supertype: super617{PExport, PForbid, PGlobal, PImport, PModule, PNative, PStruct, PStructArg, PTypeDef, PUnion}
-
-C:/flow9/lib/sys/concurrent.flow:183:5: Add type parameter. Implicit polymorphism in (Tree<flow, e671>, flow) -> bool
-	containsKeyTree(^t, key);
+C:/flow9/lib/sys/concurrent.flow:104:5: Add type parameter. Implicit polymorphism in (array<e347>) -> flow
+        flow([]);
 ^
-C:/flow9/lib/sys/concurrent.flow:198:5: Add type parameter. Implicit polymorphism in (Tree<flow, e755>) -> array<flow>
-	getTreeKeys(^t);
+C:/flow9/lib/sys/concurrent.flow:104:10: Add type parameter. Implicit polymorphism in array<e345>
+        flow([]);
+            ^
+C:/flow9/lib/sys/concurrent.flow:117:5: Add type parameter. Implicit polymorphism in (array<e431>) -> flow
+        flow([]);
 ^
-C:/flow9/lib/sys/concurrent.flow:178:10: Add type parameter. Implicit polymorphism in (flow, Tree<flow, e639>) -> void
-	t1 := mergeTree(^t1, ^t2);
-	    ^
-C:/flow9/lib/sys/concurrent.flow:193:9: Add type parameter. Implicit polymorphism in (flow, Tree<flow, e725>) -> void
-	t := removeFromTree(^t, key);
-	   ^
-C:/flow9/lib/sys/concurrent.flow:203:5: Add type parameter. Implicit polymorphism in (Tree<flow, e779>) -> int
-	sizeTree(^t);
+C:/flow9/lib/sys/concurrent.flow:117:10: Add type parameter. Implicit polymorphism in array<e429>
+        flow([]);
+            ^
+C:/flow9/lib/sys/concurrent.flow:162:5: Add type parameter. Implicit polymorphism in (ref<Tree<e708, e709>>) -> flow
+        flow(ref makeTree())
 ^
-C:/flow9/lib/sys/concurrent.flow:188:5: Add type parameter. Implicit polymorphism in (Tree<e697, ??>) -> array<??>
-	getTreeValues(^t);
-^
+C:/flow9/lib/sys/concurrent.flow:162:10: Add type parameter. Implicit polymorphism in ref<Tree<e708, e709>>
+        flow(ref makeTree())
+            ^
+C:/flow9/lib/sys/concurrent.flow:162:14: Add type parameter. Implicit polymorphism in () -> Tree<e702, e703>
+        flow(ref makeTree())
+                ^
+C:/flow9/lib/sys/concurrent.flow:162:22: Add type parameter. Implicit polymorphism in Tree<e702, e703>
+        flow(ref makeTree())
 
 Parsed 'plow/pexp/utils' as C:/fast/plow/pexp/utils.flow
 TODO: Picking random supertype: super2_3{PImport, PTopLevel}
@@ -64,13 +51,6 @@ TODO: Picking random supertype: super23_24{PForbid, PTopLevel}
 TODO: Picking random supertype: super39_40{PExport, PTopLevel}
 TODO: Picking random supertype: super136_137{PExport, PTopLevel}
 TODO: Picking random supertype: super145_146{PExport, PForbid, PGlobal, PImport, PModule, PNative, PStruct, PStructArg, PTopLevel, PTypeDef, PUnion}
-
-C:/fast/plow/types/ugraph/debug.flow:53:67: Could not resolve supertype: super128{e204}
-			"overload" + superglue(set2array(uniques), i2s, "_") + "{"
-			                                                     ^
-C:/fast/plow/types/ugraph/debug.flow:54:14: Could not resolve supertype: super130{e206}
-			+ superglue(overloads, \o -> prettyTNode(tmap, o), ", ")
-			^
 
 C:/fast/plow/types/ugraph/tnode.flow:141:14: ERROR: Merge TNode and TNodeName
 	TNodeName("", [], -1);
@@ -94,7 +74,8 @@ export {
 	makeTMap(
 		onError : (int, string) -> void, 
 		nextEClass : ref int,
-		mkUnique : () -> int
+		mkUnique : () -> int, 
+		tracing : Tracing
 	) -> TMap;
 
 	// Define the resolvers we need
@@ -104,6 +85,9 @@ export {
 		resolveSubtypes : (string) -> [string], 
 	) -> TMap;
 
+	// Given this eclass, what is the root equivalence class?
+	rootTTypeEClass(tg : TMap, eclass : int) -> int;
+	
 	// Make a new type class
 	makeTNodeClass(tmap : TMap) -> int;
 
@@ -112,18 +96,16 @@ export {
 
 	dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int;
 	findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int;
-	unifyEClass(tmap : TMap, lclass : int, rclass : int) -> void;
+	joinTNodes(tmap : TMap, left : int, right : int) -> int;
 
-	// Unify these two types
-	unifyTNodes(tmap : TMap, left : TType, right : TType, 
-		verbose : bool, reason : string, pos : int) -> void;
+	unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void;
 
 	// At the end, extract the types for each type class
 	resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>;
 }
 
 makeTMap(onError : (int, string) -> void, nextEClass : ref int,
-			mkUnique : () -> int
+			mkUnique : () -> int, tracing : Tracing
 		) -> TMap {
 	self = ref None();
 	tmap = TMap(
@@ -136,6 +118,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 				Some(s): mergeTNodes(s, l, r);
 			}
 		}),
+		ref makeTree(),
 		ref \__ -> {
 			println("TODO: The resolvers are not set");
 			None();
@@ -154,6 +137,8 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 		ref makeList(),
 		ref makeList(),
 		ref false,
+		tracing,
+		"",
 	);
 	self := Some(tmap);
 	tmap;
@@ -172,6 +157,10 @@ setTMapResolvers(t : TMap,
 	t;
 }
 
+rootTTypeEClass(tg : TMap, eclass : int) -> int {
+	findUnionMapRoot(tg.tmap, eclass)
+}
+
 // Collect all supertypes of this name, based on a one-step resolver
 transitiveResolveSuperType(basic : (string) -> [string], name : string) -> [string] {
 	supers = basic(name);
@@ -187,17 +176,20 @@ defaultTNode() -> TNode {
 uindent = ref "";
 
 // These two types are unified
-unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
-		reason : string, pos : int) -> void {
+unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
 	ind = ^uindent;
+	verbose = isTracingId(tmap.tracing, StageTypeInference(), 2, tmap.topid);
 	if (verbose) {
 		uindent := ind + "  ";
 		println("\n" + ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason );
 	}
 	lclass = findOrMakeTNodeClass(tmap, left, pos);
 	rclass = findOrMakeTNodeClass(tmap, right, pos);
-	if (verbose) {
-		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " " + i2s(lclass) + " vs " + i2s(rclass) + " | " + reason );
+	verbose2 = verbose 
+		|| isDebuggingEClass(tmap, lclass)
+		|| isDebuggingEClass(tmap, rclass);
+	if (verbose2) {
+		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + tmap.topid + ": " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -214,10 +206,6 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, verbose: bool,
 		println("Not supposed to happen: " + prettyTType(left) + " and " + prettyTType(right));
 	}
 	uindent := ind;
-}
-
-unifyEClass(tmap : TMap, lclass : int, rclass : int) -> void {
-	root = unionUnionMap(tmap.tmap, lclass, rclass);
 }
 
 findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
@@ -239,10 +227,12 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 		TNodeOverload(unique, overloads, pos): -1;
 		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): -1;
 		TNodeName(name, typars, pos): {
-			// TODO: This is the bottleneck
-			findUnionMap(tmap.tmap, \i, val : TNode -> {
-				isSameTNode(tmap, node, val)
-			}, -1);
+			eclasses = getTreeArrayValue(^(tmap.typenameEClasses), name);
+			mclass = find(eclasses, \ec -> {
+				valnode = getUnionMapValue(tmap.tmap, ec);
+				isSameTNode(tmap, node, valnode);
+			});
+			mclass ?? mclass : -1;
 		}
 	};
 
@@ -264,6 +254,12 @@ makeEClassForTNode(tmap : TMap, node : TNode) -> int {
 	// OK, could not find it. We need a new class
 	nclass = makeTNodeClass(tmap);
 	// println(^uindent + "Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + "\n");
+	switch (node) {
+		TNodeName(name, __, __): {
+			tmap.typenameEClasses := treePushToArrayValue(^(tmap.typenameEClasses), name, nclass);
+		}
+		default: {}
+	}
 	setUnionMapValue(tmap.tmap, nclass, node);
 	nclass;
 }
@@ -373,9 +369,9 @@ makeTNode(tmap : TMap, t : TType, pos : int) -> TNode {
 // Add t to this supertype as a subtype. If t is a supertype, add all members of that
 extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 	addName = \n : TNodeName -> {
-		if (hasSupertype(tmap, n)) {
+		//if (hasSupertype(tmap, n)) {
 			// println("TODO: Wrap the children in supertype if not resolved! " + prettyTNode(tmap, n));
-		}
+		// }
 		TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, n));
 	}
 	addEClass = \e : int -> {
@@ -480,6 +476,8 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 		}
 		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
 			if (!isEmptySet(unknownSubtypes)) {
+				// We have some typevars in here. See if any of those are
+				// resolved
 				resolved = foldSet(unknownSubtypes, Pair([], makeSet()), 
 						\acc : Pair<[TNodeName], Set<int>>, st : int -> {
 					unode = getUnionMapValue(tmap.tmap, st);
@@ -592,13 +590,22 @@ instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int)
 //
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
+	
 	// println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 	todo = \ -> {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 		left;
 	}
 	error = \pos -> {
-		tmap.onError(pos, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
+		lclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
+				isSameTNode(tmap, left, val)
+			}, -1);
+
+		rclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
+				isSameTNode(tmap, right, val)
+			}, -1);
+		tmap.onError(pos, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass) + ")");
+		// dumpTNodes(tmap);
 		left;
 	}
 	if (isEmptyTNode(left)) simplifyTNode(tmap, right)
@@ -610,13 +617,8 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
 						if (lname == "flow" || rname == "flow") {
-							if (true) {
-								// TODO: This causes a bunch of problems, but is maybe a way forward
-								TNodeOverload(makeSet1(tmap.mkUnique()), [left, right], min(pos, rpos));
-							} else {
-								// This is conservative
-								TNodeName("flow", [], pos);
-							}
+							// OK, we model it as an overload
+							TNodeOverload(makeSet1(tmap.mkUnique()), [left, right], min(pos, rpos));
 						} else if (isSingleUnionName(tmap, lname, rname)) {
 							// As a special case, if one of these
 							// is a singleton union with the other element,
@@ -664,13 +666,13 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					} else if (length(overloads) == 1) {
 						mergeTNodes(tmap, overloads[0], right);
 					} else {
-						// OK, we can not clarify it, so push it to pending
-						noverload = TNodeOverload(lunique, overloads, pos);
 						// If we have identical information already, we do not
 						// need to pend it
 						if (!exists(overloads, \o -> {
 							isSameTNode(tmap, o, right)
 						})) {
+							// OK, we can not clarify it, so push it to pending
+							noverload = TNodeOverload(lunique, overloads, pos);
 							tmap.pending := Cons(Pair(noverload, right), ^(tmap.pending));
 						}
 						// println("From " + prettyTNode(tmap, left) + " to " + prettyTNode(tmap, noverload));
@@ -680,6 +682,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeOverload(unique, overloads, pos): {
 					flows = filter(concat(loverloads, overloads), isFlowNode);
 					if (flows != []) {
+						// OK, we have a flow type, so just pick that
 						flows[0];
 					} else {
 						println("TODO: Find the intersection between " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
@@ -761,12 +764,11 @@ unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) ->
 	} else if (node.name == "flow" || subtype.name == "flow") {
 		true;
 	} else {
-		// OK, we know that the node has to a supertype of st
+		// OK, we know that the node has to be a supertype of st
 		munion = ^(tmap.resolveUnionName)(node.name);
 		switch (munion) {
 			None(): {
 				// OK, it is not a union, so they have to be the same
-
 				tmap.onError(node.pos, "Expected union " + prettyTNode(tmap, node) + " against " + prettyTNode(tmap, subtype));
 				false;
 			}
@@ -880,8 +882,6 @@ instantiateTNodeNameAgainstSubtype(tmap : TMap, unionNode : TNodeName, subNode :
 	}	
 }
 
-
-
 joinTNodes(tmap : TMap, left : int, right : int) -> int {
 	root = unionUnionMap(tmap.tmap, left, right);
 	
@@ -892,8 +892,7 @@ joinTNodes(tmap : TMap, left : int, right : int) -> int {
 		println("  Joining e" + i2s(left) + " and e" + i2s(right) + " to e" + i2s(root) + ": " + debugTNode(tmap, root)
 			+ " from " + prettyTNode(tmap, lnode) + " and " + prettyTNode(tmap, rnode));
 	}
-
-	findUnionMapRoot(tmap.tmap, root);
+	root;
 }
 
 // We know that the eclass "sub" is a subclass of "super".
@@ -1091,7 +1090,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 					resolveTNode(tmap, acc, visited, eclass, mflow);
 				} : {
 					if (length(subtypes) != 1) {
-						println("TODO: Picking random supertype: " + prettyTNode(tmap, node));
+						tmap.onError(pos, "TODO: Picking random supertype: " + prettyTNode(tmap, node));
 					}
 					resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
 				}

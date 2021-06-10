@@ -42,7 +42,6 @@ makeJsConfig(flowfile : string) -> JsConfig {
 		false, // beautify : bool, Call js-beautify before exit
 		false, // sourcemap : bool, Generate js source map before exit
 		false, // compress : bool,
-		true, // haxeRuntime : bool,
 		"", // fontconfig : string,
 		false, //debug : bool,
 		0,  // verbose : int,
