@@ -224,8 +224,14 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 	// dumpTNodes(tmap);
 
 	sclass = switch (node) {
-		TNodeOverload(unique, overloads, pos): -1;
-		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): -1;
+		TNodeOverload(unique, overloads, pos): {
+			println("Not supposed to happen");
+			-1;
+		}
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
+			println("Not supposed to happen");
+			-1;
+		}
 		TNodeName(name, typars, pos): {
 			eclasses = getTreeArrayValue(^(tmap.typenameEClasses), name);
 			mclass = find(eclasses, \ec -> {
@@ -242,6 +248,29 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
  		// println(^uindent + "Found it as an existing node " + i2s(sclass) + "\n");
 		sclass;
 	}
+}
+
+findTNodeClass(tmap : TMap, node : TNode) -> int {
+	switch (node) {
+		TNodeOverload(unique, overloads, pos): {
+			findUnionMap(tmap.tmap, \eclass, nn -> {
+				isSameTNode(tmap, node, nn)
+			}, -1);
+		}
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
+			findUnionMap(tmap.tmap, \eclass, nn -> {
+				isSameTNode(tmap, node, nn)
+			}, -1);
+		}
+		TNodeName(name, typars, pos): {
+			eclasses = getTreeArrayValue(^(tmap.typenameEClasses), name);
+			mclass = find(eclasses, \ec -> {
+				valnode = getUnionMapValue(tmap.tmap, ec);
+				isSameTNode(tmap, node, valnode);
+			});
+			mclass ?? mclass : -1;
+		}
+	};
 }
 
 makeTNodeClassForType(tmap : TMap, type : TType, pos : int) -> int {
@@ -590,7 +619,13 @@ instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int)
 //
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
-	
+	if (isDebuggingTopid(tmap)) {
+		lclass = findTNodeClass(tmap, left);
+		rclass = findTNodeClass(tmap, right);
+		if (isDebuggingEClass(tmap, lclass) || isDebuggingEClass(tmap, rclass)) {
+			println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
+		}
+	}
 	// println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 	todo = \ -> {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));

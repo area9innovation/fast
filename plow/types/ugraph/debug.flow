@@ -12,6 +12,7 @@ export {
 	isEmptyTNode(n : TNode) -> bool;
 	getTNodes(tmap : TMap) -> Set<int>;
 
+	isDebuggingTopid(tmap : TMap) -> bool;
 	isDebuggingEClass(tmap : TMap, eclass : int) -> bool;
 	dumpDebugEClasses(tmap : TMap) -> void;
 }
@@ -117,8 +118,12 @@ isEmptyTNode(n : TNode) -> bool {
 	}
 }
 
+isDebuggingTopid(tmap : TMap) -> bool {
+	isTracingId(tmap.tracing, StageTypeInference(), 0, tmap.topid);
+}
+
 isDebuggingEClass(tmap : TMap, eclass : int) -> bool {
-	(tmap.topid == "" || isTracingId(tmap.tracing, StageTypeInference(), 0, tmap.topid))
+	eclass != -1 && isDebuggingTopid(tmap)
 	&& (
 		isDebuggingEClass2(tmap, eclass)
 		|| {
@@ -157,7 +162,7 @@ isDebuggingEClass2(tmap : TMap, eclass : int) -> bool {
 }
 
 dumpDebugEClasses(tmap : TMap) -> void {
-	if (tmap.topid == "" || isTracingId(tmap.tracing, StageTypeInference(), 0, tmap.topid)) {
+	if (isDebuggingTopid(tmap)) {
 		println("\nDebug e-classes for " + tmap.topid + ":");
 		roots = getTNodes(tmap);
 		iterSet(roots, \root -> {
