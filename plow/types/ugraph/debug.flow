@@ -119,7 +119,7 @@ isEmptyTNode(n : TNode) -> bool {
 }
 
 isDebuggingTopid(tmap : TMap) -> bool {
-	isTracingId(tmap.tracing, StageTypeInference(), 0, tmap.topid);
+	isTracingId(tmap.tracing, StageTypeInference(), 0, ^(tmap.topid));
 }
 
 isDebuggingEClass(tmap : TMap, eclass : int) -> bool {
@@ -163,7 +163,7 @@ isDebuggingEClass2(tmap : TMap, eclass : int) -> bool {
 
 dumpDebugEClasses(tmap : TMap) -> void {
 	if (isDebuggingTopid(tmap)) {
-		println("\nDebug e-classes for " + tmap.topid + ":");
+		println("\nDebug e-classes for " + ^(tmap.topid) + ":");
 		roots = getTNodes(tmap);
 		iterSet(roots, \root -> {
 			node = getUnionMapValue(tmap.tmap, root);

@@ -32,18 +32,18 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 	restype = \reason, tv, type : TTypeEClass -> {
 		TTypeEClass(joinTNodes(env.tmap, type.eclass, tv));
 	};
-	asEClass = \type -> {
-		eclass = findOrMakeTNodeClass(env.tmap, type, d.pos);
+	asEClass = \reason, type -> {
+		eclass = findOrMakeTNodeClass(env.tmap, type, reason, d.pos);
 		TTypeEClass(eclass);
 	}
 
 	switch (d) {
-		DVoid(pos): asEClass(TTypeName("void", []));
-		DBool(v, pos): asEClass(TTypeName("bool", []));
-		DInt(v, pos): asEClass(TTypeName("int", [])); 
-		DDouble(v, pos): asEClass(TTypeName("double", []));
-		DString(v, pos): asEClass(TTypeName("string", []));
-		DStringInclude(path, pos): asEClass(TTypeName("string", []));
+		DVoid(pos): asEClass("void", TTypeName("void", []));
+		DBool(v, pos): asEClass("bool", TTypeName("bool", []));
+		DInt(v, pos): asEClass("int", TTypeName("int", [])); 
+		DDouble(v, pos): asEClass("double", TTypeName("double", []));
+		DString(v, pos): asEClass("string", TTypeName("string", []));
+		DStringInclude(path, pos): asEClass("stringinclude", TTypeName("string", []));
 		DVar(id, pos, eclass): {
 			mtype = lookupTree(env.localTypes, id);
 			type = mtype ?? {
@@ -69,7 +69,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 
 				// Any other type needs instantiation
 				itype = instantiateTTypePar(env, externalType);
-				asEClass(itype);
+				asEClass("var " + id, itype);
 			};
 
 			if (isTracingId(env.tracing, StageTypeInference(), 2, topid)) {
@@ -129,7 +129,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 					env.onError(pos, "Struct " + structid + " expects " + i2s(length(itype.second)) + " arguments, got " + i2s(length(argTypes)));
 				}
 
-				restype("construct type", eclass, asEClass(itype.first));
+				restype("construct " + structid, eclass, asEClass("construct " + structid, itype.first));
 			} : {
 				env.onError(pos, "Unknown struct " + structid);
 				TTypeEClass(env.mkEClass());
@@ -146,12 +146,13 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			// TODO: With this as true, we have a problem that super(fn-type) does not preserve
 			// the supertype of the return value
 			type = TTypeFunction(argTypes, if (false) retType else makeTTypeSupertype(env, [retType], false, pos));
-			restype("lambda", eclass, asEClass(type));
+			// println(prettyTType(type) + " for " + strGlue(map(args, \a -> a.id), ","));
+			restype("lambda", eclass, asEClass("lambda", type));
 		}
 		DRef(value, pos, eclass): {
 			vtype = ttypeInferenceDExp(env, topid, value);
 			type = TTypeName("ref", [makeTTypeSupertype(env, [vtype], false, pos)]);
-			restype("ref", eclass, asEClass(type));
+			restype("ref", eclass, asEClass("ref", type));
 		}
 		DField(value, field, pos, eclass): {
 			// OK, this is an overload of all structs with a field
@@ -237,7 +238,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			calltype = TTypeFunction([ltype], makeTTypeSupertype(env, [valtype], false, pos));
 
 			unifyTNodes(env.tmap, calltype, fntype, "field", pos);
-			restype("setmutable", eclass, asEClass(voidTType))
+			restype("setmutable", eclass, asEClass("setmutable", voidTType))
 		}
 		DArray(exps, pos, eclass): {
 			vtypes = map(exps, \e -> {
@@ -249,13 +250,13 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			} else {
 				TTypeName("array", [makeTTypeSupertype(env, vtypes, false, pos)]);
 			}
-			restype("array", eclass, asEClass(type));
+			restype("array", eclass, asEClass("array", type));
 		}
 		DSequence(exps, pos, eclass): {
 			stype = fold(exps, voidTType, \acc, e -> {
 				ttypeInferenceDExp(env, topid, e);
 			});
-			restype("seq", eclass, asEClass(stype));
+			restype("seq", eclass, asEClass("seq", stype));
 		}
 		DSwitch(value, type, cases, defaultCase, pos, eclass): {
 			tvalue = ttypeInferenceDExp(env, topid, value);
@@ -290,11 +291,11 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 				}, "cast", pos
 			);
 			// TODO: Add an eclass?
-			asEClass(ttarget);
+			asEClass("cast", ttarget);
 		}
 		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
 			tsubtype = TTypeEClass(dtype2eclass(env.tmap, makeTree(), subtype));
-			teclass = asEClass(tsubtype);
+			teclass = asEClass("downcast", tsubtype);
 
 			nenv = TTypeEnv(env with 
 				localTypes = setTree(
@@ -333,7 +334,7 @@ getDStructFieldType(env : TTypeEnv, struct : DStruct, field : string) -> Maybe<T
 makeTTypeSupertype(env : TTypeEnv, subtypes : [TType], maxed : bool, pos :int) -> TTypeEClass {
 	ss2 = fold(subtypes, makeSet(), extractTSupers);
 	type = TTypeSupertype(env.mkUnique(), set2array(ss2), maxed);
-	eclass = makeTNodeClassForType(env.tmap, type, pos);
+	eclass = makeTNodeClassForType(env.tmap, type, "supertype", pos);
 	TTypeEClass(eclass);
 }
 
