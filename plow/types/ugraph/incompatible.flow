@@ -58,7 +58,8 @@ incompatibleTNodes(tmap : TMap, left : TNode, right : TNode) -> bool {
 			}
 		}
 		TNodeOverload(lunique, loverloads, pos): {
-			todo();
+			if (exists(loverloads, isFlowNode)) false
+			else todo();
 		}
 		TNodeSupertype(luniques, lsubtypes, usubs, pos): {
 			if (existsSet(usubs, \s -> {
