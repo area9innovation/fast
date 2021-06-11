@@ -3,9 +3,9 @@ native quit : io (code : int) -> void = Native.quit;
 
 Un ::= A, B, C;
 
-A(a : int);
-C(s : string);
-B(l : Un, r : [Un]);
+A(arg : int);
+C(str : string);
+B(left : Un, right : [Un]);
 
 main() -> void {
 	println2("Test on deep equality ...");

@@ -5,12 +5,13 @@ import plow/driver;
 export {
 	linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BExpProgram;
 	linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BProgram;
+	programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited : Set<string>) -> Pair<List<BModule>, Set<string>>;
 }
 
 linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BExpProgram {
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
 	if (shorten_ids) {
-		shortenIdsBExpProgram(bmodules2BExpProgram(modules), keywords);
+		shortenIdsBExpProgram(bmodules2BExpProgram(modules), keywords).first;
 	} else {
 		bmodules2BExpProgram(modules);
 	}
