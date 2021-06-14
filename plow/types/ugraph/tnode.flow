@@ -45,27 +45,9 @@ C:/flow9/lib/sys/concurrent.flow:162:14: Add type parameter. Implicit polymorphi
 C:/flow9/lib/sys/concurrent.flow:162:22: Add type parameter. Implicit polymorphism in Tree<e702, e703>
         flow(ref makeTree())
 
-Parsed 'plow/pexp/utils' as C:/fast/plow/pexp/utils.flow
-TODO: Picking random supertype: super2_3{PImport, PTopLevel}
-TODO: Picking random supertype: super23_24{PForbid, PTopLevel}
-TODO: Picking random supertype: super39_40{PExport, PTopLevel}
-TODO: Picking random supertype: super136_137{PExport, PTopLevel}
-TODO: Picking random supertype: super145_146{PExport, PForbid, PGlobal, PImport, PModule, PNative, PStruct, PStructArg, PTopLevel, PTypeDef, PUnion}
-
-C:/fast/plow/types/ugraph/tnode.flow:141:14: ERROR: Merge TNode and TNodeName
-	TNodeName("", [], -1);
-	        ^
 C:/fast/plow/types/ugraph/tnode.flow:1021:49: ERROR: Merge overload2854{(DNative)->flow, (TNodeName)->flow} and (TNode)->flow
 				mflow = find(subtypes, \st -> st.name == "flow");
 				                               ^
-C:/fast/plow/types/ugraph/tnode.flow:825:52: Could not resolve supertype: super1179{e2199}
-			+ " from " + prettyTNode(tmap, lnode) + " and " + prettyTNode(tmap, rnode));
-			                                      ^
-
-C:/fast/plow/types/polymorphism.flow:60:35: ERROR: Merge overload152{(DArray)->flow, (DCall)->flow, (DConstruct)->flow, (DDowncast)->flow, (DField)->flow, (DGlobal)->flow, (DIf)->flow, (DLambda)->flow, (DLet)->flow, (DNative)->flow, (DRef)->flow, (DSequence)->flow, (DSetMutable)->flow, (DSwitch)->flow, (DTyped)->flow, (DVar)->flow, (TTypeEClass)->flow} and (TType)->flow
-		setTree(acc, tp, typars[i].eclass)
-		                         ^
-
 */
 
 

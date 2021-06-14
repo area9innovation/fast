@@ -46,7 +46,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 		DStringInclude(path, pos): asEClass("stringinclude", TTypeName("string", []));
 		DVar(id, pos, eclass): {
 			mtype = lookupTree(env.localTypes, id);
-			type = mtype ?? {
+			type : TTypeEClass = mtype ?? {
 				// Local types should NOT be instantiated
 				mtype
 			} : {
