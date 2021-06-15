@@ -26,10 +26,10 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 	jsfile = cfg.outputfile;
 	hx = "FlowJsProgram.hx";
 	code = blueprint("
-		import HaxeRuntime;
+		//import HaxeRuntime;
 		%imports%
 
-		class FlowJsProgram {
+		/*class FlowJsProgram {
 			static public var globals__  = {
 				HaxeRuntime._structnames_    = new haxe.ds.IntMap<String>();
 				HaxeRuntime._structids_      = new haxe.ds.StringMap<Int>();
@@ -37,7 +37,7 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 				HaxeRuntime._structargtypes_ = new haxe.ds.IntMap<Array<RuntimeType>>();
 				%render%
 			}
-		}
+		}*/
 		", [
 			"imports", imports, 
 			"render", if (containsSet(native_classes, "RenderSupport")) "  new RenderSupport();" else ""
@@ -88,7 +88,7 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 		println("Call 'haxe " + buildFile + "'");
 	}
 	//buildScript = strGlue(concat(hxparams3, ["-v"]), "\n");
-	buildScript = strGlue(hxparams3, "\n");
+	buildScript = strGlue(concat(hxparams3, ["-D skip_haxe_runtime"]), "\n");
 
 	setFileContent(buildFile, buildScript);
 	proc_out = if (cfg.verbose > 0) println else nop1;
@@ -113,38 +113,3 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 		}
 	}
 }
-/*
-initStructTables(structs : [DStruct]) -> string {
-	blueprint("
-	// Global variables
-	var _structnames_ = { };
-	var _structids_ = { };
-	var _structargs_= { };
-	var _structargtypes_ = { };
-
-	var initStruct = function(id, name, args, atypes) {
-		_structnames_[id] = name;
-		_structids_[name] = id;
-		_structargs_[id] = args;
-		_structargtypes_[id] = atypes;
-	};
-	
-	var initStructs = function() {
-		%init%
-	}
-	", ["init", concatStrings(mapi(structs, \i, s -> 
-			blueprint(
-				"initStruct(%id%, %name%, %args%, %atypes%);\n",
-				["id", i2s(i + 1), "name", s.id, 
-					"args", "[" + strGlue(map(s.structArgs, \arg -> arg.id), ", ") + "]",
-					"atypes", "[" + strGlue(map(s.structArgs, \arg -> "'" + prettyBType(dtype2btype(arg.type)) + "'"), ", ") + "]",
-				]
-			)
-		))
-	]
-	);
-}
-
-linkRuntimeCore(cfg : JsConfig) -> string {
-	
-}*/
