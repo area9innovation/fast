@@ -1,4 +1,5 @@
 import text/blueprint;
+import plow/dexp/pretty;
 import plow/bexp/bmodule;
 
 export {
@@ -20,13 +21,16 @@ prettyBModule(bmodule : BModule) -> string {
 /*
 	// TODO:
 	//	exported : DExport, 
-	traverseInOrder(d.structs, \sid, s : DStruct -> {
-		println("  struct " + prettyDStruct(input, s));
-	});
-	//	unions : Tree<string, DUnion>,
 	//	typedefs : Tree<string, DTypeDef>,
-	//	natives : Tree<string, DNative>,
 */
+	structs = foldTree(bmodule.structs, "", \__, str, acc -> {
+		acc + prettyDStruct("", str) + "\n"
+	});
+
+	unions = foldTree(bmodule.unions, "", \__, un, acc -> {
+		acc + prettyDUnion("", un) + "\n"
+	});
+
 	natives = foldTree(bmodule.natives, "", \nat, bnat, acc -> {
 		acc + "native " + nat + " : " + prettyBType(bnat.type) + "\n"
 	});
@@ -46,10 +50,16 @@ prettyBModule(bmodule : BModule) -> string {
 				]
 			);
 			Cons(glob, acc);
-		} : {acc}
+		} : {
+			acc
+		}
 	}));
 
-	head + "\n" + natives + "\n" + globals;
+	head + "\n" + 
+	(if (structs =="") "" else structs + "\n") + 
+	(if (unions == "") "" else unions + "\n") + 
+	(if (natives == "") "" else natives + "\n") + 
+	globals;
 }
 
 prettyBExp(b : BExp) -> string {

@@ -282,6 +282,70 @@ jsBackend() -> Backend {
 			BackGen("Native.getCharCodeAt", bvoidType, BackText("function(s,i){return s.charCodeAt(i);}")),
 			BackGen("Native.getCharAt", bvoidType, BackText("function(s,i){return s.charAt(i);}")),
 
+			BackGen("Native.getStructName", bvoidType, 
+				BackText(blueprint("
+					function(s) {
+						if (Object.prototype.hasOwnProperty.call(s, '_id')) {
+							return Runtime.structnames[s._id];
+						} else {
+							return "";
+						}
+					}
+					", [])
+				)
+			),
+			BackGen("Native.extractStructArguments", bvoidType, 
+				BackText(blueprint("
+					function(s) {
+						if (Object.prototype.hasOwnProperty.call(s, '_id')) {
+							var args = new Array();
+							for (field in s) {
+								if (field != '_id') {
+									args.push(s[field]);
+								}
+							}
+							return args;
+						} else {
+							return [];
+						}
+					}
+					", [])
+				)
+			),
+			BackGen("Native.isArray", bvoidType, BackText("function(a){return Array.isArray(a);}")),
+			BackGen("Native.makeStructValue", bvoidType, 
+				BackText(blueprint("
+					function(name, args, default_value) {
+						var sid = Runtime.structids[name];
+						if (sid == null) {
+							return default_value;
+						}
+						var sargs = Runtime.structargs[sid];
+						var o = { _id : sid };
+						for (var __i in sargs) {
+							o[sargs[__i]] = args[__i];
+						}
+						return o;
+					}
+					", []
+				))
+			),
+			BackGen("Native.isSameObj", bvoidType, 
+				BackText(blueprint("
+					Native.isSameObj = function(a, b) {
+						if (a == b) {
+							return true;
+						}
+						// Singletons
+						if (a != null && b != null && Object.prototype.hasOwnProperty.call(a, '_id') && a._id == b._id && Runtime.structargs[a._id].length == 0) {
+							return true;
+						}
+						return false;
+					};
+					", []
+				))
+			),
+
 			BackGen("Native.toString", bvoidType, 
 				BackRequire(
 					BackText(blueprint("
@@ -309,8 +373,9 @@ jsBackend() -> Backend {
 							}
 							if (Object.prototype.hasOwnProperty.call(value, '_id')) {
 								var id = value._id;
-								var r = id + '(';
-								if (id == 'DLink') {
+								var name = Runtime.structnames[id];
+								var r = name + '(';
+								if (name == 'DLink') {
 									return r + '...)';
 								}
 								var s = '';

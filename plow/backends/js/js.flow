@@ -77,19 +77,18 @@ dstruct2js(i : int, backend : Backend, s : DStruct, original_ids : RenameIds, st
 			this._id = '%id%';
 			%body%
 		}
-		Runtime.initStruct(%ind%, '%name%', [%arg_names%], [%arg_types%]);
+		Runtime.initStruct('%id%', '%name%', [%arg_names%], [%arg_types%]);
 		", [
-		"ind", i2s(i),
+		"id", s.id,
 		"name", lookupTreeDef(original_ids.typeRenamings, s.id, s.id),
 		"arg_names", superglue(s.structArgs, 
-			\arg -> "'" + lookupTreeDef(original_ids.fieldRenamings, arg.id, arg.id) + "'", 
+			\arg -> "'" + /*lookupTreeDef(original_ids.fieldRenamings, arg.id, arg.id)*/ arg.id + "'", 
 			", "
 		),
 		"arg_types", superglue(s.structArgs, 
 			\arg -> bype2JsType(renameBType(dtype2btype(arg.type), original_ids.typeRenamings), struct_names), 
 			", "
 		),
-		"id", s.id,
 		"args", superglue(s.structArgs, \arg -> arg.id, ", "),
 		"body", superglue(s.structArgs, \arg -> "this." + arg.id + " = " + arg.id + ";", "\n")
 	]);

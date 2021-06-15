@@ -112,18 +112,18 @@ findUsedIn(names : BNames, acc : UsedCodeAcc, name : string) -> UsedCodeAcc {
 			mergeSets(used, new)
 		);
 	}
-	proc_struct = \su -> {
+	proc_struct = \str -> {
 		used = insertSet(acc.used, name);
-		referenced = extractTypeNamesDStruct(makeSet(), su, names.structs, names.unions);
+		referenced = extractTypeNamesDStruct(makeSet(), str, names.structs, names.unions);
 		new = differenceSets(referenced, used);
 		UsedCodeAcc(
 			mergeSets(acc.queue, new), 
 			mergeSets(used, new)
 		);
 	}
-	proc_union = \su -> {
+	proc_union = \un -> {
 		used = insertSet(acc.used, name);
-		referenced = extractTypeNamesDUnion(makeSet(), su, names.structs, names.unions);
+		referenced = extractTypeNamesDUnion(makeSet(), un, names.structs, names.unions);
 		new = differenceSets(referenced, used);
 		UsedCodeAcc(
 			mergeSets(acc.queue, new), 
