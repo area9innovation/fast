@@ -8,7 +8,6 @@ export {
 }
 
 findTNode(tmap : TMap, type : TType) -> int {
-
 	findNamed = \n -> {
 		eclasses = getTreeArrayValue(^(tmap.typenameEClasses), n);
 		mclass = find(eclasses, \ec -> {

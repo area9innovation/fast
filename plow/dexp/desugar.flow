@@ -293,7 +293,7 @@ adjustImplicitStructArity(dd : DDesugar, unions : Tree<string, DUnion>, structs 
 	foldTree(unions, structs, \un, union : DUnion, acc -> {
 		arity = length(union.typars);
 		fold(union.types, acc, \acc2, tn : DTypeName -> {
-			nameArity = typenameArity(dd, tn.id);
+			nameArity = typenameArity(dd, tn.id, tn.pos);
 			uArity = length(tn.typars);
 			if (nameArity > 0 && nameArity != uArity) {
 				dd.onError(union.pos, "Expected " + i2s(nameArity) + " type args for " + tn.id + ", got " + i2s(uArity));
@@ -432,19 +432,19 @@ ptype2dtype(dd : DDesugar, p : PType) -> DType {
 }
 
 ptypename2dtypename(dd : DDesugar, p : PTypeName) -> DTypeName {
-	ntypars = typenameArity(dd, p.id);
+	ntypars = typenameArity(dd, p.id, p.pos);
 	n = length(p.typars);
 	typars0 = map(p.typars, \tp -> ptype2dtype(dd, tp));
 	typars = if (n == 0 || n != ntypars) {
 		if (n != 0) {
-			dd.onError(p.pos, "Expected " + i2s(ntypars) + " for " + p.id + ", but got " + i2s(n));
+			dd.onError(p.pos, "Expected " + i2s(ntypars) + " type parameters for " + p.id + ", but got " + i2s(n));
 		}
 		concat(typars0, generate(n, ntypars, \__ -> DTypeName("auto", [], p.pos)))
 	} else typars0;
 	DTypeName(p.id, typars, p.pos);
 }
 
-typenameArity(dd : DDesugar, id : string) -> int {
+typenameArity(dd : DDesugar, id : string, pos : int) -> int {
 	mstruct = dd.resolveStructName(id);
 	mstruct ?? length(mstruct.typars) : {
 		munion = dd.resolveUnionName(id);

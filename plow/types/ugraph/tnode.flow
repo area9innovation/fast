@@ -45,27 +45,9 @@ C:/flow9/lib/sys/concurrent.flow:162:14: Add type parameter. Implicit polymorphi
 C:/flow9/lib/sys/concurrent.flow:162:22: Add type parameter. Implicit polymorphism in Tree<e702, e703>
         flow(ref makeTree())
 
-Parsed 'plow/pexp/utils' as C:/fast/plow/pexp/utils.flow
-TODO: Picking random supertype: super2_3{PImport, PTopLevel}
-TODO: Picking random supertype: super23_24{PForbid, PTopLevel}
-TODO: Picking random supertype: super39_40{PExport, PTopLevel}
-TODO: Picking random supertype: super136_137{PExport, PTopLevel}
-TODO: Picking random supertype: super145_146{PExport, PForbid, PGlobal, PImport, PModule, PNative, PStruct, PStructArg, PTopLevel, PTypeDef, PUnion}
-
-C:/fast/plow/types/ugraph/tnode.flow:141:14: ERROR: Merge TNode and TNodeName
-	TNodeName("", [], -1);
-	        ^
 C:/fast/plow/types/ugraph/tnode.flow:1021:49: ERROR: Merge overload2854{(DNative)->flow, (TNodeName)->flow} and (TNode)->flow
 				mflow = find(subtypes, \st -> st.name == "flow");
 				                               ^
-C:/fast/plow/types/ugraph/tnode.flow:825:52: Could not resolve supertype: super1179{e2199}
-			+ " from " + prettyTNode(tmap, lnode) + " and " + prettyTNode(tmap, rnode));
-			                                      ^
-
-C:/fast/plow/types/polymorphism.flow:60:35: ERROR: Merge overload152{(DArray)->flow, (DCall)->flow, (DConstruct)->flow, (DDowncast)->flow, (DField)->flow, (DGlobal)->flow, (DIf)->flow, (DLambda)->flow, (DLet)->flow, (DNative)->flow, (DRef)->flow, (DSequence)->flow, (DSetMutable)->flow, (DSwitch)->flow, (DTyped)->flow, (DVar)->flow, (TTypeEClass)->flow} and (TType)->flow
-		setTree(acc, tp, typars[i].eclass)
-		                         ^
-
 */
 
 
@@ -92,10 +74,10 @@ export {
 	makeTNodeClass(tmap : TMap) -> int;
 
 	// When we know the type is unique - supertypes come to mind
-	makeTNodeClassForType(tmap : TMap, type : TType, pos : int) -> int;
+	makeTNodeClassForType(tmap : TMap, type : TType, reason : string, pos : int) -> int;
 
 	dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int;
-	findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int;
+	findOrMakeTNodeClass(tmap : TMap, type : TType, reason : string, pos : int) -> int;
 	joinTNodes(tmap : TMap, left : int, right : int) -> int;
 
 	unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void;
@@ -138,7 +120,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 		ref makeList(),
 		ref false,
 		tracing,
-		"",
+		ref "",
 	);
 	self := Some(tmap);
 	tmap;
@@ -178,18 +160,18 @@ uindent = ref "";
 // These two types are unified
 unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
 	ind = ^uindent;
-	verbose = isTracingId(tmap.tracing, StageTypeInference(), 2, tmap.topid);
+	verbose = isTracingId(tmap.tracing, StageTypeInference(), 2, ^(tmap.topid));
 	if (verbose) {
-		uindent := ind + "  ";
 		println("\n" + ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason );
 	}
-	lclass = findOrMakeTNodeClass(tmap, left, pos);
-	rclass = findOrMakeTNodeClass(tmap, right, pos);
+	lclass = findOrMakeTNodeClass(tmap, left, reason, pos);
+	rclass = findOrMakeTNodeClass(tmap, right, reason, pos);
 	verbose2 = verbose 
 		|| isDebuggingEClass(tmap, lclass)
 		|| isDebuggingEClass(tmap, rclass);
 	if (verbose2) {
-		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + tmap.topid + ": " + reason );
+		uindent := ind + "  ";
+		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + ^(tmap.topid) + ": " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -208,24 +190,30 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int
 	uindent := ind;
 }
 
-findOrMakeTNodeClass(tmap : TMap, type : TType, pos : int) -> int {
+findOrMakeTNodeClass(tmap : TMap, type : TType, reason : string, pos : int) -> int {
 	eclass = findTNode(tmap, type);
 	if (eclass != -1) {
 		eclass
 	} else {
-		makeTNodeClassForType(tmap, type, pos);
+		makeTNodeClassForType(tmap, type, reason, pos);
 	}
 }
 
-findOrMakeTNode(tmap : TMap, node : TNode) -> int {
+findOrMakeTNode(tmap : TMap, node : TNode, reason : string) -> int {
 	// And see if we can find that node!
 
 	// println("\nLooking for " + prettyTNode(tmap, node));
 	// dumpTNodes(tmap);
 
 	sclass = switch (node) {
-		TNodeOverload(unique, overloads, pos): -1;
-		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): -1;
+		TNodeOverload(unique, overloads, pos): {
+			println("Not supposed to happen");
+			-1;
+		}
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
+			println("Not supposed to happen");
+			-1;
+		}
 		TNodeName(name, typars, pos): {
 			eclasses = getTreeArrayValue(^(tmap.typenameEClasses), name);
 			mclass = find(eclasses, \ec -> {
@@ -237,23 +225,48 @@ findOrMakeTNode(tmap : TMap, node : TNode) -> int {
 	};
 
 	if (sclass == -1) {
-		makeEClassForTNode(tmap, node);
+		makeEClassForTNode(tmap, node, reason);
 	} else {
  		// println(^uindent + "Found it as an existing node " + i2s(sclass) + "\n");
 		sclass;
 	}
 }
 
-makeTNodeClassForType(tmap : TMap, type : TType, pos : int) -> int {
-	node = makeTNode(tmap, type, pos);
-	// println(^uindent + "Making a type for "+ prettyTTypeNode(tmap, type) + " from " + prettyTNode(tmap, node));
-	makeEClassForTNode(tmap, node);
+findTNodeClass(tmap : TMap, node : TNode) -> int {
+	switch (node) {
+		TNodeOverload(unique, overloads, pos): {
+			findUnionMap(tmap.tmap, \eclass, nn -> {
+				isSameTNode(tmap, node, nn)
+			}, -1);
+		}
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
+			findUnionMap(tmap.tmap, \eclass, nn -> {
+				isSameTNode(tmap, node, nn)
+			}, -1);
+		}
+		TNodeName(name, typars, pos): {
+			eclasses = getTreeArrayValue(^(tmap.typenameEClasses), name);
+			mclass = find(eclasses, \ec -> {
+				valnode = getUnionMapValue(tmap.tmap, ec);
+				isSameTNode(tmap, node, valnode);
+			});
+			mclass ?? mclass : -1;
+		}
+	};
 }
 
-makeEClassForTNode(tmap : TMap, node : TNode) -> int {
+makeTNodeClassForType(tmap : TMap, type : TType, reason : string, pos : int) -> int {
+	node = makeTNode(tmap, type, reason, pos);
+	// println(^uindent + "Making a type for "+ prettyTTypeNode(tmap, type) + " from " + prettyTNode(tmap, node));
+	makeEClassForTNode(tmap, node, reason);
+}
+
+makeEClassForTNode(tmap : TMap, node : TNode, reason : string) -> int {
 	// OK, could not find it. We need a new class
 	nclass = makeTNodeClass(tmap);
-	// println(^uindent + "Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + "\n");
+	if (isDebuggingTopid(tmap)) {
+		println(^uindent + "Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + ": " + reason + "\n");
+	}
 	switch (node) {
 		TNodeName(name, __, __): {
 			tmap.typenameEClasses := treePushToArrayValue(^(tmap.typenameEClasses), name, nclass);
@@ -277,7 +290,7 @@ dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int {
 			switch (meclass) {
 				None(): {
 					node = TNodeName(id, [], pos);
-					findOrMakeTNode(tmap, node);
+					findOrMakeTNode(tmap, node, "dtype2eclass");
 				}
 				Some(eclass): eclass;
 			}
@@ -287,7 +300,7 @@ dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int {
 				makeTNodeClass(tmap)
 			} else {
 				node = TNodeName(id, map(ttypars, \tp -> dtype2eclass(tmap, typars, tp)), pos);
-				findOrMakeTNode(tmap, node);
+				findOrMakeTNode(tmap, node, "dtype2eclass");
 			}
 		}
 		DTypeFunction(args, returnType, pos): {
@@ -298,7 +311,7 @@ dtype2eclass(tmap : TMap, typars : Tree<string, int>, d : DType) -> int {
 				),
 				pos
 			);
-			findOrMakeTNode(tmap, node);
+			findOrMakeTNode(tmap, node, "dtype2eclass");
 		}
 	}
 }
@@ -335,17 +348,17 @@ isSameTNode(tmap : TMap, left : TNode, right : TNode) -> bool {
 	}
 }
 
-makeTNode(tmap : TMap, t : TType, pos : int) -> TNode {
+makeTNode(tmap : TMap, t : TType, reason : string, pos : int) -> TNode {
 	error = \ -> {
 		println("ERROR: Could not make TNode for " + prettyTType(t));
 		TNodeName("", [], pos);
 	}
 	switch (t) {
-		TTypeName(id, typars): makeTNodeName(tmap, t, pos);
+		TTypeName(id, typars): makeTNodeName(tmap, t, reason, pos);
 		TTypeEClass(eclass): {
 			getUnionMapValue(tmap.tmap, eclass);
 		}
-		TTypeFunction(args, returnType): makeTNodeName(tmap, t, pos);
+		TTypeFunction(args, returnType): makeTNodeName(tmap, t, reason, pos);
 		TTypeOverload(unique, overloads): {
 			uid = findTNode(tmap, unique);
 			uniques = if (uid == -1) {
@@ -354,7 +367,7 @@ makeTNode(tmap : TMap, t : TType, pos : int) -> TNode {
 			} else makeSet1(uid);
 			simplifyTNode(tmap, TNodeOverload(
 				uniques,
-				map(overloads, \st -> makeTNodeName(tmap, st, pos)),
+				map(overloads, \st -> makeTNodeName(tmap, st, reason, pos)),
 				pos
 			))
 		}
@@ -408,10 +421,10 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 			}
 		}
 		TTypeName(__, __): {
-			addName(makeTNodeName(tmap, t, acc.pos));
+			addName(makeTNodeName(tmap, t, "extractsupers", acc.pos));
 		}
 		TTypeFunction(args, returnType): {
-			addName(makeTNodeName(tmap, t, acc.pos));
+			addName(makeTNodeName(tmap, t, "extractsupers", acc.pos));
 		}
 		TTypeOverload(unique, overloads): {
 			println("TODO: Figure out how to represent this overload as a named node: " + prettyTType(t));
@@ -421,22 +434,22 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 }
 
 // Ensure that we get a named type out of this type. Used for the args of overloads and supertypes
-makeTNodeName(tmap : TMap, t : TType, pos : int) -> TNodeName {
+makeTNodeName(tmap : TMap, t : TType, reason : string, pos : int) -> TNodeName {
 	error = \ -> {
 		println("ERROR: Could not make TNodeName for " + prettyTType(t));
 		TNodeName("", [], pos);
 	};
 	switch (t) {
 		TTypeName(id, typars): {
-			TNodeName(id, map(typars, \tp -> findOrMakeTNodeClass(tmap, tp, pos)), pos);
+			TNodeName(id, map(typars, \tp -> findOrMakeTNodeClass(tmap, tp, reason, pos)), pos);
 		}
 		TTypeFunction(args, returnType): {
 			TNodeName("", 
 				arrayPush(
 					map(args, \a -> 
-						findOrMakeTNodeClass(tmap, a, pos)
+						findOrMakeTNodeClass(tmap, a, reason, pos)
 					),
-					findOrMakeTNodeClass(tmap, returnType, pos)
+					findOrMakeTNodeClass(tmap, returnType, reason, pos)
 				), pos
 			)
 		}
@@ -548,11 +561,23 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 	}
 }
 
-// Are there any supertypes of this node?
+// Are there any direct supertypes of this node?
 hasSupertype(tmap : TMap, node : TNodeName) -> bool {
 	supertype = TNodeSupertype(makeSet(), [node], makeSet(), 0);
 	named = getPossibleTSupers(tmap, supertype);
 	sizeSet(named) > 1;
+}
+
+// Could there be some supertype placement in this one?
+isEClassResolved(tmap : TMap, eclass : int) -> bool {
+	node = getUnionMapValue(tmap.tmap, eclass);
+	switch (node) {
+		TNodeName(name, typars, pos): {
+			!isEmptyTNode(node) && forall(typars, \tp -> isEClassResolved(tmap, tp))
+		}
+		TNodeOverload(unique, overloads, pos): false;
+		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): false;
+	}
 }
 
 // Could there be a different subtype that this one?
@@ -561,7 +586,9 @@ hasSubtype(tmap : TMap, node : TNodeName) -> bool {
 	length(subtypes) > 1;
 }
 
-// We know we want a given name, and we have a set of candidates to pick from
+// We know we want a given name, and we have a set of candidates to pick from which
+// help figure out the required number of type-parameters.
+// It constructs type classes for each typar
 instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int) -> TNodeName {
 	node = filter(nodes, \n -> n.name == name);	
 	if (length(node) > 0) {
@@ -590,7 +617,13 @@ instantiateTNodeName(tmap : TMap, name : string, nodes : [TNodeName], pos : int)
 //
 
 mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
-	
+	if (isDebuggingTopid(tmap)) {
+		lclass = findTNodeClass(tmap, left);
+		rclass = findTNodeClass(tmap, right);
+		if (isDebuggingEClass(tmap, lclass) || isDebuggingEClass(tmap, rclass)) {
+			println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
+		}
+	}
 	// println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 	todo = \ -> {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
@@ -731,7 +764,7 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 	});
 
 	if (!isEmptySet(super.unknownSubtypes)) {
-		eclass = findOrMakeTNode(tmap, node);
+		eclass = findOrMakeTNode(tmap, node, "unifynodevssuper");
 		iterSet(super.unknownSubtypes, \st -> {
 			// println(^uindent + "Joining e" + i2s(eclass) + " and e" + i2s(st));
 			joinTNodes(tmap, eclass, st);
@@ -749,7 +782,9 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 // Try to unify this super type against a subtype. Return true if successful
 unifyTNodeNameWithSubtype(tmap : TMap, node : TNodeName, subtype : TNodeName) -> bool {
 	if (subtype.name == node.name) {
-		// println(^uindent + "Sub with node " + prettyTNode(tmap, subtype) + " vs " + prettyTNode(tmap, node));
+		if (isDebuggingTopid(tmap)) {
+			println(^uindent + "Sub with node " + prettyTNode(tmap, subtype) + " vs " + prettyTNode(tmap, node));
+		}
 		// OK, the same name, just go and subtype the typars
 		if (length(subtype.typars) == length(node.typars)) {
 			iteri(subtype.typars, \i, tp -> {
@@ -922,7 +957,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
 							supers = getPossibleTSupers(tmap, supertype);
 							nsupers = sizeSet(supers);
 							if (nsupers == 1) {
-								println("Ignoring that sub is  " + toString(set2array(supers)));
+								println("TODO: We could infer that sub is " + toString(set2array(supers)));
 							}
 							postpone();
 						} else {
@@ -936,13 +971,16 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : int) -> void {
 						mergeTNodes(tmap, supernode, mega);
 						{}
 					}
-					default: {
-						postpone();
-					}
+					TNodeOverload(unique, overloads, __): postpone();
 				}
 			} else {
-				joinTNodes(tmap, sub, super);
-				{}
+				if (!isEClassResolved(tmap, sub) && !isEClassResolved(tmap, super)) {
+					// println(^(tmap.topid) + ": TODO: This is wrong. We should supertype the typars " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode));
+					postpone();
+				} else {
+					joinTNodes(tmap, sub, super);
+					{}
+				}
 			}
 		}
 		TNodeOverload(__, __, __): postpone();
@@ -973,7 +1011,7 @@ resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>
 		pendingSubtypes2 = ^(tmap.pendingSubtypes);
 		switch (pendingSubtypes2) {
 			EmptyList(): {
-				if (verbose) {
+				if (isDebuggingTopid(tmap)) {
 					iterList(^(tmap.pending), \p -> {
 						println("Ignoring " + prettyTNode(tmap, p.first) + " vs " + prettyTNode(tmap, p.second));
 					});

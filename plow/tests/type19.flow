@@ -1,6 +1,6 @@
 import plow/types/ugraph/tmap;
 
-test(nameGroups, tmap, subtypes, uniques, unknownSubtypes, pos) {
+test(tmap, subtypes, uniques, unknownSubtypes, pos) {
 	// Unify the typars of identical typenames
 	nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st -> {
 		treePushToArrayUnique(acc, st.name, st)

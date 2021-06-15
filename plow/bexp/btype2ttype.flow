@@ -1,5 +1,6 @@
 import plow/bexp/bexp;
 import plow/types/type;
+import ds/array;
 
 export {
 	btype2ttype(b : BType) -> TType;

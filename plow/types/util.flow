@@ -2,34 +2,15 @@ import plow/types/type;
 import algorithms;
 
 export {
-	getTTypeName(t : TType) -> string;
 	unresolvedTType(t : TType) -> bool;
-	containsTTypeEClass(t : TType) -> bool;
-}
-
-getTTypeName(t : TType) -> string {
-	switch (t) {
-		TTypeName(n, __): n;
-		default: "";
-	}
 }
 
 unresolvedTType(t : TType) -> bool {
 	switch (t) {
-		TTypeName(id, typars): exists(typars, unresolvedTType);
+		TTypeName(id, typars): (id == "" && typars == []) || exists(typars, unresolvedTType);
 		TTypeEClass(eclass): true;
 		TTypeFunction(args, returnType): exists(args, unresolvedTType) || unresolvedTType(returnType);
 		TTypeOverload(unique, overloads): true;
 		TTypeSupertype(unique, subtypes, maxed): true;
-	}
-}
-
-containsTTypeEClass(t : TType) -> bool {
-	switch (t) {
-		TTypeName(id, typars): exists(typars, containsTTypeEClass);
-		TTypeEClass(eclass): true;
-		TTypeFunction(args, returnType): exists(args, containsTTypeEClass) || containsTTypeEClass(returnType);
-		TTypeOverload(unique, overloads): exists(overloads, containsTTypeEClass);
-		TTypeSupertype(unique, subtypes, maxed): exists(subtypes, containsTTypeEClass);
 	}
 }

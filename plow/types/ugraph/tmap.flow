@@ -28,7 +28,7 @@ export {
 		// For debugging
 		tracing : Tracing,
 		// What id are we type checking at the moment?
-		topid : string,
+		topid : ref string,
 	);
 
 	// Our nodes in the type graph

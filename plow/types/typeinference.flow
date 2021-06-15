@@ -199,10 +199,8 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 		println("\nInference of global " + d.id);
 	}
 
-	nenv = TTypeEnv(env with 
-		onError = \p, e -> env.onError(p, d.id + ": " + e), 
-		tmap = TMap(env.tmap with topid = d.id)
-	);
+	nenv = TTypeEnv(env with onError = \p, e -> env.onError(p, d.id + ": " + e));
+	nenv.tmap.topid := d.id;
 
 	tracingId = isTracingId(env.tracing, StageTypeInference(), 1, d.id);
 
