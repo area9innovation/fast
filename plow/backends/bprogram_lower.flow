@@ -139,7 +139,7 @@ findUsedIn(names : BNames, acc : UsedCodeAcc, name : string) -> UsedCodeAcc {
 					switch (lookupTree(names.unions, name)) {
 						Some(union): proc_union(union);
 						None(): {
-							if (!containsKeyTree(names.natives, name)) {
+							if (!startsWith(name, "?") && !containsKeyTree(names.natives, name)) {
 								println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
 							}
 							acc;
