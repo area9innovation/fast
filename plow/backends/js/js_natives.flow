@@ -78,8 +78,8 @@ jsBackend() -> Backend {
 									if (arrA && arrB) {
 										length = a.length;
 										if (length != b.length) return false;
-										for (var __i = length; __i-- !== 0;) {
-											if (!deepEquality(a[__i], b[__i])) return false;
+										for (var i = length; i-- !== 0;) {
+											if (!deepEquality(a[i], b[i])) return false;
 										}
 										return true;
 									}
@@ -127,8 +127,8 @@ jsBackend() -> Backend {
 									var l1 = o1.length;
 									var l2 = o2.length;
 									var l = l1 < l2 ? l1 : l2;
-									for (var __i = 0; i < l; ++ i) {
-										var c = compareByValue(o1[__i], o2[__i]);
+									for (var i = 0; i < l; ++ i) {
+										var c = compareByValue(o1[i], o2[i]);
 										if(c != 0) {
 											return c;
 										}
@@ -155,9 +155,9 @@ jsBackend() -> Backend {
 										return 1;
 									}
 									for (field in a) {
-										var __c = compareByValue(o1[field], o2[field]);
-										if(__c != 0) {
-											return __c;
+										var c = compareByValue(o1[field], o2[field]);
+										if(c != 0) {
+											return c;
 										}
 									}
 									return 0;
@@ -235,10 +235,10 @@ jsBackend() -> Backend {
 				)
 			),
 
-			BackGen("Native.fold", bvoidType, BackText("function(values,init,fn){for(var __i=0;__i<values.length;__i++){init=fn(init,values[__i]);}return init;}")),
+			BackGen("Native.fold", bvoidType, BackText("function(values,init,fn){for(var i=0;i<values.length;i++){init=fn(init,values[i]);}return init;}")),
 			BackGen("Native.map", bvoidType, BackText("function(a,fn){return a.map(fn);}")),
 			BackGen("Native.filter", bvoidType, BackText("function(a,fn){return a.filter(fn);}")),
-			BackGen("Native.enumFromTo", bvoidType, BackText("function(init,n){var r=[];for(var __i=init;__i<=n;__i++){r.push(__i);}return r;}")),
+			BackGen("Native.enumFromTo", bvoidType, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
 			BackGen("Native.length", bvoidType, BackText("function(a){return a.length;}")),
 
 			BackGen("Native.isSameStructType", bvoidType, 
@@ -327,8 +327,8 @@ jsBackend() -> Backend {
 						}
 						var sargs = Runtime.structargs[sid];
 						var o = { _id : sid };
-						for (var __i in sargs) {
-							o[sargs[__i]] = args[__i];
+						for (var i in sargs) {
+							o[sargs[i]] = args[i];
 						}
 						return o;
 					}
@@ -430,8 +430,8 @@ Native.iter = function(values,clos) {
 				this.toString = function() {
 					var args = '';
 					var s = '';
-					for (var __i in this.args) {
-						args += s + this.args[__i].toString();
+					for (var i in this.args) {
+						args += s + this.args[i].toString();
 						s = ', '
 					};
 					if (args == '') {
@@ -479,8 +479,8 @@ to_string_native =
 	if (Array.isArray(value)) {
 		var r = '[';
 		var s = '';
-		for (var __i in value) {
-			r += s + toString(value[__i]);
+		for (var i in value) {
+			r += s + toString(value[i]);
 			s = ', ';
 		}
 		return r + ']';
