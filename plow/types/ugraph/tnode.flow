@@ -756,6 +756,9 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 }
 
 // OK, we have a named type against a super.
+// There are a range of cases:
+// The name can be a supertype of the right hand side.
+// The name can be the same as the supertype
 unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> TNode {
 	// println(^uindent + "Unifying " + prettyTNode(tmap, node) + " vs " + prettyTNode(tmap, super));
 	found = ref false;
@@ -767,7 +770,13 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 		eclass = findOrMakeTNode(tmap, node, "unifynodevssuper");
 		iterSet(super.unknownSubtypes, \st -> {
 			// println(^uindent + "Joining e" + i2s(eclass) + " and e" + i2s(st));
-			joinTNodes(tmap, eclass, st);
+			if (true) {
+				subtypeTNodes(tmap, st, eclass, super.pos);
+			} else {
+				// TODO: This is wrong. All we know is that st is a subtype of eclass
+				joinTNodes(tmap, eclass, st);
+				{}
+			}
 			found := true;
 		});
 	}
