@@ -41,9 +41,9 @@ main() {
 	};
 
 	// This is how we compile a file
-	process_file = \src_file -> {
+	process_file = \src_file, ver -> {
 		flow_file = path2fastPath(allincludes, src_file);
-		if (verbose) {
+		if (verbose || ver) {
 			println("compiling file '" + src_file + "' (" + flow_file + ")");
 		}
 		cache = makePlowCache(\e -> {
@@ -72,10 +72,11 @@ main() {
 	}
 
 	if (!isDirectory(thefile)) {
-		process_file(thefile);
+		process_file(thefile, false);
 	} else {
-		files = sort(filter(readDirectoryRecursively(thefile), \f -> endsWith(f, ".flow")));
-		iter(files, process_file);
+		files0 = if (isUrlParameterTrue("rec")) readDirectoryRecursively(thefile) else map(readDirectory(thefile), \f -> pathCombine(thefile, f));
+		files = sort(filter(files0, \f -> endsWith(f, ".flow")));
+		iter(files, \f -> process_file(f, true));
 	};
 
 	// OK, listen for the error code
