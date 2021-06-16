@@ -12,11 +12,7 @@ export {
 bmodule2js(cache : PlowCache, flowpath : string, shorten_ids : bool) -> string {
 	backend = jsBackend();
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	bexp_program = if (shorten_ids) {
-		shortenIdsBExpProgram(bmodules2BExpProgram(modules), backend.keywords);
-	} else {
-		Pair(bmodules2BExpProgram(modules), RenameIds(makeTree(), makeTree(), makeTree()));
-	}
+	bexp_program = renameIdsBExpProgram(bmodules2BExpProgram(modules), shorten_ids, backend.keywords);
 	prog = bexpProgram2BProgram(bexp_program.first);
 	shortenIds = bexp_program.second;
 	bprogram2js(prog, flowpath, backend, shortenIds);

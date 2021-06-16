@@ -13,36 +13,33 @@ export {
 
 	// This function converts names to short ones, avoiding keywords.
 	// (for example "main" -> "$o2") or changes "keyword" to "keyword__" .
-	shortenIdsBExpProgram(prog : BExpProgram, keywords : Set<string>) -> Pair<BExpProgram, RenameIds>;
+	renameIdsBExpProgram(prog : BExpProgram, shorten_ids : bool, keywords : Set<string>) -> Pair<BExpProgram, RenameIds>;
 
 	// Reverse all three renamings in shorten_ids (make a backwards renaming).
 	reverseRenameIds(shorten_ids : RenameIds) -> RenameIds;
 
 	// Apply renaming to all entities of a program.
-	renameBExpProgram(prog : BExpProgram, keywords : Set<string>, renaming : RenameIds) -> BExpProgram;
+	renameBExpProgram(prog : BExpProgram, shorten_ids : bool, keywords : Set<string>, renaming : RenameIds) -> BExpProgram;
 
 	// Apply renamings to a type.
 	renameBType(t : BType, type_renamings : Tree<string, string>) -> BType;
 }
 
-makeRenaming(names : [string], keywords : Set<string>) -> Tree<string, string> {
-	foldi(names, makeTree(), \i, ac, name -> 
-		setTree(ac, name, makeSmallId(i, keywords))
-	);
-}
+renaming_suffix = "__";
 
-builtin_ids_set = buildSet([
-	"void", "bool", "int", "double", "string", "flow", 
-	"array", "ref",
-	"main"
-]);
+makeRenaming(names : [string], shorten_ids : bool, keywords : Set<string>) -> Tree<string, string> {
+	foldi(names, makeTree(), \i, ac, name -> {
+		// Make a smaller id (optionally) and add a '__' suffix to distinguish from other names
+		setTree(ac, name, (if (shorten_ids) makeSmallId(i, keywords) else name) + renaming_suffix)
+	});
+}
 
 renameId(id : string, renaming : Tree<string, string>, err_msg : string) -> string {
 	if (isLetter(getCharAt(id, 0))) {
 		// The case of identifier
 		switch (lookupTree(renaming, id)) {
 			Some(renamed): renamed;
-			None(): id;
+			None(): id; // The case of builtin names like 'int' or 'ref', etc. ...
 		}
 	} else {
 		// The case of operators like +, *, <, <=, or builtin like 'int' or 'main' ...
@@ -67,13 +64,13 @@ renameDUnion(u : DUnion, type_renamings : Tree<string, string>) -> DUnion {
 	);
 }
 
-makeShortenIds(prog : BExpProgram, keywords : Set<string>) -> RenameIds {
+makeRenameIds(prog : BExpProgram, shorten_ids : bool, keywords : Set<string>) -> RenameIds {
 	RenameIds(
 		// type renamings
 		mapTree(
 			makeRenaming(
 				concat(getTreeKeys(prog.structs), getTreeKeys(prog.unions)), 
-				keywords
+				shorten_ids, keywords
 			), 
 			// Prefix type ids with 't_' in order to distinguish them from vars
 			\id -> "t_" + id
@@ -81,22 +78,22 @@ makeShortenIds(prog : BExpProgram, keywords : Set<string>) -> RenameIds {
 		// filed renamings
 		makeRenaming(
 			concatA(map(getTreeValues(prog.structs), \s -> map(s.structArgs, \arg -> arg.id))),
-			keywords
+			shorten_ids, keywords
 		),
 		// var renamings
 		makeRenaming(
 			map(prog.declarations, \decl -> decl.id), 
-			keywords
+			shorten_ids, keywords
 		)
 	);
 }
 
-shortenIdsBExpProgram(prog : BExpProgram, keywords : Set<string>) -> Pair<BExpProgram, RenameIds> {
-	shorten_ids = makeShortenIds(prog, keywords);
-	Pair(renameBExpProgram(prog, keywords, shorten_ids), shorten_ids);
+renameIdsBExpProgram(prog : BExpProgram, shorten_ids : bool, keywords : Set<string>) -> Pair<BExpProgram, RenameIds> {
+	renaming = makeRenameIds(prog, shorten_ids, keywords);
+	Pair(renameBExpProgram(prog, shorten_ids, keywords, renaming), renaming);
 }
 
-renameBExpProgram(prog : BExpProgram, keywords : Set<string>, renaming : RenameIds) -> BExpProgram {
+renameBExpProgram(prog : BExpProgram, shorten_ids : bool, keywords : Set<string>, renaming : RenameIds) -> BExpProgram {
 	BExpProgram(
 		mapTree(prog.structs, \s ->
 			renameDStruct(s, renaming.typeRenamings, renaming.fieldRenamings)
@@ -105,7 +102,7 @@ renameBExpProgram(prog : BExpProgram, keywords : Set<string>, renaming : RenameI
 			renameDUnion(u, renaming.typeRenamings)
 		),
 		map(prog.declarations, \decl -> 
-			renameBExpDeclaration(decl, renaming.typeRenamings, renaming.fieldRenamings, renaming.varRenamings, keywords)
+			renameBExpDeclaration(decl, renaming.typeRenamings, renaming.fieldRenamings, renaming.varRenamings, shorten_ids, keywords)
 		)
 	);
 }
@@ -115,9 +112,10 @@ renameBExpDeclaration(
 	type_renamings : Tree<string, string>, 
 	field_renamings : Tree<string, string>, 
 	var_renamings : Tree<string, string>, 
+	shorten_ids : bool, 
 	keywords : Set<string>
 ) -> BExpDeclaration {
-	ren_ex = \e -> renameBExp(e, type_renamings, field_renamings, var_renamings, keywords);
+	ren_ex = \e -> renameBExp(e, type_renamings, field_renamings, var_renamings, shorten_ids, keywords);
 	ren_tp = \t -> renameBType(t, type_renamings);
 	switch (decl) {
 		BGlobalVar(id, body, type): {
@@ -126,18 +124,18 @@ renameBExpDeclaration(
 		BExpFunction(id, args, body, type): {
 			n_vars = sizeTree(var_renamings);
 			args_renamings = foldi(args, var_renamings, \i, acc, arg -> 
-				setTree(acc, arg, makeSmallId(i + n_vars, keywords))
+				setTree(acc, arg, (if (shorten_ids) makeSmallId(i + n_vars, keywords) else arg) + renaming_suffix)
 			);
 			BExpFunction(
 				renameId(id, var_renamings, prettyBExpDeclaration(decl)), 
 				map(args, \arg -> renameId(arg, args_renamings, prettyBExpDeclaration(decl))), 
-				renameBExp(body, type_renamings, field_renamings, args_renamings, keywords),
+				renameBExp(body, type_renamings, field_renamings, args_renamings, shorten_ids, keywords),
 				ren_tp(type)
 			)
 		}
 		BExpNative(id, isio, type, nativeName, fallback): {
 			BExpNative(renameId(id, var_renamings, prettyBExpDeclaration(decl)), isio, ren_tp(type), nativeName, 
-				maybeMap(fallback, \fb -> renameBExpDeclaration(fb, type_renamings, field_renamings, var_renamings, keywords))
+				maybeMap(fallback, \fb -> renameBExpDeclaration(fb, type_renamings, field_renamings, var_renamings, shorten_ids, keywords))
 			);
 		}
 	}
@@ -147,10 +145,11 @@ renameBExp(e : BExp,
 	type_renamings : Tree<string, string>, 
 	field_renamings : Tree<string, string>, 
 	var_renamings : Tree<string, string>,
+	shorten_ids : bool, 
 	keywords : Set<string>
 ) -> BExp {
 	ren_tp = \tp -> renameBType(tp, type_renamings);
-	ren_ex = \ex -> renameBExp(ex, type_renamings, field_renamings, var_renamings, keywords);
+	ren_ex = \ex -> renameBExp(ex, type_renamings, field_renamings, var_renamings, shorten_ids, keywords);
 	ren_var = \var -> BVar(renameId(var.id, var_renamings, "expr: " + prettyBExp(e)), ren_tp(var.type));
 	ren_struct = \str -> renameId(str, type_renamings, "expr: " + prettyBExp(e));
 	ren_field = \fld -> renameId(fld, field_renamings, "expr: " + prettyBExp(e));
@@ -160,22 +159,22 @@ renameBExp(e : BExp,
 			ren_var(e);
 		};
 		BLet(id, val, body, type): {
-			renamed = makeSmallId(sizeTree(var_renamings), keywords);
+			renamed = (if (shorten_ids) makeSmallId(sizeTree(var_renamings), keywords) else id) + renaming_suffix;
 			BLet(
 				renamed, 
 				ren_ex(val), 
-				renameBExp(body, type_renamings, field_renamings, setTree(var_renamings, id, renamed), keywords),
+				renameBExp(body, type_renamings, field_renamings, setTree(var_renamings, id, renamed), shorten_ids, keywords),
 				ren_tp(type)
 			);
 		}
 		BLambda(args, body, type): {
 			n_vars = sizeTree(var_renamings);
 			lambda_renamings = foldi(args, var_renamings, \i, acc, arg -> 
-				setTree(acc, arg, makeSmallId(i + n_vars, keywords))
+				setTree(acc, arg, (if (shorten_ids) makeSmallId(i + n_vars, keywords) else arg) + renaming_suffix)
 			);
 			BLambda(
 				map(args, \arg -> renameId(arg, lambda_renamings, prettyBExp(e))), 
-				renameBExp(body, type_renamings, field_renamings, lambda_renamings, keywords),
+				renameBExp(body, type_renamings, field_renamings, lambda_renamings, shorten_ids, keywords),
 				ren_tp(type)
 			);
 		}
