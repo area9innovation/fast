@@ -186,7 +186,11 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	// TODO: We could add a "stop" flag and cancel compilation in those cases
 	if (hasCachedBModule(cache.modules, flowpath)) {
 		getCachedBModule(cache.modules, flowpath);
-	} else if (hasIncrementalBModule(cache.modules, path, flowpath)) {
+	} else if (^(cache.errorCount) != 0) {
+		// We stop if there are errors
+		println("Stops compilation because of errors: " + flowpath);
+		getDummyBModule();
+	} else if (hasIncrementalBModule(cache.tracing, cache.modules, path, flowpath)) {
 		// OK, we have an incremental module, which we read now
 		bmod = getCachedBModule(cache.modules, flowpath);
 		// Then make sure we have all dependents as well
@@ -200,9 +204,6 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		// We should mark this as being processed,
 		// so we do not concurrently do the same file many times
 		cache.awaiting := insertSet(^(cache.awaiting), flowpath);
-
-		// Clear the error count
-		cache.errorCount := 0;
 
 		// OK, we have to parse this
 		code = getFileContent(path);
@@ -270,11 +271,14 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			resolveUnionName = dd.resolveUnionName
 		);
 		bmodule = ttypeInference(tenv1, dmod);
-		if (^(cache.errorCount) == 0) {
-			setCachedBModule(cache.modules, flowpath, bmodule);
-		} else {
+
+		setCachedBModule(cache.modules, flowpath, bmodule);
+
+		if (^(cache.errorCount) != 0) {
 			// OK, there are errors, so remove any incremental
-			clearCachedBModule(cache.modules, flowpath, bmodule);
+			deleteBModule(cache.tracing, flowpath)
+		} else {
+			writeBModule(cache.tracing, bmodule);
 		}
 
 		// OK, clear the name lookup cache

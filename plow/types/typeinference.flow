@@ -228,7 +228,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 }
 
 resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : string, verbose : bool) -> TTypeEnv {
-	types = resolveTNodes(env.tmap, 5, verbose);
+	types = resolveTNodes(env.tmap, 3, verbose);
 	// Only grab the etypes we do not already have set above
 	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
 		if (containsKeyTree(acc, eclass)) acc

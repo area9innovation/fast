@@ -14,7 +14,7 @@ export {
 
 	// Do we have this module in memory?
 	hasCachedBModule(m : BModules, flowpath : string) -> bool;
-	hasIncrementalBModule(m : BModules, fullpath : string, flowpath : string) -> bool;
+	hasIncrementalBModule(tracing : Tracing, m : BModules, fullpath : string, flowpath : string) -> bool;
 	getCachedBModule(m : BModules, flowpath : string) -> BModule;
 	setCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void;
 	clearCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void;
@@ -34,8 +34,8 @@ hasCachedBModule(m : BModules, flowpath : string) -> bool {
 	containsConcurrentHashMap(m.modules, flowpath);
 }
 
-hasIncrementalBModule(m : BModules, fullpath : string, flowpath : string) -> bool {
-	incremental = readBModule(fullpath, flowpath);
+hasIncrementalBModule(tracing : Tracing, m : BModules, fullpath : string, flowpath : string) -> bool {
+	incremental = readBModule(tracing, fullpath, flowpath);
 	incremental ?? {
 		// Register this guy in our cache
 		setConcurrentHashMap(m.modules, flowpath, incremental);
@@ -51,7 +51,6 @@ getCachedBModule(m : BModules, flowpath : string) -> BModule {
 
 setCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void {
 	setConcurrentHashMap(m.modules, flowpath, bmod);
-	writeBModule(bmod);
 }
 
 clearCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void {

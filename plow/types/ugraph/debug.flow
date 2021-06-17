@@ -119,7 +119,7 @@ isEmptyTNode(n : TNode) -> bool {
 }
 
 isDebuggingTopid(tmap : TMap) -> bool {
-	isTracingId(tmap.tracing, StageTypeInference(), 0, ^(tmap.topid));
+	isTracingId(tmap.tracing, StageTypeInference(), 1, ^(tmap.topid));
 }
 
 isDebuggingEClass(tmap : TMap, eclass : int) -> bool {

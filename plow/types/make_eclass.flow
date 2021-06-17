@@ -7,9 +7,11 @@ export {
 populateEClass(mkEClassFn : () -> int, e : DExp) -> void {
 	mkEClass = \ee -> {
 		if (ee != -1) {
-			println("Expected a null-eclass")
+			println("TODO: Expected a null-eclass " + toString(e));
+			ee;
+		} else {
+			mkEClassFn();
 		}
-		mkEClassFn();
 	}
 	todo = \ -> {
 		println("Add eclass");
