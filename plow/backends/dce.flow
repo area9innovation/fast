@@ -47,7 +47,7 @@ aliveCode(names : BNames) -> Set<string> {
 		buildSet([
 			"bool", "void", "int", "double", "string", 
 			"flow", "ref", "array", "__negate", "__index",
-			"<", "<=", "==", ">", ">=", ":=", "::=",
+			"<", "<=", "==", ">", ">=", ":=", "::=", "!=",
 			"+", "-", "*", "/", "%", "&&", "||", "!",
 			"__deref", "__ref", "__not", "__array",
 		])
