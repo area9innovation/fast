@@ -14,9 +14,7 @@ C:/flow9/lib/form/renderform.flow:446:46: ERROR: Merge WidthHeight and double (e
 C:/flow9/lib/form/paragraphalignments.flow:41:5: TODO: Picking random supertype: super0{EndAlign, StartAlign}
 Here, we should find the "closest" supertype and pick that.
 
-- Try to reduce size of eclasses. In principle, we do not need all of them
-  if we construct eclasses when we start typing the globals instead of when
-  desugaring.
+- Try to reset eclasses for each chunk
 
 - Review positions. They are wrong when reporting a problem in array.flow filtermap.
 

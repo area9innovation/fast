@@ -23,12 +23,6 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 	nenv1 = foldTree(d.natives, env, \nat, nativ, acc -> {
 		// The module types have to be with ? in the types
 		fulltype = dtype2ttype(acc, false, nativ.type);
-
-		// TODO: This is arguably wrong. Only required temporarily
-		// TODO: Should we put nat in TMap?
-		nativ.eclass ::= env.mkEClass();
-		unifyTNodes(acc.tmap, fulltype, TTypeEClass(nativ.eclass), "native", d.pos, );
-
 		if (isTracingId(env.tracing, StageTypeInference(), 1, nat)) {
 			println("native " + nat + ": " + prettyTType(fulltype));
 		}

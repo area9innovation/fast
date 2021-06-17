@@ -39,7 +39,7 @@ export {
 
 	// Typars is defined if this name is polymorphic.
 	DGlobal(id : string, typars : [string], recursive : bool, value : DExp, mutable eclass : int, pos : int);
-	DNative(id : string, isIo : bool, type : DType, name : string, fallback : bool, mutable eclass : int, pos : int);
+	DNative(id : string, isIo : bool, type : DType, name : string, fallback : bool, pos : int);
 
 	// Defining a union. Typars are ?, ??.
 	DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);
