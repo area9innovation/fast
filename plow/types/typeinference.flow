@@ -1,6 +1,7 @@
 import plow/dexp/types;
 import plow/dexp/vars;
 import plow/types/make_eclass;
+import plow/types/ugraph/reset;
 import plow/types/typeinference_exp;
 import plow/types/typeof;
 import plow/types/polymorphism;
@@ -132,6 +133,7 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 	if (order == []) {
 		resolveEClasses(env, d, [], d.flowpath, false);
 	} else {
+		startTyvar = getNextEClass(env.tmap);
 		chunk = order[0];
 		cenv = env;
 
@@ -155,6 +157,8 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 			acc || isTracingId(env.tracing, StageTypeResolve(), 1, c)
 		});
 		nenv = resolveEClasses(genv, d, chunk, d.flowpath, verbose);
+
+		resetTMap(env.tmap, startTyvar);
 
 		ttypeInferenceChunk(nenv, d, tail(order));
 	}
