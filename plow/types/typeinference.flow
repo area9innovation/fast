@@ -6,7 +6,7 @@ import plow/types/polymorphism;
 import plow/types/util;
 import ds/simplegraph;
 import ds/arrayutils;
-import plow/bexp/dmodule2bmodule;
+import plow/bexp/dglobal2bglobal;
 import plow/bexp/dtype2btype;
 
 export {
