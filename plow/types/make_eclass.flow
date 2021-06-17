@@ -1,0 +1,89 @@
+import plow/dexp/dexp;
+
+export {
+	populateEClass(mkEClass : () -> int, e : DExp) -> void;
+}
+
+populateEClass(mkEClassFn : () -> int, e : DExp) -> void {
+	mkEClass = \ee -> {
+		if (ee != -1) {
+			println("Expected a null-eclass")
+		}
+		mkEClassFn();
+	}
+	todo = \ -> {
+		println("Add eclass");
+	}
+	rec = \ee -> populateEClass(mkEClassFn, ee);
+	switch (e) {
+		DVoid(pos): {};
+		DBool(v, pos): {};
+		DInt(v, pos): {};
+		DDouble(v, pos): {};
+		DString(v, pos): {};
+		DStringInclude(path, pos): {};
+		DVar(id, pos, eclass): e.eclass ::= mkEClass(eclass);
+		DLet(id, value, body, pos, eclass): {
+			rec(value);
+			rec(body);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DIf(cond, then, else_, pos, eclass): {
+			rec(cond);
+			rec(then);
+			rec(else_);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DCall(fn, args, pos, eclass): {
+			rec(fn);
+			iter(args, rec);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DConstruct(structid, args, pos, eclass): {
+			iter(args, rec);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DLambda(args, body, pos, eclass): {
+			rec(body);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DRef(value, pos, eclass): {
+			rec(value);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DField(value, field, pos, eclass): {
+			rec(value);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DSetMutable(lhs, field, value, pos, eclass): {
+			rec(lhs);
+			rec(value);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DArray(exps, pos, eclass): {
+			iter(exps, rec);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DSequence(exps, pos, eclass): {
+			iter(exps, rec);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DSwitch(value, type, cases, defaultCase, pos, eclass): {
+			rec(value);
+			iter(cases, \c -> rec(c.body));
+			defaultCase ?? rec(defaultCase) : {};
+			e.eclass ::= mkEClass(eclass);
+		}
+		DCast(value, target, pos):  {
+			rec(value);
+		}
+		DDowncast(id, newid, subtype, supereclass, scope, pos, eclass): {
+			rec(scope);
+			e.eclass ::= mkEClass(eclass);
+		}
+		DTyped(value, supertype, pos, eclass): {
+			rec(value);
+			e.eclass ::= mkEClass(eclass);
+		}
+	}
+}

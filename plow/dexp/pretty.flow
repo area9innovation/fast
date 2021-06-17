@@ -145,8 +145,8 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			pr("construct " + structid);
 			iter(args, rec);
 		}
-		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): {
-			superroot = rootTTypeEClass(env.tmap, supertype);
+		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
+			superroot = rootTTypeEClass(env.tmap, supereclass);
 			mtype = lookupTree(env.etypes, superroot);
 			super = mtype ?? prettyTType(mtype) : ("e" + i2s(superroot));
 
@@ -198,7 +198,7 @@ summarizeDExp(env : TTypeEnv, d : DExp) -> string {
 		DSequence(exps, pos, eclass): "seq";
 		DSwitch(value, type, cases, defaultCase, pos, eclass): "switch";
 		DCast(value, target, pos): "cast";
-		DDowncast(oldid, newid, subtype, supertype, scope, pos, eclass): "downcast " + oldid + " to " + newid;
+		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): "downcast " + oldid + " to " + newid;
 		DTyped(value, subtype, pos, eclass): "typed";
 	}
 }

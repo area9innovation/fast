@@ -38,8 +38,8 @@ export {
 	);
 
 	// Typars is defined if this name is polymorphic.
-	DGlobal(id : string, typars : [string], recursive : bool, value : DExp, eclass : int, pos : int);
-	DNative(id : string, isIo : bool, type : DType, name : string, fallback : bool, eclass : int, pos : int);
+	DGlobal(id : string, typars : [string], recursive : bool, value : DExp, mutable eclass : int, pos : int);
+	DNative(id : string, isIo : bool, type : DType, name : string, fallback : bool, mutable eclass : int, pos : int);
 
 	// Defining a union. Typars are ?, ??.
 	DUnion(id : string, typars : [DTypePar], types : [DTypeName], pos : int);
@@ -70,31 +70,31 @@ export {
 
 		DStringInclude(path : string, pos : int);
 
-		DVar(id : string, pos : int, eclass : int);
-		DLet(id : string, value : DExp, body : DExp, pos : int, eclass : int);
-		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int, eclass : int);
-		DLambda(args : [DArgType], body : DExp, pos : int, eclass : int);
+		DVar(id : string, pos : int, mutable eclass : int);
+		DLet(id : string, value : DExp, body : DExp, pos : int, mutable eclass : int);
+		DIf(cond : DExp, then : DExp, else_ : DExp, pos : int, mutable eclass : int);
+		DLambda(args : [DArgType], body : DExp, pos : int, mutable eclass : int);
 			DArgType(id : string, type : DType, pos : int);
 
 		// Array construction
-		DArray(exps : [DExp], pos : int, eclass : int);
-		DSequence(exps : [DExp], pos : int, eclass : int);
-		DCall(fn : DExp, args : [DExp], pos : int, eclass : int);
+		DArray(exps : [DExp], pos : int, mutable eclass : int);
+		DSequence(exps : [DExp], pos : int, mutable eclass : int);
+		DCall(fn : DExp, args : [DExp], pos : int, mutable eclass : int);
 		// Struct constructor
-		DConstruct(structid : string, args : [DExp], pos : int, eclass : int);
+		DConstruct(structid : string, args : [DExp], pos : int, mutable eclass : int);
 
-		DRef(value : DExp, pos : int, eclass : int);
+		DRef(value : DExp, pos : int, mutable eclass : int);
 
-		DField(value : DExp, field : string, pos : int, eclass : int);
-		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int, eclass : int);
+		DField(value : DExp, field : string, pos : int, mutable eclass : int);
+		DSetMutable(lhs : DExp, field : string, value : DExp, pos : int, mutable eclass : int);
 
-		DSwitch(value : DVar, type : DType, cases : [DCase], defaultCase : Maybe<DExp>, pos : int, eclass : int);
+		DSwitch(value : DVar, type : DType, cases : [DCase], defaultCase : Maybe<DExp>, pos : int, mutable eclass : int);
 			DCase(id : string, body : DExp, pos : int);
 		DCast(value : DExp, target : DType, pos : int);
 		// This does a downcast from a supertype to a subtype - a la let-binding of newid : subtype = downcast(id); scope
-		DDowncast(id : string, newid : string, subtype : DType, supertype : int, scope : DExp, pos : int, eclass : int);
+		DDowncast(id : string, newid : string, subtype : DType, mutable supereclass : int, scope : DExp, pos : int, mutable eclass : int);
 		// We declare that value is a subtype of the type
-		DTyped(value : DExp, supertype : DType, pos : int, eclass : int);
+		DTyped(value : DExp, supertype : DType, pos : int, mutable eclass : int);
 
 	DType ::= DTypePar, DTypeName, DTypeFunction;
 		// This is used for void, int, Maybe, etc. Also, "auto" is used for implicit types
