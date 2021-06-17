@@ -133,10 +133,8 @@ renameBExpDeclaration(
 				ren_tp(type)
 			)
 		}
-		BExpNative(id, isio, type, nativeName, fallback): {
-			BExpNative(renameId(id, var_renamings, prettyBExpDeclaration(decl)), isio, ren_tp(type), nativeName, 
-				maybeMap(fallback, \fb -> renameBExpDeclaration(fb, type_renamings, field_renamings, var_renamings, shorten_ids, keywords))
-			);
+		BExpNative(id, isio, type, nativeName): {
+			BExpNative(renameId(id, var_renamings, prettyBExpDeclaration(decl)), isio, ren_tp(type), nativeName);
 		}
 	}
 }

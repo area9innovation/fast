@@ -53,7 +53,7 @@ bdeclaration2wasm(b : BExpDeclaration) -> string {
 				]
 			);
 		}
-		BExpNative(id, isio, type, nativeName, fallback): todo();
+		BExpNative(id, isio, type, nativeName): todo();
 	}
 }
 

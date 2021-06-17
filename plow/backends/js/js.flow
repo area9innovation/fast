@@ -57,7 +57,7 @@ bprogram2js(b : BProgram, flowpath : string, backend : Backend, shorten_ids : Re
 collectBProgramNativeNames(b : BProgram, add_class : (string) -> void) -> Tree<string, string> {
 	fold(b.declarations, makeTree(), \acc, decl ->
 		switch (decl) {
-			BNativeDec(id, __,__, nativeName, __): {
+			BExpNative(id, __,__, nativeName): {
 				setTree(acc, nativeName, mangleNativeName(nativeName, add_class));
 			}
 			default: acc;
@@ -114,15 +114,11 @@ bdeclaration2js(backend : Backend, b : BDeclaration) -> string {
 			}
 		}
 		BGlobalVar(name, body, __): "var " + name + " = " + bexp2js(backend, body) + ";";
-		BNativeDec(name, isIo, type, nativeName, mfallback): {
+		BExpNative(name, isIo, type, nativeName): {
 			generated = produceBackendNative(backend, nativeName);
 			if (generated == "") {
-				mfallback ?? {
-					bdeclaration2js(backend, mfallback);
-				}: {
-					// If the native is missing in runtime provided, a JS runtime error will occur.
-					"var " + name + " = " + nativeName + ";"
-				}
+				// If the native is missing in runtime provided, a JS runtime error will occur.
+				"var " + name + " = " + nativeName + ";"
 			} else {
 				"var " + name + " = " + generated + ";"
 			}

@@ -17,15 +17,14 @@ export {
 	);
 
 	BExpDeclaration ::= BGlobalVar, BExpFunction, BExpNative;
-	BDeclaration ::= BGlobalVar, BStatFunction, BNativeDec;
+	BDeclaration ::= BGlobalVar, BStatFunction, BExpNative;
 
 		BGlobalVar(id : string, body : BExp, type : BType);
 
 		BExpFunction(id : string, args : [string], body : BExp, type : BType);
 		BStatFunction(id : string, args : [string], body : BStatement, tailCall : bool, type : BType);
 
-		BExpNative(id : string, isio : bool, type : BType, nativeName : string, fallback : Maybe<BExpDeclaration>);
-		BNativeDec(id : string, isio : bool, type : BType, nativeName : string, fallback : Maybe<BDeclaration>);
+		BExpNative(id : string, isio : bool, type : BType, nativeName : string);
 
 	// Statement-based languages can get this format:
 	BStatement ::= BIfStatement, BLetStatement, BSetMutableStatement, BReturnVoid, BReturn, BTailCall, BSequenceStatement, BSwitchStatement;

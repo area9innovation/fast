@@ -30,21 +30,16 @@ bmodules2BExpProgram(modules : [BModule], spec : BackendSpec) -> BExpProgram {
 					if (!containsSet(alive, id)) {
 						// The native is not used
 						ac
-					} else if (!containsSet(spec.natives, nat.name)) {
+					} else if (containsSet(spec.natives, nat.name)) {
+						// Use a native since it is supported by a backend
+						concat(ac,[BExpNative(id, nat.isIo, nat.type, nat.name)]);
+					} else {
 						// The native is not implemented in a backend
 						if (!containsKeyTree(module.globals, id)) {
 							// The native is supported neither by a backend or by a fallback - error.
 							spec.onError(nat.pos, "Native " + nat.id + " (" + nat.name + ") is supported neither by a backend or by a fallback");
 						}
 						ac
-					} else {
-						// Look for a fallback
-						mfallback = lookupTree(module.globals, id);
-						concat(ac,
-							[BExpNative(id, nat.isIo, nat.type, nat.name,
-								maybeMap(mfallback, \glob : BGlobal -> bexp2BExpDeclaration(id, glob.value))
-							)]
-						);
 					}
 				),
 				\ac, id -> {
@@ -97,12 +92,7 @@ bexpDeclaration2Declaration(be : BExpDeclaration) -> BDeclaration {
 				type
 			);
 		}
-		BExpNative(name, isio, type, nativeName, fallback): {
-			sfallback : Maybe<BDeclaration> = fallback ?? {
-				Some(bexpDeclaration2Declaration(fallback))
-			} : None();
-			BNativeDec(name, isio, type, nativeName, sfallback)
-		}
+		BExpNative(name, isio, type, nativeName): be;
 	}
 }
 
