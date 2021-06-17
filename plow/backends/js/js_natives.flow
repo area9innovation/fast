@@ -170,6 +170,9 @@ jsBackend() -> Backend {
 			BackGen("Native.filter", bvoidType, BackText("function(a,fn){return a.filter(fn);}")),
 			BackGen("Native.enumFromTo", bvoidType, BackText("function(init,n){var r=[];for(var i=init;i<=n;i++){r.push(i);}return r;}")),
 			BackGen("Native.length", bvoidType, BackText("function(a){return a.length;}")),
+			BackGen("Native.concat", bvoidType, BackText("function(a,b){return a.concat(b);}")),
+			BackGen("Native.iter", bvoidType, BackText("function(a,fn){for(var i=0;i<a.length;i++){fn(a[i]);}}")),
+			BackGen("Native.replace", bvoidType, BackText("function(a,i,b){var c=a.slice();c[i]=b;return c;}")),
 
 			BackGen("Native.isSameStructType", bvoidType, 
 				BackText("function(a,b){return Object.prototype.hasOwnProperty.call(a,'_id')&&Object.prototype.hasOwnProperty.call(b,'_id')&&a._id==b._id}")
