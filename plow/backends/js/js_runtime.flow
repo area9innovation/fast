@@ -26,18 +26,13 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 	jsfile = cfg.outputfile;
 	hx = "FlowJsProgram.hx";
 	code = blueprint("
-		//import HaxeRuntime;
 		%imports%
 
-		/*class FlowJsProgram {
+		class FlowJsProgram {
 			static public var globals__  = {
-				HaxeRuntime._structnames_    = new haxe.ds.IntMap<String>();
-				HaxeRuntime._structids_      = new haxe.ds.StringMap<Int>();
-				HaxeRuntime._structargs_     = new haxe.ds.IntMap<Array<String>>();
-				HaxeRuntime._structargtypes_ = new haxe.ds.IntMap<Array<RuntimeType>>();
 				%render%
 			}
-		}*/
+		}
 		", [
 			"imports", imports, 
 			"render", if (containsSet(native_classes, "RenderSupport")) "  new RenderSupport();" else ""
