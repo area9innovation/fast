@@ -5,7 +5,14 @@ import plow/types/pretty;
 
 /*
 TODO:
-- Add debugging of type vars, so it becomes easier to debug
+C:/flow9/lib/formats/xml.flow:698:9: Add type parameter. Implicit polymorphism in array<e5717>
+		fold(elements, [], \acc, element -> {
+
+C:/flow9/lib/form/renderform.flow:446:46: ERROR: Merge WidthHeight and double (e1485 and e1484)
+                widthHeight = selectu(d.widthHeight, \wh -> {
+
+C:/flow9/lib/form/paragraphalignments.flow:41:5: TODO: Picking random supertype: super0{EndAlign, StartAlign}
+Here, we should find the "closest" supertype and pick that.
 
 - Try to reduce size of eclasses. In principle, we do not need all of them
   if we construct eclasses when we start typing the globals instead of when
@@ -756,6 +763,9 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 }
 
 // OK, we have a named type against a super.
+// There are a range of cases:
+// The name can be a supertype of the right hand side.
+// The name can be the same as the supertype
 unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -> TNode {
 	// println(^uindent + "Unifying " + prettyTNode(tmap, node) + " vs " + prettyTNode(tmap, super));
 	found = ref false;
@@ -767,7 +777,13 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype) -
 		eclass = findOrMakeTNode(tmap, node, "unifynodevssuper");
 		iterSet(super.unknownSubtypes, \st -> {
 			// println(^uindent + "Joining e" + i2s(eclass) + " and e" + i2s(st));
-			joinTNodes(tmap, eclass, st);
+			if (true) {
+				subtypeTNodes(tmap, st, eclass, super.pos);
+			} else {
+				// TODO: This is wrong. All we know is that st is a subtype of eclass
+				joinTNodes(tmap, eclass, st);
+				{}
+			}
 			found := true;
 		});
 	}
@@ -1128,6 +1144,8 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 					resolveTNode(tmap, acc, visited, eclass, mflow);
 				} : {
 					if (length(subtypes) != 1) {
+						// TODO: We should count the expanded length of
+						// each supertypes, and pick the "smallest" one
 						tmap.onError(pos, "TODO: Picking random supertype: " + prettyTNode(tmap, node));
 					}
 					resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
