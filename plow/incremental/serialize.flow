@@ -1,0 +1,15 @@
+import plow/bexp/bmodule;
+
+export {
+	readBModule(flowpath : string) -> Maybe<BModule>;
+	writeBModule(bmod : BModule) -> void;
+}
+
+readBModule(flowpath : string) -> Maybe<BModule> {
+	// println("TODO: Read bmodule "+ flowpath);
+	None();
+}
+
+writeBModule(bmod : BModule) -> void {
+	// println("TODO: Save bmodule "+ bmod.flowpath);
+}

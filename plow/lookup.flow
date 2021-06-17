@@ -1,5 +1,5 @@
 import plow/dexp/desugar;
-import plow/modules;
+import plow/incremental/modules;
 import ds/set;
 import sys/concurrent;
 

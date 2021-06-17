@@ -1,4 +1,5 @@
 import plow/bexp/bmodule;
+import plow/incremental/serialize;
 import sys/concurrent;
 
 import plow/dexp/desugar;
@@ -25,7 +26,17 @@ getDummyBModule() -> BModule {
 }
 
 hasCachedBModule(m : BModules, flowpath : string) -> bool {
-	containsConcurrentHashMap(m.modules, flowpath);
+	if (containsConcurrentHashMap(m.modules, flowpath)) {
+		true
+	} else {
+		incremental = readBModule(flowpath);
+		incremental ?? {
+			setCachedBModule(m, flowpath, incremental);
+			true;
+		} : {
+			false;
+		}
+	};
 }
 
 getCachedBModule(m : BModules, flowpath : string) -> BModule {
@@ -34,4 +45,5 @@ getCachedBModule(m : BModules, flowpath : string) -> BModule {
 
 setCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void {
 	setConcurrentHashMap(m.modules, flowpath, bmod);
+	writeBModule(bmod);
 }

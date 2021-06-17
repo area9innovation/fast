@@ -41,6 +41,8 @@ PlowCache(
 	nativeLookup : BLookupFromImport<BNative>,
 	// What is the next id
 	nextId : ref int,
+	// Awaiting modules that are being parsed
+	awaiting : ref Set<string>,
 	// Tracing helper
 	tracing : Tracing
 );
@@ -155,7 +157,7 @@ makePlowCache(
 		structLookup, unionLookup, fieldLookup, 
 		unionFieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
-		ref 0, makeTracing()
+		ref 0, ref makeSet(), makeTracing()
 	);
 }
 
@@ -177,10 +179,12 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	// TODO: We could add a "stop" flag and cancel compilation in those cases
 	if (hasCachedBModule(cache.modules, flowpath)) {
 		getCachedBModule(cache.modules, flowpath);
+	} else if (containsSet(^(cache.awaiting), flowpath)) {
+		getDummyBModule();
 	} else if (fileExists(path)) {
-
-		// TODO: We should mark this as being processes,
+		// We should mark this as being processed,
 		// so we do not concurrently do the same file many times
+		cache.awaiting := insertSet(^(cache.awaiting), flowpath);
 
 		// OK, we have to parse this
 		code = getFileContent(path);
@@ -192,7 +196,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		// OK, parse all the dependent files
 		imports = getDImports(p);
-		mods = concurrent(false, map(imports, \i -> {
+		concurrent(false, map(imports, \i -> {
 			\ -> compilePlow(cache, i.path)
 		}));
 
