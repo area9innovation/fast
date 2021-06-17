@@ -1,12 +1,27 @@
 import plow/backends/back_ast;
 
 export {
+
+	// The general info about a backend.
+	BackendSpec(
+		keywords : Set<string>, // A set of target language keywords
+		natives : Set<string>,  // A set of all supported natives
+		onError : (int, string) -> void,
+	);
+
 	// Initializes a backend structure
 	makeBackend(
 		name : string,
 		keywords : [string],
 		generators : [BackGen],
 	) -> Backend;
+
+	// Makes a default BackendSpec
+	makeBackendSpec(
+		name : string,
+		keywords : [string],
+		natives : [string],
+	) -> BackendSpec;
 }
 
 makeBackend(
@@ -33,5 +48,20 @@ makeBackend(
 			println(name + ": " + i2s(pos) + ": " + error);
 		},
 		ref makeSet()
+	)
+}
+
+makeBackendSpec(
+		name : string,
+		keywords : [string],
+		natives : [string],
+	) -> BackendSpec {
+	BackendSpec(
+		buildSet(keywords),
+		buildSet(natives),
+		\pos, error -> {
+			// TODO: Include position
+			println(name + ": " + i2s(pos) + ": " + error);
+		}
 	)
 }

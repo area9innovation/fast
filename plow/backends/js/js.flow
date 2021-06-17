@@ -11,8 +11,13 @@ export {
 
 bmodule2js(cache : PlowCache, flowpath : string, shorten_ids : bool) -> string {
 	backend = jsBackend();
+	spec = makeBackendSpec("js",
+		set2array(backend.keywords),
+		// We consider a native is a generator for a named identifier (non arithmetic, comparison, etc.)
+		filter(getTreeKeys(backend.generators), \gen_name -> isLetter(getCharAt(gen_name, 0)))
+	);
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	bexp_program = renameIdsBExpProgram(bmodules2BExpProgram(modules), shorten_ids, backend.keywords);
+	bexp_program = renameIdsBExpProgram(bmodules2BExpProgram(modules, spec), shorten_ids, backend.keywords);
 	prog = bexpProgram2BProgram(bexp_program.first);
 	shortenIds = bexp_program.second;
 	bprogram2js(prog, flowpath, backend, shortenIds);
@@ -25,6 +30,7 @@ bprogram2js(b : BProgram, flowpath : string, backend : Backend, shorten_ids : Re
 		jsmode = NODEJS_MODE,
 		code = true
 	);
+
 	native_classes = ref makeSet();
 	native_names = collectBProgramNativeNames(b, \class_ -> native_classes := insertSet(^native_classes, class_));
 
@@ -32,14 +38,6 @@ bprogram2js(b : BProgram, flowpath : string, backend : Backend, shorten_ids : Re
 	structs = getTreeValues(b.structs);
 	original_ids = reverseRenameIds(shorten_ids);
 
-	/* TODO: remove this debug stuff
-	println("Type Renamings:\n" +
-		concatStrings(map(tree2pairs(shorten_ids.typeRenamings), \p -> "\t" + p.first + " -> " + p.second + "\n")) + "\n" +
-		"Field Renamings:\n" +
-		concatStrings(map(tree2pairs(shorten_ids.fieldRenamings), \p -> "\t" + p.first + " -> " + p.second + "\n")) + "\n" + 
-		"Var Renamings:\n" +
-		concatStrings(map(tree2pairs(shorten_ids.varRenamings), \p -> "\t" + p.first + " -> " + p.second + "\n")) + "\n"
-	);*/
 	struct_names = buildSet(map(structs, \s -> s.id));
 	struct_funcs = supergluei(structs, \i, s : DStruct -> dstruct2js(i, backend, s, original_ids, struct_names), "\n");
 	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2js(backend, d), "\n");

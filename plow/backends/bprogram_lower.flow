@@ -1,11 +1,12 @@
 import plow/backends/dce;
 import plow/backends/bprogram;
+import plow/backends/backend;
 import plow/bexp/type;
 
 import ds/arrayutils;
 
 export {
-	bmodules2BExpProgram(modules : [BModule]) -> BExpProgram;
+	bmodules2BExpProgram(modules : [BModule], spec : BackendSpec) -> BExpProgram;
 
 	bexpProgram2BProgram(b : BExpProgram) -> BProgram;
 
@@ -17,7 +18,7 @@ export {
 	bstatementType(b : BStatement) -> BType;
 }
 
-bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
+bmodules2BExpProgram(modules : [BModule], spec : BackendSpec) -> BExpProgram {
 	names = bmodules2BNames(modules);
 	alive = aliveCode(names);
 	BExpProgram(
@@ -26,10 +27,20 @@ bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
 		fold(modules, [], \acc, module -> {
 			fold(module.order, 
 				foldTree(module.natives, acc, \id, nat, ac -> 
-					if (!containsSet(alive, id)) ac else {
+					if (!containsSet(alive, id)) {
+						// The native is not used
+						ac
+					} else if (!containsSet(spec.natives, nat.name)) {
+						// The native is not implemented in a backend
+						if (!containsKeyTree(module.globals, id)) {
+							// The native is supported neither by a backend or by a fallback - error.
+							spec.onError(nat.pos, "Native " + nat.id + " (" + nat.name + ") is supported neither by a backend or by a fallback");
+						}
+						ac
+					} else {
 						// Look for a fallback
 						mfallback = lookupTree(module.globals, id);
-						concat(ac, 
+						concat(ac,
 							[BExpNative(id, nat.isIo, nat.type, nat.name,
 								maybeMap(mfallback, \glob : BGlobal -> bexp2BExpDeclaration(id, glob.value))
 							)]
@@ -39,7 +50,23 @@ bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
 				\ac, id -> {
 				if (!containsSet(alive, id)) ac else {
 					switch (lookupTree(module.globals, id)) {
-						Some(decl): concat(ac, [bexp2BExpDeclaration(id, decl.value)]);
+						Some(decl): {
+							switch (lookupTree(module.natives, id)) {
+								Some(nat): {
+									if (containsSet(spec.natives, nat.name)) {
+										// This is a fallback for a native, which is supported by a backend. Ignore it.
+										ac;
+									} else {
+										// Use a fallback for a native, since it is not supported by a backend.
+										concat(ac, [bexp2BExpDeclaration(id, decl.value)]);
+									}
+								}
+								None(): {
+									// Ordinary global entity.
+									concat(ac, [bexp2BExpDeclaration(id, decl.value)]);
+								}
+							}
+						}
 						None(): {
 							println("Unknown id: '" + id + "'");
 							ac;

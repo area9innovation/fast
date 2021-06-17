@@ -3,18 +3,18 @@ import plow/backends/bprogram_lower;
 import plow/driver;
 
 export {
-	linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BExpProgram;
-	linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BProgram;
+	linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, spec : BackendSpec) -> BExpProgram;
+	linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, spec : BackendSpec) -> BProgram;
 	programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited : Set<string>) -> Pair<List<BModule>, Set<string>>;
 }
 
-linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BExpProgram {
+linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, spec : BackendSpec) -> BExpProgram {
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	renameIdsBExpProgram(bmodules2BExpProgram(modules), shorten_ids, keywords).first;
+	renameIdsBExpProgram(bmodules2BExpProgram(modules, spec), shorten_ids, spec.keywords).first;
 }
 
-linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, keywords : Set<string>) -> BProgram {
-	bexp_program = linkBExpProgram(cache, flowpath, shorten_ids, keywords);
+linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, spec : BackendSpec) -> BProgram {
+	bexp_program = linkBExpProgram(cache, flowpath, shorten_ids, spec);
 	bexpProgram2BProgram(bexp_program);
 }
 
