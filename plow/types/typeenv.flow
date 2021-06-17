@@ -61,14 +61,12 @@ export {
 	);
 
 	makeTTypeEnv(
-		nextEClass : ref int, 
 		onError : (pos : int, error : string) -> void,
 		d : DModule
 	) -> TTypeEnv;
 }
 
 makeTTypeEnv(
-	nextEClass : ref int, 
 	onError : (pos : int, error : string) -> void,
 	d : DModule
 ) -> TTypeEnv {
@@ -80,7 +78,7 @@ makeTTypeEnv(
 		};
 	tracing = makeTracing();
 
-	tmap = makeTMap(onError, nextEClass, mkUnique, tracing);
+	tmap = makeTMap(onError, ref 0, mkUnique, tracing);
 
 	TTypeEnv(
 		makeTree(), \ -> {

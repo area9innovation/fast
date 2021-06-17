@@ -211,7 +211,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
-		tenv0 = makeTTypeEnv(dd.nextEClass, dd.onError, dmod);
+		tenv0 = makeTTypeEnv(dd.onError, dmod);
 		tenv1 = TTypeEnv(
 			tenv0 with
 			resolveId = \pos, id -> {

@@ -41,7 +41,6 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 		)
 	});
 
-
 	// Set the type of top levels, so mutual recursion has something to bite on
 	tenv = foldTree(d.globals, nenv1, \id, global, acc -> {
 		global.eclass ::= acc.mkEClass();
