@@ -1,4 +1,7 @@
 import plow/backends/back_ast;
+import lingo/linecolumn;
+import fs/filesystem;
+import string_utils;
 
 export {
 
@@ -6,7 +9,7 @@ export {
 	BackendSpec(
 		keywords : Set<string>, // A set of target language keywords
 		natives : Set<string>,  // A set of all supported natives
-		onError : (int, string) -> void,
+		onError : (msg : string) -> void,
 	);
 
 	// Initializes a backend structure
@@ -22,6 +25,9 @@ export {
 		keywords : [string],
 		natives : [string],
 	) -> BackendSpec;
+
+	// Prepare an error message with position inside a source file.
+	makeErrorMessage(pos : int, file : string, error : string) -> string;
 }
 
 makeBackend(
@@ -43,10 +49,7 @@ makeBackend(
 			ngen = BackGen(gen with type = fntype);
 			treePushToArrayValue(acc, gen.name, ngen)
 		}),
-		\pos, error -> {
-			// TODO: Include position
-			println(name + ": " + i2s(pos) + ": " + error);
-		},
+		println,
 		ref makeSet()
 	)
 }
@@ -59,9 +62,20 @@ makeBackendSpec(
 	BackendSpec(
 		buildSet(keywords),
 		buildSet(natives),
-		\pos, error -> {
-			// TODO: Include position
-			println(name + ": " + i2s(pos) + ": " + error);
-		}
+		println
 	)
+}
+
+makeErrorMessage(pos : int, file : string, error : string) -> string {
+	resolver = makeLineResolver(getFileContent(file));
+	linecol = findLine(resolver, pos);
+
+	indentation = strLeft(linecol.line, linecol.lineIndex - 1);
+	spaced = stringFoldChar(indentation, "", \acc, s -> {
+		acc + if (s == "\t") s else " ";
+	});
+
+	file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
+	+ "\n" + linecol.line
+	+ "\n" + spaced + "^";
 }

@@ -37,7 +37,7 @@ bmodules2BExpProgram(modules : [BModule], spec : BackendSpec) -> BExpProgram {
 						// The native is not implemented in a backend
 						if (!containsKeyTree(module.globals, id)) {
 							// The native is supported neither by a backend or by a fallback - error.
-							spec.onError(nat.pos, "Native " + nat.id + " (" + nat.name + ") is supported neither by a backend or by a fallback");
+							spec.onError(makeErrorMessage(nat.pos, module.fullpath, "Native " + nat.id + " (" + nat.name + ") is supported neither by a backend or by a fallback"));
 						}
 						ac
 					}

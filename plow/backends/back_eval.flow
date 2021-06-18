@@ -43,7 +43,7 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string
 						gen = universal[0];
 						evalBackExp(backend, args, rec, gen.product);
 					} else if (gens != []) {
-						backend.onError(0 /*call.pos*/, 
+						backend.onError(
 							"Can not generate " + name + " for type " + prettyBType(getBType(fn)) + "\n" +
 							"expr: " + prettyBExp(e) + "\n" + 
 							"generators: \n" + concatStrings(map(concat(match, universal), \gen -> "\t" + gen.name + " : " + prettyBType(gen.type) + "\n"))
