@@ -5,6 +5,7 @@ import plow/dexp/pretty;
 
 export {
 	// This struct stores the information about original names. Used for reflection in backends.
+	// Key is an original id, a value is a new one (renamed).
 	RenameIds(
 		typeRenamings : Tree<string, string>, 
 		fieldRenamings : Tree<string, string>, 
