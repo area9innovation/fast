@@ -293,7 +293,14 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			// TODO: Add an eclass?
 			asEClass("cast", ttarget);
 		}
-		DDowncast(oldid, newid, subtype, supereclass, scope, pos, eclass): {
+		DDowncast(oldid, newid, subtype, __, scope, pos, eclass): {
+			moldtype = lookupTree(env.localTypes, oldid);
+			moldtype ?? {
+				d.supereclass ::= moldtype.eclass;
+			} : {
+				env.onError(pos, oldid + " in downcast unknown");
+			};
+
 			tsubtype = TTypeEClass(dtype2eclass(env.tmap, makeTree(), subtype));
 			teclass = asEClass("downcast", tsubtype);
 
@@ -307,7 +314,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			dtype = ttypeInferenceDExp(nenv, topid, scope);
 
 			// Relate the subtype with the supertype
-			etype = TTypeEClass(supereclass);
+			etype = TTypeEClass(d.supereclass);
 			unifyTNodes(env.tmap, makeTTypeSupertype(env, [teclass], false, pos), etype, "downcast super", pos);
 
 			restype("downcast", eclass, dtype);

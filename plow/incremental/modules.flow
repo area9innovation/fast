@@ -1,4 +1,5 @@
 import plow/bexp/bmodule;
+import plow/incremental/serialize;
 import sys/concurrent;
 
 import plow/dexp/desugar;
@@ -11,9 +12,12 @@ export {
 
 	getDummyBModule() -> BModule;
 
+	// Do we have this module in memory?
 	hasCachedBModule(m : BModules, flowpath : string) -> bool;
+	hasIncrementalBModule(tracing : Tracing, m : BModules, fullpath : string, flowpath : string) -> bool;
 	getCachedBModule(m : BModules, flowpath : string) -> BModule;
 	setCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void;
+	clearCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void;
 }
 
 makeBModules() -> BModules {
@@ -21,11 +25,24 @@ makeBModules() -> BModules {
 }
 
 getDummyBModule() -> BModule {
-	BModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), makeTree(), makeTree(), makeTree(), makeTree(), makeTree(), []);
+	BModule("", "", [], [], DExport(makeSet(), makeSet(), makeSet(), -1), 
+		makeTree(), makeTree(), makeTree(), makeTree(), makeTree(), []
+	);
 }
 
 hasCachedBModule(m : BModules, flowpath : string) -> bool {
 	containsConcurrentHashMap(m.modules, flowpath);
+}
+
+hasIncrementalBModule(tracing : Tracing, m : BModules, fullpath : string, flowpath : string) -> bool {
+	incremental = readBModule(tracing, fullpath, flowpath);
+	incremental ?? {
+		// Register this guy in our cache
+		setConcurrentHashMap(m.modules, flowpath, incremental);
+		true;
+	} : {
+		false;
+	}
 }
 
 getCachedBModule(m : BModules, flowpath : string) -> BModule {
@@ -34,4 +51,8 @@ getCachedBModule(m : BModules, flowpath : string) -> BModule {
 
 setCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void {
 	setConcurrentHashMap(m.modules, flowpath, bmod);
+}
+
+clearCachedBModule(m : BModules, flowpath : string, bmod : BModule) -> void {
+	removeConcurrentHashMap(m.modules, flowpath);
 }

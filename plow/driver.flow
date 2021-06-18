@@ -41,16 +41,25 @@ PlowCache(
 	nativeLookup : BLookupFromImport<BNative>,
 	// What is the next id
 	nextId : ref int,
+	// Awaiting modules that are being parsed
+	awaiting : ref Set<string>,
 	// Tracing helper
-	tracing : Tracing
+	tracing : Tracing,
+	// How many errors have we reported?
+	errorCount : ref int,
 );
 
 makePlowCache(
 	// How to report an error
-	onError : (string) -> void,
+	onError1 : (string) -> void,
 	// The includes we should use to find files
 	includes : [string]
 ) -> PlowCache {
+	errorCount = ref 0;
+	onError = \e -> {
+		errorCount := ^errorCount + 1;
+		onError1(e);
+	};
 	// A helper to lookup structs.
 	structLookup = BLookupFromImport("struct", \module, n -> {
 			lookupTree(module.structs, n)
@@ -155,7 +164,7 @@ makePlowCache(
 		structLookup, unionLookup, fieldLookup, 
 		unionFieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
-		ref 0, makeTracing()
+		ref 0, ref makeSet(), makeTracing(), errorCount
 	);
 }
 
@@ -177,10 +186,24 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	// TODO: We could add a "stop" flag and cancel compilation in those cases
 	if (hasCachedBModule(cache.modules, flowpath)) {
 		getCachedBModule(cache.modules, flowpath);
+	} else if (^(cache.errorCount) != 0) {
+		// We stop if there are errors
+		println("Stops compilation because of errors: " + flowpath);
+		getDummyBModule();
+	} else if (hasIncrementalBModule(cache.tracing, cache.modules, path, flowpath)) {
+		// OK, we have an incremental module, which we read now
+		bmod = getCachedBModule(cache.modules, flowpath);
+		// Then make sure we have all dependents as well
+		concurrent(false, map(bmod.imports, \i -> {
+			\ -> compilePlow(cache, i.path)
+		}));
+		bmod;
+	} else if (containsSet(^(cache.awaiting), flowpath)) {
+		getDummyBModule();
 	} else if (fileExists(path)) {
-
-		// TODO: We should mark this as being processes,
+		// We should mark this as being processed,
 		// so we do not concurrently do the same file many times
+		cache.awaiting := insertSet(^(cache.awaiting), flowpath);
 
 		// OK, we have to parse this
 		code = getFileContent(path);
@@ -194,7 +217,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		imports = getDImports(p);
 		// TODO: fix this so that concurrent running of imports compilation 
 		// wouldn't hang
-		mods = sequential(false, map(imports, \i -> {
+		sequential(false, map(imports, \i -> {
 			\ -> compilePlow(cache, i.path)
 		}));
 
@@ -213,7 +236,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		dmod = desugarPExp(dd, flowpath, path, p);
 
-		tenv0 = makeTTypeEnv(dd.nextEClass, dd.onError, dmod);
+		tenv0 = makeTTypeEnv(dd.onError, dmod);
 		tenv1 = TTypeEnv(
 			tenv0 with
 			resolveId = \pos, id -> {
@@ -250,7 +273,15 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			resolveUnionName = dd.resolveUnionName
 		);
 		bmodule = ttypeInference(tenv1, dmod);
+
 		setCachedBModule(cache.modules, flowpath, bmodule);
+
+		if (^(cache.errorCount) != 0) {
+			// OK, there are errors, so remove any incremental
+			deleteBModule(cache.tracing, flowpath)
+		} else {
+			writeBModule(cache.tracing, bmodule);
+		}
 
 		// OK, clear the name lookup cache
 		clearPlowCache(cache);

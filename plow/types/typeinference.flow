@@ -1,5 +1,7 @@
 import plow/dexp/types;
 import plow/dexp/vars;
+import plow/types/make_eclass;
+import plow/types/ugraph/reset;
 import plow/types/typeinference_exp;
 import plow/types/typeof;
 import plow/types/polymorphism;
@@ -22,11 +24,6 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 	nenv1 = foldTree(d.natives, env, \nat, nativ, acc -> {
 		// The module types have to be with ? in the types
 		fulltype = dtype2ttype(acc, false, nativ.type);
-
-		// TODO: This is arguably wrong. Only required temporarily
-		// TODO: Should we put nat in TMap?
-		unifyTNodes(acc.tmap, fulltype, TTypeEClass(nativ.eclass), "native", d.pos, );
-
 		if (isTracingId(env.tracing, StageTypeInference(), 1, nat)) {
 			println("native " + nat + ": " + prettyTType(fulltype));
 		}
@@ -45,13 +42,13 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 		)
 	});
 
-
 	// Set the type of top levels, so mutual recursion has something to bite on
 	tenv = foldTree(d.globals, nenv1, \id, global, acc -> {
+		global.eclass ::= acc.mkEClass();
 		// We need to set up a declared type here so polymorphism will work. 
 		// We need ? in the moduleTypes.
 		type = switch (global.value) {
-			DTyped(value, dtype, __, eclass): {
+			DTyped(value, dtype, __, __): {
 				// If there is a declared type, use that
 				dtype2ttype(env, false, dtype);
 			}
@@ -136,6 +133,7 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 	if (order == []) {
 		resolveEClasses(env, d, [], d.flowpath, false);
 	} else {
+		startTyvar = getNextEClass(env.tmap);
 		chunk = order[0];
 		cenv = env;
 
@@ -159,6 +157,8 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 			acc || isTracingId(env.tracing, StageTypeResolve(), 1, c)
 		});
 		nenv = resolveEClasses(genv, d, chunk, d.flowpath, verbose);
+
+		resetTMap(env.tmap, startTyvar);
 
 		ttypeInferenceChunk(nenv, d, tail(order));
 	}
@@ -198,6 +198,8 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 		|| isTracingId(env.tracing, StageTypeInference(), 1, flowpath)) {
 		println("\nInference of global " + d.id);
 	}
+	// OK, set up eclasses
+	populateEClass(env.mkEClass, d.value);
 
 	nenv = TTypeEnv(env with onError = \p, e -> env.onError(p, d.id + ": " + e));
 	nenv.tmap.topid := d.id;
@@ -207,7 +209,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 	// This is any declared type
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
 	unifyTNodes(env.tmap, etype, TTypeEClass(d.eclass), "global " + d.id + " 1", d.pos);
-
+	
 	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
 	unifyTNodes(env.tmap, ftype, TTypeEClass(d.eclass), "global " + d.id + " 2", d.pos);
 
@@ -226,7 +228,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 }
 
 resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : string, verbose : bool) -> TTypeEnv {
-	types = resolveTNodes(env.tmap, 5, verbose);
+	types = resolveTNodes(env.tmap, 3, verbose);
 	// Only grab the etypes we do not already have set above
 	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
 		if (containsKeyTree(acc, eclass)) acc
