@@ -10,7 +10,9 @@ export {
 }
 
 bmodule2wasm(cache : PlowCache, flowpath : string) -> string {
-	bprogram2wasm(linkBExpProgram(cache, flowpath, false, makeSet()), flowpath);
+	// TODO:  make a proper backend specification
+	spec = makeBackendSpec("wasm", [], []);
+	bprogram2wasm(linkBExpProgram(cache, flowpath, false, spec), flowpath);
 }
 
 bprogram2wasm(b : BExpProgram, flowpath : string) -> string {
@@ -51,7 +53,7 @@ bdeclaration2wasm(b : BExpDeclaration) -> string {
 				]
 			);
 		}
-		BExpNative(id, isio, type, nativeName, fallback): todo();
+		BExpNative(id, isio, type, nativeName): todo();
 	}
 }
 

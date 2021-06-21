@@ -165,16 +165,16 @@ prettyDType(input : string, d : DType) -> string {
 }
 
 prettyDStruct(input : string, s : DStruct) -> string {
-	s.id + "<" + strGlue(s.typars, ", ") 
-	+ ">(" + superglue(s.structArgs, \sa : DStructArg -> {
+	s.id + (if (length(s.typars) == 0) "" else "<" + strGlue(s.typars, ", ") + ">")
+	+ "(" + superglue(s.structArgs, \sa : DStructArg -> {
 		(if (sa.ismutable) "mutable " else "") 
 		+ sa.id + " : " + prettyDType(input, sa.type)
 	}, ", ") + ")";
 }
 
 prettyDUnion(input : string, u : DUnion) -> string {
-	u.id + "<" + superglue(u.typars, \tp -> tp.id, ", ") + "> " +
-	"::= " + superglue(u.types, \tp : DTypeName -> prettyDType(input, tp), ", ") + ")";
+	u.id + (if (length(u.typars) == 0) "" else "<" + superglue(u.typars, \tp -> tp.id, ", ") + ">")
+	+ " ::= " + superglue(u.types, \tp : DTypeName -> prettyDType(input, tp), ", ") + ")";
 }
 
 summarizeDExp(env : TTypeEnv, d : DExp) -> string {

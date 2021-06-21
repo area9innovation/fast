@@ -72,16 +72,18 @@ extractFreeNamesBExp(free : Set<string>, locals : Set<string>, e : BExp) -> Set<
 extractTypeNamesBExp(acc : Set<string>, e : BExp) -> Set<string> {
 	switch (e) {
 		BValue(): acc;
-		BVar(id, type): extractTypeNamesBType(acc, type);
+		BVar(id, type): {
+			extractTypeNamesBType(acc, type)
+		}
 		BLet(id, value, body, type): {
 			acc1 = extractTypeNamesBExp(acc, value);
-			acc2 = extractTypeNamesBExp(acc1, value);
+			acc2 = extractTypeNamesBExp(acc1, body);
 			extractTypeNamesBType(acc2, type);
 		}
 		BIf(cond, then, else_, type): {
 			acc1 = extractTypeNamesBExp(acc, cond);
 			acc2 = extractTypeNamesBExp(acc1, then);
-			acc3 = extractTypeNamesBExp(acc1, else_);
+			acc3 = extractTypeNamesBExp(acc2, else_);
 			extractTypeNamesBType(acc3, type);
 		}
 		BCall(fn, args, type): {
@@ -108,14 +110,14 @@ extractTypeNamesBExp(acc : Set<string>, e : BExp) -> Set<string> {
 		}
 		BSetMutable(left, field, value, type): {
 			acc1 = extractTypeNamesBExp(acc, left);
-			acc2 = extractTypeNamesBExp(acc, value);
+			acc2 = extractTypeNamesBExp(acc1, value);
 			extractTypeNamesBType(acc2, type);
 		}
 		BSwitch(value, switchType, cases, defaultCase, type): {
 			acc1 = extractTypeNamesBExp(acc, value);
-			acc2 = extractTypeNamesBType(acc, switchType);
+			acc2 = extractTypeNamesBType(acc1, switchType);
 			acc3 = defaultCase ?? {
-				extractTypeNamesBExp(acc, defaultCase);
+				extractTypeNamesBExp(acc2, defaultCase);
 			} : acc2;
 			acc4 = fold(cases, acc3, \acc0, case -> {
 				acc5 = insertSet(acc0, case.id);
@@ -137,7 +139,8 @@ extractTypeNamesBType(acc : Set<string>, t : BType) -> Set<string> {
 			acc1 = if (startsWith(id, "?")) acc else insertSet(acc, id);
 			fold(typars, acc1, extractTypeNamesBType);
 		}
-		BTypeFunction(args, returnType): fold(args, extractTypeNamesBType(acc, returnType), extractTypeNamesBType);
+		BTypeFunction(args, returnType): {
+			fold(args, extractTypeNamesBType(acc, returnType), extractTypeNamesBType);
+		}
 	}
 }
-

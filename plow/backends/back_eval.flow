@@ -34,16 +34,6 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string
 					match = filter(gens, \g -> g.type == getBType(fn));
 					universal = filter(gens, \g -> g.type == bvoidType);
 
-					if (name == "==" || name == "<") {
-						println(
-							"Genetating " + name + " for call type " + prettyBType(getBType(fn)) + "\n" +
-							//"fn.type: " + prettyBType(getBType(fn)) + "\n" +
-							"expr: " + prettyBExp(e) + "\n" + 
-							"match: \n" + concatStrings(map(match, \gen -> "\t" + gen.name + " : " + prettyBType(gen.type) + "\n")) +
-							"universal: \n" + concatStrings(map(universal, \gen -> "\t" + gen.name + " : " + prettyBType(gen.type) + "\n"))
-						);
-					}
-
 					if (length(match) == 1) {
 						// We have a hit
 						gen = match[0];
@@ -53,7 +43,7 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string
 						gen = universal[0];
 						evalBackExp(backend, args, rec, gen.product);
 					} else if (gens != []) {
-						backend.onError(0 /*call.pos*/, 
+						backend.onError(
 							"Can not generate " + name + " for type " + prettyBType(getBType(fn)) + "\n" +
 							"expr: " + prettyBExp(e) + "\n" + 
 							"generators: \n" + concatStrings(map(concat(match, universal), \gen -> "\t" + gen.name + " : " + prettyBType(gen.type) + "\n"))

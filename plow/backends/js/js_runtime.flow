@@ -26,15 +26,10 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 	jsfile = cfg.outputfile;
 	hx = "FlowJsProgram.hx";
 	code = blueprint("
-		import HaxeRuntime;
 		%imports%
 
 		class FlowJsProgram {
 			static public var globals__  = {
-				HaxeRuntime._structnames_    = new haxe.ds.IntMap<String>();
-				HaxeRuntime._structids_      = new haxe.ds.StringMap<Int>();
-				HaxeRuntime._structargs_     = new haxe.ds.IntMap<Array<String>>();
-				HaxeRuntime._structargtypes_ = new haxe.ds.IntMap<Array<RuntimeType>>();
 				%render%
 			}
 		}
@@ -88,7 +83,7 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 		println("Call 'haxe " + buildFile + "'");
 	}
 	//buildScript = strGlue(concat(hxparams3, ["-v"]), "\n");
-	buildScript = strGlue(hxparams3, "\n");
+	buildScript = strGlue(concat(hxparams3, ["-D skip_haxe_runtime"]), "\n");
 
 	setFileContent(buildFile, buildScript);
 	proc_out = if (cfg.verbose > 0) println else nop1;

@@ -1,4 +1,5 @@
 import plow/backends/js/js_defines;
+import plow/bexp/pretty;
 import fs/filesystem;
 
 export {
@@ -10,6 +11,9 @@ export {
 
 	// Makes a default JS config for a given file.
 	makeJsConfig(flowfile : string) -> JsConfig;
+
+	// Output the JS runtime type correspoding with an argument.
+	bype2JsType(type : BType, struct_names : Set<string>) -> string;
 }
 
 mangleNativeName(name : string, add_class : (string) -> void) {
@@ -53,3 +57,46 @@ makeJsConfig(flowfile : string) -> JsConfig {
 		makeSet(), // externNatives : Set<string>, Names from the external natives lib.
 	);
 } 
+
+bype2JsType(type : BType, struct_names : Set<string>) -> string {
+	switch (type) {
+		BTypePar(id): {
+			"Runtime.TypeUnknown";
+		}
+		BTypeName(id, typars): {
+			if (id == "void") {
+				"Runtime.TypeVoid";
+			} else if (id == "bool") {
+				"Runtime.TypeBool";
+			} else if (id == "int") {
+				"Runtime.TypeInt";
+			} else if (id == "double") {
+				"Runtime.TypeDouble";
+			} else if (id == "string") {
+				"Runtime.TypeString";
+			} else if (id == "flow") {
+				"Runtime.TypeUnknown";
+			} else if (id == "native") {
+				"Runtime.TypeUnknown";
+			} else if (id == "array") {
+				if (length(typars) != 1) {
+					fail("array typars length != 1: " + prettyBType(type));
+				}
+				"Runtime.TypeArray(" + bype2JsType(typars[0], struct_names) + ")";
+			} else if (id == "ref") {
+				if (length(typars) != 1) {
+					fail("ref typars length != 1: " + prettyBType(type));
+				}
+				"Runtime.TypeRef(" + bype2JsType(typars[0], struct_names) + ")";
+			} else if (containsSet(struct_names, id)) {
+				"Runtime.TypeStruct('" + id + "')";
+			} else {
+				// Case of a union
+				"Runtime.TypeUnknown";
+			}
+		}
+		BTypeFunction(args, ret_type): {
+			"Runtime.TypeUnknown";
+		}
+	}
+}

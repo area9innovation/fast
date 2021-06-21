@@ -29,9 +29,8 @@ prettyBExpDeclaration(b : BExpDeclaration) -> string {
 		BGlobalVar(name, body, type): {
 			name + " : " + prettyBType(type) + " = " + prettyBExp(body);
 		}
-		BExpNative(name, isio, type, nativeName, mfallback): {
-			"native " + name + " : " + (if (isio) "io" else "") + prettyBType(type) + " = " + nativeName
-			+ (mfallback ?? (" with " + prettyBExpDeclaration(mfallback)) : "");
+		BExpNative(name, isio, type, nativeName): {
+			"native " + name + " : " + (if (isio) "io" else "") + prettyBType(type) + " = " + nativeName;
 		}
 	}
 }
@@ -52,9 +51,8 @@ prettyBDeclaration(b : BDeclaration) -> string {
 		BGlobalVar(name, body, type): {
 			name + " : " + prettyBType(type) + " = " + prettyBExp(body);
 		}
-		BNativeDec(name, isio, type, nativeName, mfallback): {
-			"native " + name + " : " + (if (isio) "io" else "") + prettyBType(type) + " = " + nativeName
-			+ (mfallback ?? (" with " + prettyBDeclaration(mfallback)) : "");
+		BExpNative(name, isio, type, nativeName): {
+			"native " + name + " : " + (if (isio) "io" else "") + prettyBType(type) + " = " + nativeName;
 		}
 	}
 }

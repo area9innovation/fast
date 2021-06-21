@@ -6,7 +6,7 @@ export {
 	Backend(
 		keywords : Set<string>,
 		generators : Tree<string, [BackGen]>,
-		onError : (int, string) -> void,
+		onError : (msg : string) -> void,
 		requirements : ref Set<string>,
 	);
 

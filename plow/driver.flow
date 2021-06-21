@@ -215,7 +215,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		// OK, parse all the dependent files
 		imports = getDImports(p);
-		concurrent(false, map(imports, \i -> {
+		// TODO: fix this so that concurrent running of imports compilation 
+		// wouldn't hang
+		sequential(false, map(imports, \i -> {
 			\ -> compilePlow(cache, i.path)
 		}));
 

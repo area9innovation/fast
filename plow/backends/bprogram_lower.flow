@@ -1,13 +1,12 @@
+import plow/backends/dce;
 import plow/backends/bprogram;
+import plow/backends/backend;
 import plow/bexp/type;
-import plow/bexp/bmodule;
-import plow/bexp/utils;
-import plow/dexp/utils;
 
 import ds/arrayutils;
 
 export {
-	bmodules2BExpProgram(modules : [BModule]) -> BExpProgram;
+	bmodules2BExpProgram(modules : [BModule], spec : BackendSpec) -> BExpProgram;
 
 	bexpProgram2BProgram(b : BExpProgram) -> BProgram;
 
@@ -19,7 +18,7 @@ export {
 	bstatementType(b : BStatement) -> BType;
 }
 
-bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
+bmodules2BExpProgram(modules : [BModule], spec : BackendSpec) -> BExpProgram {
 	names = bmodules2BNames(modules);
 	alive = aliveCode(names);
 	BExpProgram(
@@ -28,20 +27,41 @@ bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
 		fold(modules, [], \acc, module -> {
 			fold(module.order, 
 				foldTree(module.natives, acc, \id, nat, ac -> 
-					if (!containsSet(alive, id)) ac else {
-						// Look for a fallback
-						mfallback = lookupTree(module.globals, id);
-						concat(ac, 
-							[BExpNative(id, nat.isIo, nat.type, nat.name,
-								maybeMap(mfallback, \glob : BGlobal -> bexp2BExpDeclaration(id, glob.value))
-							)]
-						);
+					if (!containsSet(alive, id)) {
+						// The native is not used
+						ac
+					} else if (containsSet(spec.natives, nat.name)) {
+						// Use a native since it is supported by a backend
+						concat(ac,[BExpNative(id, nat.isIo, nat.type, nat.name)]);
+					} else {
+						// The native is not implemented in a backend
+						if (!containsKeyTree(module.globals, id)) {
+							// The native is supported neither by a backend or by a fallback - error.
+							spec.onError(makeErrorMessage(nat.pos, module.fullpath, "Native " + nat.id + " (" + nat.name + ") is supported neither by a backend or by a fallback"));
+						}
+						ac
 					}
 				),
 				\ac, id -> {
 				if (!containsSet(alive, id)) ac else {
 					switch (lookupTree(module.globals, id)) {
-						Some(decl): concat(ac, [bexp2BExpDeclaration(id, decl.value)]);
+						Some(decl): {
+							switch (lookupTree(module.natives, id)) {
+								Some(nat): {
+									if (containsSet(spec.natives, nat.name)) {
+										// This is a fallback for a native, which is supported by a backend. Ignore it.
+										ac;
+									} else {
+										// Use a fallback for a native, since it is not supported by a backend.
+										concat(ac, [bexp2BExpDeclaration(id, decl.value)]);
+									}
+								}
+								None(): {
+									// Ordinary global entity.
+									concat(ac, [bexp2BExpDeclaration(id, decl.value)]);
+								}
+							}
+						}
 						None(): {
 							println("Unknown id: '" + id + "'");
 							ac;
@@ -51,104 +71,6 @@ bmodules2BExpProgram(modules : [BModule]) -> BExpProgram {
 			})
 		})
 	);
-}
-
-BNames(
-	structs : Tree<string, DStruct>,
-	unions : Tree<string, DUnion>,
-	natives : Tree<string, BNative>,
-	globals : Tree<string, BGlobal>
-);
-
-bmodules2BNames(modules : [BModule]) -> BNames {
-	fold(modules, BNames(makeTree(), makeTree(), makeTree(), makeTree()), \acc, m ->
-		BNames(
-			mergeTree(acc.structs, m.structs),
-			mergeTree(acc.unions, m.unions),
-			mergeTree(acc.natives, m.natives),
-			mergeTree(acc.globals, m.globals),
-		)
-	);
-}
-
-UsedCodeAcc(
-	queue : Set<string>, 
-	used : Set<string>
-);
-
-aliveCode(names : BNames) -> Set<string> {
-	findUsed(names, UsedCodeAcc(
-		makeSet1("main"), 
-		buildSet([
-			"bool", "void", "int", "double", "string", 
-			"flow", "ref", "array", "__negate", "__index",
-			"<", "<=", "==", ">", ">=", ":=", "::=",
-			"+", "-", "*", "/", "%", "&&", "||", "!",
-			"__deref", "__ref", "__not", "__array",
-		])
-	)).used;
-}
-
-findUsed(names : BNames, acc : UsedCodeAcc) -> UsedCodeAcc {
-	switch (popMinSet(acc.queue)) {
-		None(): acc;
-		Some(pop): {
-			name = pop.value;
-			findUsed(names, findUsedIn(names, UsedCodeAcc(pop.rest, acc.used), name));
-		}
-	}
-}
-
-findUsedIn(names : BNames, acc : UsedCodeAcc, name : string) -> UsedCodeAcc {
-	proc_glob = \bglob : BGlobal -> {
-		used = insertSet(acc.used, name);
-		referenced = extractTypeNamesBExp(
-			extractFreeNamesBExp(makeSet(), makeSet(), bglob.value),
-			bglob.value
-		);
-		new = differenceSets(referenced, used);
-		UsedCodeAcc(
-			mergeSets(acc.queue, new), 
-			mergeSets(used, new)
-		);
-	}
-	proc_struct = \su -> {
-		used = insertSet(acc.used, name);
-		referenced = extractTypeNamesDStruct(makeSet(), su, names.structs, names.unions);
-		new = differenceSets(referenced, used);
-		UsedCodeAcc(
-			mergeSets(acc.queue, new), 
-			mergeSets(used, new)
-		);
-	}
-	proc_union = \su -> {
-		used = insertSet(acc.used, name);
-		referenced = extractTypeNamesDUnion(makeSet(), su, names.structs, names.unions);
-		new = differenceSets(referenced, used);
-		UsedCodeAcc(
-			mergeSets(acc.queue, new), 
-			mergeSets(used, new)
-		);
-	}
-	switch (lookupTree(names.globals, name)) {
-		Some(glob): proc_glob(glob);
-		None(): {
-			switch (lookupTree(names.structs, name)) {
-				Some(struct): proc_struct(struct);
-				None(): {
-					switch (lookupTree(names.unions, name)) {
-						Some(union): proc_union(union);
-						None(): {
-							if (!containsKeyTree(names.natives, name)) {
-								println("WARNING: Something is wrong with DCE: Could not find '" + name + "'");
-							}
-							acc;
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 bexpProgram2BProgram(b : BExpProgram) -> BProgram {
@@ -170,12 +92,7 @@ bexpDeclaration2Declaration(be : BExpDeclaration) -> BDeclaration {
 				type
 			);
 		}
-		BExpNative(name, isio, type, nativeName, fallback): {
-			sfallback : Maybe<BDeclaration> = fallback ?? {
-				Some(bexpDeclaration2Declaration(fallback))
-			} : None();
-			BNativeDec(name, isio, type, nativeName, sfallback)
-		}
+		BExpNative(name, isio, type, nativeName): be;
 	}
 }
 

@@ -37,6 +37,9 @@ main() {
 		if (p <= 1) {
 			println(d2st((timestamp() - t) / 1000.0, 2) + "s");
 			quit(ec);
+		} else {
+			println("pending: " + i2s(^pending) + " (must be 0), done in " + d2st((timestamp() - t) / 1000.0, 2) + "s");
+			quit(ec);
 		}
 	};
 
