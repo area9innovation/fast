@@ -2,6 +2,7 @@ import plow/backends/link;
 import plow/backends/back_eval;
 import plow/backends/pretty;
 import plow/backends/koka/koka_backend;
+import plow/backends/type_hierarchy;
 import plow/backends/utils;
 
 export {
@@ -14,16 +15,18 @@ bmodule2koka(cache : PlowCache, flowpath : string, shortenIds : bool) -> string 
 }
 
 bprogram2koka(b : BExpProgram, flowpath : string) -> string {
+	typeHierarcy = resolveBTypeHierarchy(b);
+
 	backend = kokaBackend();
-	unions = superglue(getTreeValues(b.unions), \u : DUnion -> dunion2koka(backend, u), "\n");
-	structs = superglue(getTreeValues(b.structs), \s : DStruct -> dstruct2koka(backend, s), "\n");
+	unions = superglue(typeHierarcy.first, \u : DUnion -> dunion2koka(backend, typeHierarcy.third, u), "\n");
+	structs = superglue(typeHierarcy.second, \s : DStruct -> "struct " + dstruct2koka(backend, true, s), "\n");
 	body = superglue(b.declarations, \d : BExpDeclaration -> bdeclaration2koka(backend, d), "\n");
 
 	// The backend keeps track of what requirements are used by the various
 	// constructs used
 	strReplace(
 		getBackendRequirements(backend)
-	//	+ "// RUNTIME\n" 
+	//	+ "// RUNTIME\n"
 	//	+ runtime + "\n"
 		+ "// UNIONS\n"
 		+ unions + "\n"
@@ -38,38 +41,65 @@ bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 
 bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 	switch (d) {
-		BGlobalVar(id, body, type): "val " + id + /*" : " + btype2koka(backend, true, type)  + */ " = " + bexp2koka(backend, body) + ";";
+		BGlobalVar(id, body, type): {
+			if (id == "flow_securityModes") {
+				"val flow_securityModes = False;"
+			} else if (id == "flow_loggingEnabled") {
+				"val flow_loggingEnabled = False;"
+			} else {
+				"val " + id + /*" : " + btype2koka(backend, true, type)  + */ " = " + bexp2koka(backend, body) + ";";
+			}
+		}
 		BExpFunction(id, args, body, type): {
-			blueprint("
-				fun %id%(%args%) {
-					%body%
-				}
-			", [
-				"id", id,
-				// TODO: Add types and typars
-				"args", strGlue(args, ", "),
-				"body", bexp2koka(backend, body)
-			])
+			if (id == "flow_flow") {
+				"fun flow_flow(flow_i : a) : a { flow_i }"
+			} else if (id == "flow_isOWASPLevel1") {
+				"fun flow_isOWASPLevel1() : bool { False }"
+			} else if (id == "flow_isLoggingEnabled") {
+				"fun flow_isLoggingEnabled() : bool { False }"
+			} else {
+				argtypes = getBArgTypes(type);
+				rt0 = btype2koka(backend, false, getBReturnType(type));
+				rt = " : div " + rt0;
+				blueprint("
+					fun %id%(%args%)%rt% {
+						%body%
+					}
+				", [
+					"id", id,
+					// TODO: Add types and typars
+					"args", supergluei(args, \i, arg -> {
+						arg + " : " + btype2koka(backend, false, argtypes[i])
+					}, ", "),
+					"rt", rt,
+					"body", bexp2koka(backend, body)
+				])
+			}
 		}
 		BExpNative(id, isio, type, nativeName): "-- TODO: Native " + id;
 	}
 }
 
-dunion2koka(backend : Backend, u : DUnion) -> string {
+dunion2koka(backend : Backend, structs : Tree<string, DStruct>, u : DUnion) -> string {
 	blueprint("
 		type %name% {
 			%members%
 		}", [
 			"name", decapitalize(u.id),
-			"members", superglue(u.types, \t -> {
-				dtype2koka(backend, false, t);
+			"members", superglue(u.types, \t : DTypeName -> {
+				// TODO: Lookup what specific struct types are here
+				// and "inline" those
+				mstruct = lookupTree(structs, t.id);
+				mstruct ?? {
+					dstruct2koka(backend, false, mstruct);
+				} : dtype2koka(backend, false, t);
 			}, "\n")
 		]
 	);
 }
 
-dstruct2koka(backend : Backend, s : DStruct) -> string {
-	"struct " + decapitalize(s.id) + "{"
+dstruct2koka(backend : Backend, decap : bool, s : DStruct) -> string {
+	(if (decap) decapitalize(s.id) else s.id) + "{"
 	+ superglue(s.structArgs, \sa -> {
 		sa.id + " : " + dtype2koka(backend, true, sa.type)
 	}, "; ") + "}";
@@ -90,11 +120,14 @@ btype2koka(backend : Backend, decap : bool, btype : BType) -> string {
 		BTypeName(id, typars): {
 			if (id == "void") "()"
 			else if (id == "bool" || id == "double" || id == "string") id
-			else if (id == "int") "int32"
+			else if (id == "int") "int"
+			else if (id == "flow") "_"
 			else if (id == "array") {
 				"vector<" + btype2koka(backend, true, typars[0]) + ">"
 			} else if (id == "ref") {
 				"forall<h> ref<h," + btype2koka(backend, true, typars[0]) + ">"
+			} else if (trim2(id, "?") == "") {
+				btype2koka(backend, decap, BTypePar(id));
 			} else {
 				(if (decap) decapitalize(id) else id)
 				+ (if (typars != []) {
@@ -144,12 +177,16 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 			produceBackendCall(backend, bexp, bexp2koka);
 		}
 		BLambda(args, body, type): {
+			argtypes = getBArgTypes(type);
+			rt0 = btype2koka(backend, false, getBReturnType(type));
 			blueprint("
 					fn(%args%) {
 						%body%
 					}",
 				[
-					"args", strGlue(args, ", "),
+					"args", supergluei(args, \i, arg -> {
+							arg + " : " + btype2koka(backend, false, argtypes[i])
+						}, ", "),
 					"body", rec(body),
 			]);
 		}
@@ -205,7 +242,7 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 			]);
 		}
 		BArray(args, type): {
-			blueprint("[%args%]",
+			blueprint("vector([%args%])",
 				[
 					"args", superglue(args, rec, ", "),
 			]);

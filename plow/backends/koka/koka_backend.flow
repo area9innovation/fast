@@ -75,7 +75,7 @@ kokaBackend() -> Backend {
 
 kokaBackendSpec() -> BackendSpec {
 	makeBackendSpec(kokaBackend(),
-		"Flow", "flow-", "",
+		"Flow", "flow_", "",
 		[
 			// Natives
 		]

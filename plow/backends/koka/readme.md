@@ -22,8 +22,13 @@ In Ubuntu, then use this to compile with Koka:
 # TODO
 
 - Get euler1 to compile and run as Koka:
-  - Structs occuring in Unions should not be declared again
-  - top-level vars can not have effects
-  - Add type arguments to functions to disambiguiate args
+  - int32 do not work for comparison and stuff.
+  - Unions in unions are not handled right
+  - Special cases for 
+    - flow_flow
+      - Flow type does not exist
+    - flow_isOWASPLevel1, flow_isLoggingEnabled, flow_securityModes, flow_loggingEnabled
+      - top-level vars can not have effects
+  - Add type arguments to lambdas? to disambiguiate args
 - Fix mutable
 - Fix runtime

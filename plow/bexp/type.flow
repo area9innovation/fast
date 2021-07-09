@@ -8,7 +8,7 @@ export {
 	bstringType = BTypeName("string", []);
 
 	getBType(b : BExp) -> BType;
-
+	getBArgTypes(b : BType) -> [BType];
 	getBReturnType(b : BType) -> BType;
 }
 
@@ -30,6 +30,13 @@ getBType(b : BExp) -> BType {
 		BSetMutable(left, field, value, type): type;
 		BSwitch(value, switchType, cases, defaultCase, type): type;
 		BArray(args, type): type;
+	}
+}
+
+getBArgTypes(b : BType) -> [BType] {
+	switch (b) {
+		BTypeFunction(args, rt): args;
+		default: [];
 	}
 }
 
