@@ -63,14 +63,10 @@ renameDUnion(u : DUnion, type_renamings : Tree<string, string>) -> DUnion {
 makeRenameIds(prog : BExpProgram, spec : BackendSpec, shorten_ids : bool) -> RenameIds {
 	RenameIds(
 		// type renamings
-		mapTree(
-			makeRenaming(
-				concat(getTreeKeys(prog.structs), getTreeKeys(prog.unions)), 
-				spec, shorten_ids
-			), 
-			// Prefix type ids with 't_' in order to distinguish them from vars
-			\id -> spec.renamingTypePrefix + id
-		),
+		makeRenaming(
+			concat(getTreeKeys(prog.structs), getTreeKeys(prog.unions)), 
+			BackendSpec(spec with renamingPrefix = spec.renamingTypePrefix), shorten_ids
+		), 
 		// field renamings
 		makeRenaming(
 			concatA(map(getTreeValues(prog.structs), \s -> map(s.structArgs, \arg -> arg.id))),

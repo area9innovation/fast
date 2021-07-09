@@ -21,20 +21,24 @@ bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 
 	// The backend keeps track of what requirements are used by the various
 	// constructs used
-	getBackendRequirements(backend)
-//	+ "// RUNTIME\n" 
-//	+ runtime + "\n"
-	+ "// UNIONS\n"
-	+ unions + "\n"
-	+ "// STRUCTS\n"
-	+ structs + "\n"
-	+ "// BODY\n"
-	+ body;
+	strReplace(
+		getBackendRequirements(backend)
+	//	+ "// RUNTIME\n" 
+	//	+ runtime + "\n"
+		+ "// UNIONS\n"
+		+ unions + "\n"
+		+ "// STRUCTS\n"
+		+ structs + "\n"
+		+ "// BODY\n"
+		+ body,
+		"\t",
+		"  "
+	)
 }
 
 bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 	switch (d) {
-		BGlobalVar(id, body, type): "val " + id + " : " + btype2koka(backend, type) + bexp2koka(backend, body) + ";";
+		BGlobalVar(id, body, type): "val " + id + " : " + btype2koka(backend, true, type) + bexp2koka(backend, body) + ";";
 		BExpFunction(id, args, body, type): {
 			blueprint("
 				fun %id%(%args%) {
@@ -52,25 +56,31 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 }
 
 dunion2koka(backend : Backend, u : DUnion) -> string {
-	"type " + u.id + "{"
-	+ superglue(u.types, \t -> {
-		dtype2koka(backend, t);
-	}, "\n") + "}";
+	blueprint("
+		type %name% {
+			%members%
+		}", [
+			"name", decapitalize(u.id),
+			"members", superglue(u.types, \t -> {
+				dtype2koka(backend, false, t);
+			}, "\n")
+		]
+	);
 }
 
 dstruct2koka(backend : Backend, s : DStruct) -> string {
-	"struct " + s.id + "{"
+	"struct " + decapitalize(s.id) + "{"
 	+ superglue(s.structArgs, \sa -> {
-		sa.id + " : " + dtype2koka(backend, sa.type)
+		sa.id + " : " + dtype2koka(backend, true, sa.type)
 	}, "; ") + "}";
 }
 
 
-dtype2koka(backend : Backend, type : DType) -> string {
-	btype2koka(backend, dtype2btype(type));
+dtype2koka(backend : Backend, decap : bool, type : DType) -> string {
+	btype2koka(backend, decap, dtype2btype(type));
 }
 
-btype2koka(backend : Backend, btype : BType) -> string {
+btype2koka(backend : Backend, decap : bool, btype : BType) -> string {
 	switch (btype) {
 		BTypePar(id): {
 			// In Koka, we use a, b, c, ...
@@ -82,18 +92,19 @@ btype2koka(backend : Backend, btype : BType) -> string {
 			else if (id == "bool" || id == "double" || id == "string") id
 			else if (id == "int") "int32"
 			else if (id == "array") {
-				"vector<" + btype2koka(backend, typars[0]) + ">"
+				"vector<" + btype2koka(backend, true, typars[0]) + ">"
 			} else if (id == "ref") {
-				"ref<" + btype2koka(backend, typars[0]) + ">"
+				"ref<" + btype2koka(backend, true, typars[0]) + ">"
 			} else {
-				id + (if (typars != []) {
-					"<" + superglue(typars, \tp -> btype2koka(backend, tp), ", ") + ">"
+				(if (decap) decapitalize(id) else id)
+				+ (if (typars != []) {
+					"<" + superglue(typars, \tp -> btype2koka(backend, true, tp), ", ") + ">"
 				} else "")
 			}
 		}
 		BTypeFunction(args, returnType): {
-			"(" + superglue(args, \tp -> btype2koka(backend, tp), ", ") + ")"
-			+ " -> " + btype2koka(backend, returnType)
+			"(" + superglue(args, \tp -> btype2koka(backend, true, tp), ", ") + ")"
+			+ " -> " + btype2koka(backend, true, returnType)
 		}
 	}
 }
@@ -110,9 +121,8 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 		BVar(id, type): id;
 		BLet(id, value, body, type): {
 			blueprint("
-				var %id% = %value%;
-				%body%
-			", [
+				val %id% = %value%
+				%body%", [
 				"id", id,
 				"value", rec(value),
 				"body", rec(body),
@@ -150,9 +160,7 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 		}
 		BSequence(exps, type): {
 			blueprint("
-					{
-						%exps%
-					}",
+					%exps%",
 				[
 					"exps", superglue(exps, rec, ";\n"),
 			]);
@@ -187,9 +195,16 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 						%default%
 					}",
 				[
-					"value", prettyBExp(value),
+					"value", rec(value),
 					"cases", superglue(cases, \case -> {
-						case.id + "() -> " + rec(case.body);
+						blueprint("
+							%id%() -> {
+								%body%
+							}",
+							[
+								"id", case.id,
+								"body", rec(case.body)
+							]);
 					}, ";\n"),
 					"default", defaultCase ?? ("_ -> " + rec(defaultCase)) : "",
 			]);
