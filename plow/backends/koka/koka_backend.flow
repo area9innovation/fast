@@ -1,0 +1,28 @@
+import plow/backends/backend;
+import text/blueprint;
+
+export {
+	kokaBackend() -> Backend;
+	kokaBackendSpec() -> BackendSpec;
+}
+
+kokaBackend() -> Backend {
+	makeBackend("koka", [
+			// Keywords
+	],
+	// generators
+	[
+
+	]
+	);
+}
+
+kokaBackendSpec() -> BackendSpec {
+	makeBackendSpec("koka",
+	[
+		// Keywords
+	], 
+	[
+		// Natives
+	])
+}

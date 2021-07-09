@@ -1,0 +1,137 @@
+import plow/backends/link;
+import plow/backends/back_eval;
+import plow/backends/pretty;
+import plow/backends/koka/koka_backend;
+import plow/backends/utils;
+
+export {
+	// Compiles the given flow path to Koka as a single string
+	bmodule2koka(cache : PlowCache, flowpath : string, shortenIds : bool) -> string;
+}
+
+bmodule2koka(cache : PlowCache, flowpath : string, shortenIds : bool) -> string {
+	bprogram2koka(linkBExpProgram(cache, flowpath, shortenIds, kokaBackendSpec()), flowpath);
+}
+
+bprogram2koka(b : BExpProgram, flowpath : string) -> string {
+	backend = kokaBackend();
+	structs = superglue(getTreeValues(b.structs), \s : DStruct -> dstruct2koka(backend, s), "\n");
+	body = superglue(b.declarations, \d : BExpDeclaration -> bdeclaration2koka(backend, d), "\n");
+
+	// The backend keeps track of what requirements are used by the various
+	// constructs used
+	getBackendRequirements(backend)
+//	+ "// RUNTIME\n" 
+//	+ runtime + "\n"
+	+ "// STRUCTS\n"
+	+ structs + "\n"
+	+ "// BODY\n"
+	+ body;
+}
+
+bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
+	switch (d) {
+		BGlobalVar(id, body, type): "val " + id + " : " + btype2koka(backend, type) + bexp2koka(backend, body) + ";";
+		BExpFunction(id, args, body, type): {
+			blueprint("
+				fun %id%(%args%) {
+					%body%
+				}
+			", [
+				"id", id,
+				// TODO: Add types and typars
+				"args", strGlue(args, ", "),
+				"body", bexp2koka(backend, body)
+			])
+		}
+		BExpNative(id, isio, type, nativeName): "TODO: Native " + id;
+	}
+}
+
+dstruct2koka(backend : Backend, s : DStruct) -> string {
+	"struct " + s.id + "{"
+	+ superglue(s.structArgs, \sa -> {
+		sa.id + " : " + dtype2koka(backend, sa.type)
+	}, "; ") + "}";
+}
+
+dtype2koka(backend : Backend, type : DType) -> string {
+	btype2koka(backend, dtype2btype(type));
+}
+
+btype2koka(backend : Backend, btype : BType) -> string {
+	switch (btype) {
+		BTypePar(id): {
+			// In Koka, we use a, b, c, ...
+			len = strlen(id) - 1;
+			fromCharCode(getCharCodeAt("a", 0) + len);
+		}
+		BTypeName(id, typars): {
+			if (id == "void") "()"
+			else if (id == "bool" || id == "string") id
+			else if (id == "int") "int32"
+			else if (id == "array") {
+				"vector<" + btype2koka(backend, typars[0]) + ">"
+			} else if (isUpperLetter(getCharAt(id, 0))) {
+				id 
+				+ (if (typars != []) {
+					"<" + superglue(typars, \tp -> btype2koka(backend, tp), ", ") + ">"
+				} else "")
+			} else "TODO: " + id;
+		}
+		BTypeFunction(args, returnType): {
+			"(" + superglue(args, \tp -> btype2koka(backend, tp), ", ") + ")"
+			+ " -> " + btype2koka(backend, returnType)
+		}
+	}
+}
+
+bexp2koka(backend : Backend, bexp : BExp) -> string {
+	todo = \ -> "TODO " + toString(bexp);
+	rec = \ee -> bexp2koka(backend, ee);
+	switch (bexp) {
+		BVoid(): "()";
+		BBool(v): b2s(v);
+		BInt(v): i2s(v);
+		BDouble(v): double2string(v);
+		BString(v): toString(v);
+		BVar(id, type): id;
+		BLet(id, value, body, type): {
+			blueprint("
+				var %id% = %value%;
+				%body%
+			", [
+				"id", id,
+				"value", rec(value),
+				"body", rec(body),
+			])
+		}
+		BIf(cond, then, else_, type): {
+			blueprint("
+					if (%c%) {
+						%then%
+					} else {
+						%else%
+					}",
+				[
+					"c", rec(cond),
+					"then", rec(then),
+					"else", rec(else_),
+			]);
+		}
+		BCall(fn, args, type): {
+			blueprint("%fn%(%args%)",
+				[
+					"fn", rec(fn),
+					"args", superglue(args, rec, ", "),
+			]);
+		}
+		BLambda(args, body, type): todo();
+		BSequence(exps, type): todo();
+		BConstruct(struct, args, type): todo();
+		BField(value, field, type): todo();
+		BSetMutable(left, field, value, type): todo();
+		BSwitch(value, switchType, cases, defaultCase, type): todo();
+		BArray(args, type): todo();
+	}
+}

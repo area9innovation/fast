@@ -1,6 +1,7 @@
 import plow/backends/link;
 import plow/backends/back_eval;
 import plow/backends/pretty;
+import plow/backends/utils;
 import plow/backends/js/js_natives;
 import plow/backends/js/js_runtime;
 
@@ -291,15 +292,4 @@ bvalue2js(b : BValue) -> string {
 		BDouble(value): double2string(value);
 		BString(value): toString(value);
 	}
-}
-
-// Still not decided whether this is required or not
-double2string(d : double) -> string {
-	v0 = d2s(d);
-	if (strContains(v0, ".") 
-		|| strContains(v0, "e") 
-		|| strContains(v0, "E") 
-		|| dfloor(d) == d) {
-		v0
-	} else v0 + ".0";
 }

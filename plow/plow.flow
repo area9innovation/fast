@@ -1,5 +1,6 @@
 import plow/backends/js/js;
 import plow/backends/wasm/wasm;
+import plow/backends/koka/koka;
 import plow/pexp/parse;
 import plow/pexp/pretty;
 import plow/dexp/desugar;
@@ -61,6 +62,9 @@ main() {
 		if (isUrlParameterTrue("wasm")) {
 			startPending();
 			buildWasmTarget(cache,b, src_file, completePending);
+		}
+		if (isUrlParameterTrue("koka")) {
+			buildKokaTarget(cache, b, src_file);
 		}
 	}
 
@@ -138,5 +142,24 @@ buildWasmTarget(cache : PlowCache, b : BModule, src_file : string, onComplete : 
 	} else {
 		println("Could not save " + wasm_file);
 		onComplete(1);
+	}
+}
+
+
+buildKokaTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
+	verbose = isUrlParameterTrue("verbose");
+	if (verbose) {
+		println("building Koka target");
+	}
+	koka_src = bmodule2koka(cache, b.flowpath, isUrlParameterTrue("shorten-ids"));
+	kokaArg = getUrlParameter("koka");
+	koka_file = if (strlen(kokaArg) > 1) kokaArg else changeFileExt(src_file, ".kk");
+	if (setFileContent(koka_file, koka_src)) {
+		println("Koka target '" + koka_file + "' is built.");
+	} else {
+		println("Error: Could NOT save '" + koka_file + "'");
+	}
+	if (verbose) {
+		println("\n-------------------\n");
 	}
 }
