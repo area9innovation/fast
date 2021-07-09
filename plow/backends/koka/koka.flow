@@ -38,7 +38,7 @@ bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 
 bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 	switch (d) {
-		BGlobalVar(id, body, type): "val " + id + " : " + btype2koka(backend, true, type) + bexp2koka(backend, body) + ";";
+		BGlobalVar(id, body, type): "val " + id + /*" : " + btype2koka(backend, true, type)  + */ " = " + bexp2koka(backend, body) + ";";
 		BExpFunction(id, args, body, type): {
 			blueprint("
 				fun %id%(%args%) {
@@ -94,7 +94,7 @@ btype2koka(backend : Backend, decap : bool, btype : BType) -> string {
 			else if (id == "array") {
 				"vector<" + btype2koka(backend, true, typars[0]) + ">"
 			} else if (id == "ref") {
-				"ref<" + btype2koka(backend, true, typars[0]) + ">"
+				"forall<h> ref<h," + btype2koka(backend, true, typars[0]) + ">"
 			} else {
 				(if (decap) decapitalize(id) else id)
 				+ (if (typars != []) {
@@ -110,7 +110,6 @@ btype2koka(backend : Backend, decap : bool, btype : BType) -> string {
 }
 
 bexp2koka(backend : Backend, bexp : BExp) -> string {
-	todo = \ -> "TODO " + toString(bexp);
 	rec = \ee -> bexp2koka(backend, ee);
 	switch (bexp) {
 		BVoid(): "()";
@@ -142,11 +141,7 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 			]);
 		}
 		BCall(fn, args, type): {
-			blueprint("%fn%(%args%)",
-				[
-					"fn", rec(fn),
-					"args", superglue(args, rec, ", "),
-			]);
+			produceBackendCall(backend, bexp, bexp2koka);
 		}
 		BLambda(args, body, type): {
 			blueprint("
@@ -180,7 +175,7 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 					"field", field,
 			]);
 		}
-		BSetMutable(left, field, value, type): todo();
+		BSetMutable(left, field, value, type): "TODO-set-mutable(" + rec(left) + "." + field + ", " + rec(value);
 		BSwitch(value, switchType, cases, defaultCase, type): {
 			/*
 			match(m) {
