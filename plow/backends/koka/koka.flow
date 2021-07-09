@@ -15,6 +15,7 @@ bmodule2koka(cache : PlowCache, flowpath : string, shortenIds : bool) -> string 
 
 bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 	backend = kokaBackend();
+	unions = superglue(getTreeValues(b.unions), \u : DUnion -> dunion2koka(backend, u), "\n");
 	structs = superglue(getTreeValues(b.structs), \s : DStruct -> dstruct2koka(backend, s), "\n");
 	body = superglue(b.declarations, \d : BExpDeclaration -> bdeclaration2koka(backend, d), "\n");
 
@@ -23,6 +24,8 @@ bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 	getBackendRequirements(backend)
 //	+ "// RUNTIME\n" 
 //	+ runtime + "\n"
+	+ "// UNIONS\n"
+	+ unions + "\n"
 	+ "// STRUCTS\n"
 	+ structs + "\n"
 	+ "// BODY\n"
@@ -44,8 +47,15 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 				"body", bexp2koka(backend, body)
 			])
 		}
-		BExpNative(id, isio, type, nativeName): "TODO: Native " + id;
+		BExpNative(id, isio, type, nativeName): "-- TODO: Native " + id;
 	}
+}
+
+dunion2koka(backend : Backend, u : DUnion) -> string {
+	"type " + u.id + "{"
+	+ superglue(u.types, \t -> {
+		dtype2koka(backend, t);
+	}, "\n") + "}";
 }
 
 dstruct2koka(backend : Backend, s : DStruct) -> string {
@@ -54,6 +64,7 @@ dstruct2koka(backend : Backend, s : DStruct) -> string {
 		sa.id + " : " + dtype2koka(backend, sa.type)
 	}, "; ") + "}";
 }
+
 
 dtype2koka(backend : Backend, type : DType) -> string {
 	btype2koka(backend, dtype2btype(type));
@@ -68,16 +79,17 @@ btype2koka(backend : Backend, btype : BType) -> string {
 		}
 		BTypeName(id, typars): {
 			if (id == "void") "()"
-			else if (id == "bool" || id == "string") id
+			else if (id == "bool" || id == "double" || id == "string") id
 			else if (id == "int") "int32"
 			else if (id == "array") {
 				"vector<" + btype2koka(backend, typars[0]) + ">"
-			} else if (isUpperLetter(getCharAt(id, 0))) {
-				id 
-				+ (if (typars != []) {
+			} else if (id == "ref") {
+				"ref<" + btype2koka(backend, typars[0]) + ">"
+			} else {
+				id + (if (typars != []) {
 					"<" + superglue(typars, \tp -> btype2koka(backend, tp), ", ") + ">"
 				} else "")
-			} else "TODO: " + id;
+			}
 		}
 		BTypeFunction(args, returnType): {
 			"(" + superglue(args, \tp -> btype2koka(backend, tp), ", ") + ")"
@@ -91,7 +103,7 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 	rec = \ee -> bexp2koka(backend, ee);
 	switch (bexp) {
 		BVoid(): "()";
-		BBool(v): b2s(v);
+		BBool(v): if (v) "True" else "False";
 		BInt(v): i2s(v);
 		BDouble(v): double2string(v);
 		BString(v): toString(v);
@@ -126,12 +138,67 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 					"args", superglue(args, rec, ", "),
 			]);
 		}
-		BLambda(args, body, type): todo();
-		BSequence(exps, type): todo();
-		BConstruct(struct, args, type): todo();
-		BField(value, field, type): todo();
+		BLambda(args, body, type): {
+			blueprint("
+					fn(%args%) {
+						%body%
+					}",
+				[
+					"args", strGlue(args, ", "),
+					"body", rec(body),
+			]);
+		}
+		BSequence(exps, type): {
+			blueprint("
+					{
+						%exps%
+					}",
+				[
+					"exps", superglue(exps, rec, ";\n"),
+			]);
+		}
+		BConstruct(struct, args, type): {
+			blueprint("%struct%(%args%)",
+				[
+					"struct", struct,
+					"args", superglue(args, rec, ", "),
+			]);
+		}
+		BField(value, field, type): {
+			blueprint("
+					%value%.%field%",
+				[
+					"value", rec(value),
+					"field", field,
+			]);
+		}
 		BSetMutable(left, field, value, type): todo();
-		BSwitch(value, switchType, cases, defaultCase, type): todo();
-		BArray(args, type): todo();
+		BSwitch(value, switchType, cases, defaultCase, type): {
+			/*
+			match(m) {
+				Nothing -> 0
+				Just(i) -> i
+				_ -> 2
+			}
+			*/
+			blueprint("
+					match (%value%) {
+						%cases%
+						%default%
+					}",
+				[
+					"value", prettyBExp(value),
+					"cases", superglue(cases, \case -> {
+						case.id + "() -> " + rec(case.body);
+					}, ";\n"),
+					"default", defaultCase ?? ("_ -> " + rec(defaultCase)) : "",
+			]);
+		}
+		BArray(args, type): {
+			blueprint("[%args%]",
+				[
+					"args", superglue(args, rec, ", "),
+			]);
+		}
 	}
 }

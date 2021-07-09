@@ -76,7 +76,7 @@ makeRenameIds(prog : BExpProgram, shorten_ids : bool, keywords : Set<string>) ->
 			// Prefix type ids with 't_' in order to distinguish them from vars
 			\id -> "t_" + id
 		),
-		// filed renamings
+		// field renamings
 		makeRenaming(
 			concatA(map(getTreeValues(prog.structs), \s -> map(s.structArgs, \arg -> arg.id))),
 			shorten_ids, keywords
