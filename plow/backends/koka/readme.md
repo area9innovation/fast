@@ -29,14 +29,14 @@ the code generator will use int, rather than int32 for integers.
 
 # TODO
 
-- Get euler1 to compile and run as Koka:
-  - flow_fold is not implement
+- Get euler3 to compile and run as Koka:
+
+- Improvements:
   - Unions in unions are not handled right
   - Special cases for 
-    - flow_flow
-      - Flow type does not exist
-    - flow_isOWASPLevel1, flow_isLoggingEnabled, flow_securityModes, flow_loggingEnabled
-      - top-level vars can not have effects
+    - Flow type does not exist (flow_flow)
+    - Global state: flow_isOWASPLevel1, flow_loggingEnabled
   - Add type arguments to lambdas? to disambiguiate args
 - Fix mutable
-- Fix runtime
+
+- Extend runtime

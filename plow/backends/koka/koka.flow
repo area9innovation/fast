@@ -67,6 +67,8 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 				blueprint("
 					fun flow_println(flow_str : string) : console () { println(flow_str) };
 
+					fun flow_println(flow_str : double) : console () { println(flow_str) };
+
 					fun flow_println(flow_str : %int%) : console () { println(show(flow_str)) }
 					", [
 						"int", if (isKokaInt32()) "int32" else "int"

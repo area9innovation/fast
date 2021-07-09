@@ -10,8 +10,7 @@ double2string(d : double) -> string {
 	v0 = d2s(d);
 	if (strContains(v0, ".") 
 		|| strContains(v0, "e") 
-		|| strContains(v0, "E") 
-		|| dfloor(d) == d) {
+		|| strContains(v0, "E") ) {
 		v0
 	} else v0 + ".0";
 }

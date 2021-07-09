@@ -288,7 +288,7 @@ bvalue2js(b : BValue) -> string {
 		BVoid(): "null";
 		BBool(v): b2s(v);
 		BInt(v):  i2s(v);
-		BDouble(value): double2string(value);
+		BDouble(value): if (dfloor(value) == value) d2s(value) else double2string(value);
 		BString(value): toString(value);
 	}
 }
