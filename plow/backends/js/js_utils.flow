@@ -12,7 +12,7 @@ export {
 	// Makes a default JS config for a given file.
 	makeJsConfig(flowfile : string) -> JsConfig;
 
-	// Output the JS runtime type correspoding with an argument.
+	// Output the JS runtime type corresponding with an argument.
 	bype2JsType(type : BType, struct_names : Set<string>) -> string;
 }
 

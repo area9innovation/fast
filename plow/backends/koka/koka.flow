@@ -36,7 +36,8 @@ bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 		+ "// STRUCTS\n"
 		+ structs + "\n"
 		+ "// BODY\n"
-		+ body,
+		+ body
+		+ "fun main() { flow_main() }",
 		"\t",
 		"  "
 	)
@@ -60,10 +61,22 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 				"fun flow_isOWASPLevel1() : bool { False }"
 			} else if (id == "flow_isLoggingEnabled") {
 				"fun flow_isLoggingEnabled() : bool { False }"
+			} else if (id == "flow_extractStruct") {
+				"fun flow_extractStruct(flow_a : vector<a>, flow_e : b) : b { flow_e }"
+			} else if (id == "flow_println") {
+				blueprint("
+					fun flow_println(flow_str : string) : console () { println(flow_str) };
+
+					fun flow_println(flow_str : %int%) : console () { println(show(flow_str)) }
+					", [
+						"int", if (isKokaInt32()) "int32" else "int"
+					]
+				)
 			} else {
 				argtypes = getBArgTypes(type);
 				rt0 = btype2koka(backend, false, getBReturnType(type));
-				rt = " : div " + rt0;
+				// TODO: We only need "div" if this fn is recursive
+				rt = " : <console,div> " + rt0;
 				blueprint("
 					fun %id%(%args%)%rt% {
 						%body%
@@ -79,7 +92,30 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 				])
 			}
 		}
-		BExpNative(id, isio, type, nativeName): "// TODO: Native " + id;
+		BExpNative(id, isio, type, nativeName): {
+			if (id == "flow_fold") {
+				blueprint("
+				fun flow_fold(flow_a : vector<a>, flow_acc : b, flow_fn : (b, a) -> b) : <exn,div> b {
+					flow_do_fold(flow_a, 0, flow_acc, flow_fn)
+				}
+
+				fun flow_do_fold(flow_a : vector<a>, i : int, flow_acc : b, flow_fn : (b, a) -> b) : <exn,div> b {
+					if (i < length(flow_a)) {
+						flow_do_fold(flow_a, i + 1, flow_fn(flow_acc, flow_a[i]), flow_fn)
+					} else flow_acc
+				}", [])
+			} else if (id == "flow_isSameStructType") {
+				"fun flow_isSameStructType(a, b) { False }"
+			} else if (id == "flow_quit") {
+				if (isKokaInt32()) {
+					"fun flow_quit(ec : int32) { }"
+				} else {
+					"fun flow_quit(ec : int) { }"
+				}
+			} else {
+				"// TODO: Native " + id;
+			}
+		}
 	}
 }
 
@@ -150,7 +186,7 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 	switch (bexp) {
 		BVoid(): "()";
 		BBool(v): if (v) "True" else "False";
-		BInt(v): "int32(" + i2s(v) + ")";
+		BInt(v): if (isKokaInt32()) "int32(" + i2s(v) + ")" else i2s(v);
 		BDouble(v): double2string(v);
 		BString(v): toString(v);
 		BVar(id, type): id;

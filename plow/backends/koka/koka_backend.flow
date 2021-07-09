@@ -80,7 +80,8 @@ kokaBackendSpec() -> BackendSpec {
 			// Natives
 			"Native.fold",
 			"Native.println",
-			"Native.quit"
+			"Native.quit",
+			"Native.isSameStructType",
 		]
 	)
 }

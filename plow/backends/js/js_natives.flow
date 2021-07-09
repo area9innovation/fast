@@ -291,9 +291,6 @@ jsBackend() -> Backend {
 				)
 			),
 
-
-
-
 /*
 Native.toLowerCase = function(str) {
 	return str.toLowerCase();
