@@ -4,7 +4,6 @@ import fs/filesystem;
 import string_utils;
 
 export {
-
 	// The general info about a backend.
 	BackendSpec(
 		keywords : Set<string>, // A set of target language keywords

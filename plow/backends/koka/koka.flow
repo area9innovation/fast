@@ -25,7 +25,10 @@ bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 	// The backend keeps track of what requirements are used by the various
 	// constructs used
 	strReplace(
-		getBackendRequirements(backend)
+		(if (isKokaInt32()) {
+			"import std/num/int32\n"
+		} else "")
+		+ getBackendRequirements(backend)
 	//	+ "// RUNTIME\n"
 	//	+ runtime + "\n"
 		+ "// UNIONS\n"
@@ -76,7 +79,7 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 				])
 			}
 		}
-		BExpNative(id, isio, type, nativeName): "-- TODO: Native " + id;
+		BExpNative(id, isio, type, nativeName): "// TODO: Native " + id;
 	}
 }
 
@@ -120,7 +123,7 @@ btype2koka(backend : Backend, decap : bool, btype : BType) -> string {
 		BTypeName(id, typars): {
 			if (id == "void") "()"
 			else if (id == "bool" || id == "double" || id == "string") id
-			else if (id == "int") "int"
+			else if (id == "int") { if (isKokaInt32()) "int32" else "int" }
 			else if (id == "flow") "_"
 			else if (id == "array") {
 				"vector<" + btype2koka(backend, true, typars[0]) + ">"
@@ -147,7 +150,7 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 	switch (bexp) {
 		BVoid(): "()";
 		BBool(v): if (v) "True" else "False";
-		BInt(v): i2s(v);
+		BInt(v): "int32(" + i2s(v) + ")";
 		BDouble(v): double2string(v);
 		BString(v): toString(v);
 		BVar(id, type): id;
@@ -248,4 +251,8 @@ bexp2koka(backend : Backend, bexp : BExp) -> string {
 			]);
 		}
 	}
+}
+
+isKokaInt32() -> bool {
+	!isUrlParameterTrue("koka-int")
 }

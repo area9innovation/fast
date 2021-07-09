@@ -32,7 +32,7 @@ bmodules2BExpProgram(modules : [BModule], spec : BackendSpec) -> BExpProgram {
 						ac
 					} else if (containsSet(spec.natives, nat.name)) {
 						// Use a native since it is supported by a backend
-						concat(ac,[BExpNative(id, nat.isIo, nat.type, nat.name)]);
+						concat(ac, [BExpNative(id, nat.isIo, nat.type, nat.name)]);
 					} else {
 						// The native is not implemented in a backend
 						if (!containsKeyTree(module.globals, id)) {

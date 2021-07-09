@@ -19,10 +19,18 @@ In Ubuntu, then use this to compile with Koka:
 
 	koka /mnt/c/fast/koka.kk
 
+# Options
+
+If you use
+
+	koka-int=1
+
+the code generator will use int, rather than int32 for integers.
+
 # TODO
 
 - Get euler1 to compile and run as Koka:
-  - int32 do not work for comparison and stuff.
+  - flow_fold is not implement
   - Unions in unions are not handled right
   - Special cases for 
     - flow_flow

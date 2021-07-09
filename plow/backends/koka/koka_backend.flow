@@ -78,6 +78,9 @@ kokaBackendSpec() -> BackendSpec {
 		"Flow", "flow_", "",
 		[
 			// Natives
+			"Native.fold",
+			"Native.println",
+			"Native.quit"
 		]
 	)
 }
