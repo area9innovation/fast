@@ -44,7 +44,9 @@ kokaBackend() -> Backend {
 
 kokaBackendSpec() -> BackendSpec {
 	makeBackendSpec(kokaBackend(),
-	[
-		// Natives
-	])
+		"Flow", "flow-", "",
+		[
+			// Natives
+		]
+	)
 }

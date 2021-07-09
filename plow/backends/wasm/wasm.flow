@@ -12,7 +12,7 @@ export {
 bmodule2wasm(cache : PlowCache, flowpath : string) -> string {
 	// TODO:  make a proper backend specification
 	backend = makeBackend("wasm", [], []);
-	spec = makeBackendSpec(backend, []);
+	spec = makeBackendSpec(backend, "Type", "flow", "", []);
 	bprogram2wasm(linkBExpProgram(cache, flowpath, false, spec), flowpath);
 }
 

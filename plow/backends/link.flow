@@ -10,7 +10,7 @@ export {
 
 linkBExpProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, spec : BackendSpec) -> BExpProgram {
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	renameIdsBExpProgram(bmodules2BExpProgram(modules, spec), shorten_ids, spec.keywords).first;
+	renameIdsBExpProgram(bmodules2BExpProgram(modules, spec), spec, shorten_ids).first;
 }
 
 linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, spec : BackendSpec) -> BProgram {

@@ -8,6 +8,9 @@ export {
 	// The general info about a backend.
 	BackendSpec(
 		keywords : Set<string>, // A set of target language keywords
+		renamingTypePrefix : string, // For remaining types
+		renamingPrefix : string, // For renaming top-level ids
+		renamingSuffix : string, // For renaming top-level ids
 		natives : Set<string>,  // A set of all supported natives
 		onError : (msg : string) -> void,
 	);
@@ -22,6 +25,9 @@ export {
 	// Makes a default BackendSpec
 	makeBackendSpec(
 		backend : Backend,
+		renamingTypePrefix : string, // For remaining types
+		renamingPrefix : string, // For renaming top-level ids
+		renamingSuffix : string, // For renaming top-level ids
 		natives : [string],
 	) -> BackendSpec;
 
@@ -55,10 +61,16 @@ makeBackend(
 
 makeBackendSpec(
 		backend : Backend,
+		renamingTypePrefix : string,
+		renamingPrefix : string, // For renaming top-level ids
+		renamingSuffix : string, // For renaming top-level ids
 		natives : [string],
 	) -> BackendSpec {
 	BackendSpec(
 		backend.keywords,
+		renamingTypePrefix,
+		renamingPrefix,
+		renamingSuffix,
 		buildSet(natives),
 		backend.onError
 	)

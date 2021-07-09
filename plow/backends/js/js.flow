@@ -12,12 +12,12 @@ export {
 
 bmodule2js(cache : PlowCache, flowpath : string, shorten_ids : bool) -> string {
 	backend = jsBackend();
-	spec = makeBackendSpec(backend,
+	spec = makeBackendSpec(backend, "t_", "", "__",
 		// We consider a native is a generator for a named identifier (non arithmetic, comparison, etc.)
 		filter(getTreeKeys(backend.generators), \gen_name -> isLetter(getCharAt(gen_name, 0)))
 	);
 	modules = list2array(programBModules(cache, flowpath, makeList(), makeSet()).first);
-	bexp_program = renameIdsBExpProgram(bmodules2BExpProgram(modules, spec), shorten_ids, backend.keywords);
+	bexp_program = renameIdsBExpProgram(bmodules2BExpProgram(modules, spec), spec, shorten_ids);
 	prog = bexpProgram2BProgram(bexp_program.first);
 	shortenIds = bexp_program.second;
 	bprogram2js(prog, flowpath, backend, shortenIds);
