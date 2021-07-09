@@ -21,8 +21,7 @@ export {
 
 	// Makes a default BackendSpec
 	makeBackendSpec(
-		name : string,
-		keywords : [string],
+		backend : Backend,
 		natives : [string],
 	) -> BackendSpec;
 
@@ -55,14 +54,13 @@ makeBackend(
 }
 
 makeBackendSpec(
-		name : string,
-		keywords : [string],
+		backend : Backend,
 		natives : [string],
 	) -> BackendSpec {
 	BackendSpec(
-		buildSet(keywords),
+		backend.keywords,
 		buildSet(natives),
-		println
+		backend.onError
 	)
 }
 

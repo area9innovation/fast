@@ -7,17 +7,7 @@ export {
 }
 
 kokaBackend() -> Backend {
-	spec = kokaBackendSpec();
-	makeBackend("koka", set2array(spec.keywords),
-	// generators
-	[
-
-	]
-	);
-}
-
-kokaBackendSpec() -> BackendSpec {
-	makeBackendSpec("koka",
+	makeBackend("koka", 
 	[
 		// Keywords
 		"infix", "infixr", "infixl", "prefix", "postfix"
@@ -45,6 +35,15 @@ kokaBackendSpec() -> BackendSpec {
 		, "interface"
 		, "unsafe"
 	], 
+	// generators
+	[
+
+	]
+	);
+}
+
+kokaBackendSpec() -> BackendSpec {
+	makeBackendSpec(kokaBackend(),
 	[
 		// Natives
 	])

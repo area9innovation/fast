@@ -12,8 +12,7 @@ export {
 
 bmodule2js(cache : PlowCache, flowpath : string, shorten_ids : bool) -> string {
 	backend = jsBackend();
-	spec = makeBackendSpec("js",
-		set2array(backend.keywords),
+	spec = makeBackendSpec(backend,
 		// We consider a native is a generator for a named identifier (non arithmetic, comparison, etc.)
 		filter(getTreeKeys(backend.generators), \gen_name -> isLetter(getCharAt(gen_name, 0)))
 	);
