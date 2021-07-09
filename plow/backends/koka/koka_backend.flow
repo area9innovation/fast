@@ -69,6 +69,19 @@ kokaBackend() -> Backend {
 
 			BackGen("__ref", bvoidType, BackCall("ref", [BackArg(0)])),
 			BackGen("__deref", bvoidType, BackPreOp("!", 60, BackArg(0))),
+
+			BackGen("flow_exp", bvoidType, 
+				BackRequire(
+					BackText("import std/num/double"),
+					BackCall("exp", [BackArg(0)])
+				)
+			),
+			BackGen("flow_log", bvoidType, 
+				BackRequire(
+					BackText("import std/num/double"),
+					BackCall("log", [BackArg(0)])
+				)
+			)
 	]
 	);
 }
@@ -82,6 +95,8 @@ kokaBackendSpec() -> BackendSpec {
 			"Native.println",
 			"Native.quit",
 			"Native.isSameStructType",
+			"Native.exp",
+			"Native.log",
 		]
 	)
 }

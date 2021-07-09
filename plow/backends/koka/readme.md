@@ -29,7 +29,9 @@ the code generator will use int, rather than int32 for integers.
 
 # TODO
 
-- Get euler3 to compile and run as Koka:
+- Get euler4 to compile and run as Koka
+  - Local vars in expression context
+  - string natives
 
 - Improvements:
   - Unions in unions are not handled right
@@ -37,6 +39,9 @@ the code generator will use int, rather than int32 for integers.
     - Flow type does not exist (flow_flow)
     - Global state: flow_isOWASPLevel1, flow_loggingEnabled
   - Add type arguments to lambdas? to disambiguiate args
+
 - Fix mutable
 
-- Extend runtime
+- New mode: Produce a .kk file for each flow module
+
+- Extend runtime with more stuff
