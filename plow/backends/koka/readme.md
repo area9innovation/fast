@@ -30,8 +30,17 @@ the code generator will use int, rather than int32 for integers.
 # TODO
 
 - Get euler4 to compile and run as Koka
-  - Local vars in expression context
-  - string natives
+  - Local vars in expression context. Koka is statement-based for let-bindings!
+     So
+		a || ({
+			statement
+		})()
+	is a workaround.
+
+  - Some effect problems. foldRange needs to pass the effect:
+    fun flow_foldRange(flow_start : int32, flow_end : int32, flow_acc : a, flow_fn : (a, int32) -> e a) : e a {
+
+- euler7: enumFromTo, map, bitNot, bitAnd, bitOr
 
 - Improvements:
   - Unions in unions are not handled right

@@ -74,6 +74,22 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 						"int", if (isKokaInt32()) "int32" else "int"
 					]
 				)
+			} else if (id == "flow_i2s") {
+				blueprint("
+					fun flow_i2s(flow_i : %int%) : <> string {
+						show(flow_i)
+					}
+				", [
+						"int", if (isKokaInt32()) "int32" else "int"
+				])
+			} else if (id == "flow_i2d") {
+				blueprint("
+					fun flow_i2d(flow_i : %int%) : <> double {
+						double(flow_i)
+					}
+				", [
+						"int", if (isKokaInt32()) "int32" else "int"
+				])
 			} else {
 				argtypes = getBArgTypes(type);
 				rt0 = btype2koka(backend, false, getBReturnType(type));
@@ -114,6 +130,24 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 				} else {
 					"fun flow_quit(ec : int) { }"
 				}
+			} else if (id == "flow_substring") {
+				blueprint("
+					fun flow_substring(s : string, st : %int%, len : %int%) : string {
+   						string(string(slice(s).advance(int(st))).first(int(len)))
+					}
+					", [
+						"int", if (isKokaInt32()) "int32" else "int"
+					]
+				);
+			} else if (id == "flow_strlen") {
+				blueprint("
+					fun flow_strlen(s : string) : %int% {
+						%int%(count(s))
+					}
+					", [
+						"int", if (isKokaInt32()) "int32" else "int"
+					]
+				);
 			} else {
 				"// TODO: Native " + id;
 			}

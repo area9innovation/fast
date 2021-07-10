@@ -37,53 +37,52 @@ kokaBackend() -> Backend {
 	], 
 	// generators
 	[
-			BackGen("||", bboolType, BackBinOp("||", 10, BackArg(0), BackArg(1))),
-			BackGen("&&", bboolType, BackBinOp("&&", 20, BackArg(0), BackArg(1))),
-			BackGen("==", bvoidType, BackBinOp("==", 30, BackArg(0), BackArg(1))),
-			BackGen("!=", bvoidType, BackBinOp("!=", 30, BackArg(0), BackArg(1))),
+		BackGen("||", bboolType, BackBinOp(" || ", 10, BackArg(0), BackArg(1))),
+		BackGen("&&", bboolType, BackBinOp(" && ", 20, BackArg(0), BackArg(1))),
+		BackGen("==", bvoidType, BackBinOp(" == ", 30, BackArg(0), BackArg(1))),
+		BackGen("!=", bvoidType, BackBinOp(" != ", 30, BackArg(0), BackArg(1))),
 
-			BackGen("<=", bvoidType, BackBinOp("<=", 35, BackArg(0), BackArg(1))),
-			BackGen("<", bvoidType, BackBinOp("<", 35, BackArg(0), BackArg(1))),
-			BackGen(">=", bvoidType, BackBinOp(">=", 35, BackArg(0), BackArg(1))),
-			BackGen(">", bvoidType, BackBinOp(">", 35, BackArg(0), BackArg(1))),
+		BackGen("<=", bvoidType, BackBinOp(" <= ", 35, BackArg(0), BackArg(1))),
+		BackGen("<", bvoidType, BackBinOp(" < ", 35, BackArg(0), BackArg(1))),
+		BackGen(">=", bvoidType, BackBinOp(" >= ", 35, BackArg(0), BackArg(1))),
+		BackGen(">", bvoidType, BackBinOp(" > ", 35, BackArg(0), BackArg(1))),
 
-			BackGen("+", bintType, BackBinOp("+", 40, BackArg(0), BackArg(1))),
-			BackGen("+", bdoubleType, BackBinOp("+", 40, BackArg(0), BackArg(1))),
-			BackGen("+", bstringType, BackBinOp("++", 40, BackArg(0), BackArg(1))),
+		BackGen("+", bintType, BackBinOp(" + ", 40, BackArg(0), BackArg(1))),
+		BackGen("+", bdoubleType, BackBinOp(" + ", 40, BackArg(0), BackArg(1))),
+		BackGen("+", bstringType, BackBinOp(" ++ ", 40, BackArg(0), BackArg(1))),
 
-			BackGen("-", bintType, BackBinOp(" - ", 40, BackArg(0), BackArg(1))),
-			BackGen("-", bdoubleType, BackBinOp(" - ", 40, BackArg(0), BackArg(1))),
+		BackGen("-", bintType, BackBinOp(" - ", 40, BackArg(0), BackArg(1))),
+		BackGen("-", bdoubleType, BackBinOp(" - ", 40, BackArg(0), BackArg(1))),
 
-			BackGen("*", bintType, BackBinOp("*", 50, BackArg(0), BackArg(1))),
-			BackGen("*", bdoubleType, BackBinOp("*", 50, BackArg(0), BackArg(1))),
+		BackGen("*", bintType, BackBinOp(" * ", 50, BackArg(0), BackArg(1))),
+		BackGen("*", bdoubleType, BackBinOp(" * ", 50, BackArg(0), BackArg(1))),
 
-			BackGen("/", bintType, BackBinOp(" / ", 50, BackArg(0), BackArg(1))),
-			BackGen("/", bdoubleType, BackBinOp(" / ", 50, BackArg(0), BackArg(1))),
+		BackGen("/", bintType, BackBinOp(" / ", 50, BackArg(0), BackArg(1))),
+		BackGen("/", bdoubleType, BackBinOp(" / ", 50, BackArg(0), BackArg(1))),
 
-			BackGen("%", bintType, BackBinOp("%", 50, BackArg(0), BackArg(1))),
-			BackGen("%", bdoubleType, BackBinOp("%", 50, BackArg(0), BackArg(1))),
+		BackGen("%", bintType, BackBinOp(" % ", 50, BackArg(0), BackArg(1))),
+		BackGen("%", bdoubleType, BackBinOp(" % ", 50, BackArg(0), BackArg(1))),
 
-			BackGen("__negate", BTypeFunction([bintType], bintType), BackPreOp("-", 60, BackArg(0))),
-			BackGen("__negate", BTypeFunction([bdoubleType], bdoubleType), BackPreOp("-", 60, BackArg(0))),
-			BackGen("__not", bvoidType, BackPreOp("!", 60, BackArg(0))),
+		BackGen("__negate", BTypeFunction([bintType], bintType), BackCall("negate", [BackArg(0)])),
+		BackGen("__negate", BTypeFunction([bdoubleType], bdoubleType), BackPreOp(" -", 60, BackArg(0))),
+		BackGen("__not", bvoidType, BackPreOp(" !", 60, BackArg(0))),
 
-			BackGen("__ref", bvoidType, BackCall("ref", [BackArg(0)])),
-			BackGen("__deref", bvoidType, BackPreOp("!", 60, BackArg(0))),
+		BackGen("__ref", bvoidType, BackCall("ref", [BackArg(0)])),
+		BackGen("__deref", bvoidType, BackPreOp(" !", 60, BackArg(0))),
 
-			BackGen("flow_exp", bvoidType, 
-				BackRequire(
-					BackText("import std/num/double"),
-					BackCall("exp", [BackArg(0)])
-				)
-			),
-			BackGen("flow_log", bvoidType, 
-				BackRequire(
-					BackText("import std/num/double"),
-					BackCall("log", [BackArg(0)])
-				)
+		BackGen("flow_exp", bvoidType, 
+			BackRequire(
+				BackText("import std/num/double"),
+				BackCall("exp", [BackArg(0)])
 			)
-	]
-	);
+		),
+		BackGen("flow_log", bvoidType, 
+			BackRequire(
+				BackText("import std/num/double"),
+				BackCall("log", [BackArg(0)])
+			)
+		),
+	]);
 }
 
 kokaBackendSpec() -> BackendSpec {
@@ -97,6 +96,8 @@ kokaBackendSpec() -> BackendSpec {
 			"Native.isSameStructType",
 			"Native.exp",
 			"Native.log",
+			"Native.strlen",
+			"Native.substring",
 		]
 	)
 }
