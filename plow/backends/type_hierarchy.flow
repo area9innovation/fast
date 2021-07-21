@@ -4,17 +4,23 @@ import plow/dexp/types;
 export {
 	// Resolve our type hierarchy into a simpler one
 	// where we have no struct nor union reuse
-	resolveBTypeHierarchy(b : BExpProgram) -> Triple<[DUnion], [DStruct], Tree<string, DStruct>>;
+	resolveBTypeHierarchy(
+		structs : Tree<string, DStruct>,
+		unions : Tree<string, DUnion>,
+	) -> Triple<[DUnion], [DStruct], Tree<string, DStruct>>;
 }
 
-resolveBTypeHierarchy(b : BExpProgram) -> Triple<[DUnion], [DStruct], Tree<string, DStruct>> {
+resolveBTypeHierarchy(
+	bstructs : Tree<string, DStruct>,
+	bunions : Tree<string, DUnion>,
+) -> Triple<[DUnion], [DStruct], Tree<string, DStruct>> {
 	// Build a map from a type name to the super types it might have
-	supers : Tree<string, [string]> = makeDSupers(b.unions);
+	supers : Tree<string, [string]> = makeDSupers(bunions);
 
 	// Build a map from a type name to the subtypes it might have
-	subs : Tree<string, [string]> = makeDSubtypes(b.unions);
+	subs : Tree<string, [string]> = makeDSubtypes(bunions);
 
-	structs = getTreeValues(b.structs);
+	structs = getTreeValues(bstructs);
 	bareStructs = filter(structs, \s -> {
 		!containsKeyTree(supers, s.id)
 	});
@@ -26,7 +32,7 @@ resolveBTypeHierarchy(b : BExpProgram) -> Triple<[DUnion], [DStruct], Tree<strin
 	});
 
 	// TODO: Find only top unions and resolve them
-	unions = getTreeValues(b.unions);
+	unions = getTreeValues(bunions);
 
 	Triple(unions, bareStructs, unionedStructs)
 }

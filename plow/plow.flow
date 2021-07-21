@@ -1,6 +1,7 @@
 import plow/backends/js/js;
 import plow/backends/wasm/wasm;
 import plow/backends/koka/koka;
+import plow/backends/cpp/cpp;
 import plow/pexp/parse;
 import plow/pexp/pretty;
 import plow/dexp/desugar;
@@ -65,6 +66,9 @@ main() {
 		}
 		if (isUrlParameterTrue("koka")) {
 			buildKokaTarget(cache, b, src_file);
+		}
+		if (isUrlParameterTrue("cpp")) {
+			buildCppTarget(cache, b, src_file);
 		}
 	}
 
@@ -158,6 +162,24 @@ buildKokaTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
 		println("Koka target '" + koka_file + "' is built.");
 	} else {
 		println("Error: Could NOT save '" + koka_file + "'");
+	}
+	if (verbose) {
+		println("\n-------------------\n");
+	}
+}
+
+buildCppTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
+	verbose = isUrlParameterTrue("verbose");
+	if (verbose) {
+		println("building Cpp target");
+	}
+	cpp_src = bmodule2cpp(cache, b.flowpath, isUrlParameterTrue("shorten-ids"));
+	cppArg = getUrlParameter("cpp");
+	cpp_file = if (strlen(cppArg) > 1) cppArg else changeFileExt(src_file, ".cpp");
+	if (setFileContent(cpp_file, cpp_src)) {
+		println("C++ target '" + cpp_file + "' is built.");
+	} else {
+		println("Error: Could NOT save '" + cpp_file + "'");
 	}
 	if (verbose) {
 		println("\n-------------------\n");

@@ -15,7 +15,7 @@ bmodule2koka(cache : PlowCache, flowpath : string, shortenIds : bool) -> string 
 }
 
 bprogram2koka(b : BExpProgram, flowpath : string) -> string {
-	typeHierarcy = resolveBTypeHierarchy(b);
+	typeHierarcy = resolveBTypeHierarchy(b.structs, b.unions);
 
 	backend = kokaBackend();
 	unions = superglue(typeHierarcy.first, \u : DUnion -> dunion2koka(backend, typeHierarcy.third, u), "\n");

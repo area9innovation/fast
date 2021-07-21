@@ -1,0 +1,302 @@
+import plow/backends/link;
+import plow/backends/back_eval;
+import plow/backends/pretty;
+import plow/backends/cpp/cpp_backend;
+import plow/backends/type_hierarchy;
+import plow/backends/utils;
+
+export {
+	// Compiles the given flow path to C++ as a single string
+	bmodule2cpp(cache : PlowCache, flowpath : string, shortenIds : bool) -> string;
+}
+
+bmodule2cpp(cache : PlowCache, flowpath : string, shortenIds : bool) -> string {
+	bprogram2cpp(linkBProgram(cache, flowpath, shortenIds, cppBackendSpec()), flowpath);
+}
+
+bprogram2cpp(b : BProgram, flowpath : string) -> string {
+	typeHierarcy = resolveBTypeHierarchy(b.structs, b.unions);
+
+	backend = cppBackend();
+	unions = superglue(typeHierarcy.first, \u : DUnion -> dunion2cpp(backend, typeHierarcy.third, u), "\n");
+	structs = superglue(typeHierarcy.second, \s : DStruct -> "struct " + dstruct2cpp(backend, s), "\n");
+	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2cpp(backend, d), "\n");
+
+	// The backend keeps track of what requirements are used by the various
+	// constructs used
+	strReplace(
+		getBackendRequirements(backend)
+	//	+ "// RUNTIME\n"
+	//	+ runtime + "\n"
+		+ "// UNIONS\n"
+		+ unions + "\n"
+		+ "// STRUCTS\n"
+		+ structs + "\n"
+		+ "// BODY\n"
+		+ body
+		+ "int main() { return int(flow_main()) }",
+		"\t",
+		"  "
+	)
+}
+
+bdeclaration2cpp(backend : Backend, d : BDeclaration) -> string {
+	switch (d) {
+		BGlobalVar(id, body, type): {
+			btype2cpp(backend, type) + " " + id + " = " + bexp2cpp(backend, body) + ";";
+		}
+		BStatFunction(id, args, body, tailCall, type): {
+			if (id == "flow_i2s") {
+				blueprint("
+					std::u16string flow_i2s(int32_t flow_i) {
+						std::to_string(flow_i)
+					}
+				", [
+				])
+			} else if (id == "flow_i2d") {
+				blueprint("
+					double flow_i2d(int32_t flow_i) {
+						double(flow_i)
+					}
+				", [
+				])
+			} else {
+				argtypes = getBArgTypes(type);
+				rt = btype2cpp(backend, getBReturnType(type));
+				// TODO: We only need "div" if this fn is recursive
+				blueprint("
+					%rt% %id%(%args%) {
+						%body%
+					}
+				", [
+					"id", id,
+					// TODO: Add types and typars
+					"args", supergluei(args, \i, arg -> {
+						btype2cpp(backend, argtypes[i]) + " " + arg
+					}, ", "),
+					"rt", rt,
+					"body", bstatement2cpp(backend, body)
+				])
+			}
+		}
+		BExpNative(id, isio, type, nativeName): {
+			"// TODO: Native " + id;
+		}
+	}
+}
+
+bstatement2cpp(backend : Backend, s : BStatement) -> string {
+	todo = \ -> {
+		println("TODO C++ statement: " + toString(s));
+		toString(s)
+	}
+	rec = \ss -> bstatement2cpp(backend, ss);
+	rece = \ee -> bexp2cpp(backend, ee);
+	switch (s) {
+		BIfStatement(cond, then, else_): {
+			blueprint("
+					if (%c%) {
+						%then%
+					} else {
+						%else%
+					}",
+				[
+					"c", rece(cond),
+					"then", rec(then),
+					"else", rec(else_),
+			]);
+
+		}
+		BLetStatement(id, value, body): todo();
+		BSetMutableStatement(left, field, value): todo();
+		BReturnVoid(): "return";
+		BReturn(val): "return " + bexp2cpp(backend, val);
+		BTailCall(fn, args, values, type): {
+			fn  + "(" +superglue(values, rece, ", ") + ")"
+		}
+		BSequenceStatement(statements): {
+			blueprint("
+					{
+						%exps%
+					}",
+				[
+					"exps", superglue(statements, rec, ";\n"),
+			]);
+
+		}
+		BSwitchStatement(expr, cases, type): todo();
+	}
+}
+
+
+bexp2cpp(backend : Backend, bexp : BExp) -> string {
+	rec = \ee -> bexp2cpp(backend, ee);
+	switch (bexp) {
+		BVoid(): "{}";
+		BBool(v): if (v) "true" else "false";
+		BInt(v): i2s(v);
+		BDouble(v): double2string(v);
+		BString(v): toString(v);
+		BVar(id, type): id;
+		BLet(id, value, body, type): {
+			blueprint("
+				auto %id% = %value%;
+				%body%", [
+				"id", id,
+				// "type", btype2cpp(backend, value.type),
+				"value", rec(value),
+				"body", rec(body),
+			])
+		}
+		BIf(cond, then, else_, type): {
+			blueprint("
+					(%c%) ? (
+						%then%
+					) : (
+						%else%
+					)",
+				[
+					"c", rec(cond),
+					"then", rec(then),
+					"else", rec(else_),
+			]);
+		}
+		BCall(fn, args, type): {
+			produceBackendCall(backend, bexp, bexp2cpp);
+		}
+		BLambda(args, body, type): {
+			argtypes = getBArgTypes(type);
+			rt0 = btype2cpp(backend, getBReturnType(type));
+			blueprint("
+					fn(%args%) {
+						%body%
+					}",
+				[
+					"args", supergluei(args, \i, arg -> {
+							btype2cpp(backend, argtypes[i]) + " " + arg
+						}, ", "),
+					"body", rec(body),
+			]);
+		}
+		BSequence(exps, type): {
+			blueprint("
+					(%exps%)",
+				[
+					"exps", superglue(exps, rec, ", "),
+			]);
+		}
+		BConstruct(struct, args, type): {
+			blueprint("%struct%(%args%)",
+				[
+					"struct", struct,
+					"args", superglue(args, rec, ", "),
+			]);
+		}
+		BField(value, field, type): {
+			blueprint("
+					%value%.%field%",
+				[
+					"value", rec(value),
+					"field", field,
+			]);
+		}
+		BSetMutable(left, field, value, type): "TODO-set-mutable(" + rec(left) + "." + field + ", " + rec(value);
+		BSwitch(value, switchType, cases, defaultCase, type): {
+			/*
+			match(m) {
+				Nothing -> 0
+				Just(i) -> i
+				_ -> 2
+			}
+			*/
+			blueprint("
+					switch (%value%.index()) {
+						%cases%
+						%default%
+					}",
+				[
+					"value", rec(value),
+					"cases", superglue(cases, \case -> {
+						blueprint("
+							case %id%: {
+								%body%
+							}",
+							[
+								"id", case.id, // TODO: This should be the int id
+								"body", rec(case.body)
+							]);
+					}, ";\n"),
+					"default", defaultCase ?? ("default: " + rec(defaultCase)) : "",
+			]);
+		}
+		BArray(args, type): {
+			blueprint("{ %args% }",
+				[
+					"args", superglue(args, rec, ", "),
+			]);
+		}
+	}
+}
+
+dunion2cpp(backend : Backend, structs : Tree<string, DStruct>, u : DUnion) -> string {
+	blueprint("
+		std::variant<
+			%members%
+		> %name%", [
+			"name", u.id,
+			"members", superglue(u.types, \t : DTypeName -> {
+				// TODO: Lookup what specific struct types are here
+				// and "inline" those
+				mstruct = lookupTree(structs, t.id);
+				mstruct ?? {
+					dstruct2cpp(backend, mstruct);
+				} : dtype2cpp(backend, t);
+			}, "\n")
+		]
+	);
+}
+
+dstruct2cpp(backend : Backend, s : DStruct) -> string {
+	s.id + "{"
+	+ superglue(s.structArgs, \sa -> {
+		sa.id + " : " + dtype2cpp(backend, sa.type)
+	}, "; ") + "}";
+}
+
+
+dtype2cpp(backend : Backend, type : DType) -> string {
+	btype2cpp(backend, dtype2btype(type));
+}
+
+btype2cpp(backend : Backend, btype : BType) -> string {
+	switch (btype) {
+		BTypePar(id): {
+			// In C++, we use a, b, c, ...
+			len = strlen(id) - 1;
+			fromCharCode(getCharCodeAt("A", 0) + len);
+		}
+		BTypeName(id, typars): {
+			if (id == "void") "void"
+			else if (id == "bool" || id == "double") id
+			else if (id == "int") { "int32_t" }
+			else if (id == "string") { "std::u16string" }
+			else if (id == "flow") "std::any"
+			else if (id == "array") {
+				"std::vector<" + btype2cpp(backend, typars[0]) + ">"
+			} else if (id == "ref") {
+				"FlowRef<" + btype2cpp(backend, typars[0]) + ">"
+			} else if (trim2(id, "?") == "") {
+				"struct " + btype2cpp(backend, BTypePar(id));
+			} else {
+				id
+				+ (if (typars != []) {
+					"<" + superglue(typars, \tp -> btype2cpp(backend, tp), ", ") + ">"
+				} else "")
+			}
+		}
+		BTypeFunction(args, returnType): {
+			"TODO: (" + superglue(args, \tp -> btype2cpp(backend, tp), ", ") + ")"
+			+ " -> " + btype2cpp(backend, returnType)
+		}
+	}
+}
