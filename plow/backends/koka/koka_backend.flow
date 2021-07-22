@@ -82,7 +82,7 @@ kokaBackend() -> Backend {
 				BackCall("log", [BackArg(0)])
 			)
 		),
-	]);
+	], false);
 }
 
 kokaBackendSpec() -> BackendSpec {

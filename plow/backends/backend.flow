@@ -19,11 +19,12 @@ export {
 		name : string,
 		keywords : [string],
 		generators : [BackGen],
-	) -> Backend;
+		info : ?,
+	) -> Backend<?>;
 
 	// Makes a default BackendSpec
 	makeBackendSpec(
-		backend : Backend,
+		backend : Backend<?>,
 		renamingTypePrefix : string, // For remaining types
 		renamingPrefix : string, // For renaming top-level ids
 		renamingSuffix : string, // For renaming top-level ids
@@ -37,8 +38,9 @@ export {
 makeBackend(
 		name : string,
 		keywords : [string],
-		generators : [BackGen]
-) -> Backend {
+		generators : [BackGen],
+		info : ?
+) -> Backend<?> {
 	Backend(
 		buildSet(keywords),
 		fold(generators, makeTree(), \acc, gen : BackGen -> {
@@ -54,12 +56,13 @@ makeBackend(
 			treePushToArrayValue(acc, gen.name, ngen)
 		}),
 		println,
-		ref makeSet()
+		ref makeSet(),
+		info
 	)
 }
 
 makeBackendSpec(
-		backend : Backend,
+		backend : Backend<?>,
 		renamingTypePrefix : string,
 		renamingPrefix : string, // For renaming top-level ids
 		renamingSuffix : string, // For renaming top-level ids

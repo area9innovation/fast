@@ -318,6 +318,7 @@ Native.iter = function(values,clos) {
 
 		]
 		]),
+		false,
 	);
 	backend.requirements := insertSet(^(backend.requirements), 
 		blueprint("

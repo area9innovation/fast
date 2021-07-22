@@ -43,7 +43,7 @@ bprogram2koka(b : BExpProgram, flowpath : string) -> string {
 	)
 }
 
-bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
+bdeclaration2koka(backend : Backend<bool>, d : BExpDeclaration) -> string {
 	switch (d) {
 		BGlobalVar(id, body, type): {
 			if (id == "flow_securityModes") {
@@ -155,7 +155,7 @@ bdeclaration2koka(backend : Backend, d : BExpDeclaration) -> string {
 	}
 }
 
-dunion2koka(backend : Backend, structs : Tree<string, DStruct>, u : DUnion) -> string {
+dunion2koka(backend : Backend<bool>, structs : Tree<string, DStruct>, u : DUnion) -> string {
 	blueprint("
 		type %name% {
 			%members%
@@ -173,7 +173,7 @@ dunion2koka(backend : Backend, structs : Tree<string, DStruct>, u : DUnion) -> s
 	);
 }
 
-dstruct2koka(backend : Backend, decap : bool, s : DStruct) -> string {
+dstruct2koka(backend : Backend<bool>, decap : bool, s : DStruct) -> string {
 	(if (decap) decapitalize(s.id) else s.id) + "{"
 	+ superglue(s.structArgs, \sa -> {
 		sa.id + " : " + dtype2koka(backend, true, sa.type)
@@ -181,11 +181,11 @@ dstruct2koka(backend : Backend, decap : bool, s : DStruct) -> string {
 }
 
 
-dtype2koka(backend : Backend, decap : bool, type : DType) -> string {
+dtype2koka(backend : Backend<bool>, decap : bool, type : DType) -> string {
 	btype2koka(backend, decap, dtype2btype(type));
 }
 
-btype2koka(backend : Backend, decap : bool, btype : BType) -> string {
+btype2koka(backend : Backend<bool>, decap : bool, btype : BType) -> string {
 	switch (btype) {
 		BTypePar(id): {
 			// In Koka, we use a, b, c, ...
@@ -217,7 +217,7 @@ btype2koka(backend : Backend, decap : bool, btype : BType) -> string {
 	}
 }
 
-bexp2koka(backend : Backend, bexp : BExp) -> string {
+bexp2koka(backend : Backend<bool>, bexp : BExp) -> string {
 	rec = \ee -> bexp2koka(backend, ee);
 	switch (bexp) {
 		BVoid(): "()";

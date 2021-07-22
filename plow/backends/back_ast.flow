@@ -8,6 +8,8 @@ export {
 		generators : Tree<string, [BackGen]>,
 		onError : (msg : string) -> void,
 		requirements : ref Set<string>,
+		// A placeholder for each backend to place some data they want to carry around
+		info : ?
 	);
 
 	// Definition of a operator in a backend

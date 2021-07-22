@@ -10,6 +10,9 @@ import plow/backends/utils;
 flowcpp plow\plow.flow -- file=demos/euler/euler1.flow cpp=euler1.cpp
 g++ -std=c++2a euler1.cpp 2>out.flow
 
+TODO:
+- flow_isSameStructType
+- flow_fold
 */
 
 export {
@@ -24,7 +27,13 @@ bmodule2cpp(cache : PlowCache, flowpath : string, shortenIds : bool) -> string {
 bprogram2cpp(b : BProgram, flowpath : string) -> string {
 	typeHierarcy = resolveBTypeHierarchy(b.structs, b.unions);
 
-	backend = cppBackend();
+	info = CppInfo(
+		fold(b.declarations, makeSet(), \acc, d -> {
+			insertSet(acc, d.id)
+		})
+	);
+
+	backend = cppBackend(info);
 	// Structs in unions
 	unionStructs = foldTree(typeHierarcy.third, "", \id, struct, acc -> {
 		acc + dstruct2cpp(backend, struct) + "\n"
@@ -54,7 +63,7 @@ bprogram2cpp(b : BProgram, flowpath : string) -> string {
 	)
 }
 
-bdeclaration2cpp(backend : Backend, d : BDeclaration) -> string {
+bdeclaration2cpp(backend : Backend<CppInfo>, d : BDeclaration) -> string {
 	switch (d) {
 		BGlobalVar(id, body, type): {
 			btype2cpp(backend, type) + " " + id + " = " + bexp2cpp(backend, body) + ";";
@@ -79,7 +88,6 @@ bdeclaration2cpp(backend : Backend, d : BDeclaration) -> string {
 				argtypes = getBArgTypes(type);
 				rt = btype2cpp(backend, getBReturnType(type));
 			
-				// TODO: We only need "div" if this fn is recursive
 				blueprint("
 					%polyvars%%rt% %id%(%args%) {
 						%body%
@@ -90,7 +98,6 @@ bdeclaration2cpp(backend : Backend, d : BDeclaration) -> string {
 						else "template <" + superglue(set2array(polyvars), \pv -> "typename " + btype2cpp(backend, pv), ", ") + "> "
 					},
 					"id", id,
-					// TODO: Add types and typars
 					"args", supergluei(args, \i, arg -> {
 						btype2cpp(backend, argtypes[i]) + " " + arg
 					}, ", "),
@@ -105,7 +112,7 @@ bdeclaration2cpp(backend : Backend, d : BDeclaration) -> string {
 	}
 }
 
-bstatement2cpp(backend : Backend, s : BStatement) -> string {
+bstatement2cpp(backend : Backend<CppInfo>, s : BStatement) -> string {
 	todo = \ -> {
 		println("TODO C++ statement: " + toString(s));
 		toString(s)
@@ -159,18 +166,18 @@ bstatement2cpp(backend : Backend, s : BStatement) -> string {
 }
 
 
-bexp2cpp(backend : Backend, bexp : BExp) -> string {
+bexp2cpp(backend : Backend<CppInfo>, bexp : BExp) -> string {
 	rec = \ee -> bexp2cpp(backend, ee);
 	switch (bexp) {
 		BVoid(): "{}";
 		BBool(v): if (v) "true" else "false";
-		BInt(v): i2s(v);
+		BInt(v): "int32_t(" + i2s(v) + ")";
 		BDouble(v): double2string(v);
 		BString(v): toString(v);
 		BVar(id, type): id;
 		BLet(id, value, body, type): {
 			// TODO: Find a list of globals here
-			globals = makeSet();
+			globals = backend.info.globals;
 			freevars0 = extractFreeNamesBExp(makeSet(), globals, value);
 			freevars = set2array(removeSet(extractFreeNamesBExp(freevars0, globals, body), id));
 			blueprint("
@@ -204,14 +211,15 @@ bexp2cpp(backend : Backend, bexp : BExp) -> string {
 			argtypes = getBArgTypes(type);
 			rt0 = btype2cpp(backend, getBReturnType(type));
 			blueprint("
-					[](%args%) {
+					%type%([](%args%) {
 						return %body%;
-					}",
+					})",
 				[
 					"args", supergluei(args, \i, arg -> {
 							btype2cpp(backend, argtypes[i]) + " " + arg
 						}, ", "),
 					"body", rec(body),
+					"type", btype2cpp(backend, type),
 			]);
 		}
 		BSequence(exps, type): {
@@ -275,7 +283,7 @@ bexp2cpp(backend : Backend, bexp : BExp) -> string {
 	}
 }
 
-dunion2cpp(backend : Backend, u : DUnion) -> string {
+dunion2cpp(backend : Backend<CppInfo>, u : DUnion) -> string {
 	blueprint("
 		using %name% = std::variant<%members%>;", [
 			"name", u.id,
@@ -286,7 +294,7 @@ dunion2cpp(backend : Backend, u : DUnion) -> string {
 	);
 }
 
-dstruct2cpp(backend : Backend, s : DStruct) -> string {
+dstruct2cpp(backend : Backend<CppInfo>, s : DStruct) -> string {
 	"struct " + s.id + "{"
 	+ superglue(s.structArgs, \sa -> {
 		dtype2cpp(backend, sa.type) + " " + sa.id + ";"
@@ -294,11 +302,11 @@ dstruct2cpp(backend : Backend, s : DStruct) -> string {
 }
 
 
-dtype2cpp(backend : Backend, type : DType) -> string {
+dtype2cpp(backend : Backend<CppInfo>, type : DType) -> string {
 	btype2cpp(backend, dtype2btype(type));
 }
 
-btype2cpp(backend : Backend, btype : BType) -> string {
+btype2cpp(backend : Backend<CppInfo>, btype : BType) -> string {
 	switch (btype) {
 		BTypePar(id): {
 			// In C++, we use a, b, c, ...

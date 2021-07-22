@@ -9,20 +9,20 @@ import plow/types/builtin;
 
 export {
 	// Produce code for this call operator, respecting precedence
-	produceBackendCall(backend : Backend, call : BCall, rec : (Backend, BExp) -> string) -> string;
+	produceBackendCall(backend : Backend<?>, call : BCall, rec : (Backend<?>, BExp) -> string) -> string;
 
 	// See if we can produce code for this native
-	produceBackendNative(backend : Backend, nativeName : string) -> string;
+	produceBackendNative(backend : Backend<?>, nativeName : string) -> string;
 
 	// What stuff is required at the top?
-	getBackendRequirements(backend : Backend) -> string;
+	getBackendRequirements(backend : Backend<?>) -> string;
 }
 
-produceBackendCall(backend : Backend, call : BCall, rec : (Backend, BExp) -> string) -> string {
+produceBackendCall(backend : Backend<?>, call : BCall, rec : (Backend<?>, BExp) -> string) -> string {
 	produceCodeWithPrec(backend, call, rec).first;
 }
 
-produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string) -> Pair<string, int> {
+produceCodeWithPrec(backend : Backend<?>, e : BExp, rec : (Backend<?>, BExp) -> string) -> Pair<string, int> {
 	switch (e) {
 		BCall(fn, args, type): {
 			call_type = BTypeFunction(map(args, \arg -> getBType(arg)), type);
@@ -60,7 +60,7 @@ produceCodeWithPrec(backend : Backend, e : BExp, rec : (Backend, BExp) -> string
 	}
 }
 
-produceBackendNative(backend : Backend, nativeName : string) -> string {
+produceBackendNative(backend : Backend<?>, nativeName : string) -> string {
 	gens = getTreeArrayValue(backend.generators, nativeName);
 	if (length(gens) == 1) {
 		gen = gens[0];
@@ -68,7 +68,7 @@ produceBackendNative(backend : Backend, nativeName : string) -> string {
 	} else "";
 }
 
-evalBackExp(backend : Backend, args : [BExp], rec : (Backend, BExp) -> string, e : BackExp) -> Pair<string, int> {
+evalBackExp(backend : Backend<?>, args : [BExp], rec : (Backend<?>, BExp) -> string, e : BackExp) -> Pair<string, int> {
 	switch (e) {
 		BackText(text): Pair(text, 1000);
 		BackBinOp(name, precedence, arg0, arg1): {
@@ -121,7 +121,7 @@ evalBackExp(backend : Backend, args : [BExp], rec : (Backend, BExp) -> string, e
 	}
 }
 
-getBackendRequirements(backend : Backend) -> string {
+getBackendRequirements(backend : Backend<?>) -> string {
 	t = strGlue(set2array(^(backend.requirements)), "\n");
 	if (t != "") t + "\n" else t;
 }
