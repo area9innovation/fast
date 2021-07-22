@@ -3,11 +3,13 @@ import plow/dexp/types;
 
 export {
 	// Resolve our type hierarchy into a simpler one
-	// where we have no struct nor union reuse
+	// where we have no struct nor union reuse.
 	resolveBTypeHierarchy(
 		structs : Tree<string, DStruct>,
 		unions : Tree<string, DUnion>,
 	) -> Triple<[DUnion], [DStruct], Tree<string, DStruct>>;
+
+	extractPolymorphism(acc : Set<BTypePar>, b : BType) -> Set<BTypePar>;
 }
 
 resolveBTypeHierarchy(
@@ -35,4 +37,17 @@ resolveBTypeHierarchy(
 	unions = getTreeValues(bunions);
 
 	Triple(unions, bareStructs, unionedStructs)
+}
+
+extractPolymorphism(acc : Set<BTypePar>, b : BType) -> Set<BTypePar> {
+	switch (b) {
+		BTypePar(id): insertSet(acc, b);
+		BTypeName(id, typars): {
+			fold(typars, acc, extractPolymorphism);
+		}
+		BTypeFunction(args, returnType): {
+			fold(args, extractPolymorphism(acc, returnType), extractPolymorphism)
+		}
+
+	}
 }

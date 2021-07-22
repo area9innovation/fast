@@ -53,8 +53,8 @@ cppBackend() -> Backend {
 		BackGen("__negate", BTypeFunction([bdoubleType], bdoubleType), BackPreOp(" -", 60, BackArg(0))),
 		BackGen("__not", bvoidType, BackPreOp(" !", 60, BackArg(0))),
 
-//		BackGen("__ref", bvoidType, BackCall("__ref", [BackArg(0)])),
-//		BackGen("__deref", bvoidType, BackPreOp(" __deref", 60, BackArg(0))),
+		BackGen("__ref", bvoidType, BackCall("std::make_tuple", [BackArg(0)])),
+		BackGen("__deref", bvoidType, BackCall("std::get<0>", [BackArg(0)])),
 	]);
 }
 

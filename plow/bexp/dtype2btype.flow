@@ -9,7 +9,11 @@ dtype2btype(d : DType) -> BType {
 	switch (d) {
 		DTypePar(id, pos): BTypePar(id);
 		DTypeName(id, typars, pos): {
-			BTypeName(id, map(typars, dtype2btype));
+			if (trim2(id, "?") == "" && typars == []) {
+				BTypePar(id)
+			} else {
+				BTypeName(id, map(typars, dtype2btype));
+			}
 		}
 		DTypeFunction(args, returnType, pos): {
 			BTypeFunction(

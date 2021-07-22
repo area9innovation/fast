@@ -133,7 +133,13 @@ dexp2bexp(env : BExpEnv, d : DExp) -> BExp {
 
 ttype2btype(env : BExpEnv, type : TType) -> BType {
 	switch (type) {
-		TTypeName(id, typars): BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
+		TTypeName(id, typars): {
+			if (trim2(id, "?") == "" && typars == []) {
+				BTypePar(id);
+			} else {
+				BTypeName(id, map(typars, \tp -> ttype2btype(env, tp)));
+			}
+		}
 		TTypeEClass(eclass): {
 			// println("ERROR: Tyvar");
 			BTypeName("bool", []);

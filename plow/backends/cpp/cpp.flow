@@ -5,6 +5,13 @@ import plow/backends/cpp/cpp_backend;
 import plow/backends/type_hierarchy;
 import plow/backends/utils;
 
+/*
+
+flowcpp plow\plow.flow -- file=demos/euler/euler1.flow cpp=euler1.cpp
+g++ -std=c++2a euler1.cpp 2>out.flow
+
+*/
+
 export {
 	// Compiles the given flow path to C++ as a single string
 	bmodule2cpp(cache : PlowCache, flowpath : string, shortenIds : bool) -> string;
@@ -18,23 +25,30 @@ bprogram2cpp(b : BProgram, flowpath : string) -> string {
 	typeHierarcy = resolveBTypeHierarchy(b.structs, b.unions);
 
 	backend = cppBackend();
-	unions = superglue(typeHierarcy.first, \u : DUnion -> dunion2cpp(backend, typeHierarcy.third, u), "\n");
+	// Structs in unions
+	unionStructs = foldTree(typeHierarcy.third, "", \id, struct, acc -> {
+		acc + dstruct2cpp(backend, struct) + "\n"
+	});
+	unions = superglue(typeHierarcy.first, \u : DUnion -> dunion2cpp(backend, u), "\n");
 	structs = superglue(typeHierarcy.second, \s : DStruct -> "struct " + dstruct2cpp(backend, s), "\n");
 	body = superglue(b.declarations, \d : BDeclaration -> bdeclaration2cpp(backend, d), "\n");
 
 	// The backend keeps track of what requirements are used by the various
 	// constructs used
 	strReplace(
-		getBackendRequirements(backend)
+		"#include <cstdint>\n#include <variant>\n#include <functional>\n#include <any>\n#include <tuple>"
+		+ getBackendRequirements(backend)
 	//	+ "// RUNTIME\n"
 	//	+ runtime + "\n"
+		+ "// Structs for unions\n"
+		+ unionStructs
 		+ "// UNIONS\n"
 		+ unions + "\n"
 		+ "// STRUCTS\n"
 		+ structs + "\n"
 		+ "// BODY\n"
 		+ body
-		+ "int main() { return int(flow_main()) }",
+		+ "int main() { return int(flow_main()); }",
 		"\t",
 		"  "
 	)
@@ -61,14 +75,20 @@ bdeclaration2cpp(backend : Backend, d : BDeclaration) -> string {
 				", [
 				])
 			} else {
+				polyvars = extractPolymorphism(makeSet(), type);
 				argtypes = getBArgTypes(type);
 				rt = btype2cpp(backend, getBReturnType(type));
+			
 				// TODO: We only need "div" if this fn is recursive
 				blueprint("
-					%rt% %id%(%args%) {
+					%polyvars%%rt% %id%(%args%) {
 						%body%
 					}
 				", [
+					"polyvars", {
+						if (isEmptySet(polyvars)) ""
+						else "template <" + superglue(set2array(polyvars), \pv -> "typename " + btype2cpp(backend, pv), ", ") + "> "
+					},
 					"id", id,
 					// TODO: Add types and typars
 					"args", supergluei(args, \i, arg -> {
@@ -107,12 +127,22 @@ bstatement2cpp(backend : Backend, s : BStatement) -> string {
 			]);
 
 		}
-		BLetStatement(id, value, body): todo();
+		BLetStatement(id, value, body): {
+			"auto " + id + " = " + bexp2cpp(backend, value) + ";\n"
+			+ bstatement2cpp(backend, body);
+		}
 		BSetMutableStatement(left, field, value): todo();
-		BReturnVoid(): "return";
-		BReturn(val): "return " + bexp2cpp(backend, val);
+		BReturnVoid(): "return;";
+		BReturn(val): {
+			type = getBType(val);
+			if (type == bvoidType) {
+				""
+			} else {
+				"return ";
+			}  + bexp2cpp(backend, val) + ";"
+		}
 		BTailCall(fn, args, values, type): {
-			fn  + "(" +superglue(values, rece, ", ") + ")"
+			fn  + "(" +superglue(values, rece, ", ") + ");"
 		}
 		BSequenceStatement(statements): {
 			blueprint("
@@ -120,7 +150,7 @@ bstatement2cpp(backend : Backend, s : BStatement) -> string {
 						%exps%
 					}",
 				[
-					"exps", superglue(statements, rec, ";\n"),
+					"exps", superglue(statements, rec, "\n"),
 			]);
 
 		}
@@ -139,13 +169,19 @@ bexp2cpp(backend : Backend, bexp : BExp) -> string {
 		BString(v): toString(v);
 		BVar(id, type): id;
 		BLet(id, value, body, type): {
+			// TODO: Find a list of globals here
+			globals = makeSet();
+			freevars0 = extractFreeNamesBExp(makeSet(), globals, value);
+			freevars = set2array(removeSet(extractFreeNamesBExp(freevars0, globals, body), id));
 			blueprint("
-				auto %id% = %value%;
-				%body%", [
+				[%capture%]() {
+					auto %id% = %value%;
+					return %body%;
+				}()", [
 				"id", id,
-				// "type", btype2cpp(backend, value.type),
 				"value", rec(value),
 				"body", rec(body),
+				"capture", strGlue(freevars, ",")
 			])
 		}
 		BIf(cond, then, else_, type): {
@@ -168,8 +204,8 @@ bexp2cpp(backend : Backend, bexp : BExp) -> string {
 			argtypes = getBArgTypes(type);
 			rt0 = btype2cpp(backend, getBReturnType(type));
 			blueprint("
-					fn(%args%) {
-						%body%
+					[](%args%) {
+						return %body%;
 					}",
 				[
 					"args", supergluei(args, \i, arg -> {
@@ -186,7 +222,7 @@ bexp2cpp(backend : Backend, bexp : BExp) -> string {
 			]);
 		}
 		BConstruct(struct, args, type): {
-			blueprint("%struct%(%args%)",
+			blueprint("(struct %struct%){%args%}",
 				[
 					"struct", struct,
 					"args", superglue(args, rec, ", "),
@@ -230,37 +266,31 @@ bexp2cpp(backend : Backend, bexp : BExp) -> string {
 			]);
 		}
 		BArray(args, type): {
-			blueprint("{ %args% }",
+			blueprint("%type%({ %args% })",
 				[
+					"type", btype2cpp(backend, type),
 					"args", superglue(args, rec, ", "),
 			]);
 		}
 	}
 }
 
-dunion2cpp(backend : Backend, structs : Tree<string, DStruct>, u : DUnion) -> string {
+dunion2cpp(backend : Backend, u : DUnion) -> string {
 	blueprint("
-		std::variant<
-			%members%
-		> %name%", [
+		using %name% = std::variant<%members%>;", [
 			"name", u.id,
 			"members", superglue(u.types, \t : DTypeName -> {
-				// TODO: Lookup what specific struct types are here
-				// and "inline" those
-				mstruct = lookupTree(structs, t.id);
-				mstruct ?? {
-					dstruct2cpp(backend, mstruct);
-				} : dtype2cpp(backend, t);
+				dtype2cpp(backend, t);
 			}, "\n")
 		]
 	);
 }
 
 dstruct2cpp(backend : Backend, s : DStruct) -> string {
-	s.id + "{"
+	"struct " + s.id + "{"
 	+ superglue(s.structArgs, \sa -> {
-		sa.id + " : " + dtype2cpp(backend, sa.type)
-	}, "; ") + "}";
+		dtype2cpp(backend, sa.type) + " " + sa.id + ";"
+	}, "; ") + "};";
 }
 
 
@@ -284,9 +314,9 @@ btype2cpp(backend : Backend, btype : BType) -> string {
 			else if (id == "array") {
 				"std::vector<" + btype2cpp(backend, typars[0]) + ">"
 			} else if (id == "ref") {
-				"FlowRef<" + btype2cpp(backend, typars[0]) + ">"
+				"std::tuple<" + btype2cpp(backend, typars[0]) + ">"
 			} else if (trim2(id, "?") == "") {
-				"struct " + btype2cpp(backend, BTypePar(id));
+				btype2cpp(backend, BTypePar(id));
 			} else {
 				id
 				+ (if (typars != []) {
@@ -295,8 +325,8 @@ btype2cpp(backend : Backend, btype : BType) -> string {
 			}
 		}
 		BTypeFunction(args, returnType): {
-			"TODO: (" + superglue(args, \tp -> btype2cpp(backend, tp), ", ") + ")"
-			+ " -> " + btype2cpp(backend, returnType)
+			"std::function<" + btype2cpp(backend, returnType)
+			+ "(" + superglue(args, \tp -> btype2cpp(backend, tp), ", ") + ")>"
 		}
 	}
 }
