@@ -593,11 +593,11 @@ desugarPWith(dd : DDesugar, w : PWith) -> DExp {
 	mstruct = dd.resolveStructName(w.struct);
 	mstruct ?? {
 		uni = makeTempDName(dd);
-		var = DVar(uni, w.value.pos, -1);
 		args = map(mstruct.structArgs, \sa : DStructArg -> {
 			mfield : Maybe<PFieldAssign> = find(w.fields, \f : PFieldAssign -> {
 				f.id == sa.id
 			});
+			var = DVar(uni, w.value.pos, -1);
 			switch (mfield) {
 				None(): DField(var, sa.id, w.pos, -1);
 				Some(field): pexp2dexp(dd, field.value);
