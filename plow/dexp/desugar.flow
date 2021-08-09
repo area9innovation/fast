@@ -451,7 +451,16 @@ typenameArity(dd : DDesugar, id : string, pos : int) -> int {
 		switch (munion) {
 			None(): {
 				if (id == "array" || id == "ref") 1
-				else 0
+				else {
+					0
+					/*
+					if (contains(["void", "bool", "int", "double", "string", "flow", "auto"], id)) {
+						0
+					} else {
+						dd.onError(pos, id + " unknown ");
+						0
+					}*/
+				}
 			}
 			Some(un): length(un.typars);
 		}

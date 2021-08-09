@@ -22,7 +22,6 @@ Here, we should find the "closest" supertype and pick that.
 
 Errors towards plow\plow.flow:
 
-plow/pexp/utils: Very slow
 plow/dexp/pretty': Very slow
 
 Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow

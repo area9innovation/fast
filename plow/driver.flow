@@ -194,7 +194,8 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		// OK, we have an incremental module, which we read now
 		bmod = getCachedBModule(cache.modules, flowpath);
 		// Then make sure we have all dependents as well
-		concurrent(false, map(bmod.imports, \i -> {
+		// TODO: concurrent does not work in Java for some reason. Figure out why
+		sequential(false, map(bmod.imports, \i -> {
 			\ -> compilePlow(cache, i.path)
 		}));
 		bmod;
