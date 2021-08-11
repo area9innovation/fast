@@ -199,7 +199,7 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 		println("\nInference of global " + d.id);
 	}
 	// OK, set up eclasses
-	populateEClass(env.mkEClass, d.value);
+	populateEClass(env.mkEClass, env.tmap.tyvarPlacements, d.value);
 
 	nenv = TTypeEnv(env with onError = \p, e -> env.onError(p, d.id + ": " + e));
 	nenv.tmap.topid := d.id;

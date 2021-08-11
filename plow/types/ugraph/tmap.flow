@@ -6,6 +6,8 @@ export {
 	TMap(
 		// The union/find map of tnodes for each equivalence class
 		tmap : UnionFindMap<TNode>,
+		// What positions do each tyvar come from?
+		tyvarPlacements : ref Tree<int, Set<int>>,
 		// To help find a type name in the union find map
 		typenameEClasses : ref Tree<string, [int]>,
 		// The helpers we need to do the unification

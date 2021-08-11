@@ -52,6 +52,7 @@ where `PlowCache` is a cache for modules.
 - Build a map from tyvar to where it comes from so we can do better
   debugging of the type errors. Same applies to recursively constructed
   tyvars. So probably send in location to each tyvar construction?
+- Change onError to take an array of positions
 - Positions on some operators are off a bit.
 - Debug type errors
 - Speed up the compiler - try vector in union_find_map, which might be

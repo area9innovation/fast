@@ -107,6 +107,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 			}
 		}),
 		ref makeTree(),
+		ref makeTree(),
 		ref \__ -> {
 			println("TODO: The resolvers are not set");
 			None();
