@@ -51,6 +51,7 @@ where `PlowCache` is a cache for modules.
 
 - Positions on some operators are off a bit.
 - Debug type errors
+- Figure out why Java run does not work
 - Speed up the compiler
 - Add a compile server
   - Add option to only type check given ids

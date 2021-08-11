@@ -222,7 +222,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		dd = makeDDesugar(makeOnError(path, cache.onError), cache.nextId, 
+		dd = makeDDesugar(cache.tracing, makeOnError(path, cache.onError), cache.nextId, 
 			// resolveStructName
 			\n -> {
 				// OK, scan our imports for this struct

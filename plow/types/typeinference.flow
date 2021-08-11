@@ -17,14 +17,14 @@ export {
 }
 
 ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
-	if (isTracingStage(env.tracing, StageTypeInference(), 1)) {
+	if (isTracingStage(env.tracing, StageTypeInference(), 0)) {
 		println("\nStage: Type inference of " + d.flowpath);
 	}
 	// Resolve the types of natives
 	nenv1 = foldTree(d.natives, env, \nat, nativ, acc -> {
 		// The module types have to be with ? in the types
 		fulltype = dtype2ttype(acc, false, nativ.type);
-		if (isTracingId(env.tracing, StageTypeInference(), 1, nat)) {
+		if (isTracingId(env.tracing, StageTypeInference(), 0, nat)) {
 			println("native " + nat + ": " + prettyTType(fulltype));
 		}
 
@@ -56,7 +56,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 				TTypeEClass(global.eclass)
 			}
 		};
-		if (isTracingId(env.tracing, StageTypeInference(), 1, id)) {
+		if (isTracingId(env.tracing, StageTypeInference(), 0, id)) {
 			println(id + ": " + prettyTType(type));
 		}
 		if (!containsKeyTree(acc.moduleTypes, id)) {

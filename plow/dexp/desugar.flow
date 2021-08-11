@@ -60,6 +60,10 @@ desugarPExp(dd : DDesugar, flowpath : string, fullpath : string, pexp : PExp) ->
 	module = getPModule(pexp);
 	if (module.pos == -1) dd.onError(pexp.pos, "Expected module");
 
+	if (isTracingStage(dd.tracing, StageParse(), 0)) {
+		println("\nStage: Desugaring " + flowpath);
+	}
+
 	imports = getDImports(pexp);
 	forbids = filtermap(module.toplevels, \tl -> {
 			switch (tl) {

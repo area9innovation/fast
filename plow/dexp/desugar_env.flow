@@ -1,5 +1,6 @@
 import plow/dexp/dexp;
 import plow/types/type;
+import plow/tracing;
 
 export {
 	DDesugar(
@@ -11,18 +12,21 @@ export {
 		onError : (int, string) -> void,
 		// For unique ids
 		nextId : ref int,
+		// Tracing info
+		tracing : Tracing
 	);
 
-	makeDDesugar(onError : (int, string) -> void, nextId : ref int, 
+	makeDDesugar(tracing : Tracing, onError : (int, string) -> void, nextId : ref int, 
 		resolveStructName : (string) -> Maybe<DStruct>,
 		resolveUnionName : (string) -> Maybe<DUnion>) -> DDesugar;
 }
 
-makeDDesugar(onError : (int, string) -> void, nextId : ref int, 
+makeDDesugar(tracing : Tracing, onError : (int, string) -> void, nextId : ref int, 
 		resolveStructName : (string) -> Maybe<DStruct>,
 		resolveUnionName : (string) -> Maybe<DUnion>) -> DDesugar {
 	DDesugar(resolveStructName, resolveUnionName, 
 		onError, 
 		nextId,
+		tracing
 	);
 }
