@@ -49,9 +49,15 @@ where `PlowCache` is a cache for modules.
 
 # TODOs
 
+- Build a map from tyvar to where it comes from so we can do better
+  debugging of the type errors. Same applies to recursively constructed
+  tyvars. So probably send in location to each tyvar construction?
 - Positions on some operators are off a bit.
 - Debug type errors
-- Speed up the compiler
+- Speed up the compiler - try vector in union_find_map, which might be
+  faster at least in Java. Try to reduce the active set of tyvars when
+  doing chunks. Maybe try small chunks (only for cycles in id use), and
+  "raise" to bigger chunks in case of errors?
 - Add a compile server
   - Add option to only type check given ids
 
