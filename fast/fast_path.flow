@@ -57,7 +57,7 @@ path2fastPath(includes : [string], path : string) -> string {
 	rel = mrel ?? {
 		ltrim2(takeAfter(abspath, mrel, path), "/\\")
 	} : path;
-	changeFileExt(rel, "");
+	strReplace(changeFileExt(rel, ""), "\\", "/");
 }
 
 // Find the file, using includes. Requires .fast extension
