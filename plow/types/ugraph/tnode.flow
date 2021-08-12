@@ -636,7 +636,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 		left;
 	}
-	error = \pos -> {
+	error = \pos1, pos2 -> {
 		lclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
 				isSameTNode(tmap, left, val)
 			}, -1);
@@ -644,7 +644,8 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 		rclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
 				isSameTNode(tmap, right, val)
 			}, -1);
-		tmap.onError(pos, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass) + ")");
+		tmap.onError(pos1, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass) + ")");
+		tmap.onError(pos2, "and here");
 		// dumpTNodes(tmap);
 		left;
 	}
@@ -657,7 +658,8 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 				TNodeName(rname, rtypars, rpos): {
 					if (lname != rname) {
 						if (lname == "flow" || rname == "flow") {
-							// OK, we model it as an overload
+							// OK, we model it as an overload.
+							// TODO: Should TNodeOverload have a set of positions?
 							TNodeOverload(makeSet1(tmap.mkUnique()), [left, right], min(pos, rpos));
 						} else if (isSingleUnionName(tmap, lname, rname)) {
 							// As a special case, if one of these
@@ -669,11 +671,11 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 								// ? vs ?? is not a problem
 								left;
 							} else {
-								error(max(pos, rpos));
+								error(pos, rpos);
 							}
 						}
 					} else if (length(ltypars) != length(rtypars)) {
-						error(max(pos, rpos));
+						error(pos, rpos);
 					} else {
 						simplifyTNode(tmap, TNodeName(lname, mapi(ltypars, \i, lt -> {
 							joinTNodes(tmap, lt, rtypars[i]);
@@ -702,7 +704,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 						}
 					});
 					if (overloads == []) {
-						error(max(lpos, pos));
+						error(lpos, pos);
 					} else if (length(overloads) == 1) {
 						mergeTNodes(tmap, overloads[0], right);
 					} else {
@@ -754,7 +756,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 						mergeSets(lunique, runique), 
 						concat(lsubtypes, rsubtypes),
 						mergeSets(lusub, rusub),
-						max(pos, lpos)
+						max(pos, lpos)	// TODO: Should TNodeSupertype have a set of positions?
 					));
 				}
 			}
