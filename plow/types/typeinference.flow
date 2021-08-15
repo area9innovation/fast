@@ -116,7 +116,7 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, senv.resolveSupertypes, senv.resolveSubtypes)
 	);
 
-	order : [[string]] = buildDModuleDeps(d.globals, d.order);
+	order : [[string]] = buildDModuleDeps(tmenv.moduleTypes, d.globals, d.order);
 	order2 = if (false) [d.order] else order;
 	tbenv = ttypeInferenceChunk(tmenv, d, order2);
 	
@@ -136,6 +136,11 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		startTyvar = getNextEClass(env.tmap);
 		chunk = order[0];
 		cenv = env;
+		if (length(chunk) > 1) {
+			// For debugging mutually dependent types that
+			// need to be inferred in a group
+			println(chunk);
+		}
 
 		// Clear etypes
 		cenv.tmap.tmap.parents := [];
@@ -166,15 +171,21 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 
 // Build dependencies between all globals
 // and return them in order we can treat them (respecting connected components)
-buildDModuleDeps(globals : Tree<string, DGlobal>, order : [string]) -> [[string]] {
+buildDModuleDeps(types : Tree<string, TType>, globals : Tree<string, DGlobal>, order : [string]) -> [[string]] {
 	// Build a graph of dependencies
-	deps = foldTree(globals, makeSimpleGraph(), \id, global, acc : SimpleGraph<string, bool> -> {
+	deps = foldTree(globals, makeSimpleGraph(), \id, global : DGlobal, acc : SimpleGraph<string, bool> -> {
 		vars = extractDVars(makeSet(), global.value);
 		foldSet(vars, acc, \acc2, var -> {
 			if (containsKeyTree(globals, var)) {
+				mtype = lookupTree(types, var);
+				isResolved = mtype ?? { !unresolvedTType(mtype) } : false;
+				if (!isResolved) {
+					println(var);
+				}
+
 				// OK, an internal name - add a bidirectional dependency
-				acc3 = if (false) acc2 else addSimpleEdge(acc2, id, var, false, 1);
-				if (true) addSimpleEdge(acc3, var, id, false, 1) else acc3
+				acc3 = if (isResolved) acc2 else addSimpleEdge(acc2, id, var, false, 1);
+				if (!isResolved) addSimpleEdge(acc3, var, id, false, 1) else acc3
 			} else acc2;
 		})
 	});

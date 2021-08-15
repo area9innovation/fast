@@ -1,11 +1,11 @@
 import plow/bexp/bexp;
 
 export {
-	bvoidType = BTypeName("void", []);
-	bboolType = BTypeName("bool", []);
-	bintType = BTypeName("int", []);
-	bdoubleType = BTypeName("double", []);
-	bstringType = BTypeName("string", []);
+	bvoidType : BTypeName = BTypeName("void", []);
+	bboolType : BTypeName = BTypeName("bool", []);
+	bintType : BTypeName = BTypeName("int", []);
+	bdoubleType : BTypeName = BTypeName("double", []);
+	bstringType : BTypeName = BTypeName("string", []);
 
 	getBType(b : BExp) -> BType;
 	getBArgTypes(b : BType) -> [BType];

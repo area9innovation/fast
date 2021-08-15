@@ -162,7 +162,7 @@ defaultTNode() -> TNode {
 	TNodeName("", [], -1);
 }
 
-uindent = ref "";
+uindent : ref string = ref "";
 
 // These two types are unified
 unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : int) -> void {
@@ -495,77 +495,86 @@ simplifyTNode(tmap : TMap, node : TNode) -> TNode {
 			}
 		}
 		TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
-			if (!isEmptySet(unknownSubtypes)) {
-				// We have some typevars in here. See if any of those are
-				// resolved
-				resolved = foldSet(unknownSubtypes, Pair([], makeSet()), 
-						\acc : Pair<[TNodeName], Set<int>>, st : int -> {
-					unode = getUnionMapValue(tmap.tmap, st);
-					unknown = \ -> {
-						Pair(acc.first, insertSet(acc.second, st));
-					}
-					switch (unode) {
-						TNodeName(name, typars, __): {
-							if (isEmptyTNode(unode)) {
-								unknown();
-							} else {
-								Pair(arrayPush(acc.first, unode), acc.second)
-							}
-						}
-						TNodeSupertype(nuniques, nsubtypes, nunknownSubtypes, npos): {
-							if (nsubtypes != []) {
-								Pair(concat(acc.first, nsubtypes), acc.second);
-							} else unknown();
-						}
-						default: unknown();
-					}
-				});
-				if (resolved.first != []) {
-					cleaned = TNodeSupertype(uniques, concat(subtypes, resolved.first), resolved.second, pos);
-					// println("Cleaned unknown " + prettyTNode(tmap, cleaned));
-					simplifyTNode(tmap, cleaned);
-				} else {
-					node;
-				}
-			} else {
-				// OK, we can calculate potential super types here
-				// and reduce them to an overload or a given type
-				named = getPossibleTSupers(tmap, node);
-				nnamed = sizeSet(named);
+			simplifyTNodeSupertype(tmap, node);
+		}
+	}
+}
 
-				// Here we have the names that are possible
-				if (nnamed == 1) {
-					fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
-					unifyTNodeNameWithSuper(tmap, fnode, node);
-				} else {
-					// Unify the typars of identical typenames
-					nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st -> {
-						treePushToArrayUnique(acc, st.name, st)
-					});
-					unis : Pair<[TNodeName], [TNode]> = foldTree(nameGroups, Pair([], []), \name, group, acc -> {
-						if (length(group) > 1) {
-							merged = foldi(tail(group), group[0], \i, nn, acc2 : TNode -> {
-								mergeTNodes(tmap, acc2, nn);
-							});
-							switch (merged) {
-								TNodeName(__, __, __): Pair(arrayPush(acc.first, merged), acc.second);
-								default: {
-									Pair(acc.first, arrayPush(acc.second, merged));
-								}
-							}
-						} else Pair(concat(acc.first, group), acc.second);
-					});
-					if (unis.second == []) {
-						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+simplifyTNodeSupertype(tmap : TMap, node : TNodeSupertype) -> TNode {
+	uniques = node.uniques;
+	subtypes : [TNodeName] = node.subtypes;
+	unknownSubtypes = node.unknownSubtypes;
+	pos = node.pos;
+	if (!isEmptySet(unknownSubtypes)) {
+		// We have some typevars in here. See if any of those are
+		// resolved
+		resolved : Pair<[TNodeName], Set<int>> = foldSet(unknownSubtypes, Pair([], makeSet()), 
+				\acc : Pair<[TNodeName], Set<int>>, st : int -> {
+			unode = getUnionMapValue(tmap.tmap, st);
+			unknown = \ -> {
+				Pair(acc.first, insertSet(acc.second, st));
+			}
+			switch (unode) {
+				TNodeName(name, typars, __): {
+					if (isEmptyTNode(unode)) {
+						unknown();
 					} else {
-						println("TODO: We found a non-named thing in a supertype");
-						println(unis.second);
-						TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+						Pair(arrayPush(acc.first, unode), acc.second)
 					}
 				}
+				TNodeSupertype(nuniques, nsubtypes, nunknownSubtypes, npos): {
+					if (nsubtypes != []) {
+						Pair(concat(acc.first, nsubtypes), acc.second);
+					} else unknown();
+				}
+				default: unknown();
+			}
+		});
+		if (resolved.first != []) {
+			cleaned = TNodeSupertype(uniques, concat(subtypes, resolved.first), resolved.second, pos);
+			// println("Cleaned unknown " + prettyTNode(tmap, cleaned));
+			simplifyTNode(tmap, cleaned);
+		} else {
+			node;
+		}
+	} else {
+		// OK, we can calculate potential super types here
+		// and reduce them to an overload or a given type
+		named = getPossibleTSupers(tmap, node);
+		nnamed = sizeSet(named);
+
+		// Here we have the names that are possible
+		if (nnamed == 1) {
+			fnode = instantiateTNodeName(tmap, set2array(named)[0], subtypes, pos);
+			unifyTNodeNameWithSuper(tmap, fnode, node);
+		} else {
+			// Unify the typars of identical typenames
+			nameGroups : Tree<string, [TNodeName]> = fold(subtypes, makeTree(), \acc, st : TNodeName -> {
+				treePushToArrayUnique(acc, st.name, st)
+			});
+			unis : Pair<[TNodeName], [TNode]> = foldTree(nameGroups, Pair([], []), \name, group, acc : Pair<[TNodeName], [TNode]> -> {
+				if (length(group) > 1) {
+					merged = foldi(tail(group), group[0], \i, nn, acc2 : TNode -> {
+						mergeTNodes(tmap, acc2, nn);
+					});
+					switch (merged) {
+						TNodeName(__, __, __): Pair(arrayPush(acc.first, merged), acc.second);
+						default: {
+							Pair(acc.first, arrayPush(acc.second, merged));
+						}
+					}
+				} else Pair(concat(acc.first, group), acc.second);
+			});
+			if (unis.second == []) {
+				TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
+			} else {
+				println("TODO: We found a non-named thing in a supertype");
+				println(unis.second);
+				TNodeSupertype(uniques, unis.first, unknownSubtypes, pos);
 			}
 		}
 	}
+
 }
 
 // Are there any direct supertypes of this node?
@@ -1083,7 +1092,7 @@ resolveTNodeClass(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int
 	}
 }
 
-resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, eclass : int, node : TNode) {
+resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, eclass : int, node : TNode) -> TType {
 	mkClass = \ee -> {
 		lookupTreeDef(^acc, ee, TTypeEClass(ee))
 	}
@@ -1141,7 +1150,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 			if (simpler != node) {
 				resolveTNode(tmap, acc, visited, eclass, simpler);
 			} else if (subtypes != []) {
-				mflow = find(subtypes, \st -> st.name == "flow");
+				mflow = find(subtypes, \st : TNodeName -> st.name == "flow");
 				mflow ?? {
 					resolveTNode(tmap, acc, visited, eclass, mflow);
 				} : {

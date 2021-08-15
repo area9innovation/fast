@@ -577,7 +577,18 @@ desugarDSwitchWithVar(dd : DDesugar, s : PSwitch, switchvar : DVar, type : DType
 								acc
 							} else {
 								structArg = struct.structArgs[i];
-								DLet(arg, DField(switchvar, structArg.id, c.pos, -1), acc, c.pos, -1)
+								field = DField(switchvar, structArg.id, c.pos, -1);
+								// TODO: We can replace ? with auto, and then use the type always
+								value = if (isDTypeResolved(structArg.type)) {
+									DTyped(
+										field,
+										structArg.type,
+										c.pos, -1
+									);
+								} else {
+									field
+								};
+								DLet(arg, value, acc, c.pos, -1)
 							}
 						});
 						// Check if switchvar occurs in the body.
