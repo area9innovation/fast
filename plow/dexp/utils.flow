@@ -7,7 +7,8 @@ export {
 	extractTypeNamesDUnion(acc : Set<string>, t : DUnion, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string>;
 	extractTypeNamesDStruct(acc : Set<string>, t : DStruct, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string>;
 
-	isDTypeResolved(d : DType) -> bool;
+	// Instantiates ? as auto
+	instantiateDType(d : DType) -> DType;
 }
 
 extractTypeNamesDUnion(acc : Set<string>, t : DUnion, structs : Tree<string, DStruct>, unions : Tree<string, DUnion>) -> Set<string> {
@@ -66,14 +67,14 @@ extractTypeNamesDType(acc : Set<string>, t : DType, structs : Tree<string, DStru
 	}
 }
 
-isDTypeResolved(d : DType) -> bool {
+instantiateDType(d : DType) -> DType {
 	switch (d) {
-		DTypePar(id, pos): false;
+		DTypePar(id, pos): DTypeName("auto", [], pos);
 		DTypeName(id, typars, pos): {
-			id != "auto" && forall(typars, isDTypeResolved);
+			DTypeName(id, map(typars, instantiateDType), pos);
 		}
 		DTypeFunction(args, returnType, pos): {
-			isDTypeResolved(returnType) && forall(args, isDTypeResolved);
+			DTypeFunction(map(args, instantiateDType), instantiateDType(returnType), pos)
 		}
 	}
 }

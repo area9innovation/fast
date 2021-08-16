@@ -221,76 +221,81 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			\ -> compilePlow(cache, i.path)
 		}));
 
-		dd = makeDDesugar(cache.tracing, makeOnError(path, cache.onError), cache.nextId, 
-			// resolveStructName
-			\n -> {
-				// OK, scan our imports for this struct
-				lookupFromImport(cache.modules, cache.structLookup, imports, n);
-			}, 
-			// resolveUnionName
-			\n -> {
-				// OK, scan our imports for this struct
-				lookupFromImport(cache.modules, cache.unionLookup, imports, n)
-			}
-		);
-
-		dmod = desugarPExp(dd, flowpath, path, p);
-
-		tenv0 = makeTTypeEnv(dd.onError, dmod);
-		tenv1 = TTypeEnv(
-			tenv0 with
-			resolveId = \pos, id -> {
-				mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
-				mbmod ?? {
-					btype2ttype(mbmod.type);
-				} : {
-					mbnat : Maybe<BNative> = lookupFromImport(cache.modules, cache.nativeLookup, imports, id);
-					switch (mbnat) {
-						None(): {
-							dd.onError(pos, "Unknown id " + id);
-							TTypeEClass(makeTNodeClass(tenv0.tmap));
-						}
-						Some(bnat): btype2ttype(bnat.type);
-					}
-				}
-			},
-			resolveField = \id -> {
-				structs : [string] = lookupsFromImport(cache.modules, cache.fieldLookup, imports, id);
-				filtermap(structs, \str -> {
-					dd.resolveStructName(str);
-				})
-			},
-			resolveUnionField = \id -> {
-				buildSet(lookupsFromImport(cache.modules, cache.unionFieldLookup, imports, id));
-			},
-			resolveSupertypes = \id -> {
-				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
-			},
-			resolveSubtypes = \id -> {
-				lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
-			},
-			resolveStructName = dd.resolveStructName,
-			resolveUnionName = dd.resolveUnionName
-		);
-		bmodule = ttypeInference(tenv1, dmod);
-
-		setCachedBModule(cache.modules, flowpath, bmodule);
-
-		if (^(cache.errorCount) != 0) {
-			// OK, there are errors, so remove any incremental
-			deleteBModule(cache.tracing, flowpath)
+		if (^(cache.errorCount) > 0) {
+			println("Stops compilation because of errors: " + flowpath);
+			getDummyBModule();
 		} else {
-			writeBModule(cache.tracing, bmodule);
+			dd = makeDDesugar(cache.tracing, makeOnError(path, cache.onError), cache.nextId, 
+				// resolveStructName
+				\n -> {
+					// OK, scan our imports for this struct
+					lookupFromImport(cache.modules, cache.structLookup, imports, n);
+				}, 
+				// resolveUnionName
+				\n -> {
+					// OK, scan our imports for this struct
+					lookupFromImport(cache.modules, cache.unionLookup, imports, n)
+				}
+			);
+
+			dmod = desugarPExp(dd, flowpath, path, p);
+
+			tenv0 = makeTTypeEnv(dd.onError, dmod);
+			tenv1 = TTypeEnv(
+				tenv0 with
+				resolveId = \pos, id -> {
+					mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
+					mbmod ?? {
+						btype2ttype(mbmod.type);
+					} : {
+						mbnat : Maybe<BNative> = lookupFromImport(cache.modules, cache.nativeLookup, imports, id);
+						switch (mbnat) {
+							None(): {
+								dd.onError(pos, "Unknown id " + id);
+								TTypeEClass(makeTNodeClass(tenv0.tmap));
+							}
+							Some(bnat): btype2ttype(bnat.type);
+						}
+					}
+				},
+				resolveField = \id -> {
+					structs : [string] = lookupsFromImport(cache.modules, cache.fieldLookup, imports, id);
+					filtermap(structs, \str -> {
+						dd.resolveStructName(str);
+					})
+				},
+				resolveUnionField = \id -> {
+					buildSet(lookupsFromImport(cache.modules, cache.unionFieldLookup, imports, id));
+				},
+				resolveSupertypes = \id -> {
+					lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
+				},
+				resolveSubtypes = \id -> {
+					lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
+				},
+				resolveStructName = dd.resolveStructName,
+				resolveUnionName = dd.resolveUnionName
+			);
+			bmodule = ttypeInference(tenv1, dmod);
+
+			setCachedBModule(cache.modules, flowpath, bmodule);
+
+			if (^(cache.errorCount) != 0) {
+				// OK, there are errors, so remove any incremental
+				deleteBModule(cache.tracing, flowpath)
+			} else {
+				writeBModule(cache.tracing, bmodule);
+			}
+
+			// OK, clear the name lookup cache
+			clearPlowCache(cache);
+
+			if (isTracingId(tenv1.tracing, StageLower(), 1, flowpath)) {
+				println(prettyBModule(bmodule));
+			}
+
+			bmodule;
 		}
-
-		// OK, clear the name lookup cache
-		clearPlowCache(cache);
-
-		if (isTracingId(tenv1.tracing, StageLower(), 1, flowpath)) {
-			println(prettyBModule(bmodule));
-		}
-
-		bmodule;
 	} else {
 		cache.onError(file + " could not be found");
 		getDummyBModule();
