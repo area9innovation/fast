@@ -44,26 +44,26 @@ functionOrStruct =
 
 exp = 
 	// These optsemi should really be semi, but we have too much legacy without
-	(idpos "=" ws exp optsemi expsemi $"sequence" $"let"
-		| idpos ":" ws type "=" ws exp optsemi expsemi $"sequence" $"let_typed"
+	(idpos "=" ws exp optsemi $$pos expsemi $"sequence" $"setpos" $"let" 
+		| idpos ":" ws type "=" ws exp optsemi $$pos expsemi $"sequence" $"setpos" $"let_typed"
 	)
-	|> exp ":=" $$pos $"swap" ws exp $":=" $"setpos"
-	|> exp < ( "|>" $$pos $"swap" ws exp $"|>" $"setpos")*
-	|> exp "||" $$pos $"swap" ws exp $"||" $"setpos"
-	|> exp "&&" $$pos $"swap" ws exp $"&&" $"setpos"
-	|> exp "==" $$pos $"swap" ws exp $"==" $"setpos" | exp "!=" $$pos $"swap" ws exp $"!=" $"setpos"
-	|> exp ("<=" $$pos $"swap" ws exp $"<=" $"setpos" |"<" $$pos $"swap" ws exp $"<" $"setpos" | ">=" $$pos $"swap" ws exp $">=" $"setpos" | ">" $$pos $"swap" ws exp $">" $"setpos")
-	|> exp < ("+" $$pos $"swap"ws exp $"+" $"setpos" | "-" $$pos $"swap" ws exp $"-" $"setpos")*
-	|> exp ("*" $$pos $"swap" ws exp $"*" $"setpos" | "/" $$pos $"swap" ws exp $"/" $"setpos" | "%" $$pos $"swap"ws exp $"%" $"setpos")*
+	|> exp ":=" $$pos $"b2" $"swap" ws exp $":=" $"setpos"
+	|> exp < ( "|>" $$pos $"b2" $"swap" ws exp $"|>" $"setpos")*
+	|> exp "||" $$pos $"b2" $"swap" ws exp $"||" $"setpos"
+	|> exp "&&" $$pos $"b2" $"swap" ws exp $"&&" $"setpos"
+	|> exp "==" $$pos $"b2" $"swap" ws exp $"==" $"setpos" | exp "!=" $$pos $"b2" $"swap" ws exp $"!=" $"setpos"
+	|> exp ("<=" $$pos $"b2" $"swap" ws exp $"<=" $"setpos" |"<" $$pos $"b1" $"swap" ws exp $"<" $"setpos" | ">=" $$pos $"b2" $"swap" ws exp $">=" $"setpos" | ">" $$pos $"b1" $"swap" ws exp $">" $"setpos")
+	|> exp < ("+" $$pos $"b1" $"swap"ws exp $"+" $"setpos" | "-" $$pos $"b1" $"swap" ws exp $"-" $"setpos")*
+	|> exp ("*" $$pos $"b1" $"swap" ws exp $"*" $"setpos" | "/" $$pos $"b1" $"swap" ws exp $"/" $"setpos" | "%" $$pos $"b1" $"swap" ws exp $"%" $"setpos")*
 
 	// To ensure that ?? does not consider the : as part of the type
-	|> exp (":" $$pos $"swap" ws type $":" $"setpos")+
+	|> exp (":" $$pos $"b1" $"swap" ws type $":" $"setpos")+
 
-	|> exp "??" $$pos $"swap" ws <exp ":" ws exp $"maybe" $"setpos"
+	|> exp "??" $$pos $"b2" $"swap" ws <exp ":" ws exp $"maybe" $"setpos"
 
 	|> (
-		'!' $$pos ws exp $"__not" $"setpos"
-		| "-" $$pos ws exp $"__negate" $"setpos"
+		$$pos '!' ws exp $"__not" $"setpos"
+		| $$pos "-" ws exp $"__negate" $"setpos"
 		| lambda
 		| exp (
 			( $$pos "(" $"swap" ws exps ")" ws $"call" $"setpos")
@@ -107,8 +107,8 @@ switch = $$pos "switch" !letterOrDigit ws
 			| $"list";
 
 	defaultOrNamedCase = 
-		"default" !letterOrDigit $$pos ws ':' ws exp (';' ws)? $"default" $"setpos"
-		| idpos '(' ws names ')' ws ':' ws exp (';' ws)?  $"case";
+		$$pos "default" !letterOrDigit ws ':' ws exp (';' ws)? $"default" $"setpos"
+		| idpos '(' ws names ')' ws ':' ws exp (';' ws)? $"case";
 
 	names = $"list" id $"cons" ("," ws id $"cons")* ("," ws)? | $"list";
 

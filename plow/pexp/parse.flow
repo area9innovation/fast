@@ -51,17 +51,15 @@ pexpTypeAction(onError : (string) -> void) -> GringoAction<List<PExp>> {
 }
 
 pexpTypeOps() -> GringoTypedOperators<PExp> {
-	todo = \ -> -1;
-
-	un = \op -> Pair(op, \l -> PCallOp(op, [l], todo()));
-	bin = \op -> Pair(op, \l, r -> PCallOp(op, [l, r], todo()));
-	tri = \op -> Pair(op, \l, m, r -> PCallOp(op, [l, m, r], todo()));
+	un = \op -> Pair(op, \l -> PCallOp(op, [l], -1));
+	bin = \op -> Pair(op, \l, r -> PCallOp(op, [l, r], -1));
+	tri = \op -> Pair(op, \l, m, r -> PCallOp(op, [l, m, r], -1));
 	mktype = \t -> PTypeName(t, [], -1);
 
 	GringoTypedOperators(
 		// Nullary operators
 		pairs2tree([
-			Pair("void", \ -> PVoid(todo())),
+			Pair("void", \ -> PVoid(-1)),
 			Pair("voidtype", \ -> mktype("void")),
 			Pair("bool", \ -> mktype("bool")),
 			Pair("int", \ -> mktype("int")),
@@ -84,13 +82,13 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				}
 			}),
 			Pair("var", \e -> {
-				PVar(getPString(e), todo())
+				PVar(getPString(e), -1)
 			}),
 			Pair("sequence", \e -> {
-				PSequence(getPListArray(e), todo());
+				PSequence(getPListArray(e), -1);
 			}),
 			Pair("hex", \e -> {
-				PInt(parseHex(getPString(e)), todo())
+				PInt(parseHex(getPString(e)), -1)
 			}),
 			Pair("stringinclude", \e -> {
 				PStringInclude(getPString(e), getPPos(e))
@@ -102,29 +100,35 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PForbid(getPString(e), getPPos(e))
 			}),
 			Pair("export", \e -> {
-				PExport(map(getPListArray(e), getPTopLevel), todo())
+				PExport(map(getPListArray(e), getPTopLevel), -1)
 			}),
 			Pair("ref", \e -> {
-				PRef(e, todo())
+				PRef(e, -1)
 			}),
 			Pair("default", \e -> {
-				PCase("default", [], e, todo())
+				PCase("default", [], e, -1)
 			}),
 			Pair("polytype", \e -> {
-				PTypePar(getPString(e), todo())
+				PTypePar(getPString(e), -1)
 			}),
 			Pair("arraytype", \e -> {
-				PTypeName("array", [getPType(e)], todo())
+				PTypeName("array", [getPType(e)], -1)
 			}),
 			Pair("reftype", \e -> {
-				PTypeName("ref", [getPType(e)], todo())
+				PTypeName("ref", [getPType(e)], -1)
 			}),
 			Pair("array", \e -> {
-				PArray(getPListArray(e), todo());
+				PArray(getPListArray(e), -1);
 			}),
 			Pair("module", \tl -> {
-				PModule(map(getPListArray(tl), getPTopLevel), todo());
-			})
+				PModule(map(getPListArray(tl), getPTopLevel), -1);
+			}),
+			Pair("b1", \p -> {
+				PString(i2s(s2i(getPString(p)) - 1), p.pos);
+			}),
+			Pair("b2", \p -> {
+				PString(i2s(s2i(getPString(p)) - 2), p.pos);
+			}),
 		]),
 		// Binary operators
 		pairs2tree([
@@ -135,22 +139,22 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			bin("*"), bin("/"), bin("%"), 
 			bin("__index"), 
 			Pair("dot", \val, field -> {
-				PField(val, getPString(field), todo())
+				PField(val, getPString(field), -1)
 			}),
 			Pair("lambda", \args, b -> {
 				fargs = map(getPListArray(args), getPArgType);
-				PLambda(fargs, b, todo());
+				PLambda(fargs, b, -1);
 			}),
 			Pair("call", \fn, args -> {
-				PCall(fn, getPListArray(args), todo())
+				PCall(fn, getPListArray(args), -1)
 			}),
 			bin(":="), bin("|>"), 
 			Pair(":", \ex, type -> {
-				PTyped(ex, getPType(type), todo())
+				PTyped(ex, getPType(type), -1)
 			}),
 
 			Pair("switch", \a, b -> {
-				PSwitch(a, map(getPListArray(b), getPCase), todo())
+				PSwitch(a, map(getPListArray(b), getPCase), -1)
 			}),
 			Pair("typename", \a, b -> {
 				PTypeName(getPString(a), map(getPListArray(b), getPType), getPPos(a))
@@ -165,13 +169,13 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				PStruct(getPString(a), map(getPListArray(b), getPStructArg), getPPos(a));
 			}),
 			Pair("fntype", \a, b -> {
-				PTypeFunction(map(getPListArray(a), getPArgType), getPType(b), todo())
+				PTypeFunction(map(getPListArray(a), getPArgType), getPType(b), -1)
 			}),
 			Pair("argtype", \id, type -> {
-				PArgType(getPString(id), getPType(type), todo())
+				PArgType(getPString(id), getPType(type), -1)
 			}),
 			Pair("cast", \val, type -> {
-				PCast(val, getPType(type), todo())
+				PCast(val, getPType(type), -1)
 			}),
 			Pair("fieldassign", \field, value -> {
 				PFieldAssign(getPString(field), value, getPPos(field))
@@ -181,15 +185,15 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 			}),
 			Pair("setpos", \pos, e -> {
 				setPPos(s2i(getPString(pos)), e)
-			})
+			}),
 		]),
 		// Ternary operators
 		pairs2tree([
 			Pair("ifelse", \c, t, e -> {
-				PIf(c, t, e, todo())
+				PIf(c, t, e, -1)
 			}),
 			Pair("maybe", \c, t, e -> {
-				PMaybe(c, t, e, todo())
+				PMaybe(c, t, e, -1)
 			}),
 			Pair("let", \a, b, c -> {
 				PLet(getPString(a), b, c, getPPos(a))
@@ -215,10 +219,10 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 				)
 			}),
 			Pair("::=", \a, field, val -> {
-				PSetMutable(a, getPString(field), val, todo());
+				PSetMutable(a, getPString(field), val, -1);
 			}),
 			Pair("with", \struct, value, fields -> {
-				PWith(getPVar(struct), value, map(getPListArray(fields), getPFieldAssign), todo());
+				PWith(getPVar(struct), value, map(getPListArray(fields), getPFieldAssign), -1);
 			}),
 		]),
 		// Quadrary operators
