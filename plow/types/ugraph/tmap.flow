@@ -15,7 +15,7 @@ export {
 		resolveSupertypes : ref (string) -> [string],
 		resolveSubtypes : ref (string) -> [string],
 		// For error reporting
-		onError : (int, string) -> void,
+		onError : ([int], string) -> void,
 		// The next eclass
 		nextEClass : ref int,
 		// Make a unique id for supertypes
@@ -23,7 +23,7 @@ export {
 		// A list of pending unifications that we could not do
 		pending : ref List<Pair<TNode, TNode>>,
 		// A list of pending subtypings we could not do
-		pendingSubtypes : ref List<Triple<int, int, int>>,
+		pendingSubtypes : ref List<Triple<int, int, [int]>>,
 		// Are we at a point where we have to make up our mind about 
 		// supertypes and overloads even if they are ambigious?
 		finalPhase : ref bool,
@@ -36,12 +36,12 @@ export {
 	// Our nodes in the type graph
 	TNode ::= TNodeName, TNodeOverload, TNodeSupertype;
 		// If the name is empty, it is a function. If name is empty, and typars empty, null
-		TNodeName(name : string, typars : [int], pos : int);
+		TNodeName(name : string, typars : [int], pos : [int]);
 		TNodeOverload(
 			unique : Set<int>, 
 			// When we do not know what overload to pick, we keep candidates here
 			overloads : [TNodeName], 
-			pos : int
+			pos : [int]
 		);
 		TNodeSupertype(
 			uniques : Set<int>, 
@@ -49,6 +49,6 @@ export {
 			subtypes : [TNodeName],
 			// When we do not know what the subtype is called, it goes here
 			unknownSubtypes : Set<int>,
-			pos : int
+			pos : [int]
 		);
 }

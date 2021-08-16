@@ -350,7 +350,7 @@ pexp2dexp(dd : DDesugar, pexp : PExp) -> DExp {
 				PVar(id, __): {
 					mst = dd.resolveStructName(id);
 					mst ?? {
-						DConstruct(mst.id, map(args, rec), pos, -1);
+						DConstruct(mst.id, map(args, rec), fn.pos, -1);
 					} : {
 						DCall(rec(fn), map(args, rec), pos, -1);
 					}

@@ -50,8 +50,8 @@ prettyDModule(env : TTypeEnv, verbose : bool, d : DModule) -> void {
 prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 	rec = \e -> prettyDExp(env, input, i + " ", e);
 	type = \t -> println(i + " " + prettyDType(input, t));
-	pr = \s : string -> {
-		line = if (d.pos == -1) "MISSING POS " + d.structname else substring(input, d.pos, 20);
+	pr2 = \s : string, pos : int -> {
+		line = if (pos == -1) "MISSING POS " + d.structname else substring(input, pos, 20);
 		pre = i + s;
 		dtype = dexpType(env, d);
 
@@ -64,7 +64,10 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			default: "";
 		};
 
-		println(rpad(pre, " ", 60) + " " + rpad(etype, " ", 40) + rpad("(desugar " + prettyTType(dtype) + ")", " ", 20) + " " + takeBefore(line, "\n", line));
+		println(rpad(pre, " ", 40) + " " + i2s(pos) + " " + rpad(etype, " ", 40) + rpad("(" + prettyTType(dtype) + ")", " ", 15)  + " " + takeBefore(line, "\n", line));
+	}
+	pr = \s : string -> {
+		pr2(s, d.pos);
 	}
 	switch (d : DExp) {
 		DVoid(pos): pr("void");
@@ -124,11 +127,11 @@ prettyDExp(env : TTypeEnv, input : string, i : string, d : DExp) -> void {
 			rec(value);
 			type(typ);
 			iter(cases, \case : DCase -> {
-				pr("  case " + case.id);
+				pr2("  case " + case.id, case.pos);
 				prettyDExp(env, input, i + "    ", case.body);
 			});
 			mdef ?? {
-				pr("  default:");
+				pr2("  default:", mdef.pos);
 				rec(mdef)
 			} : {}
 		}

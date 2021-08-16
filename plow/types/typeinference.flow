@@ -163,6 +163,16 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		});
 		nenv = resolveEClasses(genv, d, chunk, d.flowpath, verbose);
 
+		if (verbose) {
+			iter(chunk, \id -> {
+				mglobal = lookupTree(d.globals, id);
+				mglobal ?? {
+					println(" " + id + "<" + strGlue(mglobal.typars, ", ") + ">" + "=");
+					prettyDExp(env, "", "  ", mglobal.value);
+				} : {}
+			})
+		}
+
 		resetTMap(env.tmap, startTyvar);
 
 		ttypeInferenceChunk(nenv, d, tail(order));
@@ -219,10 +229,10 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 
 	// This is any declared type
 	etype = lookupTreeDef(env.moduleTypes, d.id, TTypeEClass(d.eclass));
-	unifyTNodes(env.tmap, etype, TTypeEClass(d.eclass), "global " + d.id + " 1", d.pos);
+	unifyTNodes(env.tmap, etype, TTypeEClass(d.eclass), "global " + d.id + " 1", [d.pos]);
 	
 	ftype = ttypeInferenceDExp(nenv, d.id, d.value);
-	unifyTNodes(env.tmap, ftype, TTypeEClass(d.eclass), "global " + d.id + " 2", d.pos);
+	unifyTNodes(env.tmap, ftype, TTypeEClass(d.eclass), "global " + d.id + " 2", [d.pos]);
 
 	finalType = backfillType(etype, ftype);
 	if (tracingId) {
