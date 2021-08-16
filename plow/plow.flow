@@ -11,14 +11,7 @@ import fs/filesystem;
 import math/stringmath;
 
 main() {
-	file0 = "plow/plow.flow";
-	file6 = "plow/tests/";
-	file = "plow/tests/type3.flow";
-	file4  = "plow/tests/maybe.flow";
-	file3  = "behaviour.flow";
-	file1 = "c:/flow9/lib/formats/unicode/unidecode.flow";
-	file2 = "c:\\lyceum/components/rhapsode_server/rhapsode_server/api/isams/import_data.flow";
-	file5 = "mini/tests";
+	file = if (isUrlParameterTrue("test")) "plow/tests/" else "";
 
 	includes = strSplit(getUrlParameter("I"), ",");
 	allincludes = filter(concat([".", getFlowDir() + "/lib", getFlowDir()], includes), neq(""));
@@ -28,7 +21,7 @@ main() {
 	t = timestamp();
 
 	// OK, set up tracking of pending asynchronous stuff
-	pending = ref 1;
+	pending = ref 0;
 	startPending = \ -> {
 		p = ^pending;
 		pending := p + 1;
@@ -36,7 +29,7 @@ main() {
 	completePending = \ec -> {
 		p = ^pending;
 		pending := p - 1;
-		if (p <= 1) {
+		if (p <= 0) {
 			println(d2st((timestamp() - t) / 1000.0, 2) + "s");
 			quit(ec);
 		} else {
@@ -82,7 +75,8 @@ main() {
 		getUrlParameterDef("file", file);
 	}
 
-	if (!isDirectory(thefile)) {
+	if (thefile == "") {
+	} else if (!isDirectory(thefile)) {
 		process_file(thefile, false);
 	} else {
 		files0 = if (isUrlParameterTrue("rec")) readDirectoryRecursively(thefile) else map(readDirectory(thefile), \f -> pathCombine(thefile, f));
@@ -90,8 +84,13 @@ main() {
 		iter(files, \f -> process_file(f, true));
 	};
 
-	// OK, listen for the error code
-	completePending(0)
+	if (^pending == 0) {
+		printPlowUsage();
+		quit(1);
+	} else {
+		// OK, listen for the error code
+		completePending(0)
+	}
 }
 
 buildJsTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
@@ -183,5 +182,40 @@ buildCppTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
 	}
 	if (verbose) {
 		println("\n-------------------\n");
+	}
+}
+
+printPlowUsage() {
+	printl2 = \s -> {
+		if (isUrlParameterTrue("help")) {
+			println(s);
+		}
+	}
+	println("Usage:");
+	println("flowcpp plow/plow.flow -- <args>");
+	println("java -jar plow.jar -- <args>");
+	println("");
+	println("Args:");
+	println("file=<path>,<folder>  File (or folder) to compile");
+	printl2("  rec=1               Compile all files recursively in the folder given");
+	printl2("flowc-tests=1         Compile the tests in flowc compiler");
+	println("");
+
+	println("I=<path>,<path>       Include paths");
+	println("js=1 or <path>        Compile to JS");
+	println("  shorten-ids=1       Whether to shorten the ids in the output");
+	printl2("  run-tests=1         Execute the resulting JS with node");
+	println("cpp=1 or <path>       Compile to C++");
+	printl2("wasm=1 or <path>      Compile to WASM");
+	printl2("koka=1 or <path>      Compile to Koka");
+	printl2("  koka-int=1          Use int32 as int instead of int in Koka");
+	println("");
+	println("debug=1,id,path,eclass           Debug compilation of the relevant piece");
+	println("verbose=0,1,2                    Amount of debugging information");
+	println("stages=parse,type,resolve,lower  What stages to debug");
+	println("");
+
+	if (!isUrlParameterTrue("help")) {
+		println("\nAdd help=1 for complete usage");
 	}
 }

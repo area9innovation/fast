@@ -1,3 +1,7 @@
+Maybe<?> ::= None, Some<?>;
+	None();
+	Some(value : ?);
+
 BValue ::= BVoid, BBool, BInt, BDouble, BString;
 	BVoid();
 	BBool(v : bool);

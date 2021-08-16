@@ -5,6 +5,14 @@ import plow/types/pretty;
 
 /*
 TODO:
+type19.flow.
+C:/fast/plow/tests/type19.flow:6:38: ERROR: Merge TNodeName and TNode (e259 and e321)
+		treePushToArrayUnique(acc, st.name, st)
+		                            ^
+C:/fast/plow/tests/type19.flow:16:46: and here
+					Pair(acc.first, arrayPush(acc.second, merged));
+					                        ^
+
 C:/flow9/lib/formats/xml.flow:698:9: Add type parameter. Implicit polymorphism in array<e5717>
 		fold(elements, [], \acc, element -> {
 
@@ -518,9 +526,10 @@ simplifyTNodeSupertype(tmap : TMap, node : TNodeSupertype) -> TNode {
 		// resolved
 		resolved : Pair<[TNodeName], Set<int>> = foldSet(unknownSubtypes, Pair([], makeSet()), 
 				\acc : Pair<[TNodeName], Set<int>>, st : int -> {
-			unode = getUnionMapValue(tmap.tmap, st);
+			root = rootTTypeEClass(tmap, st);
+			unode = getUnionMapValue(tmap.tmap, root);
 			unknown = \ -> {
-				Pair(acc.first, insertSet(acc.second, st));
+				Pair(acc.first, insertSet(acc.second, root));
 			}
 			switch (unode) {
 				TNodeName(name, typars, __): {
@@ -535,7 +544,7 @@ simplifyTNodeSupertype(tmap : TMap, node : TNodeSupertype) -> TNode {
 						Pair(concat(acc.first, nsubtypes), acc.second);
 					} else unknown();
 				}
-				default: unknown();
+				TNodeOverload(unique, overloads, __): unknown();
 			}
 		});
 		if (resolved.first != []) {
@@ -543,7 +552,8 @@ simplifyTNodeSupertype(tmap : TMap, node : TNodeSupertype) -> TNode {
 			// println("Cleaned unknown " + prettyTNode(tmap, cleaned));
 			simplifyTNode(tmap, cleaned);
 		} else {
-			node;
+			// Simplify the supertypes
+			TNodeSupertype(uniques, subtypes, resolved.second, pos);
 		}
 	} else {
 		// OK, we can calculate potential super types here
@@ -1152,7 +1162,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 				mkClass(eclass);
 			}
 		}
-		TNodeSupertype(unique, subtypes, __, pos): {
+		TNodeSupertype(unique, subtypes, unsup, pos): {
 			simpler = simplifyTNode(tmap, node);
 			if (simpler != node) {
 				resolveTNode(tmap, acc, visited, eclass, simpler);
@@ -1168,6 +1178,9 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 					}
 					resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
 				}
+/*			} else if (sizeSet(unsup) == 1) {
+				feclass = set2array(unsup)[0];
+				TTypeEClass(feclass);*/
 			} else {
 				tmap.onError(pos, "Could not resolve supertype: " + prettyTNode(tmap, node));
 				mkClass(eclass);
