@@ -104,7 +104,7 @@ makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>)
 	foldTree(unions, makeTree(), \un, uni, acc -> {
 		fields : Set<Pair<string, DType>> = getDTypenameFields(unions, typenameFields, un);
 		foldSet(fields, acc, \acc2, field -> {
-			insertMultimap(acc, field.first, un)
+			insertMultimap(acc2, field.first, un)
 		})
 	});
 }

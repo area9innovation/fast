@@ -18,13 +18,6 @@ export {
 	aliveCode(names : BNames) -> Set<string>;
 }
 
-BNames(
-	structs : Tree<string, DStruct>,
-	unions : Tree<string, DUnion>,
-	natives : Tree<string, BNative>,
-	globals : Tree<string, BGlobal>
-);
-
 bmodules2BNames(modules : [BModule]) -> BNames {
 	fold(modules, BNames(makeTree(), makeTree(), makeTree(), makeTree()), \acc, m ->
 		BNames(

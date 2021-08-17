@@ -74,7 +74,7 @@ makeRenameIds(prog : BExpProgram, spec : BackendSpec, shorten_ids : bool) -> Ren
 		),
 		// var renamings
 		makeRenaming(
-			map(prog.declarations, \decl -> decl.id), 
+			map(prog.declarations, \decl : BExpDeclaration -> decl.id),
 			spec, shorten_ids
 		)
 	);
@@ -238,8 +238,8 @@ renameIdWithSpec(spec : BackendSpec, shorten_ids : bool, i : int, name : string)
 	spec.renamingPrefix + (if (shorten_ids) makeSmallId(i, spec.keywords) else name) + spec.renamingSuffix
 }
 
-small_identifier_chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-small_identifier_char_cnt = strlen(small_identifier_chars);
+small_identifier_chars : string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+small_identifier_char_cnt : int = strlen(small_identifier_chars);
 
 makeSmallId_(id : int) -> string {
 	char = getCharAt(small_identifier_chars, id % small_identifier_char_cnt);
@@ -247,8 +247,8 @@ makeSmallId_(id : int) -> string {
 	if (remv > 0) char + makeSmallId_(remv - 1) else char;
 }
 
-small_identifier_chars1 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-small_identifier_char1_cnt = strlen(small_identifier_chars1);
+small_identifier_chars1 : string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+small_identifier_char1_cnt : int = strlen(small_identifier_chars1);
 
 makeSmallId(id : int, keywords : Set<string>) -> string {
 	char = getCharAt(small_identifier_chars1, id % small_identifier_char1_cnt);
