@@ -5145,7 +5145,11 @@ parse_cs(acc : DParseAcc<?>) -> bool {
 								}) {
 									discardDCheckpoint(acc)
 								} else {
-									restoreDCheckpoint(acc)
+									if (matchString(acc, "\u000d")) {
+										discardDCheckpoint(acc)
+									} else {
+										restoreDCheckpoint(acc)
+									}
 								}
 							}
 						}

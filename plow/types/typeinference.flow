@@ -164,11 +164,13 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		nenv = resolveEClasses(genv, d, chunk, d.flowpath, verbose);
 
 		if (verbose) {
+			println("Debug dump");
+			input = getFileContent(d.fullpath);
 			iter(chunk, \id -> {
 				mglobal = lookupTree(d.globals, id);
 				mglobal ?? {
 					println(" " + id + "<" + strGlue(mglobal.typars, ", ") + ">" + "=");
-					prettyDExp(env, "", "  ", mglobal.value);
+					prettyDExp(nenv, input, "  ", mglobal.value);
 				} : {}
 			})
 		}
@@ -249,7 +251,12 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 }
 
 resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : string, verbose : bool) -> TTypeEnv {
+	if (verbose) {
+		println("Resolving " + toString(chunk));
+	}
+
 	types = resolveTNodes(env.tmap, 3, verbose);
+
 	// Only grab the etypes we do not already have set above
 	etypes = foldTree(types, env.etypes, \eclass, type, acc -> {
 		if (containsKeyTree(acc, eclass)) acc

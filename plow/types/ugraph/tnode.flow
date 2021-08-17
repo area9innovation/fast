@@ -300,6 +300,10 @@ makeEClassForTNode(tmap : TMap, node : TNode, reason : string) -> int {
 	nclass;
 }
 
+setTNodeClass(tmap : TMap, eclass : int, node : TNode) -> void {
+	setUnionMapValue(tmap.tmap, eclass, node);
+}
+
 makeTNodeClass(tmap : TMap) -> int {
 	nclass = ^(tmap.nextEClass);
 	tmap.nextEClass := nclass + 1;
@@ -732,6 +736,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 					if (overloads == []) {
 						error(lpos, pos);
 					} else if (length(overloads) == 1) {
+						// println("Resolved overload " + prettyTNode(tmap, overloads[0]) + " for " + prettyTNode(tmap, left));
 						mergeTNodes(tmap, overloads[0], right);
 					} else {
 						// If we have identical information already, we do not
@@ -742,8 +747,8 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 							// OK, we can not clarify it, so push it to pending
 							noverload = TNodeOverload(lunique, overloads, concat(lpos, pos));
 							tmap.pending := Cons(Pair(noverload, right), ^(tmap.pending));
+							// println("Push pending again " + prettyTNode(tmap, right) + " to " + prettyTNode(tmap, noverload));
 						}
-						// println("From " + prettyTNode(tmap, left) + " to " + prettyTNode(tmap, noverload));
 						right;
 					}
 				}
@@ -994,6 +999,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : [int]) -> void {
 		}
 		TNodeName(name, typars, __): {
 			if (hasSupertype(tmap, subnode)) {
+				// We have a direct supertype
 				switch (supernode) {
 					TNodeName(__, __, __): {
 						if (isEmptyTNode(supernode)) {
@@ -1018,12 +1024,55 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, pos : [int]) -> void {
 					TNodeOverload(unique, overloads, __): postpone();
 				}
 			} else {
-				if (!isEClassResolved(tmap, sub) && !isEClassResolved(tmap, super)) {
-					// println(^(tmap.topid) + ": TODO: This is wrong. We should supertype the typars " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode));
-					postpone();
-				} else {
-					joinTNodes(tmap, sub, super);
-					{}
+				def = \ -> {
+					if (!isEClassResolved(tmap, sub) && !isEClassResolved(tmap, super)) {
+						// println(^(tmap.topid) + ": Postpone. TODO: We could maybe stub the type up " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode));
+						postpone();
+					} else {
+						joinTNodes(tmap, sub, super);
+						{}
+					}
+				}
+				switch (supernode) {
+					TNodeName(supername, stypars, __): {
+						if (name == supername && length(typars) == length(stypars)) {
+							// OK, we subtype the typars
+							// println("Subtyping the typars");
+							if (name == "") {
+								// Function
+								def();
+							} else {
+								iteri(typars, \i, tp -> {
+									if (i < length(stypars)) {
+										subtypeTNodes(tmap, tp, stypars[i], pos)
+									}
+								});
+							}
+						} else {
+							if (isEmptyTNode(subnode) && !isEmptyTNode(supernode) && !hasSubtype(tmap, supernode)) {
+								subtype = TNodeName(supername, mapi(stypars, \i, lt -> {
+									makeTNodeClass(tmap)
+								}), subnode.pos);
+								setTNodeClass(tmap, sub, subtype);
+								// println(^(tmap.topid) + ": We stub the subtype up " + prettyTNode(tmap, subtype) + " vs " + prettyTNode(tmap, supernode));
+								iteri(subtype.typars, \i, tp -> {
+									subtypeTNodes(tmap, tp, stypars[i], pos)
+								});
+							} else if (!isEmptyTNode(subnode) && isEmptyTNode(supernode)) {
+								suptype = TNodeName(name, mapi(typars, \i, lt -> {
+									makeTNodeClass(tmap)
+								}), supernode.pos);
+								setTNodeClass(tmap, super, suptype);
+								// println(^(tmap.topid) + ": We stub the supertype up " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supnode));
+								iteri(suptype.typars, \i, tp -> {
+									subtypeTNodes(tmap, typars[i], tp, pos)
+								});
+							} else {
+								def();
+							}
+						}
+					}
+					default: def();
 				}
 			}
 		}
@@ -1040,13 +1089,14 @@ resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>
 	pending = ^(tmap.pending);
 	tmap.pending := makeList();
 	iterList(pending, \p : Pair<TNode, TNode> -> {
+		// println("Merge pending " + prettyTNode(tmap, p.first) + " and " + prettyTNode(tmap, p.second));
 		mergeTNodes(tmap, p.first, p.second);
 		{}
 	});
 	pendingSubtypes = ^(tmap.pendingSubtypes);
 	tmap.pendingSubtypes := makeList();
 	iterList(pendingSubtypes, \p : Triple<int, int, [int]> -> {
-		// println("Subtype " + prettyEClass(tmap, p.first) + " sub " + prettyEClass(tmap, p.second));
+		// println("Subtype " + prettyEClass(tmap, p.first) + " super " + prettyEClass(tmap, p.second));
 		subtypeTNodes(tmap, p.first, p.second, p.third);
 	});
 	if (iterations == 0

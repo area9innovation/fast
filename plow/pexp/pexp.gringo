@@ -198,7 +198,7 @@ int = '0'-'9'+;
 ws = s*;
 s = cs+;
 
-cs = " " | "\t" | "\n" | "//" (!"\n" anychar)* "\n" | "/*" (!"*/" anychar)* "*/";
+cs = " " | "\t" | "\n" | "//" (!"\n" anychar)* "\n" | "/*" (!"*/" anychar)* "*/" | "\r";
 
 lastLineComment = "//" (!"\n" anychar)*;
 
