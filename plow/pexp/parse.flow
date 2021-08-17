@@ -237,9 +237,9 @@ pexpTypeOps() -> GringoTypedOperators<PExp> {
 		// Stack ops
 		pairs2tree([
 			Pair("swap", \s : List<PExp> -> {
-				switch (s) {
+				switch (s : List<PExp>) {
 					Cons(h0, t0): {
-						switch (t0) {
+						switch (t0 : List<PExp>) {
 							Cons(h1, t1): {
 								Cons(h1, Cons(h0, t1))
 							}

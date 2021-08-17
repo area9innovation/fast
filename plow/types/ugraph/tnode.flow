@@ -1221,12 +1221,15 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 				mflow ?? {
 					resolveTNode(tmap, acc, visited, eclass, mflow);
 				} : {
-					if (length(subtypes) != 1) {
+					supers : [string] = set2array(getPossibleTSupers(tmap, node));
+					if (length(supers) != 1) {
 						// TODO: We should count the expanded length of
 						// each supertypes, and pick the "smallest" one
-						tmap.onError(pos, "TODO: Picking random supertype: " + prettyTNode(tmap, node));
+						// tmap.onError(pos, "TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
 					}
-					resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
+					
+					fnode = instantiateTNodeName(tmap, supers[0], subtypes, pos);
+					resolveTNode(tmap, acc, visited, eclass, fnode);
 				}
 /*			} else if (sizeSet(unsup) == 1) {
 				feclass = set2array(unsup)[0];
