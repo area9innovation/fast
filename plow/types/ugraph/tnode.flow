@@ -30,6 +30,10 @@ programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited :
 C:\fast\plow\backends\link.flow:22:14: and here
 	module = getCachedBModule(cache.modules, file);
 	        ^
+
+For some reason, ".modules" on PlowCache becomes the .modules in BModules and we get "native"
+as the field type. This is wrong.
+
 */
 
 export {
