@@ -190,8 +190,8 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : [in
 	lclass = findOrMakeTNodeClass(tmap, left, reason, pos);
 	rclass = findOrMakeTNodeClass(tmap, right, reason, pos);
 	verbose2 = verbose 
-		|| isDebuggingEClass(tmap, lclass)
-		|| isDebuggingEClass(tmap, rclass);
+		|| isDebuggingEClass(tmap, lclass, makeSet())
+		|| isDebuggingEClass(tmap, rclass, makeSet());
 	if (verbose2) {
 		uindent := ind + "  ";
 		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + ^(tmap.topid) + ": " + reason );
@@ -658,7 +658,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 	if (isDebuggingTopid(tmap)) {
 		lclass = findTNodeClass(tmap, left);
 		rclass = findTNodeClass(tmap, right);
-		if (isDebuggingEClass(tmap, lclass) || isDebuggingEClass(tmap, rclass)) {
+		if (isDebuggingEClass(tmap, lclass, makeSet()) || isDebuggingEClass(tmap, rclass, makeSet())) {
 			println(^uindent + "Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 		}
 	}
@@ -1229,6 +1229,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 					}
 					
 					fnode = instantiateTNodeName(tmap, supers[0], subtypes, pos);
+					unifyTNodeNameWithSuper(tmap, fnode, node);
 					resolveTNode(tmap, acc, visited, eclass, fnode);
 				}
 /*			} else if (sizeSet(unsup) == 1) {

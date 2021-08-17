@@ -13,7 +13,7 @@ export {
 	getTNodes(tmap : TMap) -> Set<int>;
 
 	isDebuggingTopid(tmap : TMap) -> bool;
-	isDebuggingEClass(tmap : TMap, eclass : int) -> bool;
+	isDebuggingEClass(tmap : TMap, eclass : int, seen : Set<int>) -> bool;
 	dumpDebugEClasses(tmap : TMap) -> void;
 }
 
@@ -122,35 +122,39 @@ isDebuggingTopid(tmap : TMap) -> bool {
 	isTracingId(tmap.tracing, StageTypeInference(), 1, ^(tmap.topid));
 }
 
-isDebuggingEClass(tmap : TMap, eclass : int) -> bool {
-	eclass != -1 && isDebuggingTopid(tmap)
-	&& (
-		isDebuggingEClass2(tmap, eclass)
-		|| {
-			node = getUnionMapValue(tmap.tmap, eclass);
-			switch (node) {
-				TNodeName(name, typars, pos): exists(typars, \tp -> {
-					isDebuggingEClass(tmap, tp)
-				});
-				TNodeOverload(unique, overloads, pos): {
-					exists(overloads, \ol -> {
-						exists(ol.typars, \tp -> {
-							isDebuggingEClass(tmap, tp)
+isDebuggingEClass(tmap : TMap, eclass : int, seen : Set<int>) -> bool {
+	if (containsSet(seen, eclass)) false
+	else {
+		seen2 = insertSet(seen, eclass);	
+		eclass != -1 && isDebuggingTopid(tmap)
+		&& (
+			isDebuggingEClass2(tmap, eclass)
+			|| {
+				node = getUnionMapValue(tmap.tmap, eclass);
+				switch (node) {
+					TNodeName(name, typars, pos): exists(typars, \tp -> {
+						isDebuggingEClass(tmap, tp, seen2)
+					});
+					TNodeOverload(unique, overloads, pos): {
+						exists(overloads, \ol -> {
+							exists(ol.typars, \tp -> {
+								isDebuggingEClass(tmap, tp, seen2)
+							})
 						})
-					})
-				}
-				TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
-					existsSet(unknownSubtypes, \st -> {
-						isDebuggingEClass(tmap, st)
-					}) || exists(subtypes, \ol -> {
-						exists(ol.typars, \tp -> {
-							isDebuggingEClass(tmap, tp)
+					}
+					TNodeSupertype(uniques, subtypes, unknownSubtypes, pos): {
+						existsSet(unknownSubtypes, \st -> {
+							isDebuggingEClass(tmap, st, seen2)
+						}) || exists(subtypes, \ol -> {
+							exists(ol.typars, \tp -> {
+								isDebuggingEClass(tmap, tp, seen2)
+							})
 						})
-					})
+					}
 				}
 			}
-		}
-	)
+		)
+	}
 }
 
 isDebuggingEClass2(tmap : TMap, eclass : int) -> bool {
