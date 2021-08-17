@@ -49,12 +49,6 @@ where `PlowCache` is a cache for modules.
 
 # TODOs
 
-- Build a map from tyvar to where it comes from so we can do better
-  debugging of the type errors. Same applies to recursively constructed
-  tyvars. So probably send in location to each tyvar construction?
-  TODO: Do not record type var positions that exist in the AST. Instead,
-  send in the chunk of names we are working on, and search in the AST to
-  find the position
 - Debug type errors
 - Speed up the compiler - try vector in union_find_map, which might be
   faster at least in Java. Try to reduce the active set of tyvars when

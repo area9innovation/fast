@@ -5,65 +5,32 @@ import plow/types/pretty;
 
 /*
 TODO:
-type19.flow.
-C:/fast/plow/tests/type19.flow:6:38: ERROR: Merge TNodeName and TNode (e259 and e321)
-		treePushToArrayUnique(acc, st.name, st)
-		                            ^
-C:/fast/plow/tests/type19.flow:16:46: and here
-					Pair(acc.first, arrayPush(acc.second, merged));
-					                        ^
+- plow/test/struct.flow
+C:\fast\plow\tests\struct.flow:11:9: Could not resolve supertype: super1{e96}
+		Some(v): v;
+	^
+C:\fast\plow\tests\struct.flow:9:5: Could not resolve supertype: super3{e96, e115}
+	switch (m : Maybe) {
+^
 
-C:/flow9/lib/formats/xml.flow:698:9: Add type parameter. Implicit polymorphism in array<e5717>
-		fold(elements, [], \acc, element -> {
+- fusion.flow does not type
 
-C:/flow9/lib/form/renderform.flow:446:46: ERROR: Merge WidthHeight and double (e1485 and e1484)
-                widthHeight = selectu(d.widthHeight, \wh -> {
-
-C:/flow9/lib/form/paragraphalignments.flow:41:5: TODO: Picking random supertype: super0{EndAlign, StartAlign}
-Here, we should find the "closest" supertype and pick that.
+- For random supertypes, we should find the "closest" supertype and pick that.
 
 - Try to reset eclasses for each chunk: To do this, we need a "copy into new tmap"
   operation to run after each chunk, where we pick up "live" eclasses from the global
   names.
 
-- Review positions. They are wrong when reporting a problem in array.flow filtermap.
-
 Errors towards plow\plow.flow:
 
-plow/dexp/pretty': Very slow
-
-Parsed 'plow/pexp/values' as C:/fast/plow/pexp/values.flow
-TODO: Picking random supertype: super60{PArgType, PTypeFunction, PTypeName, PTypePar}
-
-C:/flow9/lib/sys/concurrent.flow:104:5: Add type parameter. Implicit polymorphism in (array<e347>) -> flow
-        flow([]);
-^
-C:/flow9/lib/sys/concurrent.flow:104:10: Add type parameter. Implicit polymorphism in array<e345>
-        flow([]);
-            ^
-C:/flow9/lib/sys/concurrent.flow:117:5: Add type parameter. Implicit polymorphism in (array<e431>) -> flow
-        flow([]);
-^
-C:/flow9/lib/sys/concurrent.flow:117:10: Add type parameter. Implicit polymorphism in array<e429>
-        flow([]);
-            ^
-C:/flow9/lib/sys/concurrent.flow:162:5: Add type parameter. Implicit polymorphism in (ref<Tree<e708, e709>>) -> flow
-        flow(ref makeTree())
-^
-C:/flow9/lib/sys/concurrent.flow:162:10: Add type parameter. Implicit polymorphism in ref<Tree<e708, e709>>
-        flow(ref makeTree())
-            ^
-C:/flow9/lib/sys/concurrent.flow:162:14: Add type parameter. Implicit polymorphism in () -> Tree<e702, e703>
-        flow(ref makeTree())
-                ^
-C:/flow9/lib/sys/concurrent.flow:162:22: Add type parameter. Implicit polymorphism in Tree<e702, e703>
-        flow(ref makeTree())
-
-C:/fast/plow/types/ugraph/tnode.flow:1021:49: ERROR: Merge overload2854{(DNative)->flow, (TNodeName)->flow} and (TNode)->flow
-				mflow = find(subtypes, \st -> st.name == "flow");
-				                               ^
+plow/backends/link
+C:\fast\plow\backends\link.flow:21:1: ERROR: Merge PlowCache and BModules (e212 and e219)
+programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited : Set<string>) -> Pair<List<BModule>, Set<string>> {
+                                                                                                                                  ^
+C:\fast\plow\backends\link.flow:22:14: and here
+	module = getCachedBModule(cache.modules, file);
+	        ^
 */
-
 
 export {
 	// Set up the type unification map

@@ -203,7 +203,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			rtype = TTypeEClass(eclass);
 			calltype = TTypeFunction([tvalue], rtype);
 
-			unifyTNodes(env.tmap, calltype, fntype, "field", [pos]);
+			unifyTNodes(env.tmap, calltype, fntype, "field " + field, [pos]);
 			rtype;
 		}
 		DSetMutable(left, field, value, pos, eclass): {
