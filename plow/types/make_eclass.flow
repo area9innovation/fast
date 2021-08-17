@@ -2,24 +2,22 @@ import plow/dexp/dexp;
 import ds/treeutils;
 
 export {
-	populateEClass(mkEClass : () -> int, positions : ref Tree<int, Set<int>>, e : DExp) -> void;
+	populateEClass(mkEClass : () -> int, e : DExp) -> void;
 }
 
-populateEClass(mkEClassFn : () -> int, positions : ref Tree<int, Set<int>>, e : DExp) -> void {
+populateEClass(mkEClassFn : () -> int, e : DExp) -> void {
 	mkEClass = \ee, pos : int -> {
 		if (ee != -1) {
 			println("TODO: Expected a null-eclass " + toString(e));
 			ee;
 		} else {
-			eclass = mkEClassFn();
-			positions := insertMultimap(^positions, eclass, pos);
-			eclass;
+			mkEClassFn();
 		}
 	}
 	todo = \ -> {
 		println("Add eclass");
 	}
-	rec = \ee -> populateEClass(mkEClassFn, positions, ee);
+	rec = \ee -> populateEClass(mkEClassFn, ee);
 	switch (e) {
 		DVoid(pos): {};
 		DBool(v, pos): {};

@@ -115,7 +115,6 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 			}
 		}),
 		ref makeTree(),
-		ref makeTree(),
 		ref \__ -> {
 			println("TODO: The resolvers are not set");
 			None();
@@ -1230,7 +1229,8 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 						if (length(supers) != 1) {
 							// TODO: We should count the expanded length of
 							// each supertypes, and pick the "smallest" one
-							tmap.onError(pos, "TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
+							println("TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
+							// tmap.onError(pos, "TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
 						}
 						
 						fnode = instantiateTNodeName(tmap, supers[0], subtypes, pos);

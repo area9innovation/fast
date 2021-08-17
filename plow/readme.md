@@ -55,7 +55,6 @@ where `PlowCache` is a cache for modules.
   TODO: Do not record type var positions that exist in the AST. Instead,
   send in the chunk of names we are working on, and search in the AST to
   find the position
-- Positions on some operators are off a bit.
 - Debug type errors
 - Speed up the compiler - try vector in union_find_map, which might be
   faster at least in Java. Try to reduce the active set of tyvars when

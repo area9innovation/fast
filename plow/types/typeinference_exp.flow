@@ -6,7 +6,7 @@ export {
 	ttypeInferenceDExp(env : TTypeEnv, id : string, d : DExp) -> TTypeEClass;
 }
 
-inferenceIndent = ref "  ";
+inferenceIndent : ref string = ref "  ";
 
 ttypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 	if (true) {
