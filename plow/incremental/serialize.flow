@@ -92,7 +92,7 @@ makeBIncremental(fullpath : string, ser : string) -> BIncremental {
 
 isBIncrementalSame(a : BIncremental, b : BIncremental) -> bool {
 	a.fullpath == b.fullpath
-	&& a.modifiedTimestamp == b.modifiedTimestamp
+	&& equalDoubles2(a.modifiedTimestamp, b.modifiedTimestamp, 12)
 	&& a.checksum == b.checksum
 	&& a.fileSize == b.fileSize
 }

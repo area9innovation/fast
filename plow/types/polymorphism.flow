@@ -54,9 +54,9 @@ doInstantiateTTypePar(env : TTypeEnv, typars : ref Tree<string, TTypeEClass>, t 
 }
 
 instantiateTTypeNameForStruct(env : TTypeEnv, struct : DStruct) -> Pair<TType, [Pair<string, TType>]> {
-	typars = map(struct.typars, \tp -> TTypeEClass(env.mkEClass()));
+	typars : [TTypeEClass] = map(struct.typars, \tp -> TTypeEClass(env.mkEClass()));
 
-	typarTree = foldi(struct.typars, makeTree(), \i, acc, tp -> {
+	typarTree = foldi(struct.typars, makeTree(), \i, acc, tp : string -> {
 		setTree(acc, tp, typars[i].eclass)
 	});
 
