@@ -20,7 +20,7 @@ linkBProgram(cache : PlowCache, flowpath : string, shorten_ids : bool, spec : Ba
 
 programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited : Set<string>) -> Pair<List<BModule>, Set<string>> {
 	module = getCachedBModule(cache.modules, file);
-	imported_visited = fold(module.imports, Pair(acc, insertSet(visited, file)), \ac, imp -> {
+	imported_visited : Pair<List<BModule>, Set<string>> = fold(module.imports, Pair(acc, insertSet(visited, file)), \ac : Pair<List<BModule>, Set<string>>, imp : DImport -> {
 		if (containsSet(ac.second, imp.path)) ac else {
 			programBModules(cache, imp.path, ac.first, ac.second)
 		}

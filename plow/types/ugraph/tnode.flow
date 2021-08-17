@@ -1221,16 +1221,22 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 				mflow ?? {
 					resolveTNode(tmap, acc, visited, eclass, mflow);
 				} : {
-					supers : [string] = set2array(getPossibleTSupers(tmap, node));
-					if (length(supers) != 1) {
-						// TODO: We should count the expanded length of
-						// each supertypes, and pick the "smallest" one
-						// tmap.onError(pos, "TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
+					if (length(subtypes) == 1) {
+						// A single type - we just grab it as is
+						resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
+					} else {
+						// OK, find the set of potential supertypes
+						supers : [string] = set2array(getPossibleTSupers(tmap, node));
+						if (length(supers) != 1) {
+							// TODO: We should count the expanded length of
+							// each supertypes, and pick the "smallest" one
+							tmap.onError(pos, "TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
+						}
+						
+						fnode = instantiateTNodeName(tmap, supers[0], subtypes, pos);
+						unifyTNodeNameWithSuper(tmap, fnode, node);
+						resolveTNode(tmap, acc, visited, eclass, fnode);
 					}
-					
-					fnode = instantiateTNodeName(tmap, supers[0], subtypes, pos);
-					unifyTNodeNameWithSuper(tmap, fnode, node);
-					resolveTNode(tmap, acc, visited, eclass, fnode);
 				}
 /*			} else if (sizeSet(unsup) == 1) {
 				feclass = set2array(unsup)[0];
