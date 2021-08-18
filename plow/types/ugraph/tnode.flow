@@ -105,7 +105,7 @@ setTMapResolvers(t : TMap,
 ) -> TMap {
 	t.resolveUnionName := resolveUnionName;
 	t.resolveSupertypes := \type -> {
-		transitiveResolveSuperType(resolveSupertypes, type)
+		set2array(transitiveResolveSuperType(resolveSupertypes, type, makeSet(), makeSet()))
 	};
 	t.resolveSubtypes := resolveSubtypes;
 	t;
@@ -116,11 +116,15 @@ rootTTypeEClass(tg : TMap, eclass : int) -> int {
 }
 
 // Collect all supertypes of this name, based on a one-step resolver
-transitiveResolveSuperType(basic : (string) -> [string], name : string) -> [string] {
-	supers = basic(name);
-	fold(supers, supers, \acc, base -> {
-		concat(acc, transitiveResolveSuperType(basic, base))
-	})
+transitiveResolveSuperType(basic : (string) -> [string], name : string, seen : Set<string>, acc : Set<string>) -> Set<string> {
+	if (containsSet(seen, name)) acc
+	else {
+		supers = basic(name);
+		seen2 = insertSet(seen, name);
+		fold(supers, mergeSets(buildSet(supers), acc), \acc2, base -> {
+			transitiveResolveSuperType(basic, base, seen2, acc2)
+		})
+	}
 }
 
 defaultTNode() -> TNode {
@@ -551,9 +555,9 @@ simplifyTNodeSupertype(tmap : TMap, node : TNodeSupertype) -> TNode {
 
 // Are there any direct supertypes of this node?
 hasSupertype(tmap : TMap, node : TNodeName) -> bool {
-	supertype = TNodeSupertype(makeSet(), [node], makeSet(), []);
-	named = getPossibleTSupers(tmap, supertype);
-	sizeSet(named) > 1;
+	id = node.name;
+	supers0 = ^(tmap.resolveSupertypes)(id);
+	supers0 != [];
 }
 
 // Could there be some supertype placement in this one?
@@ -1183,10 +1187,14 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 							println("TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
 							// tmap.onError(pos, "TODO: Picking random supertype from " + toString(supers) + " for: " + prettyTNode(tmap, node));
 						}
-						
-						fnode = instantiateTNodeName(tmap, supers[0], subtypes, pos);
-						unifyTNodeNameWithSuper(tmap, fnode, node);
-						resolveTNode(tmap, acc, visited, eclass, fnode);
+						if (supers == []) {
+							tmap.onError(pos, "No supertype for " + prettyTNode(tmap, node));
+							resolveTNode(tmap, acc, visited, eclass, subtypes[0]);
+						} else {
+							fnode = instantiateTNodeName(tmap, supers[0], subtypes, pos);
+							unifyTNodeNameWithSuper(tmap, fnode, node);
+							resolveTNode(tmap, acc, visited, eclass, fnode);
+						}
 					}
 				}
 /*			} else if (sizeSet(unsup) == 1) {

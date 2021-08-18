@@ -62,14 +62,6 @@ where `PlowCache` is a cache for modules.
 	This is somehow related to how "println" contaminates the rest with the "flow" type
 	there.
 
-  - plow/plow.flow:
-  C:/flow9/lib/lingo/pegcode/pegcode_lib.flow:146:15: Add type parameter. Implicit polymorphism in (List<PegCaptureEntry>, array<e1463>, (array<e1463>, PegCaptureEntry) -> array<e1463>) -> array<e1463>
-	results = foldList(listAndRest.first, [], \acc : flow, p : PegCaptureEntry -> {
-	         ^
-
-C:/flow9/lib/lingo/pegcode/pegcode.flow:244:71: ERROR: Merge overload1016{(PegCodeConst<e2385>)->RuleResult, (PegStackChoice)->List<PegCaptureEntry>, (PegStackEntry)->List<PegCaptureEntry>, (PegStackPc)->List<PegCaptureEntry>, (PegStackPcCache)->List<PegCaptureEntry>, (PegVmCacheItem)->RuleResult} and (super325{e2320})->PegCaptureEntry (e-1 and e2388)
-
-
   - form/renderform:
 	C:/flow9/lib/form/renderform.flow:367:13: and here
 			CameraID(id) : {
@@ -87,11 +79,14 @@ C:/flow9/lib/lingo/pegcode/pegcode.flow:244:71: ERROR: Merge overload1016{(PegCo
 			attachChildAndCapability(
 								^
 
-
 - Speed up the compiler - try vector in union_find_map, which might be
   faster at least in Java. Try to reduce the active set of tyvars when
-  doing chunks. Maybe try small chunks (only for cycles in id use), and
-  "raise" to bigger chunks in case of errors?
+  doing chunks. Copy from one tyvar space to a new one, to reduce max
+  set.
+
+- The most time is spent in incompatibleTNodeNames. Improve that somehow.
+- Secondly, it is mostly spent in lookupFromImport, doImportLookup
+
 - Add a compile server
   - Add option to only type check given ids
 
