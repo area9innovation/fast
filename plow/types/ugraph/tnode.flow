@@ -12,6 +12,8 @@ C:\fast\plow\tests\struct.flow:11:9: Could not resolve supertype: super1{e96}
 C:\fast\plow\tests\struct.flow:9:5: Could not resolve supertype: super3{e96, e115}
 	switch (m : Maybe) {
 ^
+   This is somehow related to how "println" contaminates the rest with the "flow" type
+   there.
 
 - fusion.flow does not type
 
@@ -164,7 +166,7 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : [in
 		|| isDebuggingEClass(tmap, rclass, makeSet());
 	if (verbose2) {
 		uindent := ind + "  ";
-		println(ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + ^(tmap.topid) + ": " + reason );
+		println(ind + "Unify 2 " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + ^(tmap.topid) + ": " + reason );
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -174,6 +176,7 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, reason : string, pos : [in
 		
 		// println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
 		if (verbose) {
+			println("\n" + ind + "After unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason + ":");
 			dumpTNodes(tmap);
 		}
 		{}

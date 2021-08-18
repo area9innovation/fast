@@ -1,0 +1,201 @@
+import plow/lookup;
+import string_utils;
+import lingo/linecolumn;
+
+export {
+	// Constructs a compilation cache
+	makePlowCache(
+		// How to report an error
+		onError : (string) -> void,
+		// The includes we should use to find files
+		includes : [string]
+	) -> PlowCache;
+
+	clearPlowCache(cache : PlowCache) -> void;
+
+	makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void;
+}
+
+PlowCache(
+	// How to report an error
+	onError : (string) -> void,
+	// The includes we should use to find files
+	includes : [string], 
+	// Map of the Modules we have already parsed and desugared
+	modules : BModules,
+	// Helpers to look up things in imports
+	structLookup : BLookupFromImport<DStruct>,
+	unionLookup : BLookupFromImport<DUnion>,
+	fieldLookup : BLookupFromImport<[string]>,
+	unionFieldLookup : BLookupFromImport<[string]>,
+	superTypeLookup : BLookupFromImport<[string]>,
+	subTypeLookup : BLookupFromImport<[string]>,
+	globalLookup : BLookupFromImport<BGlobal>,
+	nativeLookup : BLookupFromImport<BNative>,
+	// What is the next id
+	nextId : ref int,
+	// Awaiting modules that are being parsed
+	awaiting : ref Set<string>,
+	// Tracing helper
+	tracing : Tracing,
+	// How many errors have we reported?
+	errorCount : ref int,
+);
+
+makePlowCache(
+	// How to report an error
+	onError1 : (string) -> void,
+	// The includes we should use to find files
+	includes : [string]
+) -> PlowCache {
+	errorCount = ref 0;
+	onError = \e -> {
+		errorCount := ^errorCount + 1;
+		onError1(e);
+	};
+	// A helper to lookup structs.
+	structLookup = BLookupFromImport("struct", \module, n -> {
+			lookupTree(module.structs, n)
+		}, \module, n -> {
+			containsSet(module.exported.exportedTypes, n)
+			|| containsSet(module.exported.exportedTypeNames, n)
+		},
+		\spath, struct, error -> {
+			makeOnError(spath, onError)(struct.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+
+	// A helper to lookup unions.
+	unionLookup = BLookupFromImport("union", \module, n -> {
+			lookupTree(module.unions, n)
+		}, 
+		\module, n -> {
+			containsSet(module.exported.exportedTypes, n)
+			|| containsSet(module.exported.exportedTypeNames, n)
+		},
+		\upath, struct, error -> {
+			makeOnError(upath, onError)(struct.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+
+	globalLookup = BLookupFromImport("global", \module, n -> {
+			lookupTree(module.globals, n);
+		},
+		\module, n -> {
+			containsSet(module.exported.exportedGlobals, n)
+		},
+		\upath, gl, error -> {
+			makeOnError(upath, onError)(gl.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+	nativeLookup = BLookupFromImport("native", \module, n -> {
+			lookupTree(module.natives, n);
+		},
+		\module, n -> {
+			containsSet(module.exported.exportedGlobals, n);
+		},
+		\upath, nat, error -> {
+			makeOnError(upath, onError)(nat.pos, error)
+		},
+		ref makeTree(), ref makeSet()
+	);
+	fieldLookup = BLookupFromImport("field", \module, n -> {
+			lookupTree(module.fields, n);
+		}, \module, n -> {
+			structs = getTreeArrayValue(module.fields, n);
+			// TODO: Maybe this is too much. We should probably just restrict
+			// to those that are exported
+			forall(structs, \s -> {
+				containsSet(module.exported.exportedTypes, s)
+			})
+		}, \upath, n, error -> {
+			println("TODO: What about the position of this field? " + toString(n));
+			makeOnError(upath, onError)(0, error)
+		}, ref makeTree(), ref makeSet()
+	);
+	unionFieldLookup = BLookupFromImport("union-field", \module, n -> {
+			unionFields = makeDUnionFields(module.unions, module.structs);
+			unions = lookupTreeDef(unionFields, n, makeSet());
+			if (isEmptySet(unions)) None()
+			else Some(set2array(unions))
+		}, \module, n -> {
+			// TODO: I guess we could refine this
+			true;
+		}, \upath, n, error -> {
+			println("TODO: What about the position of this field? " + toString(n));
+			makeOnError(upath, onError)(0, error)
+		}, ref makeTree(), ref makeSet()
+	);
+
+	superTypeLookup = BLookupFromImport("supertype", \module, n -> {
+			supers = makeDSupers(module.unions);
+			Some(getTreeArrayValue(supers, n));
+		}, \module, n -> {
+			true;
+		}, \upath, nat, error -> {
+			println("TODO: What about the position of this field? " + toString(nat));
+			makeOnError(upath, onError)(0, error)
+		}, ref makeTree(), ref makeSet()
+	);
+
+	subTypeLookup = BLookupFromImport("subtype", \module, n -> {
+			subs = makeDSubtypes(module.unions);
+			Some(getTreeArrayValue(subs, n));
+		}, \module, n -> {
+			true;
+		}, \upath, nat, error -> {
+			println("TODO: What about the position of this field? " + toString(nat));
+			makeOnError(upath, onError)(0, error)
+		}, ref makeTree(), ref makeSet()
+	);
+
+	PlowCache(
+		onError, includes, makeBModules(), 
+		structLookup, unionLookup, fieldLookup, 
+		unionFieldLookup, superTypeLookup, subTypeLookup,
+		globalLookup, nativeLookup,
+		ref 0, ref makeSet(), makeTracing(), errorCount
+	);
+}
+
+clearPlowCache(cache : PlowCache) -> void {
+	cache.structLookup.cache := makeTree();
+	cache.unionLookup.cache := makeTree();
+	cache.fieldLookup.cache := makeTree();
+	cache.unionFieldLookup.cache := makeTree();
+	cache.superTypeLookup.cache := makeTree();
+	cache.subTypeLookup.cache := makeTree();
+	cache.globalLookup.cache := makeTree();
+	cache.nativeLookup.cache := makeTree();
+}
+
+makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void {
+	resolver = ref None();
+	\pos, error -> {
+		if (pos == -1 || pos == 0) {
+			onError(
+				file + ":" + error
+			);
+		} else {
+			res = onlyOnce(resolver, \ -> {
+				text = getFileContent(file);
+				makeLineResolver(text);
+			});
+			linecol = findLine(res, pos); // maxi
+
+			indentation = strLeft(linecol.line, linecol.lineIndex - 1);
+			spaced = stringFoldChar(indentation, "", \acc, s -> {
+				acc + if (s == "\t") s else " ";
+			});
+
+			onError(
+				file + ":" + i2s(linecol.lineno) + ":" + i2s(linecol.column) + ": " + error
+				+ "\n" + linecol.line
+				+ "\n" + spaced + "^"
+			);
+		}
+	}
+}
