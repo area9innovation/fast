@@ -62,6 +62,23 @@ where `PlowCache` is a cache for modules.
 	This is somehow related to how "println" contaminates the rest with the "flow" type
 	there.
 
+  - form/renderform:
+	C:/flow9/lib/form/renderform.flow:367:13: and here
+			CameraID(id) : {
+			^
+	C:/flow9/lib/form/renderform.flow:262:31: ERROR: Merge int and WidthHeight (e736 and e1930)
+				if (length(texts) == 0) {
+								^
+	C:/flow9/lib/form/renderform.flow:262:31: and here
+				if (length(texts) == 0) {
+								^
+	C:/flow9/lib/form/renderform.flow:533:17: and here
+					ClipCapabilities(d.capabilities.move, d.capabilities.filters, d.capabilities.interactive, d.capabilities.scale, false), fn
+				^
+	C:/flow9/lib/form/renderform.flow:712:33: and here
+			attachChildAndCapability(
+								^
+
 
 - Speed up the compiler - try vector in union_find_map, which might be
   faster at least in Java. Try to reduce the active set of tyvars when
