@@ -25,17 +25,6 @@ C:\fast\plow\tests\struct.flow:9:5: Could not resolve supertype: super3{e96, e11
 
 Errors towards plow\plow.flow:
 
-plow/backends/link
-C:\fast\plow\backends\link.flow:21:1: ERROR: Merge PlowCache and BModules (e212 and e219)
-programBModules(cache : PlowCache, file : string, acc : List<BModule>, visited : Set<string>) -> Pair<List<BModule>, Set<string>> {
-                                                                                                                                  ^
-C:\fast\plow\backends\link.flow:22:14: and here
-	module = getCachedBModule(cache.modules, file);
-	        ^
-
-For some reason, ".modules" on PlowCache becomes the .modules in BModules and we get "native"
-as the field type. This is wrong.
-
 */
 
 export {

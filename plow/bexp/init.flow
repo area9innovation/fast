@@ -14,12 +14,9 @@ initBModule(d : DModule) -> BModule {
 		d.exported,
 		d.structs,
 		d.unions,
-		makeDFieldMap(
-			// We only include those that are exported fully
-			filterTree(d.structs, \id, st -> {
-				containsSet(d.exported.exportedTypes, id)
-			})
-		),
+		// Since it is common to try to reference fields for non-exported
+		// types, we have to include all. Otherwise, the errors are very mystic. See tests/type24.flow
+		makeDFieldMap(d.structs),
 		makeTree(),	// Natives
 		makeTree(), // Globals
 		d.order
