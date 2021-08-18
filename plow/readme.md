@@ -50,6 +50,19 @@ where `PlowCache` is a cache for modules.
 # TODOs
 
 - Debug type errors
+  - type25: it is fundamentally flow vs [flow]
+
+	- plow/test/struct.flow
+	C:\fast\plow\tests\struct.flow:11:9: Could not resolve supertype: super1{e96}
+			Some(v): v;
+		^
+	C:\fast\plow\tests\struct.flow:9:5: Could not resolve supertype: super3{e96, e115}
+		switch (m : Maybe) {
+	^
+	This is somehow related to how "println" contaminates the rest with the "flow" type
+	there.
+
+
 - Speed up the compiler - try vector in union_find_map, which might be
   faster at least in Java. Try to reduce the active set of tyvars when
   doing chunks. Maybe try small chunks (only for cycles in id use), and

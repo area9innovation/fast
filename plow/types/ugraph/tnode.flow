@@ -5,18 +5,6 @@ import plow/types/pretty;
 
 /*
 TODO:
-- plow/test/struct.flow
-C:\fast\plow\tests\struct.flow:11:9: Could not resolve supertype: super1{e96}
-		Some(v): v;
-	^
-C:\fast\plow\tests\struct.flow:9:5: Could not resolve supertype: super3{e96, e115}
-	switch (m : Maybe) {
-^
-   This is somehow related to how "println" contaminates the rest with the "flow" type
-   there.
-
-- fusion.flow does not type
-
 - For random supertypes, we should find the "closest" supertype and pick that.
 
 - Try to reset eclasses for each chunk: To do this, we need a "copy into new tmap"
