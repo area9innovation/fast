@@ -52,10 +52,11 @@ doImportLookup(modules : BModules, m : BLookupFromImport<?>, imports : [DImport]
 					}
 					Some(f): {
 						if (!m.isExported(module, name)) {
-
-							m.onError(module.fullpath, f, name + " is not exported for " + m.kind);
-						};
-						Some(f);
+							m.visited := insertSet(^(m.visited), impor.path);
+							doImportLookup(modules, m, module.imports, name);
+						} else {
+							Some(f);
+						}
 					}
 				}
 			} else acc;

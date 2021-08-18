@@ -226,7 +226,7 @@ jsBackend() -> Backend {
 						if (Object.prototype.hasOwnProperty.call(s, '_id')) {
 							return Runtime.structnames[s._id];
 						} else {
-							return "";
+							return \"\";
 						}
 					}
 					", [])
