@@ -79,16 +79,23 @@ builtinTypeNames = ["", "?", "??", "???", "????", "void", "bool", "int", "double
 lookupsFromImport(modules : BModules, m : BLookupFromImport<[?]>, imports : [DImport], name : string) -> [?] {
 	if (contains(builtinTypeNames, name)) []
 	else {
-		concatA(
-			map(imports, \impor : DImport -> {
-				module : BModule = getCachedBModule(modules, impor.path);
-				deep = lookupsFromImport(modules, m, module.imports, name);
-				modfind = m.lookup(module, name);
-				switch (modfind) {
-					None(): deep;
-					Some(val): concat(deep, val);
-				}
-			})
-		)
+		doLookupsFromImport(modules, m, imports, [], name, makeSet()).first
 	}
+}
+
+doLookupsFromImport(modules : BModules, m : BLookupFromImport<[?]>, imports : [DImport], acc : [?], name : string, pathVisited : Set<string>) -> Pair<[?], Set<string>> {
+	fold2(imports, acc, pathVisited, \acc2, pathVisited2, impor : DImport -> {
+		if (containsSet(pathVisited2, impor.path)) {
+			// println("Skip " + impor.path);
+			Pair(acc2, pathVisited2)
+		} else {
+			module : BModule = getCachedBModule(modules, impor.path);
+			modfind = m.lookup(module, name);
+			acc3 = switch (modfind) {
+				None(): acc2;
+				Some(val): concat(acc2, val);
+			}
+			doLookupsFromImport(modules, m, module.imports, acc3, name, insertSet(pathVisited2, impor.path));
+		}
+	})
 }
