@@ -84,6 +84,7 @@ where `PlowCache` is a cache for modules.
   doing chunks. Copy from one tyvar space to a new one, to reduce max
   set.
 
+- Most important thing to optimize is tmap.resolveSupertypes function
 - Secondly, it is mostly spent in lookupFromImport, doImportLookup, lookupsFromImport
 - The most time is spent in incompatibleTNodeNames. Improve that somehow.
 
