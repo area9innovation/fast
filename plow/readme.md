@@ -94,6 +94,17 @@ Structure of name lookup of code and types:
   - typeenv uses those to search the import, and the local module. 
   - tmap lifts these directly, except we do transitive collection of supertypes
 
+Ideas:
+  - When a module is typed, we build a local, transitive lookup thing for that
+    subtree of modules, and keep track of what paths are included there?
+    There is a relative big cost with this approach, so maybe only do it for
+	some modules?
+ - Build a global supertype lookup. Each time we see a union, we can build up
+   this map
+ 
+ Elements needed nomatter what:
+- Function which updates a tree of supertypes from a union
+
 - Add a compile server
   - Add option to only type check given ids
 

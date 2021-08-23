@@ -182,7 +182,7 @@ buildCppTarget(cache : PlowCache, b : BModule, src_file : string) -> void {
 	}
 }
 
-printPlowUsage() {
+printPlowUsage() -> void {
 	printl2 = \s -> {
 		if (isUrlParameterTrue("help")) {
 			println(s);

@@ -396,7 +396,7 @@ Native.iter = function(values,clos) {
 	backend;
 }
 
-to_string_native = 
+to_string_native : string = 
 "var toString = function(value, keepStringEscapes) {
 	if (keepStringEscapes == null) {
 		keepStringEscapes = false;
@@ -459,7 +459,7 @@ to_string_native =
 };
 ";
 
-equality_native = "
+equality_native : string = "
 var deepEquality = function(a, b) {
 	if (a === b) return true;
 
@@ -499,7 +499,7 @@ var deepEquality = function(a, b) {
 }
 ";
 
-less_native = "
+less_native : string = "
 let compareByValue = function(o1, o2) {
 	if (o1 === o2) return 0;
 	if (o1 == null || o2 == null) {

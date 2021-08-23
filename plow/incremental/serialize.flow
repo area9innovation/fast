@@ -10,7 +10,7 @@ export {
 	deleteBModule(tracing : Tracing, flowpath : string) -> void;
 }
 
-bincrementalVersion = 1;
+bincrementalVersion : int = 1;
 
 BIncremental(
 	version : int,

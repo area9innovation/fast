@@ -33,7 +33,7 @@ getDExpChildren(e : DExp) -> [DExp] {
 	}
 }
 
-dexpApi : RecApi = RecApi(
+dexpApi : RecApi<DExp> = RecApi(
 	// Clear out recursive children to make the parent value canonical to comparison
 	\e : DExp -> {
 		v = DVoid(0);
