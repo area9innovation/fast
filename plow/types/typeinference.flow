@@ -64,7 +64,23 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 		} else acc;
 	});
 
-	// Make a field map
+	// Set up name lookups for this module
+	tmenv = updateNameLookupsForModule(tenv, d);
+
+	order : [[string]] = buildDModuleDeps(tmenv.moduleTypes, d.globals, d.order);
+	order2 = if (false) [d.order] else order;
+	tbenv = ttypeInferenceChunk(tmenv, d, order2);
+	
+	benv = BExpEnv(tbenv.onError, tbenv.tmap, tbenv.etypes, tbenv.resolveStructName);
+
+	if (isTracingId(tbenv.tracing, StageLower(), 1, d.flowpath)) {
+		prettyDModule(tbenv, true, d);
+	}
+
+	tbenv.bmodule;
+}
+
+updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
 	fields = makeDFieldMap(d.structs);
 	unionFields = makeDUnionFields(d.unions, d.structs);
 	supers = makeDSupers(d.unions);
@@ -112,21 +128,9 @@ ttypeInference(env : TTypeEnv, d : DModule) -> BModule {
 	);
 
 	// OK, send the resolver to the unification friend
-	tmenv = TTypeEnv(senv with
+	TTypeEnv(senv with
 		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, senv.resolveSupertypes, senv.resolveSubtypes)
 	);
-
-	order : [[string]] = buildDModuleDeps(tmenv.moduleTypes, d.globals, d.order);
-	order2 = if (false) [d.order] else order;
-	tbenv = ttypeInferenceChunk(tmenv, d, order2);
-	
-	benv = BExpEnv(tbenv.onError, tbenv.tmap, tbenv.etypes, tbenv.resolveStructName);
-
-	if (isTracingId(tbenv.tracing, StageLower(), 1, d.flowpath)) {
-		prettyDModule(tbenv, true, d);
-	}
-
-	tbenv.bmodule;
 }
 
 ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv {

@@ -69,7 +69,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 				}, 
 				// resolveUnionName
 				\n -> {
-					// OK, scan our imports for this struct
+					// OK, scan our imports for this union
 					lookupFromImport(cache.modules, cache.unionLookup, imports, n)
 				}
 			);
@@ -77,41 +77,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			dmod = desugarPExp(dd, flowpath, path, p);
 
 			tenv0 = makeTTypeEnv(dd.onError, dmod);
-			tenv1 = TTypeEnv(
-				tenv0 with
-				resolveId = \pos, id -> {
-					mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
-					mbmod ?? {
-						btype2ttype(mbmod.type);
-					} : {
-						mbnat : Maybe<BNative> = lookupFromImport(cache.modules, cache.nativeLookup, imports, id);
-						switch (mbnat) {
-							None(): {
-								dd.onError(pos, "Unknown id " + id);
-								TTypeEClass(makeTNodeClass(tenv0.tmap));
-							}
-							Some(bnat): btype2ttype(bnat.type);
-						}
-					}
-				},
-				resolveField = \id -> {
-					structs : [string] = lookupsFromImport(cache.modules, cache.fieldLookup, imports, id);
-					filtermap(structs, \str -> {
-						dd.resolveStructName(str);
-					})
-				},
-				resolveUnionField = \id -> {
-					buildSet(lookupsFromImport(cache.modules, cache.unionFieldLookup, imports, id));
-				},
-				resolveSupertypes = \id -> {
-					lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
-				},
-				resolveSubtypes = \id -> {
-					lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
-				},
-				resolveStructName = dd.resolveStructName,
-				resolveUnionName = dd.resolveUnionName
-			);
+			tenv1 = updateNameLookupsForImports(cache, dd, tenv0, imports);
 			bmodule = ttypeInference(tenv1, dmod);
 
 			setCachedBModule(cache.modules, flowpath, bmodule);
@@ -136,4 +102,43 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		cache.onError(file + " could not be found");
 		getDummyBModule();
 	}
+}
+
+// Given this module, looks up names from imports
+updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, imports : [DImport]) -> TTypeEnv {
+	TTypeEnv(
+		env with
+		resolveId = \pos, id -> {
+			mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
+			mbmod ?? {
+				btype2ttype(mbmod.type);
+			} : {
+				mbnat : Maybe<BNative> = lookupFromImport(cache.modules, cache.nativeLookup, imports, id);
+				switch (mbnat) {
+					None(): {
+						dd.onError(pos, "Unknown id " + id);
+						TTypeEClass(makeTNodeClass(env.tmap));
+					}
+					Some(bnat): btype2ttype(bnat.type);
+				}
+			}
+		},
+		resolveField = \id -> {
+			structs : [string] = lookupsFromImport(cache.modules, cache.fieldLookup, imports, id);
+			filtermap(structs, \str -> {
+				dd.resolveStructName(str);
+			})
+		},
+		resolveUnionField = \id -> {
+			buildSet(lookupsFromImport(cache.modules, cache.unionFieldLookup, imports, id));
+		},
+		resolveSupertypes = \id -> {
+			lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
+		},
+		resolveSubtypes = \id -> {
+			lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
+		},
+		resolveStructName = dd.resolveStructName,
+		resolveUnionName = dd.resolveUnionName
+	);
 }

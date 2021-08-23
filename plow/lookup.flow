@@ -22,7 +22,7 @@ export {
 	// This is the main function to find a given id
 	lookupFromImport(modules : BModules, m : BLookupFromImport<?>, imports : [DImport], name : string) -> Maybe<?>;
 
-	// Find all hits across all modules
+	// Find all hits across all modules. Only used for types
 	lookupsFromImport(modules : BModules, m : BLookupFromImport<[?]>, imports : [DImport], name : string) -> [?];
 }
 
