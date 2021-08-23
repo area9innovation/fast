@@ -127,10 +127,26 @@ updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
 		}
 	);
 
-	// OK, send the resolver to the unification friend
+	// Transitively resolve supertypes
+	resolveSupertypes = \type -> {
+		set2array(transitiveResolveSuperType(senv.resolveSupertypes, type, makeSet(), makeSet()))
+	};
+	// The TMap helper needs to know about some of the resolvers
 	TTypeEnv(senv with
-		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, senv.resolveSupertypes, senv.resolveSubtypes)
+		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, resolveSupertypes, senv.resolveSubtypes)
 	);
+}
+
+// Collect all supertypes of this name, based on a one-step resolver
+transitiveResolveSuperType(basic : (string) -> [string], name : string, seen : Set<string>, acc : Set<string>) -> Set<string> {
+	if (containsSet(seen, name)) acc
+	else {
+		supers = basic(name);
+		seen2 = insertSet(seen, name);
+		fold(supers, mergeSets(buildSet(supers), acc), \acc2, base -> {
+			transitiveResolveSuperType(basic, base, seen2, acc2)
+		})
+	}
 }
 
 ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv {

@@ -88,6 +88,12 @@ where `PlowCache` is a cache for modules.
 - Secondly, it is mostly spent in lookupFromImport, doImportLookup, lookupsFromImport
 - The most time is spent in incompatibleTNodeNames. Improve that somehow.
 
+Structure of name lookup of code and types:
+  - plowcache sets up general functions to look from module to definitions.
+    Has a cache for the lookup. Arguably, these are placed wrong?
+  - typeenv uses those to search the import, and the local module. 
+  - tmap lifts these directly, except we do transitive collection of supertypes
+
 - Add a compile server
   - Add option to only type check given ids
 

@@ -104,27 +104,13 @@ setTMapResolvers(t : TMap,
 	resolveSubtypes : (string) -> [string], 
 ) -> TMap {
 	t.resolveUnionName := resolveUnionName;
-	t.resolveSupertypes := \type -> {
-		set2array(transitiveResolveSuperType(resolveSupertypes, type, makeSet(), makeSet()))
-	};
+	t.resolveSupertypes := resolveSupertypes;
 	t.resolveSubtypes := resolveSubtypes;
 	t;
 }
 
 rootTTypeEClass(tg : TMap, eclass : int) -> int {
 	findUnionMapRoot(tg.tmap, eclass)
-}
-
-// Collect all supertypes of this name, based on a one-step resolver
-transitiveResolveSuperType(basic : (string) -> [string], name : string, seen : Set<string>, acc : Set<string>) -> Set<string> {
-	if (containsSet(seen, name)) acc
-	else {
-		supers = basic(name);
-		seen2 = insertSet(seen, name);
-		fold(supers, mergeSets(buildSet(supers), acc), \acc2, base -> {
-			transitiveResolveSuperType(basic, base, seen2, acc2)
-		})
-	}
 }
 
 defaultTNode() -> TNode {
