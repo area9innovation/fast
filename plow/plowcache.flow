@@ -12,7 +12,8 @@ export {
 	) -> PlowCache;
 
 	// Once a module has been typed, we clear the name cache
-	clearPlowCache(cache : PlowCache) -> void;
+	// and update the global, transitive super and sub-types
+	updatePlowCache(cache : PlowCache, module : BModule) -> void;
 
 	makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void;
 }
@@ -33,6 +34,8 @@ PlowCache(
 	subTypeLookup : BLookupFromImport<[string]>,
 	globalLookup : BLookupFromImport<BGlobal>,
 	nativeLookup : BLookupFromImport<BNative>,
+	globalSubtypes : ref Tree<string, [string]>,
+	globalSupertypes : ref Tree<string, [string]>,
 	// What is the next id
 	nextId : ref int,
 	// Awaiting modules that are being parsed
@@ -158,11 +161,12 @@ makePlowCache(
 		structLookup, unionLookup, fieldLookup, 
 		unionFieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
+		ref makeTree(), ref makeTree(),
 		ref 0, ref makeSet(), makeTracing(), errorCount
 	);
 }
 
-clearPlowCache(cache : PlowCache) -> void {
+updatePlowCache(cache : PlowCache, module : BModule) -> void {
 	cache.structLookup.cache := makeTree();
 	cache.unionLookup.cache := makeTree();
 	cache.fieldLookup.cache := makeTree();
@@ -171,6 +175,12 @@ clearPlowCache(cache : PlowCache) -> void {
 	cache.subTypeLookup.cache := makeTree();
 	cache.globalLookup.cache := makeTree();
 	cache.nativeLookup.cache := makeTree();
+
+	// TODO: Update the global subtypes here by traversing any unions here
+	// and expand them
+
+	// TODO: Basd on this, expand the global supertypes here by traversing
+	// the unions, resolving them to subtypes transivitely, and register them
 }
 
 makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void {

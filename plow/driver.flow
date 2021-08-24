@@ -90,7 +90,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			}
 
 			// OK, clear the name lookup cache
-			clearPlowCache(cache);
+			updatePlowCache(cache, bmodule);
 
 			if (isTracingId(tenv1.tracing, StageLower(), 1, flowpath)) {
 				println(prettyBModule(bmodule));
