@@ -47,6 +47,67 @@ This pipeline is exposed by
 
 where `PlowCache` is a cache for modules.
 
+# Name and type lookups
+
+A key problem is to find names, types, sub and supertypes from the context of a given
+module. We would like this lookup to be precise in terms of the import graph.
+
+This is not easy. Consider the problem of transitive supertypes:
+
+	file1:
+	U := A, B;
+	Add: A -> U, B -> U
+
+	file2:
+	import file1
+	T := U, C;
+	Was: A -> U, B -> U, 
+	Add: U -> T, C -> T, (A -> T, B -> T expand U to subtypes)
+
+	file3:
+	import file2
+	V := T, D;
+	Was: A -> U, B -> U, U -> T, C -> T, (A -> T, B -> T expand U to subtypes)
+	Add: T -> V, D -> V, Expand T to subtypes: U -> V, (A -> V, B -> V), C -> T
+
+	file4:
+	W := C, E;
+	Add: C -> W, E -> W.
+
+So we have a graph of types and subtypes, but there are some parts of the graph
+that only become online when certain files are included.
+
+Options:
+
+- Maintaining transivitive closure: https://pure.tue.nl/ws/files/4393029/319321.pdf
+
+Basically, requires a N^2 binary matrix for each step. Thus, maintaining all intermediate
+transitive closures requires N^3 space. We have on the order of 5000 flow files.
+To keep all those would require 120gb. So we have to be smarter.
+We could restrict the graph to just those files that define unions. For plow, this is 21 
+files out of 148. 15%. That still becomes 1GB for Rhapsode.
+
+So doing it precisely for all files is not realistic.
+Instead, we should maintain a global lookup, as well as a way to check what path each
+global is defined in.
+Then we need the ability to check whether a given file is including in the transitive
+import closure of another file.
+
+Live data structures to envision:
+- Global graph of super/subtypes
+- Import graph
+- Global map from symbol to what file defines that
+
+So to find the supertypes of a given file, we get the global list.
+Then we filter that list by looking up the source file of each type, and
+checking that this is in the transitive closure of the current file.
+
+This paper provides an algorithm that allows us to check if A is in the
+transitive closure of B:
+https://dl.acm.org/doi/abs/10.1145/99935.99944
+
+Try to understand that, and maybe implement it.
+
 # TODOs
 
 - Debug type errors
@@ -104,6 +165,7 @@ Ideas:
  
  Elements needed nomatter what:
 - Function which updates a tree of supertypes from a union
+
 
 - Add a compile server
   - Add option to only type check given ids
