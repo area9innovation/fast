@@ -77,6 +77,8 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			dmod = desugarPExp(dd, flowpath, path, p);
 
 			tenv0 = makeTTypeEnv(dd.onError, dmod);
+			// Register unions and subtyping relations into the global lookup
+			updateSubtyping(cache, tenv0.bmodule);
 			tenv1 = updateNameLookupsForImports(cache, dd, tenv0, imports);
 			bmodule = ttypeInference(tenv1, dmod);
 
@@ -90,7 +92,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			}
 
 			// OK, clear the name lookup cache
-			updatePlowCache(cache, bmodule);
+			clearPlowCache(cache);
 
 			if (isTracingId(tenv1.tracing, StageLower(), 1, flowpath)) {
 				println(prettyBModule(bmodule));
