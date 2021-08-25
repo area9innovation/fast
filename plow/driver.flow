@@ -138,7 +138,11 @@ updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, im
 			lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
 		},
 		resolveSubtypes = \id -> {
-			lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
+			if (true) {
+				getTreeArrayValue(^(cache.globalSubtypes), id);
+			} else {
+				lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
+			}
 		},
 		resolveStructName = dd.resolveStructName,
 		resolveUnionName = dd.resolveUnionName

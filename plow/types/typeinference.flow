@@ -120,10 +120,14 @@ updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
 			);
 		},
 		resolveSubtypes = \name -> {
-			concat(
-				getTreeArrayValue(subs, name),
+			if (false) {
+				concat(
+					getTreeArrayValue(subs, name),
+					tenv.resolveSubtypes(name)
+				);
+			} else {
 				tenv.resolveSubtypes(name)
-			);
+			}
 		}
 	);
 
