@@ -135,10 +135,16 @@ updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, im
 			buildSet(lookupsFromImport(cache.modules, cache.unionFieldLookup, imports, id));
 		},
 		resolveSupertypes = \id -> {
-			lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
+			if (true) {
+				// TODO: Filter to those reachable from the module
+				getTreeArrayValue(^(cache.globalSupertypes), id);
+			} else {
+				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
+			}
 		},
 		resolveSubtypes = \id -> {
 			if (true) {
+				// TODO: Filter to those reachable from the module
 				getTreeArrayValue(^(cache.globalSubtypes), id);
 			} else {
 				lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);

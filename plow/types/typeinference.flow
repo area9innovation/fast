@@ -114,10 +114,14 @@ updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
 			mergeSets(unions, others);
 		},
 		resolveSupertypes = \name -> {
-			concat(
-				getTreeArrayValue(supers, name),
+			if (false) {
+				concat(
+					getTreeArrayValue(supers, name),
+					tenv.resolveSupertypes(name)
+				);
+			} else {
 				tenv.resolveSupertypes(name)
-			);
+			}
 		},
 		resolveSubtypes = \name -> {
 			if (false) {
@@ -133,7 +137,11 @@ updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
 
 	// Transitively resolve supertypes
 	resolveSupertypes = \type -> {
-		set2array(transitiveResolveSuperType(senv.resolveSupertypes, type, makeSet(), makeSet()))
+		if (false) {
+			set2array(transitiveResolveSuperType(senv.resolveSupertypes, type, makeSet(), makeSet()))
+		} else {
+			senv.resolveSupertypes(type)
+		}
 	};
 	// The TMap helper needs to know about some of the resolvers
 	TTypeEnv(senv with

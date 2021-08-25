@@ -110,11 +110,8 @@ Try to understand that, and maybe implement it.
 
 Plan:
 - Get it to work with global ids.
-  Place global ids in plowcache, which is the only thing which survives all files.
-  - We need ability to have transitive subtypes and supertypes updated to build this
-    thing
-- Implement the transitive closure check in a second step
-
+  Place global ids in plowcache, which is the only thing which survives all files. Done.
+- TODO: Implement the transitive closure check in a second step to filter the list of ids found
 
 # TODOs
 

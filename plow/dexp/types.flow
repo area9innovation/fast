@@ -22,6 +22,9 @@ export {
 	// Build a map from a type name to the subtypes it might have (including expanding subunions further)
 	addTransitiveDSubtypes(unions : Tree<string, DUnion>, subtypes : Tree<string, [string]>) -> Tree<string, [string]>;
 
+	// Build a map from a typename to the unions it might be part of (transitively)
+	addTransitiveDSupertypes(unions : Tree<string, DUnion>, supertypes : Tree<string, [string]>, subtypes : Tree<string, [string]>) -> Tree<string, [string]>;
+
 	// Build a map from field names to what unions have that field
 	makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>) -> Tree<string, Set<string>>;
 }
@@ -121,6 +124,18 @@ addDSubtype(subtypes : Tree<string, [string]>, super : string, sub : string) -> 
 	fold(subs, subtypes, \acc, tn -> {
 		acc2 = treePushToArrayValue(acc, super, tn);
 		addDSubtype(acc2, super, tn)
+	})
+}
+
+addTransitiveDSupertypes(unions : Tree<string, DUnion>, supertypes : Tree<string, [string]>, subtypes : Tree<string, [string]>) -> Tree<string, [string]> {
+	foldTree(unions, supertypes, \un, uni, acc -> {
+		fold(uni.types, acc, \acc2, tn -> {
+			acc3 = treePushToArrayValue(acc2, tn.id, un);
+			subs = getTreeArrayValue(subtypes, tn.id);
+			fold(subs, acc3, \acc4, sub -> {
+				treePushToArrayValue(acc4, sub, un);
+			})
+		})
 	})
 }
 

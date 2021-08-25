@@ -178,12 +178,18 @@ updateSubtyping(cache : PlowCache, module : BModule) -> void {
 			traverseInOrder(^(cache.globalSubtypes), \sup, subs -> {
 				println(sup + ": " + toString(subs));
 			});
+		}
 
+		// Based on this, expand the global supertypes here by traversing
+		// the unions, resolving them to subtypes transivitely, and register them
+		cache.globalSupertypes := addTransitiveDSupertypes(module.unions, ^(cache.globalSupertypes), ^(cache.globalSubtypes));
+		if (false) {
+			println("Supertypes transitively:");
+			traverseInOrder(^(cache.globalSupertypes), \st, supers -> {
+				println(st + ": " + toString(supers));
+			});
 		}
 	}
-
-	// TODO: Basd on this, expand the global supertypes here by traversing
-	// the unions, resolving them to subtypes transivitely, and register them
 }
 
 clearPlowCache(cache : PlowCache) -> void {
