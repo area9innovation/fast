@@ -1069,12 +1069,10 @@ resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>
 }
 
 extractTNodes(tmap : TMap, verbose : bool) -> Tree<int, TType> {
-	roots = getTNodes(tmap);
 	types = ref makeTree();
 	visited = ref makeSet();
 
-	iterSet(roots, \root -> {
-		node = getUnionMapValue(tmap.tmap, root);
+	iterUnionMap(tmap.tmap, \root, node -> {
 		if (!isEmptyTNode(node)) {
 			t = resolveTNodeClass(tmap, types, visited, root);
 			if (verbose) {

@@ -37,6 +37,7 @@ PlowCache(
 	globalLookup : BLookupFromImport<BGlobal>,
 	nativeLookup : BLookupFromImport<BNative>,
 	// Global lookups
+	globalStructs : ref Tree<string, DStruct>,
 	globalUnions : ref Tree<string, DUnion>,
 	globalSubtypes : ref Tree<string, [string]>,
 	globalSupertypes : ref Tree<string, [string]>,
@@ -166,7 +167,7 @@ makePlowCache(
 		unionFieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
 		// Global lookups
-		ref makeTree(), ref makeTree(), ref makeTree(),
+		ref makeTree(), ref makeTree(), ref makeTree(), ref makeTree(),
 		ref 0, ref makeSet(), makeTracing(), errorCount
 	);
 }
