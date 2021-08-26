@@ -149,10 +149,22 @@ Plan:
   faster at least in Java. Try to reduce the active set of tyvars when
   doing chunks. Copy from one tyvar space to a new one, to reduce max
   set.
+- Compiling runtime.flow takes 2527ms. Rough breakdown:
+   1262ms in type inference
+    800ms in parsing
+	600ms in resolveTNodes
 
-- Most important thing to optimize is tmap.resolveSupertypes function
-- Secondly, it is mostly spent in lookupFromImport, doImportLookup, lookupsFromImport
-- The most time is spent in incompatibleTNodeNames. Improve that somehow.
+- UnionFindMap total time (with some double counting, since they call each others):
+  588ms in iterUnionMap
+  529ms in findUnionMapRoot
+  468ms in unionEnsureMapCapacity
+  328ms in setUnionMapValue
+  184ms in getUnionMapValue
+  167ms in unionUnionMap
+
+- When finding chunks, check if the code for a referenced piece of code has any
+  free ids. If not, no need to chunk it. (see unicodeToLowerTable and others
+  in text/unicodecharacters.flow)
 
 Structure of name lookup of code and types:
   - plowcache sets up general functions to look from module to definitions.

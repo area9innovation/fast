@@ -168,7 +168,7 @@ ttypeInferenceChunk(env : TTypeEnv, d : DModule, order : [[string]]) -> TTypeEnv
 		startTyvar = getNextEClass(env.tmap);
 		chunk = order[0];
 		cenv = env;
-		if (length(chunk) > 1) {
+		if (false && length(chunk) > 1) {
 			// For debugging mutually dependent types that
 			// need to be inferred in a group
 			println(chunk);
@@ -223,7 +223,9 @@ buildDModuleDeps(types : Tree<string, TType>, globals : Tree<string, DGlobal>, o
 			if (containsKeyTree(globals, var)) {
 				mtype = lookupTree(types, var);
 				isResolved = mtype ?? { !unresolvedTType(mtype) } : false;
-				if (!isResolved) {
+				// TODO: Keep track of those that do not references any free vars.
+				// If it does not, then it can always be it's own chunk
+				if (false && !isResolved) {
 					println(var);
 				}
 
