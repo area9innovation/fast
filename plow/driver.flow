@@ -151,6 +151,28 @@ updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, im
 			}
 		},
 		resolveStructName = dd.resolveStructName,
-		resolveUnionName = dd.resolveUnionName
+		resolveUnionName = \id -> {
+			munion = lookupTree(^(cache.globalUnions), id);
+			switch (munion) {
+				None(): {
+					// TODO: We could check if this is a known struct,
+					// in whcih can we know it is not a union
+					munion2 = dd.resolveUnionName(id);
+					switch (munion2) {
+						None(): {
+							munion2;
+						}
+						Some(un): {
+							cache.globalUnions := setTree(^(cache.globalUnions), id, un);
+							munion2;
+						}
+					}
+				}
+				Some(__): {
+					// TODO: Check that we have the correct import required
+					munion;
+				}
+			}
+		}
 	);
 }
