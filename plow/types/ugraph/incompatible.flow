@@ -15,20 +15,28 @@ export {
 
 // Are these node names incompatible forever?
 incompatibleTNodeNames(tmap : TMap, node : TNodeName, overload : TNodeName) -> bool {
-	if (isEmptyTNode(node) || isEmptyTNode(overload)) {
+	if (isEmptyTNode(node) || isEmptyTNode(overload) ) {
 		false
 	} else if (node.name == "flow" || overload.name == "flow") {
 		// This is always ok
 		false
-	} else if (isSingleUnionName(tmap, node.name, overload.name)) {
-		false
-	} else {
-		node.name != overload.name 
-		|| length(node.typars) != length(overload.typars)
+	} else if (node.name == overload.name) {
+		length(node.typars) != length(overload.typars)
 		|| exists(mapi(node.typars, \i, tp -> {
 			incompatibleEClasses(tmap, tp, overload.typars[i])
 		}), idfn)
+	} else if (isBuiltinDirectTypeName(node.name) || isBuiltinDirectTypeName(overload.name)) {
+		// The names are different, but built-in types, so there is a problem
+		true;
+	} else {
+		!isSingleUnionName(tmap, node.name, overload.name);
 	}
+}
+
+builtinDirectTypeNames = ["void", "bool", "int", "double", "string", "?", "??", "???", "????"];
+
+isBuiltinDirectTypeName(id : string) -> bool {
+	contains(builtinDirectTypeNames, id);
 }
 
 incompatibleEClasses(tmap : TMap, left : int, right : int) -> bool {
