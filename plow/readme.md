@@ -116,6 +116,7 @@ Plan:
 # TODOs
 
 - Debug type errors
+  - type27: ref None vs ref Maybe. Should be easy
   - type25: it is fundamentally flow vs [flow]
 
 	- plow/test/struct.flow

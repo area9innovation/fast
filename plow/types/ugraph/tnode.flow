@@ -607,7 +607,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 		println("TODO: Merge nodes " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
 		left;
 	}
-	error = \pos1, pos2 -> {
+	error = \pos1 : [int], pos2 : [int] -> {
 		lclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
 				isSameTNode(tmap, left, val)
 			}, -1);
@@ -615,8 +615,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode) -> TNode {
 		rclass = findUnionMap(tmap.tmap, \i, val : TNode -> {
 				isSameTNode(tmap, right, val)
 			}, -1);
-		tmap.onError(pos1, "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass) + ")");
-		tmap.onError(pos2, "and here");
+		tmap.onError(sortUnique(concat(pos1, pos2)), "ERROR: Merge " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right) + " (e" + i2s(lclass) + " and e" + i2s(rclass) + ")");
 		// dumpTNodes(tmap);
 		left;
 	}
