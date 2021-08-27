@@ -29,6 +29,9 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 	} else if (hasIncrementalBModule(cache.tracing, cache.modules, path, flowpath)) {
 		// OK, we have an incremental module, which we read now
 		bmod = getCachedBModule(cache.modules, flowpath);
+
+		updateSubtyping(cache, bmod);
+
 		// Then make sure we have all dependents as well
 		sequential(false, map(bmod.imports, \i -> {
 			\ -> compilePlow(cache, i.path)
