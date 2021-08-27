@@ -116,7 +116,10 @@ Plan:
 # TODOs
 
 - Debug type errors
-  - type27: ref None vs ref Maybe. Should be easy
+	C:/flow9/tools/flowc/fctypeenv.flow:135:97: ERROR: Merge overload334{(FcArgType)->string, (FcDeclaration)->string, (FcFieldPrim)->string, (FcFunArg)->string, (FcFunArg2)->string, (FcFunctionDec)->string, (FcGlobalVar)->string, (FcLet)->string, (FcNativeDec)->string, (FcSetMutablePrim)->string, (FcStructArg)->string, (FcTypeName)->string, (FcTypeStruct)->string, (FcTypeUnion)->string, (FcUnsafe)->string, (FcVar)->string, (FiDeclaration)->string, (FiFunArg)->string, (FiFunctionDec)->string, (FiGlobalVar)->string, (FiLet)->string, (FiNativeDec)->string, (FiStructArg)->string, (FiStructOrUnion)->string, (FiTypeName)->string, (FiTypeStruct)->string, (FiTypeUnion)->string, (FiUnsafe)->string, (FiVar)->string, (TraceEntry)->string} and (FiNamed)->e334 (e508 and e477)
+		wrap = \n : FiNamed -> Some(FcCacheNamed(n, module.fileinfo.flowfile, containsSet(exports, n.name)));
+  - This is because I guess we do not get a union .name lookup for FiNamed
+
   - type25: it is fundamentally flow vs [flow]
 
 	- plow/test/struct.flow
@@ -166,6 +169,9 @@ Plan:
 - When finding chunks, check if the code for a referenced piece of code has any
   free ids. If not, no need to chunk it. (see unicodeToLowerTable and others
   in text/unicodecharacters.flow)
+
+- Imports that start with "lib/" are almost surely wrong, and do not work.
+  Add a check that imports really exist
 
 Structure of name lookup of code and types:
   - plowcache sets up general functions to look from module to definitions.
