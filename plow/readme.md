@@ -115,10 +115,11 @@ Plan:
 
 # TODOs
 
+- Improve type error reporting: Probably, we should build a tyvar hierarchy with reference to where
+  they belong and what semantic check they are involved in. Also, we should not report more than one
+  error per tyvar
+
 - Debug type errors
-	C:/flow9/tools/flowc/fctypeenv.flow:135:97: ERROR: Merge overload334{(FcArgType)->string, (FcDeclaration)->string, (FcFieldPrim)->string, (FcFunArg)->string, (FcFunArg2)->string, (FcFunctionDec)->string, (FcGlobalVar)->string, (FcLet)->string, (FcNativeDec)->string, (FcSetMutablePrim)->string, (FcStructArg)->string, (FcTypeName)->string, (FcTypeStruct)->string, (FcTypeUnion)->string, (FcUnsafe)->string, (FcVar)->string, (FiDeclaration)->string, (FiFunArg)->string, (FiFunctionDec)->string, (FiGlobalVar)->string, (FiLet)->string, (FiNativeDec)->string, (FiStructArg)->string, (FiStructOrUnion)->string, (FiTypeName)->string, (FiTypeStruct)->string, (FiTypeUnion)->string, (FiUnsafe)->string, (FiVar)->string, (TraceEntry)->string} and (FiNamed)->e334 (e508 and e477)
-		wrap = \n : FiNamed -> Some(FcCacheNamed(n, module.fileinfo.flowfile, containsSet(exports, n.name)));
-  - This is because I guess we do not get a union .name lookup for FiNamed
 
   - type25: it is fundamentally flow vs [flow]
 

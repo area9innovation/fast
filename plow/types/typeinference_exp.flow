@@ -169,29 +169,31 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			unionFns = map(set2array(fieldUnions), \un -> {
 				utype = instantiateTTypeName(env, un);
 
-				munion = env.resolveUnionName(un);
-				fieldType = switch (munion) {
-					None(): TTypeEClass(env.mkEClass());
-					Some(union): {
-						// Find the type of this field
-						fieldType : Maybe<TTypeFunction> = fold(union.types, None(), \acc, type -> {
-							mstruct = env.resolveStructName(type.id);
-							mstruct ?? {
-								getDStructFieldType(env, mstruct, field)
-							} : acc;
-						});
-						switch (fieldType) {
-							None(): TTypeEClass(env.mkEClass());
-							Some(ft): {
-								ft.returnType
-							}
-						}
+				subtypes : [string] = env.resolveSubtypes(un);
+
+				// Find the type of this field
+				fieldType : Maybe<TTypeFunction> = fold(subtypes, None(), \acc, type -> {
+					mstruct = env.resolveStructName(type);
+					mstruct ?? {
+						getDStructFieldType(env, mstruct, field)
+					} : {
+						acc;
+					}
+				});
+				rt = switch (fieldType) {
+					None(): {
+						env.onError(pos, "Unknown field " + field + " type from union");
+						TTypeEClass(env.mkEClass());
+					}
+					Some(ft): {
+						ft.returnType
 					}
 				};
-				TTypeFunction([utype], fieldType);
+				TTypeFunction([utype], rt);
 			});
 
 			fnTypes = concat(fieldFnTypes, unionFns);
+			// println("Field " + field + " has fns " + toString(fnTypes));
 
 			fntype = if (fnTypes == []) {
 				env.onError(pos, "Unknown field " + field);

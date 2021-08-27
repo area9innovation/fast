@@ -32,7 +32,7 @@ prettyTTypeNode(tmap : TMap, t : TType) -> string {
 		}
 		TTypeName(id, typars): id + (if (typars == []) "" else "<" + superglue(typars, rec, ", ") + ">");
 		TTypeFunction(args, returnType): "(" + superglue(args, rec, ", ") + ") -> " + rec(returnType);
-		TTypeOverload(typar, overloads): "overloads{" + superglue(overloads, rec, ", ") + "}";
+		TTypeOverload(typar, overloads): "overloads_" + prettyTTypeNode(tmap, typar) + " {" + superglue(overloads, rec, ", ") + "}";
 		TTypeSupertype(unique, subtypes, maxed): "super" + i2s(unique) + "{" + superglue(subtypes, rec, if (maxed) " & " else ", ") + "}";
 	}
 }

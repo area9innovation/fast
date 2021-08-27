@@ -228,7 +228,7 @@ makeEClassForTNode(tmap : TMap, node : TNode, reason : string) -> int {
 	// OK, could not find it. We need a new class
 	nclass = makeTNodeClass(tmap);
 	if (isDebuggingTopid(tmap)) {
-		println(^uindent + "Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + ": " + reason + "\n");
+		println(^uindent + "  Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + ": " + reason + "\n");
 	}
 	switch (node) {
 		TNodeName(name, __, __): {
