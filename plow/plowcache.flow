@@ -62,6 +62,8 @@ makePlowCache(
 		errorCount := ^errorCount + 1;
 		onError1(e);
 	};
+	globalStructs = ref makeTree();
+
 	// A helper to lookup structs.
 	structLookup = BLookupFromImport("struct", \module, n -> {
 			lookupTree(module.structs, n)
@@ -126,7 +128,9 @@ makePlowCache(
 		}, ref makeTree()
 	);
 	unionFieldLookup = BLookupFromImport("union-field", \module, n -> {
-			unionFields = makeDUnionFields(module.unions, module.structs);
+			unionFields = makeDUnionFields(module.unions, module.structs, \st -> {
+				lookupTree(^globalStructs, st)
+			});
 			unions = lookupTreeDef(unionFields, n, makeSet());
 			if (isEmptySet(unions)) None()
 			else Some(set2array(unions))
@@ -167,7 +171,7 @@ makePlowCache(
 		unionFieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
 		// Global lookups
-		ref makeTree(), ref makeTree(), ref makeTree(), ref makeTree(),
+		globalStructs, ref makeTree(), ref makeTree(), ref makeTree(),
 		ref 0, ref makeSet(), makeTracing(), errorCount
 	);
 }
@@ -234,3 +238,4 @@ makeOnError(file : string, onError : (string) -> void) -> (int, string) -> void 
 		}
 	}
 }
+

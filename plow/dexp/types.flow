@@ -26,7 +26,7 @@ export {
 	addTransitiveDSupertypes(unions : Tree<string, DUnion>, supertypes : Tree<string, [string]>, subtypes : Tree<string, [string]>) -> Tree<string, [string]>;
 
 	// Build a map from field names to what unions have that field
-	makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>) -> Tree<string, Set<string>>;
+	makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>, resolveStruct : (string) -> Maybe<DStruct>) -> Tree<string, Set<string>>;
 }
 
 extractDTyparsFromDExp(e : DExp) -> Set<string> {
@@ -139,11 +139,31 @@ addTransitiveDSupertypes(unions : Tree<string, DUnion>, supertypes : Tree<string
 	})
 }
 
-//
-makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>) -> Tree<string, Set<string>> {
-	typenameFields = makeDStructFields(structs);
+// Scan these unions to find any union fields
+makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>, resolveStruct : (string) -> Maybe<DStruct>) -> Tree<string, Set<string>> {
+	structFields : (string) -> [Pair<string, DType>] = \st -> {
+		mstruct = resolveStruct(st);
+		mstruct ?? {
+			map(mstruct.structArgs, \sa -> {
+				Pair(sa.id, cleanDType(sa.type))
+			})
+		}: {
+			mstruct2 = lookupTree(structs, st);
+			switch (mstruct2) {
+				None(): {
+					println("Unknown struct " + st);
+					[];
+				}
+				Some(str): {
+					map(str.structArgs, \sa -> {
+						Pair(sa.id, cleanDType(sa.type))
+					})
+				}
+			}
+		}
+	};
 	foldTree(unions, makeTree(), \un, uni, acc -> {
-		fields : Set<Pair<string, DType>> = getDTypenameFields(unions, typenameFields, un);
+		fields : Set<Pair<string, DType>> = getDTypenameFields(unions, structFields, un);
 		foldSet(fields, acc, \acc2, field -> {
 			insertMultimap(acc2, field.first, un)
 		})
@@ -153,13 +173,13 @@ makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>)
 // Find what fields this typename has? (If union, what all have in common)
 getDTypenameFields(
 	unions : Tree<string, DUnion>, 
-	typenameFields : Tree<string, [Pair<string, DType>]>,
+	structFields : (string) -> [Pair<string, DType>],
 	typename : string,
 ) -> Set<Pair<string, DType>> {
 	munion = lookupTree(unions, typename);
 	munion ?? {
 		foldi(munion.types, makeSet(), \i, acc, type -> {
-			fields = getDTypenameFields(unions, typenameFields, type.id);
+			fields = getDTypenameFields(unions, structFields, type.id);
 			if (i == 0) {
 				fields;
 			} else {
@@ -167,17 +187,9 @@ getDTypenameFields(
 			}
 		});
 	} : {
-		buildSet(getTreeArrayValue(typenameFields, typename));
+		// TODO: Lookup in the global unions map
+		buildSet(structFields(typename));
 	}
-}
-
-// What fields does each struct have with their type?
-makeDStructFields(structs : Tree<string, DStruct>) -> Tree<string, [Pair<string, DType>]> {
-	foldTree(structs, makeTree(), \st, stru, acc -> {
-		fold(stru.structArgs, acc, \acc2, sa -> {
-			treePushToArrayValue(acc2, st, Pair(sa.id, cleanDType(sa.type)))
-		})
-	});
 }
 
 cleanDType(d : DType) -> DType {

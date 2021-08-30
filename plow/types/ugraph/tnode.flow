@@ -10,9 +10,6 @@ TODO:
 - Try to reset eclasses for each chunk: To do this, we need a "copy into new tmap"
   operation to run after each chunk, where we pick up "live" eclasses from the global
   names.
-
-Errors towards plow\plow.flow:
-
 */
 
 export {

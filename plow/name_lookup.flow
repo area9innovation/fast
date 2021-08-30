@@ -1,0 +1,91 @@
+import plow/dexp/dexp;
+import plow/types/typeenv;
+
+export {
+	// Before we type inference a module, this is called to set up
+	// name lookup for this module
+	updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv;
+}
+
+updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
+	resolveStructName = \name -> {
+			lstruct = lookupTree(d.structs, name);
+			lstruct ?? {
+				Some(lstruct)
+			} : tenv.resolveStructName(name);
+		};
+	fields = makeDFieldMap(d.structs);
+	// TODO: The problem is that we need all unions and structs for this to work
+	unionFields = makeDUnionFields(d.unions, d.structs, resolveStructName);
+	supers = makeDSupers(d.unions);
+	subs = makeDSubtypes(d.unions);
+
+	// Make sure we can find local structs
+	senv = TTypeEnv(tenv with
+		resolveStructName = resolveStructName,
+		resolveUnionName = \name -> {
+			lunion = lookupTree(d.unions, name);
+			lunion ?? {
+				Some(lunion)
+			} : tenv.resolveUnionName(name);
+		},
+		resolveField = \name -> {
+			structs = getTreeArrayValue(fields, name);
+			istructs = filtermap(structs, \str -> {
+				lookupTree(d.structs, str);
+			});
+			others = tenv.resolveField(name);
+			uniq(concat(istructs, others));
+		},
+		resolveUnionField = \name -> {
+			unions = lookupTreeDef(unionFields, name, makeSet());
+			others = tenv.resolveUnionField(name);
+			mergeSets(unions, others);
+		},
+		resolveSupertypes = \name -> {
+			if (false) {
+				concat(
+					getTreeArrayValue(supers, name),
+					tenv.resolveSupertypes(name)
+				);
+			} else {
+				tenv.resolveSupertypes(name)
+			}
+		},
+		resolveSubtypes = \name -> {
+			if (false) {
+				concat(
+					getTreeArrayValue(subs, name),
+					tenv.resolveSubtypes(name)
+				);
+			} else {
+				tenv.resolveSubtypes(name)
+			}
+		}
+	);
+
+	// Transitively resolve supertypes
+	resolveSupertypes = \type -> {
+		if (false) {
+			set2array(transitiveResolveSuperType(senv.resolveSupertypes, type, makeSet(), makeSet()))
+		} else {
+			senv.resolveSupertypes(type)
+		}
+	};
+	// The TMap helper needs to know about some of the resolvers
+	TTypeEnv(senv with
+		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, resolveSupertypes, senv.resolveSubtypes)
+	);
+}
+
+// Collect all supertypes of this name, based on a one-step resolver
+transitiveResolveSuperType(basic : (string) -> [string], name : string, seen : Set<string>, acc : Set<string>) -> Set<string> {
+	if (containsSet(seen, name)) acc
+	else {
+		supers = basic(name);
+		seen2 = insertSet(seen, name);
+		fold(supers, mergeSets(buildSet(supers), acc), \acc2, base -> {
+			transitiveResolveSuperType(basic, base, seen2, acc2)
+		})
+	}
+}
