@@ -120,10 +120,6 @@ Plan:
   error per tyvar
 
 - Debug type errors
-  - fctypeenv: The problem is union fields and makeDUnionFields which requires "global"
-    unions and structs to build the proper representation. Change the lookup to be global,
-	like sub/supertypes.
-
   - type25: it is fundamentally flow vs [flow]
 
 	- plow/test/struct.flow

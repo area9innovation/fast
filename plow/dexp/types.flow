@@ -26,7 +26,15 @@ export {
 	addTransitiveDSupertypes(unions : Tree<string, DUnion>, supertypes : Tree<string, [string]>, subtypes : Tree<string, [string]>) -> Tree<string, [string]>;
 
 	// Build a map from field names to what unions have that field
-	makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>, resolveStruct : (string) -> Maybe<DStruct>) -> Tree<string, Set<string>>;
+	makeDUnionFields(
+		// The unions we should process
+		unions : Tree<string, DUnion>, 
+		// Any local structs
+		structs : Tree<string, DStruct>, 
+		// General structs & unions to resolve
+		resolveStruct : (string) -> Maybe<DStruct>,
+		resolveUnion : (string) -> Maybe<DUnion>,
+	) -> Tree<string, Set<string>>;
 }
 
 extractDTyparsFromDExp(e : DExp) -> Set<string> {
@@ -140,7 +148,10 @@ addTransitiveDSupertypes(unions : Tree<string, DUnion>, supertypes : Tree<string
 }
 
 // Scan these unions to find any union fields
-makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>, resolveStruct : (string) -> Maybe<DStruct>) -> Tree<string, Set<string>> {
+makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>, 
+		resolveStruct : (string) -> Maybe<DStruct>,
+		resolveUnion : (string) -> Maybe<DUnion>,
+	) -> Tree<string, Set<string>> {
 	structFields : (string) -> [Pair<string, DType>] = \st -> {
 		mstruct = resolveStruct(st);
 		mstruct ?? {
@@ -163,7 +174,7 @@ makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>,
 		}
 	};
 	foldTree(unions, makeTree(), \un, uni, acc -> {
-		fields : Set<Pair<string, DType>> = getDTypenameFields(unions, structFields, un);
+		fields : Set<Pair<string, DType>> = getDTypenameFields(unions, structFields, resolveUnion, un);
 		foldSet(fields, acc, \acc2, field -> {
 			insertMultimap(acc2, field.first, un)
 		})
@@ -174,21 +185,30 @@ makeDUnionFields(unions : Tree<string, DUnion>, structs : Tree<string, DStruct>,
 getDTypenameFields(
 	unions : Tree<string, DUnion>, 
 	structFields : (string) -> [Pair<string, DType>],
+	resolveUnion : (string) -> Maybe<DUnion>,
 	typename : string,
 ) -> Set<Pair<string, DType>> {
-	munion = lookupTree(unions, typename);
-	munion ?? {
-		foldi(munion.types, makeSet(), \i, acc, type -> {
-			fields = getDTypenameFields(unions, structFields, type.id);
+	process = \u : DUnion -> {
+		foldi(u.types, makeSet(), \i, acc, type -> {
+			fields = getDTypenameFields(unions, structFields, resolveUnion, type.id);
 			if (i == 0) {
 				fields;
 			} else {
 				intersectSets(fields, acc);
 			}
 		});
+	};
+	munion = lookupTree(unions, typename);
+	munion ?? {
+		process(munion);
 	} : {
-		// TODO: Lookup in the global unions map
-		buildSet(structFields(typename));
+		munion2 = resolveUnion(typename);
+		switch (munion2) {
+			None(): {
+				buildSet(structFields(typename));
+			}
+			Some(u2): process(u2);
+		}
 	}
 }
 

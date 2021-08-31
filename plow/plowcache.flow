@@ -63,6 +63,7 @@ makePlowCache(
 		onError1(e);
 	};
 	globalStructs = ref makeTree();
+	globalUnions = ref makeTree();
 
 	// A helper to lookup structs.
 	structLookup = BLookupFromImport("struct", \module, n -> {
@@ -130,6 +131,8 @@ makePlowCache(
 	unionFieldLookup = BLookupFromImport("union-field", \module, n -> {
 			unionFields = makeDUnionFields(module.unions, module.structs, \st -> {
 				lookupTree(^globalStructs, st)
+			}, \un -> {
+				lookupTree(^globalUnions, un)
 			});
 			unions = lookupTreeDef(unionFields, n, makeSet());
 			if (isEmptySet(unions)) None()
@@ -171,7 +174,7 @@ makePlowCache(
 		unionFieldLookup, superTypeLookup, subTypeLookup,
 		globalLookup, nativeLookup,
 		// Global lookups
-		globalStructs, ref makeTree(), ref makeTree(), ref makeTree(),
+		globalStructs, globalUnions, ref makeTree(), ref makeTree(),
 		ref 0, ref makeSet(), makeTracing(), errorCount
 	);
 }
