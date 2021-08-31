@@ -1,10 +1,118 @@
 import plow/dexp/dexp;
 import plow/types/typeenv;
+import plow/plowcache;
+import plow/bexp/btype2ttype;
 
 export {
+	// Before we even start looking at a module, this is called to set up
+	// the method that can look for names through imports
+	updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, imports : [DImport]) -> TTypeEnv;
+
 	// Before we type inference a module, this is called to set up
 	// name lookup for this module
 	updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv;
+}
+
+// Given this module, looks up names from imports
+updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, imports : [DImport]) -> TTypeEnv {
+	TTypeEnv(
+		env with
+		resolveId = \pos, id -> {
+			mbmod : Maybe<BGlobal> = lookupFromImport(cache.modules, cache.globalLookup, imports, id);
+			mbmod ?? {
+				btype2ttype(mbmod.type);
+			} : {
+				mbnat : Maybe<BNative> = lookupFromImport(cache.modules, cache.nativeLookup, imports, id);
+				switch (mbnat) {
+					None(): {
+						dd.onError(pos, "Unknown id " + id);
+						TTypeEClass(makeTNodeClass(env.tmap));
+					}
+					Some(bnat): btype2ttype(bnat.type);
+				}
+			}
+		},
+		resolveField = \id -> {
+			structs : [string] = lookupsFromImport(cache.modules, cache.fieldLookup, imports, id);
+			filtermap(structs, \str -> {
+				dd.resolveStructName(str);
+			})
+		},
+		resolveUnionField = \id -> {
+			buildSet(lookupsFromImport(cache.modules, cache.unionFieldLookup, imports, id));
+		},
+		resolveSupertypes = \id -> {
+			if (true) {
+				// TODO: Filter to those reachable from the module
+				getTreeArrayValue(^(cache.globalSupertypes), id);
+			} else {
+				lookupsFromImport(cache.modules, cache.superTypeLookup, imports, id);
+			}
+		},
+		resolveSubtypes = \id -> {
+			if (true) {
+				// TODO: Filter to those reachable from the module
+				getTreeArrayValue(^(cache.globalSubtypes), id);
+			} else {
+				lookupsFromImport(cache.modules, cache.subTypeLookup, imports, id);
+			}
+		},
+		resolveStructName = \id -> {
+			munion = lookupTree(^(cache.globalStructs), id);
+			switch (munion) {
+				None(): {
+					if (containsKeyTree(^(cache.globalUnions), id)) {
+						// We check if this is a known union, in which 
+						// case we know it is not a struct
+						None();
+					} else {
+						munion2 = dd.resolveStructName(id);
+						switch (munion2) {
+							None(): {
+								munion2;
+							}
+							Some(un): {
+								cache.globalStructs := setTree(^(cache.globalStructs), id, un);
+								munion2;
+							}
+						}
+
+					}
+				}
+				Some(__): {
+					// TODO: Check that we have the correct import required
+					munion;
+				}
+			}
+		},
+		resolveUnionName = \id -> {
+			munion = lookupTree(^(cache.globalUnions), id);
+			switch (munion) {
+				None(): {
+					if (containsKeyTree(^(cache.globalStructs), id)) {
+						// We check if this is a known struct, in which 
+						// case we know it is not a union
+						None();
+					} else {
+						munion2 = dd.resolveUnionName(id);
+						switch (munion2) {
+							None(): {
+								munion2;
+							}
+							Some(un): {
+								cache.globalUnions := setTree(^(cache.globalUnions), id, un);
+								munion2;
+							}
+						}
+					}
+				}
+				Some(__): {
+					// TODO: Check that we have the correct import required
+					munion;
+				}
+			}
+		}
+	);
 }
 
 updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
@@ -17,8 +125,6 @@ updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
 	fields = makeDFieldMap(d.structs);
 	// TODO: The problem is that we need all unions and structs for this to work
 	unionFields = makeDUnionFields(d.unions, d.structs, resolveStructName, tenv.resolveUnionName);
-	supers = makeDSupers(d.unions);
-	subs = makeDSubtypes(d.unions);
 
 	// Make sure we can find local structs
 	senv = TTypeEnv(tenv with
@@ -42,50 +148,10 @@ updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv {
 			others = tenv.resolveUnionField(name);
 			mergeSets(unions, others);
 		},
-		resolveSupertypes = \name -> {
-			if (false) {
-				concat(
-					getTreeArrayValue(supers, name),
-					tenv.resolveSupertypes(name)
-				);
-			} else {
-				tenv.resolveSupertypes(name)
-			}
-		},
-		resolveSubtypes = \name -> {
-			if (false) {
-				concat(
-					getTreeArrayValue(subs, name),
-					tenv.resolveSubtypes(name)
-				);
-			} else {
-				tenv.resolveSubtypes(name)
-			}
-		}
 	);
 
-	// Transitively resolve supertypes
-	resolveSupertypes = \type -> {
-		if (false) {
-			set2array(transitiveResolveSuperType(senv.resolveSupertypes, type, makeSet(), makeSet()))
-		} else {
-			senv.resolveSupertypes(type)
-		}
-	};
 	// The TMap helper needs to know about some of the resolvers
 	TTypeEnv(senv with
-		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, resolveSupertypes, senv.resolveSubtypes)
+		tmap = setTMapResolvers(senv.tmap, senv.resolveUnionName, senv.resolveSupertypes, senv.resolveSubtypes)
 	);
-}
-
-// Collect all supertypes of this name, based on a one-step resolver
-transitiveResolveSuperType(basic : (string) -> [string], name : string, seen : Set<string>, acc : Set<string>) -> Set<string> {
-	if (containsSet(seen, name)) acc
-	else {
-		supers = basic(name);
-		seen2 = insertSet(seen, name);
-		fold(supers, mergeSets(buildSet(supers), acc), \acc2, base -> {
-			transitiveResolveSuperType(basic, base, seen2, acc2)
-		})
-	}
 }
