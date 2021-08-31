@@ -120,6 +120,10 @@ Plan:
   error per tyvar
 
 - Debug type errors
+  - tools/flowc/type_helpers.flow:1108:9: ERROR: Merge FcTypeName and FcType (e12441 and e11628)
+		FcTypeName(n1, typars1,__):
+	when run directly, it has a bunch of unknown unions and structs.
+
   - type25: it is fundamentally flow vs [flow]
 
 	- plow/test/struct.flow
