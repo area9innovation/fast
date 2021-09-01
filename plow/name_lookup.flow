@@ -4,6 +4,13 @@ import plow/plowcache;
 import plow/bexp/btype2ttype;
 
 export {
+	// This is called for all modules after type checking - also incremental
+	// Update the global, transitive super and sub-types maps
+	// (natives and globals are NOT ready when compiling.)
+	registerModuleTypes(cache : PlowCache, module : BModule) -> void;
+
+	// The following two are only called for desugared modules
+
 	// Before we even start looking at a module, this is called to set up
 	// the method that can look for names through imports
 	updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, imports : [DImport]) -> TTypeEnv;
@@ -12,6 +19,35 @@ export {
 	// name lookup for this module
 	updateNameLookupsForModule(tenv : TTypeEnv, d : DModule) -> TTypeEnv;
 }
+
+registerModuleTypes(cache : PlowCache, module : BModule) -> void {
+	// OK, update the global caches of structs and unions
+	cache.globalStructs := mergeTree(^(cache.globalStructs), module.structs);
+	cache.globalUnions := mergeTree(^(cache.globalUnions), module.unions);
+
+	// Update the global subtypes here by traversing any unions here
+	// and expand them transitively
+	if (!isEmptyTree(module.unions)) {
+		cache.globalSubtypes := addTransitiveDSubtypes(module.unions, ^(cache.globalSubtypes));
+		if (false) {
+			println("Subtypes transitively:");
+			traverseInOrder(^(cache.globalSubtypes), \sup, subs -> {
+				println(sup + ": " + toString(subs));
+			});
+		}
+
+		// Based on this, expand the global supertypes here by traversing
+		// the unions, resolving them to subtypes transivitely, and register them
+		cache.globalSupertypes := addTransitiveDSupertypes(module.unions, ^(cache.globalSupertypes), ^(cache.globalSubtypes));
+		if (false) {
+			println("Supertypes transitively:");
+			traverseInOrder(^(cache.globalSupertypes), \st, supers -> {
+				println(st + ": " + toString(supers));
+			});
+		}
+	}
+}
+
 
 // Given this module, looks up names from imports
 updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, imports : [DImport]) -> TTypeEnv {
@@ -58,59 +94,10 @@ updateNameLookupsForImports(cache : PlowCache, dd : DDesugar, env : TTypeEnv, im
 			}
 		},
 		resolveStructName = \id -> {
-			munion = lookupTree(^(cache.globalStructs), id);
-			switch (munion) {
-				None(): {
-					if (containsKeyTree(^(cache.globalUnions), id)) {
-						// We check if this is a known union, in which 
-						// case we know it is not a struct
-						None();
-					} else {
-						munion2 = dd.resolveStructName(id);
-						switch (munion2) {
-							None(): {
-								munion2;
-							}
-							Some(un): {
-								cache.globalStructs := setTree(^(cache.globalStructs), id, un);
-								munion2;
-							}
-						}
-
-					}
-				}
-				Some(__): {
-					// TODO: Check that we have the correct import required
-					munion;
-				}
-			}
+			lookupTree(^(cache.globalStructs), id);
 		},
 		resolveUnionName = \id -> {
-			munion = lookupTree(^(cache.globalUnions), id);
-			switch (munion) {
-				None(): {
-					if (containsKeyTree(^(cache.globalStructs), id)) {
-						// We check if this is a known struct, in which 
-						// case we know it is not a union
-						None();
-					} else {
-						munion2 = dd.resolveUnionName(id);
-						switch (munion2) {
-							None(): {
-								munion2;
-							}
-							Some(un): {
-								cache.globalUnions := setTree(^(cache.globalUnions), id, un);
-								munion2;
-							}
-						}
-					}
-				}
-				Some(__): {
-					// TODO: Check that we have the correct import required
-					munion;
-				}
-			}
+			lookupTree(^(cache.globalUnions), id);
 		}
 	);
 }
