@@ -98,7 +98,7 @@ isBIncrementalSame(a : BIncremental, b : BIncremental) -> bool {
 }
 
 getBIncrementalPath(flowpath : string) -> string {
-	changeFileExt(pathCombine(pathCombine(getFlowDir(), "objp"), flowpath), ".objp");
+	changeFileExt(pathCombine(pathCombine(getFlowDirectory(), "objp"), flowpath), ".objp");
 }	
 
 deleteBModule(tracing : Tracing, flowpath : string) -> void {

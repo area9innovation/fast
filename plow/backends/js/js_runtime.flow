@@ -40,8 +40,8 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 	);
 
 	saveFileContent("FlowJsProgram.hx", code);
-	srcDir = pathCombine(getFlowDir(), "platforms/js");
-	commonSrcDir = pathCombine(getFlowDir(), "platforms/common/haxe");
+	srcDir = pathCombine(getFlowDirectory(), "platforms/js");
+	commonSrcDir = pathCombine(getFlowDirectory(), "platforms/common/haxe");
 	hxparams =
 		if (cfg.jsmode == NODEJS_MODE && cfg.webmodule)
 			["-js " + jsfile, hx, "-cp " + srcDir, "-cp " + commonSrcDir, "-D jsruntime", "-D no-deprecation-warnings", "-lib hxnodejs", "-D flow_nodejs", "-D flow_webmodule", "-D js-classic", "-lib node-express"]

@@ -2,6 +2,7 @@ import plow/backends/js/js;
 import plow/backends/wasm/wasm;
 import plow/backends/koka/koka;
 import plow/backends/cpp/cpp;
+import plow/backends/flowc/flowc;
 import plow/pexp/parse;
 import plow/pexp/pretty;
 import plow/dexp/desugar;
@@ -10,11 +11,16 @@ import plow/driver;
 import fs/filesystem;
 import math/stringmath;
 
+// forbid tools/flowc/flow_parser;
+
+// import tools/flowc/backends/build;
+
+
 main() {
 	file = if (isUrlParameterTrue("test")) "plow/tests/" else "";
 
 	includes = strSplit(getUrlParameter("I"), ",");
-	allincludes = filter(concat([".", getFlowDir() + "/lib", getFlowDir()], includes), neq(""));
+	allincludes = filter(concat([".", getFlowDirectory() + "/lib", getFlowDirectory()], includes), neq(""));
 	verbose = isUrlParameterTrue("verbose");
 
 	errors = ref 0;
@@ -39,7 +45,7 @@ main() {
 	};
 
 	// This is how we compile a file
-	process_file = \src_file, ver -> {
+	process_file = \src_file, ver, onDone : () -> void -> {
 		flow_file = path2fastPath(allincludes, src_file);
 		if (verbose || ver) {
 			println("compiling file '" + src_file + "' (" + flow_file + ")");
@@ -63,7 +69,24 @@ main() {
 		if (isUrlParameterTrue("cpp")) {
 			buildCppTarget(cache, b, src_file);
 		}
-	}
+		if (isUrlParameterTrue("flowc")) {
+			mfiprogram = bmodule2fiprogram(cache, src_file);
+			switch (mfiprogram) {
+				None(): {
+					onDone();
+				}
+				Some(fiprogram): {
+					/*
+					buildFiProgram(fiprogram, initFcTypeEnvGlobal(), \done -> {
+						onDone();
+					})*/
+					onDone();
+				}
+			}
+		} else {
+			onDone();
+		}
+	};
 
 	thefile = if (isUrlParameterTrue("flowc-tests")) {
 		tests_dir = pathCombineMany(["tests", "with_main"]);
@@ -79,15 +102,23 @@ main() {
 		printPlowUsage();
 		quit(1);
 	} else if (!isDirectory(thefile)) {
-		process_file(thefile, false);
+		process_file(thefile, false, \ -> {
+			completePending(0);
+		});
 	} else {
 		files0 = if (isUrlParameterTrue("rec")) readDirectoryRecursively(thefile) else map(readDirectory(thefile), \f -> pathCombine(thefile, f));
 		files = sort(filter(files0, \f -> endsWith(f, ".flow")));
-		iter(files, \f -> process_file(f, true));
+		applyAllSync(
+			map(files, \f -> {
+				\onDone -> {
+					process_file(f, true, onDone)
+				}
+			}),
+			\ -> {
+				completePending(0);
+			}
+		);
 	};
-
-	// OK, listen for the error code
-	completePending(0)
 }
 
 buildJsTarget(cache : PlowCache, b : BModule, src_file : string) -> void {

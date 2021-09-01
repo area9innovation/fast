@@ -23,7 +23,7 @@ export {
 PlowCache(
 	// How to report an error
 	onError : (string) -> void,
-	// The includes we should use to find files
+	// The include paths we should use to find files
 	includes : [string], 
 	// Map of the Modules we have already parsed and desugared
 	modules : BModules,

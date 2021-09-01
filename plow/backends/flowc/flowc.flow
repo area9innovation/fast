@@ -1,0 +1,66 @@
+import plow/plowcache;
+import tools/flowc/incremental/fiprogram;
+
+export {
+	// Converts this program to FiProgram to allow reusing the flowc backends
+	bmodule2fiprogram(cache : PlowCache, flowpath : string) -> Maybe<FiProgram>;
+}
+
+bmodule2fiprogram(cache : PlowCache, flowpath : string) -> Maybe<FiProgram> {
+	mconfig = getCompilerConfig(fcCurrentWorkingDir());
+	switch (mconfig) {
+		Some(config): {
+			// TODO:
+			names = FiGlobalNames(
+				makeTree(), // struct2module : Tree<string, string>,
+				makeTree(), // union2module : Tree<string, string>,
+				makeTree(), // function2module : Tree<string, string>,
+				makeTree(), // globalVar2module : Tree<string, string>,
+				makeTree(), // native2module : Tree<string, string>,
+				makeTree(), // structs : Tree<string, FiTypeStruct>,
+				makeTree(), // unions : Tree<string, FiTypeUnion>,
+							// global vars, functions, natives
+				makeTree(), // toplevel : Tree<string, FiDeclaration>,
+			);
+			Some(FiProgram(
+				config,
+				bmodules2fimodules(config, cache.modules),
+				[],	// TODO: Traversal
+				names
+			));
+		}
+		Failed(msg): {
+			cache.onError(msg);
+			None();
+		}
+	};
+}
+
+bmodules2fimodules(config : CompilerConfig, b : BModules) -> Tree<string, FiModule> {
+	paths = keysConcurrentHashMap(b.modules);
+	fold(paths, makeTree(), \acc, path : string -> {
+		bmod = getCachedBModule(b, path);
+		setTree(acc, path, bmodule2fimodule(config, bmod))
+	})
+}
+
+bmodule2fimodule(config : CompilerConfig, m : BModule) -> FiModule {
+	// TODO: Finish this
+	FiModule(
+		fcfileinfo2fi(getFcFileInfo(m.flowpath, config)),
+		[], // imports: [FiImport], // unresolved paths to included modules
+		[], // forbids : [FiForbid], // unresolved paths to forbid
+		[], // exports: [string], // names of unions, structs, functions, values, natives
+		[], // structs : [FiTypeStruct],
+		[], // unions : [FiTypeUnion],
+		[], // functions: [FiFunctionDec],
+		[], // globalVars: [FiGlobalVar],
+		[], // natives: [FiNativeDec],
+		// Safe initialization order of globals and functions.
+		[], // initOrder : [string],
+		[], // stringIncludes : [FiFileInfo],
+		0, 0, // start : int, end : int,
+		makeSet(), // allImports : Set<string>, // transitive closure of all included files
+		true, // incremental : bool, // module was loaded 'as is', without changes
+	)
+}

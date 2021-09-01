@@ -230,6 +230,10 @@ We could extend Plow with a rewriting feature.
 	=>
 	js-exp: $l(100) + $r(99)
 
+# Integration with flowc:
+
+- Add a conversion to FiProgram from (modules : BModules, flowpath : string)
+
 # C++ backend
 
 TODO:

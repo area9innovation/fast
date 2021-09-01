@@ -16,7 +16,7 @@ export {
 	getFastDir() -> string;
 
 	// Try to find a flow9 repo directory
-	getFlowDir() -> string;
+	getFlowDirectory() -> string;
 }
 
 getFastDir() -> string {
@@ -28,7 +28,7 @@ getFastDir() -> string {
 	findDirectoryContainingFile(paths, "fast/fast.flow");
 }
 
-getFlowDir() -> string {
+getFlowDirectory() -> string {
 	paths = [
 		getUrlParameter("flowdir"),
 		"..", "../flow9", "../../flow9", "../../../flow9", "../../../../flow9",
