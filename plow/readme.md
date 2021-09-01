@@ -47,37 +47,58 @@ This pipeline is exposed by
 
 where `PlowCache` is a cache for modules.
 
+## Type inference
+
+The type inference uses equivalence classes for the types.
+The type system is extended with two constructs:
+
+- Overloads. This defines a set of types, where we know the
+  real type is exactly one of them. As type inference proceeds,
+  we will eliminate options one by one until we have a winner.
+- Supertypes. This defines a type which is a supertype of all
+  the subtypes within.
+
+We use overload types to handle the overloading of +, - as well as
+dot on structs, which can be considered as an overloaded function.
+
+TODO: Review the lower/upper types from
+https://gilmi.me/blog/post/2021/04/13/giml-typing-polymorphic-variants
+
 # Name and type lookups
 
-A key problem is to find names, types, sub and supertypes from the context of a given
-module. We would like this lookup to be precise in terms of the import graph.
+A key problem is to find names, types, sub- and supertypes from the context 
+of a given module. We would like this lookup to be precise in terms of the import graph.
 
 This is not easy. Consider the problem of transitive supertypes:
 
 	file1:
 	U := A, B;
-	Add: A -> U, B -> U
+
+	Add relations: A -> U, B -> U
 
 	file2:
 	import file1
 	T := U, C;
-	Was: A -> U, B -> U, 
-	Add: U -> T, C -> T, (A -> T, B -> T expand U to subtypes)
+
+	Has: A -> U, B -> U, 
+	Add relations: U -> T, C -> T, and expanding U to get A -> T, B -> T
 
 	file3:
 	import file2
 	V := T, D;
-	Was: A -> U, B -> U, U -> T, C -> T, (A -> T, B -> T expand U to subtypes)
-	Add: T -> V, D -> V, Expand T to subtypes: U -> V, (A -> V, B -> V), C -> T
+
+	Has: A -> U, B -> U, U -> T, C -> T, A -> T, B -> T
+	Add relations: T -> V, D -> V, expand T to get: U -> V, (A -> V, B -> V), C -> T
 
 	file4:
 	W := C, E;
+
 	Add: C -> W, E -> W.
 
 So we have a graph of types and subtypes, but there are some parts of the graph
 that only become online when certain files are included.
 
-Options:
+Rejection options for having efficient solution:
 
 - Maintaining transivitive closure: https://pure.tue.nl/ws/files/4393029/319321.pdf
 
@@ -85,15 +106,15 @@ Basically, requires a N^2 binary matrix for each step. Thus, maintaining all int
 transitive closures requires N^3 space. We have on the order of 5000 flow files.
 To keep all those would require 120gb. So we have to be smarter.
 We could restrict the graph to just those files that define unions. For plow, this is 21 
-files out of 148. 15%. That still becomes 1GB for Rhapsode.
+files out of 148. 15%. That still becomes 1GB for Rhapsode. So doing it precisely for all 
+files is not realistic.
 
-So doing it precisely for all files is not realistic.
 Instead, we should maintain a global lookup, as well as a way to check what path each
 global is defined in.
-Then we need the ability to check whether a given file is including in the transitive
+Then we need the ability to check whether a given file is included in the transitive
 import closure of another file.
 
-Live data structures to envision:
+Live data structures to make this possible:
 - Global graph of super/subtypes
 - Import graph
 - Global map from symbol to what file defines that
@@ -110,19 +131,22 @@ Try to understand that, and maybe implement it.
 
 Plan:
 - Get it to work with global ids.
-  Place global ids in plowcache, which is the only thing which survives all files. Done.
-- TODO: Implement the transitive closure check in a second step to filter the list of ids found
+  Place global ids in plowcache, which is the only thing which survives all files. Done for
+  sub-/super-types, but todo: Do this eagerly for structs & unions as well.
+- TODO: Implement the transitive closure check in a second step to filter the list of ids found.
+  We should probably maintain a set of dependent ids for each global, so we can quickly check this
+  also when incremental is going to be done on ids?
 
 # TODOs
 
 - Improve type error reporting: Probably, we should build a tyvar hierarchy with reference to where
   they belong and what semantic check they are involved in. Also, we should not report more than one
-  error per tyvar
+  error per tyvar.
 
 - Debug type errors
   - tools/flowc/type_helpers.flow:1108:9: ERROR: Merge FcTypeName and FcType (e12441 and e11628)
 		FcTypeName(n1, typars1,__):
-	when run directly, it has a bunch of unknown unions and structs.
+	Also, when run directly, it has a bunch of unknown unions and structs.
 
   - type25: it is fundamentally flow vs [flow]
 
@@ -152,15 +176,22 @@ Plan:
 	C:/flow9/lib/form/renderform.flow:712:33: and here
 			attachChildAndCapability(
 								^
+	Still unknown.
 
-- Speed up the compiler - try vector in union_find_map, which might be
-  faster at least in Java. Try to reduce the active set of tyvars when
-  doing chunks. Copy from one tyvar space to a new one, to reduce max
-  set.
+## Optimization of the compiler
+
+The compiler has decent speed, but could be faster.
+
+- Try vector in union_find_map, which might be faster at least in Java. 
+
+- Try to reduce the active set of tyvars when doing chunks. Copy from one 
+  tyvar space to a new one, to reduce max set.
+
 - Compiling runtime.flow takes 2527ms. Rough breakdown:
+    800ms in parsing. The best fix there is to improve Gringo backend for common
+	      constructs
    1262ms in type inference
-    800ms in parsing
-	600ms in resolveTNodes
+ 	 	600ms in resolveTNodes
 
 - UnionFindMap total time (with some double counting, since they call each others):
   588ms in iterUnionMap
@@ -169,67 +200,40 @@ Plan:
   328ms in setUnionMapValue
   184ms in getUnionMapValue
   167ms in unionUnionMap
+  Main potential improvement is the reduce the number of live tyvars, next
+  try a different data structure.
 
 - When finding chunks, check if the code for a referenced piece of code has any
   free ids. If not, no need to chunk it. (see unicodeToLowerTable and others
   in text/unicodecharacters.flow)
 
+## Improvements
+
 - Imports that start with "lib/" are almost surely wrong, and do not work.
-  Add a check that imports really exist
 
-Structure of name lookup of code and types:
-  - plowcache sets up general functions to look from module to definitions.
-    Has a cache for the lookup. Arguably, these are placed wrong?
-  - typeenv uses those to search the import, and the local module. 
-  - tmap lifts these directly, except we do transitive collection of supertypes
-
-Ideas:
-  - When a module is typed, we build a local, transitive lookup thing for that
-    subtree of modules, and keep track of what paths are included there?
-    There is a relative big cost with this approach, so maybe only do it for
-	some modules?
- - Build a global supertype lookup. Each time we see a union, we can build up
-   this map
- 
- Elements needed nomatter what:
-- Function which updates a tree of supertypes from a union
-
+- Add a check that imports really exist, and report errors for those that do not
 
 - Add a compile server
   - Add option to only type check given ids
-
-# Type inference
-
-The type inference uses equivalence classes for the types.
-The type system is extended with two constructs:
-
-- Overloads. This defines a set of types, where we know the
-  real type is exactly one of them. As type inference proceeds,
-  we will eliminate options one by one until we have a winner.
-- Supertypes. This defines a type which is a supertype of all
-  the subtypes within.
-
-We use overload types to handle the overloading of +, - as well as
-dot on structs, which can be considered as an overloaded function.
-
-TODO: Review the lower/upper types from
-https://gilmi.me/blog/post/2021/04/13/giml-typing-polymorphic-variants
 
 # Proposal: Rewrite syntax
 
 We could extend Plow with a rewriting feature.
 
-flow-exp: $id = $val; $body
-=>
-js-statement: 
-var $id = $val(100);
-$body
+	flow-exp: $id = $val; $body
+	=>
+	js-statement: 
+	var $id = $val(100);
+	$body
 
-flow-exp: $l + $r
-=>
-js-exp: $l(100) + $r(99)
+	flow-exp: $l + $r
+	=>
+	js-exp: $l(100) + $r(99)
 
 # C++ backend
+
+TODO:
+- We need struct id and unions to work
 
 There is a C GC library here:
 
@@ -243,9 +247,15 @@ https://github.com/doublec/gc
 Advanced, performant, but complicated:
 https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/platform/heap/BlinkGCAPIReference.md
 
-# General backend plan
+The best solution is to go for Perceus:
+https://www.microsoft.com/en-us/research/uploads/prod/2020/11/perceus-tr-v1.pdf
 
-1. Extend lambda calculus with dyn & join
-2. Extend lambda calculus with inline construct
+## General backend plan
+
+1. Extend lambda calculus with dyn & join with partial evaluation to construct vars and functions
+
+2. Extend lambda calculus with inline construct and foreign language construct
+
 3. Add backend to compile lambda calculus to flow-code, JS, Java, Wasm, Bytecode, C++
-4. First use case is Gringo to flow
+
+4. First use case could be Gringo to flow
