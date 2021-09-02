@@ -11,7 +11,7 @@ export {
 
 parsePExp(program : string, onError : (string) -> void) -> PExp {
 	if (true) {
-		gringoTypedParse(program, pexpTypeAction(onError), parse_flow, PSequence([], -1), onError);
+		gringoTypedParse(program, pexpTypeAction(onError), parseFlow, PSequence([], -1), onError);
 	} else {
 		gterm = prepareGringoParser("#include plow/pexp/pexp.gringo", onError);
 		// println(gterm2string(gterm));

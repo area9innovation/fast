@@ -3,11 +3,11 @@ import text/gringo/dcode_lib;
 import string;
 
 export {
-	parse_flow(acc : DParseAcc<?>) -> bool;
+	parseFlow(acc : DParseAcc<?>) -> bool;
 }
 
 
-parse_flow(acc : DParseAcc<?>) -> bool {
+parseFlow(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
 		matchString(acc, "\\uFEFF");

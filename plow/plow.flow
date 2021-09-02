@@ -10,10 +10,9 @@ import plow/dexp/pretty;
 import plow/driver;
 import fs/filesystem;
 import math/stringmath;
+import tools/flowc/backends/build;
 
 // forbid tools/flowc/flow_parser;
-
-// import tools/flowc/backends/build;
 
 
 main() {
@@ -76,10 +75,9 @@ main() {
 					onDone();
 				}
 				Some(fiprogram): {
-					/*
 					buildFiProgram(fiprogram, initFcTypeEnvGlobal(), \done -> {
 						onDone();
-					})*/
+					})
 					onDone();
 				}
 			}
@@ -236,6 +234,7 @@ printPlowUsage() -> void {
 	println("cpp=1 or <path>       Compile to C++");
 	printl2("wasm=1 or <path>      Compile to WASM");
 	printl2("koka=1 or <path>      Compile to Koka");
+	printl2("flowc=1 or <path>     Use the flowc backends for code generation");
 	printl2("  koka-int=1          Use int32 as int instead of int in Koka");
 	println("");
 	println("debug=1,id,path,eclass           Debug compilation of the relevant piece");

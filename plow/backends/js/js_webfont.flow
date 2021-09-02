@@ -28,7 +28,7 @@ prepareWebFonts(cfg : JsConfig) {
 					v = getJsonFieldValue(jsn, e.first, JsonNull());
 					if (v != JsonNull()) {
 						fl_name = resourceprefix + e.first + resourcesuffix;
-						saveFileContent(fl_name, json2string(v));
+						setFileContent(fl_name, json2string(v));
 						arrayPush(acc, Pair(fl_name, e.second));
 					} else acc
 				});

@@ -1,8 +1,9 @@
 import ds/set;
 import lingo/flow/javascript_cli_params;
+import tools/flowc/backends/common;
 
 export {
-	STANDARD_JS = 0;
+	/*STANDARD_JS = 0;
 	STANDARD_ES6 = 1;
 	NODEJS_MODE = 2;
 	NWJS_MODE = 3;
@@ -12,7 +13,7 @@ export {
 	STANDARD_ES6_TXT = "ES6 JS";
 	NODEJS_MODE_TXT = "Node.js";
 	NWJS_MODE_TXT = "Node.js, NW.js";
-	TS_MODE_TXT = "Typescript";
+	TS_MODE_TXT = "Typescript";*/
 
 	JsConfig(
 		flowfile : string,
