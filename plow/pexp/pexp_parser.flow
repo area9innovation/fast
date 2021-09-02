@@ -10,12 +10,7 @@ export {
 parse_flow(acc : DParseAcc<?>) -> bool {
 	{
 		pushDCheckpoint(acc);
-		pushDCheckpoint(acc);
-		if (matchString(acc, "\\uFEFF")) {
-			discardDCheckpoint(acc)
-		} else {
-			restoreDCheckpoint(acc)
-		};
+		matchString(acc, "\\uFEFF");
 		if (addMatched(acc, i2s(acc.i))) {
 			if (parse_ws(acc)) {
 				if (parse_toplevels(acc)) {
@@ -4335,17 +4330,12 @@ parse_type(acc : DParseAcc<?>) -> bool {
 								if (if (addMatched(acc, i2s(acc.i))) {
 									{
 										acc.starti ::= acc.i;
-										pushDCheckpoint(acc);
 										if (if (if (matchString(acc, "?")) {
-											if (parseStar(acc, \ -> {
+											parseStar(acc, \ -> {
 												matchString(acc, "?")
-											})) {
-												discardDCheckpoint(acc)
-											} else {
-												restoreDCheckpoint(acc)
-											}
+											})
 										} else {
-											restoreDCheckpoint(acc)
+											false
 										}) {
 											{
 												addMatched(acc, substring(acc.input, acc.starti, acc.i - acc.starti));
@@ -5043,19 +5033,12 @@ parse_double(acc : DParseAcc<?>) -> bool {
 }
 
 parse_int(acc : DParseAcc<?>) -> bool {
-	{
-		pushDCheckpoint(acc);
-		if (matchRange(acc, 48, 57)) {
-			if (parseStar(acc, \ -> {
-				matchRange(acc, 48, 57)
-			})) {
-				discardDCheckpoint(acc)
-			} else {
-				restoreDCheckpoint(acc)
-			}
-		} else {
-			restoreDCheckpoint(acc)
-		}
+	if (matchRange(acc, 48, 57)) {
+		parseStar(acc, \ -> {
+			matchRange(acc, 48, 57)
+		})
+	} else {
+		false
 	}
 }
 
