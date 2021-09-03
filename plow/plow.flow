@@ -75,10 +75,7 @@ main() {
 					onDone();
 				}
 				Some(fiprogram): {
-					buildFiProgram(fiprogram, initFcTypeEnvGlobal(), \done -> {
-						onDone();
-					})
-					onDone();
+					buildFiProgram(fiprogram, initFcTypeEnvGlobal(), \done -> onDone());
 				}
 			}
 		} else {

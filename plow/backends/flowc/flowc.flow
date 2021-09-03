@@ -167,6 +167,30 @@ bmodule2fimodule(config : CompilerConfig, m : BModule) -> FiModule {
 	)
 }
 
+bop2fcop : Tree<string, FcPrim> = pairs2tree([
+	Pair(":=", FcAssignPrim()),
+	Pair("==", FcEqPrim()),
+	Pair("!=", FcNePrim()),
+	Pair("<", FcLtPrim()),
+	Pair("<=", FcLePrim()),
+	Pair(">", FcGtPrim()),
+	Pair(">=", FcGePrim()),
+	Pair("+", FcPlusPrim()),
+	Pair("-", FcMinusPrim()),
+	Pair("*", FcMulPrim()),
+	Pair("/", FcDivPrim()),
+	Pair("%", FcModPrim()),
+	Pair("||", FcOrPrim()),
+	Pair("&&", FcAndPrim()),
+	Pair("!", FcNotPrim()),
+	Pair("array", FcArrayPrim()),
+	Pair("__index", FcIndexPrim()),
+	Pair("__ref", FcRefPrim()),
+	Pair("__deref", FcDerefPrim()),
+	Pair("__not", FcNotPrim()),
+	Pair("__negate", FcNegPrim()),
+]);
+
 bexp2fiexp(e : BExp) -> FiExp {
 	switch (e) {
 		BVoid():    FiVoid(-1);
@@ -194,11 +218,21 @@ bexp2fiexp(e : BExp) -> FiExp {
 			);
 		}
 		BCall(fn, args, type): {
-			FiCall(
-				bexp2fiexp(fn), 
-				map(args, bexp2fiexp), 
-				btype2fitype(type), -1
-			);
+			fiargs = map(args, bexp2fiexp);
+			fitype = btype2fitype(type);
+			switch (fn) {
+				BVar(id, tp): {
+					switch (lookupTree(bop2fcop, id)) {
+						Some(op): {
+							FiCallPrim(op, fiargs, btype2fitype(type), -1);
+						}
+						None(): {
+							FiCall(bexp2fiexp(fn), fiargs, fitype, -1);
+						}
+					}
+				}
+				default: FiCall(bexp2fiexp(fn), fiargs, fitype, -1);
+			}
 		}
 		BLambda(args, body, type): {
 			fn_type = cast(type: BType -> BTypeFunction);
