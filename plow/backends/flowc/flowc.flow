@@ -59,7 +59,7 @@ bmoduleGlobalNames(acc : FiGlobalNames, m : BModule) -> FiGlobalNames {
 		),
 		fold(bmoduleGlobalVars(m), 
 			fold(bmoduleFunctions(m), 
-				foldTree(m.natives, makeTree(), \id, nat, ac ->
+				foldTree(m.natives, acc.toplevel, \id, nat, ac ->
 					setTree(ac, id, bnative2FiNativeDec(nat, m))
 				),
 				\ac, fn -> setTree(ac, fn.id, bfunction2FiFunctionDec(fn))

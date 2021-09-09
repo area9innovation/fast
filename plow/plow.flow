@@ -69,7 +69,7 @@ main() {
 			buildCppTarget(cache, b, src_file);
 		}
 		if (isUrlParameterTrue("flowc")) {
-			mfiprogram = bmodule2fiprogram(cache, src_file);
+			mfiprogram = bmodule2fiprogram(cache, b.flowpath);
 			switch (mfiprogram) {
 				None(): {
 					onDone();
