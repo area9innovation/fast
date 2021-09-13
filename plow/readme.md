@@ -12,6 +12,9 @@ Options:
 	verbose=0,1,2
 		Increasing amount of tracing information
 
+	help=1
+		Print usage info
+
 # Goals and motivation
 
 The goal is to an incremental compiler, which is incremental at the id level.
@@ -98,7 +101,7 @@ This is not easy. Consider the problem of transitive supertypes:
 So we have a graph of types and subtypes, but there are some parts of the graph
 that only become online when certain files are included.
 
-Rejection options for having efficient solution:
+Rejected this options for having efficient solution:
 
 - Maintaining transivitive closure: https://pure.tue.nl/ws/files/4393029/319321.pdf
 
@@ -109,10 +112,9 @@ We could restrict the graph to just those files that define unions. For plow, th
 files out of 148. 15%. That still becomes 1GB for Rhapsode. So doing it precisely for all 
 files is not realistic.
 
-Instead, we should maintain a global lookup, as well as a way to check what path each
-global is defined in.
-Then we need the ability to check whether a given file is included in the transitive
-import closure of another file.
+Instead, we maintain a global lookup. We should add a way to check what path each
+global is defined in. Then we need the ability to check whether a given file is included 
+in the transitive import closure of another file.
 
 Live data structures to make this possible:
 - Global graph of super/subtypes
@@ -142,6 +144,14 @@ Plan:
 - Improve type error reporting: Probably, we should build a tyvar hierarchy with reference to where
   they belong and what semantic check they are involved in. Also, we should not report more than one
   error per tyvar.
+
+  The errors should be semantic.
+  Instead of "Could not merge FcTypeName and FcType", we should refer to the variable or other construct
+  where the type originates. For each eclass, we could have a "origin" story associated. Some origins
+  are more "understandable" than others, so that way, we could pick the most understandable one.
+
+  An alternative is just to extend makeUnionFindMap with a "reason" argument when merging, so the merging
+  can report a suitable error message.
 
 - Debug type errors
   - tools/flowc/type_helpers.flow:1108:9: ERROR: Merge FcTypeName and FcType (e12441 and e11628)
