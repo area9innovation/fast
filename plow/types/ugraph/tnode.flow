@@ -331,7 +331,9 @@ makeTNode(tmap : TMap, t : TType, reason : ErrorReason) -> TNode {
 			} else makeSet1(uid);
 			simplifyTNode(tmap, TNodeOverload(
 				uniques,
-				map(overloads, \st -> makeTNodeName(tmap, st, reason)),
+				map(overloads, \st -> makeTNodeName(tmap, st, 
+					elaborateReason(reason, "overload")
+				)),
 				reason.pos
 			), reason)
 		}
@@ -405,15 +407,21 @@ makeTNodeName(tmap : TMap, t : TType, reason : ErrorReason) -> TNodeName {
 	};
 	switch (t) {
 		TTypeName(id, typars): {
-			TNodeName(id, map(typars, \tp -> findOrMakeTNodeClass(tmap, tp, reason)), reason.pos);
+			TNodeName(id, mapi(typars, \i, tp -> findOrMakeTNodeClass(tmap, tp, 
+				elaborateReason(reason, id + " typar #" + i2s(i + 1))
+			)), reason.pos);
 		}
 		TTypeFunction(args, returnType): {
 			TNodeName("", 
 				arrayPush(
-					map(args, \a -> 
-						findOrMakeTNodeClass(tmap, a, reason)
+					mapi(args, \i, a -> 
+						findOrMakeTNodeClass(tmap, a, 
+							elaborateReason(reason, "arg #" + i2s(i + 1))
+						)
 					),
-					findOrMakeTNodeClass(tmap, returnType, reason)
+					findOrMakeTNodeClass(tmap, returnType, 
+						elaborateReason(reason, "return type")
+					)
 				), reason.pos
 			)
 		}
@@ -657,8 +665,15 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode, reason : ErrorReason) -> T
 					} else if (length(ltypars) != length(rtypars)) {
 						error(pos, rpos);
 					} else {
+						// Same name and # typars
 						simplifyTNode(tmap, TNodeName(lname, mapi(ltypars, \i, lt -> {
-							joinTNodes(tmap, lt, rtypars[i], reason);
+							joinTNodes(tmap, lt, rtypars[i], elaborateReason(reason, 
+								(if (lname == "") {
+									if (i + 1 == length(ltypars)) {
+										"return type"
+									} else "arg #" + i2s(i + 1) 
+								} else "typar #" + i2s(i + 1))
+							));
 						}), concat(pos, rpos)), reason)
 					}
 				}

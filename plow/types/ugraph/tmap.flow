@@ -35,6 +35,7 @@ export {
 	// Our nodes in the type graph
 	TNode ::= TNodeName, TNodeOverload, TNodeSupertype;
 		// If the name is empty, it is a function. If name is empty, and typars empty, null
+		// For functions, the last typar is the return type
 		TNodeName(name : string, typars : [int], pos : [int]);
 		TNodeOverload(
 			unique : Set<int>, 

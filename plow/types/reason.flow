@@ -9,6 +9,8 @@ export {
 	joinReasons(left : ErrorReason, right : ErrorReason) -> ErrorReason;
 
 	makeErrorReason(pos : [int], error : string) -> ErrorReason;
+
+	elaborateReason(e : ErrorReason, extra : string) -> ErrorReason;
 }
 
 makeErrorReason(pos : [int], error : string) -> ErrorReason {
@@ -22,3 +24,9 @@ joinReasons(left : ErrorReason, right : ErrorReason) -> ErrorReason {
 	)
 }
 
+elaborateReason(e : ErrorReason, extra : string) -> ErrorReason {
+	ErrorReason(
+		e.reason + ", " + extra,
+		e.pos
+	)
+}
