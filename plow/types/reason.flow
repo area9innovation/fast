@@ -1,0 +1,32 @@
+import algorithms;
+
+export {
+	ErrorReason(
+		reason : string,
+		pos : [int],
+	);
+
+	joinReasons(left : ErrorReason, right : ErrorReason) -> ErrorReason;
+
+	makeErrorReason(pos : [int], error : string) -> ErrorReason;
+
+	elaborateReason(e : ErrorReason, extra : string) -> ErrorReason;
+}
+
+makeErrorReason(pos : [int], error : string) -> ErrorReason {
+	ErrorReason(error, sortUnique(pos));
+}
+
+joinReasons(left : ErrorReason, right : ErrorReason) -> ErrorReason {
+	ErrorReason(
+		left.reason + ", " + right.reason,
+		sortUnique(concat(left.pos, right.pos))
+	)
+}
+
+elaborateReason(e : ErrorReason, extra : string) -> ErrorReason {
+	ErrorReason(
+		e.reason + ", " + extra,
+		e.pos
+	)
+}
