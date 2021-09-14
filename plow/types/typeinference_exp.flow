@@ -169,22 +169,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 
 			unionFns = map(set2array(fieldUnions), \un -> {
 				utype = instantiateTTypeName(env, un);
-
-				//subtypes : [string] = env.resolveSubtypes(un);
-				is_union = \name -> !(
-					contains(["DValue", "DVoid", "DBool", "DInt", "DDouble", "DString", "DFlow", "DNative"], name) ||
-					isSome(env.resolveStructName(name))
-				);
-				subtypes : [string] = set2array(for(
-					buildSet(env.resolveSubtypes(un)),
-					\sts -> existsSet(sts, is_union),
-					\sts -> {
-						unions = set2array(filterSet(sts, is_union));
-						other = filterSet(sts, \x -> !is_union(x));
-						resolved_subtypes = concatA(map(unions, \u -> env.resolveSubtypes(u)));
-						mergeSets(other, buildSet(resolved_subtypes));
-					}
-				));
+				subtypes : [string] = env.resolveSubtypes(un);
 
 				// Find the type of this field
 				fieldType : Maybe<TTypeFunction> = fold(subtypes, None(), \acc, type -> {

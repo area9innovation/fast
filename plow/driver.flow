@@ -30,12 +30,13 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 		// OK, we have an incremental module, which we read now
 		bmod = getCachedBModule(cache.modules, flowpath);
 
-		registerModuleTypes(cache, bmod);
-
 		// Then make sure we have all dependents as well
 		sequential(false, map(bmod.imports, \i -> {
 			\ -> compilePlow(cache, i.path)
 		}));
+
+		// After all imported modules are compiled register types
+		registerModuleTypes(cache, bmod);
 		bmod;
 	} else if (containsSet(^(cache.awaiting), flowpath)) {
 		getDummyBModule();
@@ -54,6 +55,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 
 		// OK, parse all the dependent files
 		imports = getDImports(p);
+
 		// TODO: fix this so that concurrent running of imports compilation 
 		// wouldn't hang
 		sequential(false, map(imports, \i -> {
@@ -80,6 +82,7 @@ compilePlow(cache : PlowCache, file : string) -> BModule {
 			dmod = desugarPExp(dd, flowpath, path, p);
 
 			tenv0 = makeTTypeEnv(dd.onError, dmod);
+
 			// Register unions and subtyping relations into the global lookup
 			registerModuleTypes(cache, tenv0.bmodule);
 			tenv1 = updateNameLookupsForImports(cache, dd, tenv0, imports);
