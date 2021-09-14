@@ -75,13 +75,7 @@ makeTMap(onError : (int, string) -> void, nextEClass : ref int,
 			[];
 		},
 		\er -> {
-			iteri(er.pos, \i, p -> {
-				if (i == 0) {
-					onError(p, "ERROR: " + er.reason);
-				} else {
-					onError(p, "and here");
-				}
-			});
+			reportErrors(er, onError)
 		},
 		nextEClass,
 		mkUnique,
@@ -121,7 +115,7 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, reason : ErrorReason) -> v
 	ind = ^uindent;
 	verbose = isTracingId(tmap.tracing, StageTypeInference(), 2, ^(tmap.topid));
 	if (verbose) {
-		println("\n" + ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason.reason);
+		debugErrorReason(reason, "\n" + ind + "Unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | ");
 	}
 	lclass = findOrMakeTNodeClass(tmap, left, reason);
 	rclass = findOrMakeTNodeClass(tmap, right, reason);
@@ -130,7 +124,7 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, reason : ErrorReason) -> v
 		|| isDebuggingEClass(tmap, rclass, makeSet());
 	if (verbose2) {
 		uindent := ind + "  ";
-		println(ind + "Unify 2 " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + ^(tmap.topid) + ": " + reason.reason);
+		debugErrorReason(reason, ind + "Unify 2 " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " e" + i2s(lclass) + " vs e" + i2s(rclass) + " | " + ^(tmap.topid) + ": ");
 		// println("  " + debugTNode(tmap, lclass));
 		// println("  " + debugTNode(tmap, rclass));
 	}
@@ -140,7 +134,7 @@ unifyTNodes(tmap : TMap, left : TType, right : TType, reason : ErrorReason) -> v
 		
 		// println("  to e" + i2s(root) + " =  " + debugTNode(tmap, root));
 		if (verbose) {
-			println("\n" + ind + "After unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | " + reason.reason + ":");
+			debugErrorReason(reason, "\n" + ind + "After unify " + rpad(prettyTTypeNode(tmap, left) + " and " + prettyTTypeNode(tmap, right), " ", 60) + " | ");
 			dumpTNodes(tmap);
 		}
 		{}
@@ -225,7 +219,7 @@ makeEClassForTNode(tmap : TMap, node : TNode, reason : ErrorReason) -> int {
 	// OK, could not find it. We need a new class
 	nclass = makeTNodeClass(tmap);
 	if (isDebuggingTopid(tmap)) {
-		println(^uindent + "  Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + ": " + reason.reason + "\n");
+		debugErrorReason(reason, ^uindent + "  Made e" + i2s(nclass) + " as " + prettyTNode(tmap, node) + ": ");
 	}
 	switch (node) {
 		TNodeName(name, __, __): {
@@ -315,7 +309,7 @@ isSameTNode(tmap : TMap, left : TNode, right : TNode) -> bool {
 makeTNode(tmap : TMap, t : TType, reason : ErrorReason) -> TNode {
 	error = \ -> {
 		println("ERROR: Could not make TNode for " + prettyTType(t));
-		TNodeName("", [], reason.pos);
+		TNodeName("", [], []);
 	}
 	switch (t) {
 		TTypeName(id, typars): makeTNodeName(tmap, t, reason);
@@ -334,11 +328,11 @@ makeTNode(tmap : TMap, t : TType, reason : ErrorReason) -> TNode {
 				map(overloads, \st -> makeTNodeName(tmap, st, 
 					elaborateReason(reason, "overload")
 				)),
-				reason.pos
+				getTreeKeys(reason.reasons)
 			), reason)
 		}
 		TTypeSupertype(unique, subtypes, maxed): {
-			emptySuper = TNodeSupertype(makeSet1(unique), [], makeSet(), reason.pos);
+			emptySuper = TNodeSupertype(makeSet1(unique), [], makeSet(), getTreeKeys(reason.reasons));
 			super = fold(subtypes, emptySuper, \acc, st -> extractSupers(tmap, acc, st));
 			simplifyTNode(tmap, super, reason);
 		}
@@ -403,13 +397,13 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 makeTNodeName(tmap : TMap, t : TType, reason : ErrorReason) -> TNodeName {
 	error = \ -> {
 		println("ERROR: Could not make TNodeName for " + prettyTType(t));
-		TNodeName("", [], reason.pos);
+		TNodeName("", [], getTreeKeys(reason.reasons));
 	};
 	switch (t) {
 		TTypeName(id, typars): {
 			TNodeName(id, mapi(typars, \i, tp -> findOrMakeTNodeClass(tmap, tp, 
 				elaborateReason(reason, id + " typar #" + i2s(i + 1))
-			)), reason.pos);
+			)), getTreeKeys(reason.reasons));
 		}
 		TTypeFunction(args, returnType): {
 			TNodeName("", 
@@ -422,7 +416,7 @@ makeTNodeName(tmap : TMap, t : TType, reason : ErrorReason) -> TNodeName {
 					findOrMakeTNodeClass(tmap, returnType, 
 						elaborateReason(reason, "return type")
 					)
-				), reason.pos
+				), getTreeKeys(reason.reasons)
 			)
 		}
 		TTypeEClass(eclass): {
@@ -918,7 +912,7 @@ unifyTNodeNameAgainstSubtype(tmap : TMap, unionNode : TNodeName, subNode : TNode
 		if (length(subtypes) == length(subNode.typars)) {
 			iteri(subtypes, \i, tp -> {
 				if (tp != -1) {
-					joinTNodes(tmap, tp, subNode.typars[i], ErrorReason("TODO: Typar #" + i2s(i + 1) + " from " + subNode.name + " vs " + unionNode.name, sortUnique(concat(unionNode.pos, subNode.pos))));
+					joinTNodes(tmap, tp, subNode.typars[i], makeErrorReason(concat(unionNode.pos, subNode.pos), "TODO: Typar #" + i2s(i + 1) + " from " + subNode.name + " vs " + unionNode.name));
 					{}
 				} else {
 					tmap.onError(makeErrorReason(unionNode.pos, "ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode)));
