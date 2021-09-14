@@ -39,7 +39,7 @@ linkRuntime(cfg : JsConfig, native_classes : Set<string>, mainFn : string) -> st
 		]
 	);
 
-	setFileContent("FlowJsProgram.hx", code);
+	plSaveFileContent("FlowJsProgram.hx", code);
 	srcDir = pathCombine(getFlowDirectory(), "platforms/js");
 	commonSrcDir = pathCombine(getFlowDirectory(), "platforms/common/haxe");
 	hxparams =
