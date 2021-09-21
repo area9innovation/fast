@@ -52,7 +52,11 @@ reportErrors(er : ErrorReason, onError : (int, string) -> void) -> void {
 }
 
 debugErrorReason(er : ErrorReason, prefix : string) -> void {
-	traverseInOrder(er.reasons, \pos, errors -> {
-		println(prefix + strGlue(errors, ", "));
-	});
+	if (isEmptyTree(er.reasons)) {
+		println(prefix);
+	} else {
+		traverseInOrder(er.reasons, \pos, errors -> {
+			println(prefix + strGlue(errors, ", "));
+		});
+	}
 }
