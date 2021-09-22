@@ -122,8 +122,8 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 				});
 				itype = instantiateTTypeNameForStruct(env, mstruct);
 				if (length(argTypes) == length(itype.second)) {
-					iteri(itype.second, \i, fields : Pair<string, TType> -> {
-						unifyTNodes(env.tmap, makeTTypeSupertype(env, [argTypes[i]], false, pos), fields.second, makeErrorReason([pos], "construct " + structid));
+					iteri(itype.second, \i, fields : Triple<string, bool, TType> -> {
+						unifyTNodes(env.tmap, makeTTypeSupertype(env, [argTypes[i]], false, pos), fields.third, makeErrorReason([pos], "construct " + structid));
 					});
 				} else {
 					env.onError(pos, "Struct " + structid + " expects " + i2s(length(itype.second)) + " arguments, got " + i2s(length(argTypes)));
@@ -217,13 +217,13 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			fieldFnTypes = filtermap(fieldStructs, \struct : DStruct -> {
 				stypenameFields = instantiateTTypeNameForStruct(env, struct);
 				stypename = stypenameFields.first;
-				fields = stypenameFields.second;
+				fields : [Triple<string, bool, TType>] = stypenameFields.second;
 
-				mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
+				mft : Maybe<Triple<string, bool, TType>> = find(fields, \sa -> sa.first == field);
 				fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
 					// OK, the typars are wrong here, since we should use the type
 					// of the field
-					ft.second
+					ft.third
 				});
 				fieldType ?? {
 					Some(TTypeFunction([stypename], fieldType));
@@ -329,11 +329,11 @@ getDStructFieldType(env : TTypeEnv, struct : DStruct, field : string) -> Maybe<T
 	stypename = stypenameFields.first;
 	fields = stypenameFields.second;
 
-	mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
+	mft : Maybe<Triple<string, bool, TType>> = find(fields, \sa -> sa.first == field);
 	fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
 		// OK, the typars are wrong here, since we should use the type
 		// of the field
-		ft.second
+		ft.third
 	});
 	fieldType ?? {
 		Some(TTypeFunction([stypename], fieldType));
