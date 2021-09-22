@@ -154,13 +154,25 @@ Plan:
   can report a suitable error message.
 
 - Debug type errors
-  - ds/dynamic_array.flow simplified to type29
-C:/flow9/lib/ds/dynamic_array.flow:299:10: ERROR: overload147{(DynamicArrayConcat<e2600>)->bool, (DynamicArrayConstruct<e2601>)->bool, (DynamicArrayContainer<e2602>)->bool, (DynamicArrayFilter<e2603>)->bool, (DynamicArrayMap<e2604>)->bool, (DynamicArrayMapi<e2605>)->bool, (DynamicArrayMapiWithPrevious<e2606>)->bool, (DynamicArrayMapiu<e2607>)->bool, (DynamicArrayMapiuWithPrevious<e2608>)->bool, (DynamicArrayMapu<e2609>)->bool, (DynamicArrayMerge<e2610>)->bool, (DynamicArraySubMap<e2611>)->bool, (DynamicArraySubMapi<e2612>)->bool, (DynamicArraySubrange<e2613>)->bool} != (DynamicArray<?>)->bool (e2630 and e2615), set field linked
-		a.linked ::= true;
-		^
-    Seems we do not find the union overload for .linked for DynamicArray
+  - ds/dynamic_array.flow
+	TODO: Picking random supertype from ["ArrayOperation", "ArrayOperationWithSwapp"] for: super181{ArrayNop<?>, ArrayRemove<?>}
+	TODO: Picking random supertype from ["ArrayOperation", "ArrayOperationWithSwapp"] for: super182{ArrayInsert<?>, ArrayNop<?>, ArrayRemove<?>}
+	TODO: Picking random supertype from ["ArrayOperation", "ArrayOperationWithSwapp"] for: super183{ArrayInsert<?>, ArrayNop<?>, ArrayRemove<?>, ArrayReplace<?>}
+	C:/flow9/lib/ds/dynamic_array.flow:635:33: ERROR: Could not resolve supertype: super806{e1901}
+									HeckelInsert(i, v): {
+								^
+	C:/flow9/lib/ds/dynamic_array.flow:636:46: Add type annotation. Unresolved type (equivalence class e1662)
+										if (a.fn(v)) {
+												^
+	C:/flow9/lib/ds/dynamic_array.flow:638:103: Add type annotation. Unresolved type (equivalence class e1662)
+											insertDynamicArray(a, countA(subrange(^result , 0, i), idfn), v);
+																										^
+	C:/flow9/lib/ds/dynamic_array.flow:866:21: Add type parameter. Implicit polymorphism in (DList<(HeckelOperationSimple<e14564>) -> void>) -> int
+		if (a.linked && lengthDList(a.subscribers) == 0) {
+					^
 
   - ds/vector.flow:178
+    
 
   - forcelayout.flow:
 	C:/flow9/lib/forcelayout.flow:145:51: ERROR: overload889{(CubicBezierTo)->double, (Factor)->double, (ForceNode)->DynamicBehaviour<double>, (GCircle)->double, (GEllipse)->double, (GRect)->double, (GRoundedRect)->double, (LineTo)->double, (MouseDownInfo)->double, (MouseInfo)->double, (MoveTo)->double, (Point)->double, (QPoint)->double, (QuadraticBezierTo)->double, (Scale)->Behaviour<double>, (StaticGraphicShape)->double, (Translate)->Behaviour<double>, (V2)->double, (XYWeight)->double} != (ForceNode)->Behaviour<double> (e-1 and e1422), field x
