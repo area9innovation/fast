@@ -19,7 +19,10 @@ import math/stringmath;
 main() {
 	test = getUrlParameter("test");
 	file = if (test != "") {
-		"plow/tests/" + if (test == "1") "" else test
+		if (test == "1") "plow/tests/"
+		else if (strContains(test, "/")) {
+			test
+		} else "plow/tests/" + test;
 	} else "";
 
 	includes = strSplit(getUrlParameter("I"), ",");

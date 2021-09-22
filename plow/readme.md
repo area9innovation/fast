@@ -154,6 +154,24 @@ Plan:
   can report a suitable error message.
 
 - Debug type errors
+  - ds/dynamic_array.flow simplified to type29
+C:/flow9/lib/ds/dynamic_array.flow:299:10: ERROR: overload147{(DynamicArrayConcat<e2600>)->bool, (DynamicArrayConstruct<e2601>)->bool, (DynamicArrayContainer<e2602>)->bool, (DynamicArrayFilter<e2603>)->bool, (DynamicArrayMap<e2604>)->bool, (DynamicArrayMapi<e2605>)->bool, (DynamicArrayMapiWithPrevious<e2606>)->bool, (DynamicArrayMapiu<e2607>)->bool, (DynamicArrayMapiuWithPrevious<e2608>)->bool, (DynamicArrayMapu<e2609>)->bool, (DynamicArrayMerge<e2610>)->bool, (DynamicArraySubMap<e2611>)->bool, (DynamicArraySubMapi<e2612>)->bool, (DynamicArraySubrange<e2613>)->bool} != (DynamicArray<?>)->bool (e2630 and e2615), set field linked
+		a.linked ::= true;
+		^
+    Seems we do not find the union overload for .linked for DynamicArray
+
+  - ds/vector.flow:178
+
+  - forcelayout.flow:
+	C:/flow9/lib/forcelayout.flow:145:51: ERROR: overload889{(CubicBezierTo)->double, (Factor)->double, (ForceNode)->DynamicBehaviour<double>, (GCircle)->double, (GEllipse)->double, (GRect)->double, (GRoundedRect)->double, (LineTo)->double, (MouseDownInfo)->double, (MouseInfo)->double, (MoveTo)->double, (Point)->double, (QPoint)->double, (QuadraticBezierTo)->double, (Scale)->Behaviour<double>, (StaticGraphicShape)->double, (Translate)->Behaviour<double>, (V2)->double, (XYWeight)->double} != (ForceNode)->Behaviour<double> (e-1 and e1422), field x
+		nodes = map(f.nodes, \n -> XYWeight(getValue(n.x), getValue(n.y), n.weight));
+	                                             ^
+    Has some strange -1 for eclass. The conflict seems to be 
+		(ForceNode)->DynamicBehaviour<double> vs (ForceNode)->Behaviour<double>
+
+  - ds/array_diff.flow: Supertype resolution
+
+
   - tools/flowc/type_helpers.flow:1108:9: ERROR: Merge FcTypeName and FcType (e12441 and e11628)
 		FcTypeName(n1, typars1,__):
 
