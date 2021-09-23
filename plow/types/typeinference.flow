@@ -217,6 +217,16 @@ resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : 
 		else setTree(acc, eclass, type)
 	});
 
+	// Now, check if any of these are unresolved
+	if (false) {
+		unresolved : Set<TType> = foldTree(etypes, makeSet(), \eclass, ttype, acc -> {
+			unresolvedTTypes(acc, ttype);
+		});
+		iterSet(unresolved, \tt -> {
+			println(tt);
+		});
+	}
+
 	// OK, now lower the typed chunk into BGlobals
 	benv = BExpEnv(env.onError, env.tmap, etypes, env.resolveStructName);
 

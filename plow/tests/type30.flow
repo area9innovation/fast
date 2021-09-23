@@ -1,0 +1,47 @@
+import behaviour;
+
+/*
+Behaviour<?> ::= ConstBehaviour<?>, DynamicBehaviour<?>;
+	DynamicBehaviour(value : ref ?);
+	ConstBehaviour : (constv : ?);
+
+make(value : ?) -> DynamicBehaviour<?> {
+	DynamicBehaviour(ref value);
+}
+
+getValue(v : Behaviour<?>) -> ? {
+	switch(v) {
+		ConstBehaviour(constv): constv;
+		DynamicBehaviour(value): ^value;
+	}
+}
+
+nop() {}
+
+// Do the same, but only if the value is different from the current value
+nextDistinct(b : DynamicBehaviour<?>, value : ?) -> void {
+}
+
+subscribe(b  : Behaviour<?>, fn : (?) -> void) -> () -> void {
+	\ -> {}
+}
+*/
+
+native i2d : (i : int) -> double = Native.i2d;
+
+Timer(
+	value : Behaviour<double>,
+);
+
+getTimeline(f : int ) -> void {
+	factor = make(1);
+
+	// timelines won't work in neko...or work horribly wrong
+	uns2 = subscribe(factor, \ff -> {
+		ticker = Timer(make(1.0));
+
+		b = subscribe(ticker.value, \t -> {
+			a = t * i2d(ff);
+		});
+	});
+}
