@@ -1129,8 +1129,8 @@ resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>
 			}
 			Cons(head, ltail): {
 				// OK, we will just switch to join instead, and then continue
-				// println("Joining " + prettyEClass(tmap, head.first) + " sub " + prettyEClass(tmap, head.second));
-				joinTNodes(tmap, head.first, head.second, makeErrorReason([], "todo: pending subtypes reason"));
+				// println("TODO: Optimistic joining " + prettyEClass(tmap, head.first) + " sub " + prettyEClass(tmap, head.second));
+				joinTNodes(tmap, head.first, head.second, makeErrorReason([], "Optimistic subtypes join"));
 				tmap.pendingSubtypes := ltail;
 				resolveTNodes(tmap, 0, verbose);
 			}

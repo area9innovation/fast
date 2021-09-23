@@ -16,7 +16,13 @@ import tools/flowc/backends/build;
 
 
 main() {
-	file = if (isUrlParameterTrue("test")) "plow/tests/" else "";
+	test = getUrlParameter("test");
+	file = if (test != "") {
+		if (test == "1") "plow/tests/"
+		else if (strContains(test, "/")) {
+			test
+		} else "plow/tests/" + test;
+	} else "";
 
 	includes = strSplit(getUrlParameter("I"), ",");
 	allincludes = filter(concat([".", getFlowDirectory() + "/lib", getFlowDirectory()], includes), neq(""));

@@ -110,7 +110,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 				DVar(fnid, __, __): " " + fnid;
 				default: "";
 			};
-			unifyTNodes(env.tmap, fntype1, fntype2, makeErrorReason([pos], "call" + id + " : " + prettyTType(fntype2)));
+			unifyTNodes(env.tmap, fntype1, fntype2, makeErrorReason([pos], "call" + id + " : e" + i2s(eclass) + "=" + prettyTTypeNode(env.tmap, fntype2)));
 
 			restype("call-ret", eclass, rettype);
 		}
@@ -122,8 +122,8 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 				});
 				itype = instantiateTTypeNameForStruct(env, mstruct);
 				if (length(argTypes) == length(itype.second)) {
-					iteri(itype.second, \i, fields : Pair<string, TType> -> {
-						unifyTNodes(env.tmap, makeTTypeSupertype(env, [argTypes[i]], false, pos), fields.second, makeErrorReason([pos], "construct " + structid));
+					iteri(itype.second, \i, fields : Triple<string, bool, TType> -> {
+						unifyTNodes(env.tmap, makeTTypeSupertype(env, [argTypes[i]], false, pos), fields.third, makeErrorReason([pos], "construct " + structid));
 					});
 				} else {
 					env.onError(pos, "Struct " + structid + " expects " + i2s(length(itype.second)) + " arguments, got " + i2s(length(argTypes)));
@@ -158,49 +158,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			// OK, this is an overload of all structs with a field
 			tvalue = ttypeInferenceDExp(env, topid, value);
 
-			fieldStructs : [DStruct] = env.resolveField(field);
-
-			// Types for overload functions
-			fieldFnTypes : [TTypeFunction] = filtermap(fieldStructs, \struct : DStruct -> {
-				getDStructFieldType(env, struct, field);
-			});
-
-			fieldUnions : Set<string> = env.resolveUnionField(field);
-
-			unionFns = map(set2array(fieldUnions), \un -> {
-				utype = instantiateTTypeName(env, un);
-				subtypes : [string] = env.resolveSubtypes(un);
-
-				// Find the type of this field
-				fieldType : Maybe<TTypeFunction> = fold(subtypes, None(), \acc, type -> {
-					mstruct = env.resolveStructName(type);
-					mstruct ?? {
-						getDStructFieldType(env, mstruct, field)
-					} : {
-						acc;
-					}
-				});
-				rt = switch (fieldType) {
-					None(): {
-						env.onError(pos, "Unknown field " + field + " type from union " + un + ", subtypes: " + strGlue(subtypes, ", "));
-						TTypeEClass(env.mkEClass());
-					}
-					Some(ft): {
-						ft.returnType
-					}
-				};
-				TTypeFunction([utype], rt);
-			});
-
-			fnTypes = concat(fieldFnTypes, unionFns);
-			// println("Field " + field + " has fns " + toString(fnTypes));
-
-			fntype = if (fnTypes == []) {
-				env.onError(pos, "Unknown field " + field);
-				TTypeEClass(env.mkEClass());
-			} else if (length(fnTypes) == 1) {
-				fnTypes[0]
-			} else TTypeOverload(TTypeEClass(eclass), sort(fnTypes));
+			fntype = getDFieldType(env, field, pos, eclass);
 
 			rtype = TTypeEClass(eclass);
 			calltype = TTypeFunction([tvalue], rtype);
@@ -212,30 +170,7 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 			ltype = ttypeInferenceDExp(env, topid, left);
 			valtype = ttypeInferenceDExp(env, topid, value);
 
-			fieldStructs : [DStruct] = env.resolveField(field);
-
-			fieldFnTypes = filtermap(fieldStructs, \struct : DStruct -> {
-				stypenameFields = instantiateTTypeNameForStruct(env, struct);
-				stypename = stypenameFields.first;
-				fields = stypenameFields.second;
-
-				mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
-				fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
-					// OK, the typars are wrong here, since we should use the type
-					// of the field
-					ft.second
-				});
-				fieldType ?? {
-					Some(TTypeFunction([stypename], fieldType));
-				} : None();
-			});
-
-			fntype = if (fieldFnTypes == []) {
-				env.onError(pos, "Unknown field " + field);
-				TTypeEClass(env.mkEClass());
-			} else if (length(fieldFnTypes) == 1) {
-				fieldFnTypes[0]
-			} else TTypeOverload(TTypeEClass(eclass), sort(fieldFnTypes));
+			fntype = getDFieldType(env, field, pos, eclass);
 
 			calltype = TTypeFunction([ltype], makeTTypeSupertype(env, [valtype], false, pos));
 
@@ -324,16 +259,62 @@ doTTtypeInferenceDExp(env : TTypeEnv, topid : string, d : DExp) -> TTypeEClass {
 	}
 }
 
+// OK, find the type for this field (resolving to an overload if ambigious)
+getDFieldType(env : TTypeEnv, field : string, pos : int, eclass : int) -> TType {
+	fieldStructs : [DStruct] = env.resolveField(field);
+	// Types for overload functions
+	fieldFnTypes : [TTypeFunction] = filtermap(fieldStructs, \struct : DStruct -> {
+		getDStructFieldType(env, struct, field);
+	});
+
+	fieldUnions : Set<string> = env.resolveUnionField(field);
+	unionFns = map(set2array(fieldUnions), \un -> {
+		utype = instantiateTTypeName(env, un);
+
+		subtypes : [string] = env.resolveSubtypes(un);
+
+		// Find the type of this field
+		fieldType : Maybe<TTypeFunction> = fold(subtypes, None(), \acc, type -> {
+			mstruct = env.resolveStructName(type);
+			mstruct ?? {
+				getDStructFieldType(env, mstruct, field)
+			} : {
+				acc;
+			}
+		});
+		rt = switch (fieldType) {
+			None(): {
+				env.onError(pos, "Unknown field " + field + " type from union");
+				TTypeEClass(env.mkEClass());
+			}
+			Some(ft): {
+				ft.returnType
+			}
+		};
+		TTypeFunction([utype], rt);
+	});
+
+	fnTypes = concat(fieldFnTypes, unionFns);
+	// println("Field " + field + " has fns " + toString(fnTypes));
+
+	if (fnTypes == []) {
+		env.onError(pos, "Unknown field " + field);
+		TTypeEClass(env.mkEClass());
+	} else if (length(fnTypes) == 1) {
+		fnTypes[0]
+	} else TTypeOverload(TTypeEClass(eclass), sort(fnTypes));
+}
+
 getDStructFieldType(env : TTypeEnv, struct : DStruct, field : string) -> Maybe<TTypeFunction> {
 	stypenameFields = instantiateTTypeNameForStruct(env, struct);
 	stypename = stypenameFields.first;
 	fields = stypenameFields.second;
 
-	mft : Maybe<Pair<string, TType>> = find(fields, \sa -> sa.first == field);
+	mft : Maybe<Triple<string, bool, TType>> = find(fields, \sa -> sa.first == field);
 	fieldType : Maybe<TType> = maybeMap(mft, \ft -> {
 		// OK, the typars are wrong here, since we should use the type
 		// of the field
-		ft.second
+		ft.third
 	});
 	fieldType ?? {
 		Some(TTypeFunction([stypename], fieldType));

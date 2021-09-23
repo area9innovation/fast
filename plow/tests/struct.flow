@@ -5,7 +5,7 @@ Maybe<?> ::= None, Some<?>;
 	Some(value : ?);
 
 
-either(m, alternative) {
+either(m : Maybe<?>, alternative : ?) -> ? {
 	switch (m : Maybe) {
 		None(): alternative;
 		Some(v): v;
