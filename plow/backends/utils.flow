@@ -3,6 +3,9 @@ import math/math;
 
 export {
 	double2string(d : double) -> string;
+
+	// If saving was unsuccessfull - print a message.
+	plSaveFileContent(filename : string, content : string) -> void;
 }
 
 // Still not decided whether this is required or not
@@ -13,4 +16,10 @@ double2string(d : double) -> string {
 		|| strContains(v0, "E") ) {
 		v0
 	} else v0 + ".0";
+}
+
+plSaveFileContent(filename : string, content : string) -> void {
+	if (!setFileContent(filename, content)) {
+		println("Could not save " + filename);
+	}
 }

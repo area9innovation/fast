@@ -1,5 +1,6 @@
 import plow/backends/js/js_utils;
 import formats/json/json_parse;
+import plow/backends/utils;
 
 export {
 	prepareWebFonts(cfg : JsConfig) -> Pair<[string], [string]>;
@@ -28,7 +29,7 @@ prepareWebFonts(cfg : JsConfig) {
 					v = getJsonFieldValue(jsn, e.first, JsonNull());
 					if (v != JsonNull()) {
 						fl_name = resourceprefix + e.first + resourcesuffix;
-						saveFileContent(fl_name, json2string(v));
+						plSaveFileContent(fl_name, json2string(v));
 						arrayPush(acc, Pair(fl_name, e.second));
 					} else acc
 				});

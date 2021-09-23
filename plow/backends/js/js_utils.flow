@@ -5,9 +5,6 @@ import fs/filesystem;
 export {
 	// Mangle a single name. (It is required for calling Haxe DCE ?)
 	mangleNativeName(name : string, add_class : (string) -> void) -> string;
-	
-	// Report errors if any at saving.
-	saveFileContent(filename : string, content : string) -> void;
 
 	// Makes a default JS config for a given file.
 	makeJsConfig(flowfile : string) -> JsConfig;
@@ -24,12 +21,6 @@ mangleNativeName(name : string, add_class : (string) -> void) {
 	add_class(class);
 	renamed = class + "." + parts[1];
 	if (renamed == "Native.length") "Native.length__" else renamed;
-}
-
-saveFileContent(filename : string, content : string) -> void {
-	if (!setFileContent(filename, content)) {
-		println("Could not save " + filename);
-	}
 }
 
 makeJsConfig(flowfile : string) -> JsConfig {
