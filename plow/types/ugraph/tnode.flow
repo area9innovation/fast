@@ -366,6 +366,7 @@ extractSupers(tmap : TMap, acc : TNodeSupertype, t : TType) -> TNodeSupertype {
 				}
 				TNodeOverload(unique, overloads, pos): {
 					if (exists(overloads, isFlowNode)) {
+						println("REVIEW: Somehow, we extract flow here");
 						TNodeSupertype(acc with subtypes = arrayPush(acc.subtypes, TNodeName("flow", [], pos)));
 					} else {
 						println("TODO: Figure out how to represent this overload as a named type: " + prettyTType(t));
@@ -719,6 +720,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode, reason : ErrorReason) -> T
 					flows = filter(concat(loverloads, overloads), isFlowNode);
 					if (flows != []) {
 						// OK, we have a flow type, so just pick that
+						println("REVIEW: Why do we just pick the flow here?");
 						flows[0];
 					} else {
 						println("TODO: Find the intersection between " + prettyTNode(tmap, left) + " and " + prettyTNode(tmap, right));
@@ -739,6 +741,7 @@ mergeTNodes(tmap : TMap, left : TNode, right : TNode, reason : ErrorReason) -> T
 				TNodeOverload(runique, roverloads, pos): {
 					flows = filter(roverloads, isFlowNode);
 					if (flows != []) {
+						println("REVIEW: Why do we pick the flow in this supertype?");
 						// OK, we resolve to the flow type
 						flows[0];
 					} else {
@@ -774,7 +777,7 @@ unifyTNodeNameWithSuper(tmap : TMap, node : TNodeName, super : TNodeSupertype, r
 	});
 
 	if (!isEmptySet(super.unknownSubtypes)) {
-		eclass = findOrMakeTNode(tmap, node, joinReasons(reason, makeErrorReason([], "unifynodevssuper")));
+		eclass = findOrMakeTNode(tmap, node, joinReasons(reason, makeErrorReason(concat(node.pos, super.pos), "unifynodevssuper")));
 		iterSet(super.unknownSubtypes, \st -> {
 			// println(^uindent + "Joining e" + i2s(eclass) + " and e" + i2s(st));
 			subtypeTNodes(tmap, st, eclass, 
@@ -908,11 +911,14 @@ unifyTNodeNameAgainstSubtype(tmap : TMap, unionNode : TNodeName, subNode : TNode
 		unionDef, subDef);
 	msubInstantiated ?? {
 		subtypes = msubInstantiated.typars;
-		// println("    " + prettyTNode(tmap, subInstantiated) + " vs " + prettyTNode(tmap, subNode));
 		if (length(subtypes) == length(subNode.typars)) {
+			// println("    " + prettyTNode(tmap, msubInstantiated) + " vs " + prettyTNode(tmap, subNode));
 			iteri(subtypes, \i, tp -> {
 				if (tp != -1) {
-					joinTNodes(tmap, tp, subNode.typars[i], makeErrorReason(concat(unionNode.pos, subNode.pos), "TODO: Typar #" + i2s(i + 1) + " from " + subNode.name + " vs " + unionNode.name));
+					joinTNodes(tmap, tp, subNode.typars[i], 
+						makeErrorReason(concat(unionNode.pos, subNode.pos), 
+						"TODO: Typar #" + i2s(i + 1) + " from " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode) + " from " + prettyTNode(tmap, msubInstantiated))
+					);
 					{}
 				} else {
 					tmap.onError(makeErrorReason(unionNode.pos, "ERROR: Could not match typars " + prettyTNode(tmap, subNode) + " vs " + prettyTNode(tmap, unionNode)));
@@ -977,13 +983,13 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, reason : ErrorReason) -> void
 	subnode = getUnionMapValue(tmap.tmap, sub);
 	// println(^uindent + "Subtyping " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode) + "  // e" + i2s(sub) + " vs e" + i2s(super));
 	switch (subnode) {
-		TNodeSupertype(__, __, __, __): {
+		TNodeSupertype(__, __, __, spos): {
 			if (isEmptyTNode(supernode)) {
 				postpone();
 			} else {
 				// This is optimistic, but we just take the chance
 				joinTNodes(tmap, sub, super, 
-					joinReasons(reason, makeErrorReason([], "optimistic sub vs super"))
+					joinReasons(reason, makeErrorReason(concat(supernode.pos, spos), "optimistic sub vs super"))
 				);
 				{}
 			}
@@ -1033,7 +1039,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, reason : ErrorReason) -> void
 					}
 				}
 				switch (supernode) {
-					TNodeName(supername, stypars, __): {
+					TNodeName(supername, stypars, spos): {
 						if (name == supername && length(typars) == length(stypars)) {
 							// OK, we subtype the typars
 							// println("Subtyping the typars");
@@ -1045,7 +1051,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, reason : ErrorReason) -> void
 									if (i < length(stypars)) {
 										subtypeTNodes(tmap, tp, stypars[i], 
 											joinReasons(reason,
-												makeErrorReason([], "Subtyping typars for " + name)
+												makeErrorReason(concat(npos, spos), "Subtyping typars for " + name)
 											)
 										)
 									}
@@ -1062,7 +1068,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, reason : ErrorReason) -> void
 									subtypeTNodes(tmap, tp, stypars[i], 
 										joinReasons(
 											reason,
-											makeErrorReason([], "stub subtype up " + prettyTNode(tmap, subtype) + " vs " + prettyTNode(tmap, supernode))
+											makeErrorReason(concat(npos, spos), "stub subtype up " + prettyTNode(tmap, subtype) + " vs " + prettyTNode(tmap, supernode))
 										)
 									)
 								});
@@ -1075,7 +1081,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, reason : ErrorReason) -> void
 								iteri(suptype.typars, \i, tp -> {
 									subtypeTNodes(tmap, typars[i], tp, 
 										joinReasons(reason, 
-											makeErrorReason([], "stub the supertype up " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode))
+											makeErrorReason(concat(npos, spos), "stub the supertype up " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode))
 										)
 									)
 								});
@@ -1129,7 +1135,7 @@ resolveTNodes(tmap : TMap, iterations : int, verbose : bool) -> Tree<int, TType>
 			}
 			Cons(head, ltail): {
 				// OK, we will just switch to join instead, and then continue
-				// println("TODO: Optimistic joining " + prettyEClass(tmap, head.first) + " sub " + prettyEClass(tmap, head.second));
+				println("REVIEW: Optimistic joining " + prettyEClass(tmap, head.first) + " sub " + prettyEClass(tmap, head.second));
 				joinTNodes(tmap, head.first, head.second, makeErrorReason([], "Optimistic subtypes join"));
 				tmap.pendingSubtypes := ltail;
 				resolveTNodes(tmap, 0, verbose);
@@ -1209,6 +1215,7 @@ resolveTNode(tmap : TMap, acc : ref Tree<int, TType>, visited : ref Set<int>, ec
 					nonflow[0];
 				} else if (length(nonflow) != length(overloads)) {
 					// There is a flow in there
+					println("REVIEW: We found a flow in an overload");
 					TNodeName("flow", [], pos);
 				} else {
 					if (length(overloads) != 1) {

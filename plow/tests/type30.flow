@@ -9,19 +9,6 @@ make(value : ?) -> DynamicBehaviour<?> {
 	DynamicBehaviour(ref value);
 }
 
-getValue(v : Behaviour<?>) -> ? {
-	switch(v) {
-		ConstBehaviour(constv): constv;
-		DynamicBehaviour(value): ^value;
-	}
-}
-
-nop() {}
-
-// Do the same, but only if the value is different from the current value
-nextDistinct(b : DynamicBehaviour<?>, value : ?) -> void {
-}
-
 subscribe(b  : Behaviour<?>, fn : (?) -> void) -> () -> void {
 	\ -> {}
 }

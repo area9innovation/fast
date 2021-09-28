@@ -154,6 +154,9 @@ Plan:
   can report a suitable error message.
 
 - Debug type errors
+  - test30: Somehow related to subscribe becoming a type with "flow" inside, and then
+    all hell breaks loose
+
   - ds/dynamic_array.flow
 	TODO: Picking random supertype from ["ArrayOperation", "ArrayOperationWithSwapp"] for: super181{ArrayNop<?>, ArrayRemove<?>}
 	TODO: Picking random supertype from ["ArrayOperation", "ArrayOperationWithSwapp"] for: super182{ArrayInsert<?>, ArrayNop<?>, ArrayRemove<?>}
