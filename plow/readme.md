@@ -132,6 +132,8 @@ https://dl.acm.org/doi/abs/10.1145/99935.99944
 Try to understand that, and maybe implement it.
 
 Plan:
+- Implement prolog-style resolution.
+
 - Get it to work with global ids.
   Place global ids in plowcache, which is the only thing which survives all files. Done for
   sub-/super-types, but todo: Do this eagerly for structs & unions as well.
