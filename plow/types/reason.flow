@@ -20,6 +20,7 @@ export {
 makeErrorReason(pos : [int], error : string) -> ErrorReason {
 	if (pos == []) {
 		println("We do not have a position for this error: " + error);
+		printCallstack();
 	}
 	ErrorReason(fold(pos, makeTree(), \acc, p -> treePushToArrayUnique(acc, p, error)));
 }

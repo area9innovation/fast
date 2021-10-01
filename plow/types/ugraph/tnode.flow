@@ -1064,7 +1064,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, reason : ErrorReason) -> void
 							if (isEmptyTNode(subnode) && !isEmptyTNode(supernode) && !hasSubtype(tmap, supernode)) {
 								subtype = TNodeName(supername, mapi(stypars, \i, lt -> {
 									makeTNodeClass(tmap)
-								}), subnode.pos);
+								}), supernode.pos);
 								setTNodeClass(tmap, sub, subtype);
 								// println(^(tmap.topid) + ": We stub the subtype up " + prettyTNode(tmap, subtype) + " vs " + prettyTNode(tmap, supernode));
 								iteri(subtype.typars, \i, tp -> {
@@ -1078,7 +1078,7 @@ subtypeTNodes(tmap : TMap, sub : int, super : int, reason : ErrorReason) -> void
 							} else if (!isEmptyTNode(subnode) && isEmptyTNode(supernode)) {
 								suptype = TNodeName(name, mapi(typars, \i, lt -> {
 									makeTNodeClass(tmap)
-								}), supernode.pos);
+								}), subnode.pos);
 								setTNodeClass(tmap, super, suptype);
 								// println(^(tmap.topid) + ": We stub the supertype up " + prettyTNode(tmap, subnode) + " vs " + prettyTNode(tmap, supernode));
 								iteri(suptype.typars, \i, tp -> {

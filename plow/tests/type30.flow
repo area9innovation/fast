@@ -20,7 +20,7 @@ Timer(
 	value : Behaviour<double>,
 );
 
-getTimeline(f : int ) -> void {
+getTimeline(f : int) -> void {
 	factor = make(1);
 
 	// timelines won't work in neko...or work horribly wrong
