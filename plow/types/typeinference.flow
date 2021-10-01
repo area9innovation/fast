@@ -206,10 +206,10 @@ ttypeInferenceDGlobal(env : TTypeEnv, flowpath : string, d : DGlobal) -> TTypeEn
 }
 
 resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : string, verbose : bool) -> TTypeEnv {
-	if (verbose) {
+	if ( verbose) {
 		println("Resolving " + toString(chunk));
 	}
-
+	
 	types = resolveTNodes(env.tmap, 3, verbose);
 
 	// Only grab the etypes we do not already have set above
@@ -219,14 +219,18 @@ resolveEClasses(env : TTypeEnv, dmodule : DModule, chunk : [string], flowpath : 
 	});
 
 	// Now, check if any of these are unresolved
-	if (true) {
+	if (verbose) {
 		unresolved : Set<TType> = foldTree(etypes, makeSet(), \eclass, ttype, acc -> {
 			unresolvedTTypes(acc, ttype);
 		});
+		if (!isEmptySet(unresolved)) {
+			println("Unresolved types:");
+		}
 		iterSet(unresolved, \tt -> {
 			println(tt);
 		});
 	}
+	if (verbose) println("Resolution done " + toString(chunk));
 
 	// OK, now lower the typed chunk into BGlobals
 	benv = BExpEnv(env.onError, env.tmap, etypes, env.resolveStructName);
