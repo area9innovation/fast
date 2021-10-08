@@ -12,9 +12,6 @@ import fs/filesystem;
 import math/stringmath;
 import tools/flowc/backends/build;
 
-// forbid tools/flowc/flow_parser;
-
-
 main() {
 	test = getUrlParameter("test");
 	file = if (test != "") {
