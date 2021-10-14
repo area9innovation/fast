@@ -298,12 +298,3 @@ https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/render
 The best solution is to go for Perceus:
 https://www.microsoft.com/en-us/research/uploads/prod/2020/11/perceus-tr-v1.pdf
 
-## General backend plan
-
-1. Extend lambda calculus with dyn & join with partial evaluation to construct vars and functions
-
-2. Extend lambda calculus with inline construct and foreign language construct
-
-3. Add backend to compile lambda calculus to flow-code, JS, Java, Wasm, Bytecode, C++
-
-4. First use case could be Gringo to flow

@@ -1,5 +1,8 @@
+native println : io (?) -> void = Native.println;
+
+
 main() {
-	1000.0 - 1.0 - 2.0;
+	println(1000.0 - 1.0 - 2.0);
 }
 
 /*

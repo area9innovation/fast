@@ -45,7 +45,7 @@ bprogram2cpp(b : BProgram, flowpath : string) -> string {
 	// The backend keeps track of what requirements are used by the various
 	// constructs used
 	strReplace(
-		"#include <cstdint>\n#include <variant>\n#include <functional>\n#include <any>\n#include <tuple>"
+		"#include <cstdint>\n#include <variant>\n#include <functional>\n#include <any>\n#include <tuple>\n#include <iostream>"
 		+ getBackendRequirements(backend)
 	//	+ "// RUNTIME\n"
 	//	+ runtime + "\n"
@@ -57,7 +57,8 @@ bprogram2cpp(b : BProgram, flowpath : string) -> string {
 		+ structs + "\n"
 		+ "// BODY\n"
 		+ body
-		+ "int main() { return int(flow_main()); }",
+		// TODO: If flow_main returns int, do something else
+		+ "int main() { flow_main(); return 0; }",
 		"\t",
 		"  "
 	)
@@ -87,7 +88,7 @@ bdeclaration2cpp(backend : Backend<CppInfo>, d : BDeclaration) -> string {
 				polyvars = extractPolymorphism(makeSet(), type);
 				argtypes = getBArgTypes(type);
 				rt = btype2cpp(backend, getBReturnType(type));
-			
+
 				blueprint("
 					%polyvars%%rt% %id%(%args%) {
 						%body%
@@ -107,7 +108,15 @@ bdeclaration2cpp(backend : Backend<CppInfo>, d : BDeclaration) -> string {
 			}
 		}
 		BExpNative(id, isio, type, nativeName): {
-			"// TODO: Native " + id;
+			if (id == "flow_println") {
+				"template <typename A>
+void flow_println(A d) {
+	std::cout << d << std::endl;
+}
+";
+			} else {
+				"// TODO: Native " + id;
+			}
 		}
 	}
 }
@@ -142,11 +151,11 @@ bstatement2cpp(backend : Backend<CppInfo>, s : BStatement) -> string {
 		BReturnVoid(): "return;";
 		BReturn(val): {
 			type = getBType(val);
-			if (type == bvoidType) {
+			(if (type == bvoidType) {
 				""
 			} else {
 				"return ";
-			}  + bexp2cpp(backend, val) + ";"
+			}) + bexp2cpp(backend, val) + ";"
 		}
 		BTailCall(fn, args, values, type): {
 			fn  + "(" +superglue(values, rece, ", ") + ");"
