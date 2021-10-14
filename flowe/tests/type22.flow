@@ -1,8 +1,0 @@
-import flowe/pexp/pexp;
-
-getPType(e : PExp) -> PType {
-	switch (e) {
-		PType(): e;
-		default: PTypeName("", [], -1);
-	}
-}
